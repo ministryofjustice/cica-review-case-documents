@@ -1,0 +1,17 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Answers document",
+    "allOf": [
+        {"$ref": "../../../json-api-base-document.json"},
+        {
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "../../../resources/answer-resource.json"
+                    }
+                }
+            }
+        }
+    ]
+}

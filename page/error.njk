@@ -1,0 +1,12 @@
+{% extends "page.njk" %}
+{% block pageTitle %}Something went wrong - {{ super() }}{% endblock %}
+
+{% block innerContent %}
+    <h1 class="govuk-heading-xl">Something went wrong</h1>
+    <p class="govuk-body">
+        {{ error }}
+    </p>
+
+    <h2 class="govuk-heading-l">Contact us</h2>
+    {% include "contact.njk" %}
+{% endblock %}

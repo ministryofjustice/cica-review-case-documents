@@ -1,0 +1,6 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Dcs-Api-Version",
+    "type": "string",
+    "enum": ["2023-05-17"]
+}

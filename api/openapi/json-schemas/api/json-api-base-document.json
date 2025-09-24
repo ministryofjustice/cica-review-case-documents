@@ -1,0 +1,28 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Loosely describes the JSON:API document format",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["data"],
+    "properties": {
+        "data": {
+            "anyOf": [
+                {
+                    "type": "object"
+                },
+                {
+                    "type": "array"
+                }
+            ]
+        },
+        "included": {
+            "type": "array"
+        },
+        "links": {
+            "type": "object"
+        },
+        "meta": {
+            "type": "object"
+        }
+    }
+}

@@ -1,0 +1,33 @@
+{% extends "page.njk" %}
+{% block pageTitle %}{{ documentId }} - Document - {{ super() }}{% endblock %}
+
+{% block innerContent %}
+    <h1 class="govuk-heading-xl">{{ documentResource.source_file_name }}</h1>
+
+    {{ mojSubNavigation({
+        label: "Sub navigation",
+        items: [
+            {
+                text: "Document image",
+                href: "/document/" + documentId + "/view/image/page/" + pagination.currentPage,
+                active: "document-image" in pageType
+            },
+            {
+                text: "Document text",
+                href: "/document/" + documentId + "/view/text/page/" + pagination.currentPage,
+                active: "document-text" in pageType
+            }
+        ]
+    }) }}
+
+    {% block paginationTopContent %}
+    {% endblock %}
+
+    {% block documentContent %}
+        {# custom imports from document-image.njk, and document-text.njk will ender here. #}
+    {% endblock %}
+
+    {% block paginationBottomContent %}
+    {% endblock %}
+
+{% endblock %}

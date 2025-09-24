@@ -1,0 +1,65 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["data"],
+    "properties": {
+        "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "attributes"],
+            "properties": {
+                "type": {
+                    "const": "questionnaires"
+                },
+                "attributes": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["templateName", "owner"],
+                    "properties": {
+                        "templateName": {
+                            "$ref": "../../../../models/definitions/questionnaire-template-name.json"
+                        },
+                        "owner": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["id", "isAuthenticated"],
+                            "properties": {
+                                "id": {
+                                    "$ref": "../../../../models/definitions/owner-id.json"
+                                },
+                                "isAuthenticated": {
+                                    "type": "boolean"
+                                }
+                            }
+                        },
+                        "origin": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["channel"],
+                            "properties": {
+                                "channel": {
+                                    "type": "string",
+                                    "pattern": "^[a-z][a-z0-9]{0,19}(?:-[a-z0-9]{1,20}){0,20}$"
+                                }
+                            }
+                        },
+                        "external": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["id"],
+                            "properties": {
+                                "id": {
+                                    "$ref": "../../../../models/definitions/external-id.json"
+                                }
+                            }
+                        },
+                        "templateVersion": {
+                            "$ref": "../../../../models/definitions/semver.json"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

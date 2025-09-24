@@ -1,0 +1,13 @@
+<div class="document-image">
+    <div class="document-image_image-container">
+        <img class="document-image_image-container-image" src="{{ documentResource.s3_pages_image[pagination.currentPage - 1].image }}" />
+    </div>
+    <div class="document-image-overlay">
+        <div class="document-highlights">
+            {% for highlight in highlights %}
+                <span id="somechunk_id" class="document-highlights_highlight"
+                style="top: {{highlight.top * 100}}%; left: {{highlight.left * 100}}%; width: {{highlight.width * 100}}%; height: {{highlight.height * 100}}%;"></span>
+            {% endfor %}
+        </div>
+    </div>
+</div>
