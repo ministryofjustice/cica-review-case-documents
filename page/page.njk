@@ -1,0 +1,132 @@
+{% extends "template.njk" %}
+{%- from "moj/components/banner/macro.njk" import mojBanner -%}
+{%- from "moj/components/header/macro.njk" import mojHeader -%}
+{%- from "moj/components/identity-bar/macro.njk" import mojIdentityBar -%}
+{%- from "moj/components/sub-navigation/macro.njk" import mojSubNavigation -%}
+{% from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner %}
+
+{% block pageTitle %}CICA Review Case Documents - GOV.UK{% endblock %}
+{% block head %}
+    <link href="/stylesheets/all.css?v={{CRCD_APP_VERSION}}&c={{CRCD_BUILDTIME_ID}}" rel="stylesheet"/>
+{% endblock %}
+
+{% block header %}
+    {{ mojHeader({
+        organisationLabel: {
+            text: 'CICA',
+            href: '#'
+        },
+        serviceLabel: {
+            text: 'Review Case Documents',
+            href: '#'
+        },
+        navigation: {
+            label: 'Account navigation',
+            items: [{
+                text: 'User One',
+                href: '#',
+                active: true
+            }, {
+                text: 'Sign out',
+                href: '#'
+            }]
+            }
+    }) }}
+    {% call mojIdentityBar({
+        title: {
+            html: "<strong>John Smith - XHA/12658 SA</strong>"
+        }
+    }) %}
+    {{ mojSubNavigation({
+        label: "Sub navigation",
+        items: [
+            {
+                text: "Nav item 1",
+                href: "#1",
+                active: true
+            },{
+                text: "Nav item 2",
+                href: "#2"
+            },{
+                text: "Nav item 3",
+                href: "#3"
+            }
+        ]
+    }) }}
+    {% endcall %}
+
+    <div class="govuk-width-container" role="navigation">
+        {% block innerHeader %}{% endblock %}
+    </div>
+{% endblock %}
+
+{% block beforeContent %}{% endblock %}
+
+{% block content %}
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-two-thirds">
+            {% if CRCD_MAINTENANCE_MESSAGE_ENABLED %}
+
+                {% set bannerHtml %}
+                <p class="govuk-body">{{ CRCD_MAINTENANCE_MESSAGE }}</p>
+                {% endset %}
+
+                {{ mojBanner({
+                    type: 'information',
+                    html: bannerHtml
+                }) }}
+
+            {% endif %}
+
+            {% block innerContent %}{% endblock %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block main %}
+    {{ super() }}
+    <div class="govuk-width-container govuk-!-margin-bottom-7">
+        <hr class="govuk-section-break govuk-section-break--m govuk-!-margin-bottom-0 govuk-section-break--visible">
+        {{ govukPhaseBanner({
+            tag: {
+                text: "Beta"
+            },
+            html: 'This is a new service. Help us improve it and <a class="govuk-link" href="#">give your feedback (opens in new tab)</a>.'
+        }) }}
+    </div>
+{% endblock %}
+
+{% block bodyEnd %}
+    {# Run JavaScript at end of the <body>, to avoid blocking the initial render. #}
+    <script nonce="{{ cspNonce }}">
+        window.CRCD = {
+            // SOME_VAR: 'foo'
+        };
+    </script>
+    <script nonce="{{ cspNonce }}" src="/js/bundle.js?v={{CRCD_APP_VERSION}}&c={{CRCD_BUILDTIME_ID}}"></script>
+{% endblock %}
+
+{% block footer %}
+    {{ govukFooter({
+      meta: {
+        items: [
+          {
+            href: "https://www.gov.uk/guidance/cica-privacy-notice",
+            text: "Privacy"
+          },
+          {
+            href: "/cookies",
+            text: "Cookies"
+          },
+          {
+            href: "/contact-us",
+            text: "Contact"
+          },
+          {
+            href: "/accessibility-statement",
+            text: "Accessibility statement"
+          }
+        ]
+      }
+    }) }}
+{% endblock %}

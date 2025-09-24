@@ -1,0 +1,114 @@
+{% extends "page.njk" %}
+{% block pageTitle %}{{ query }} - Search - {{ super() }}{% endblock %}
+
+{%- from "govuk/components/fieldset/macro.njk" import govukFieldset -%}
+{%- from "govuk/components/input/macro.njk" import govukInput -%}
+{%- from "govuk/components/button/macro.njk" import govukButton -%}
+{%- from "moj/components/pagination/macro.njk" import mojPagination -%}
+{%- from "search/macro/search-result-item/macro.njk" import searchResultItem %}
+
+{% block innerContent %}
+    <form method="post" action="/search">
+        {% call govukFieldset({
+            legend: {
+                text: "Search",
+                classes: "govuk-fieldset__legend--xl",
+                isPageHeading: true
+            }
+        }) %}
+
+            {{ govukInput({
+                label: {
+                    text: "Search",
+                    classes: "govuk-fieldset__legend--l govuk-visually-hidden"
+                },
+                id: "q",
+                name: "q",
+                value: query
+            }) }}
+
+            {{ govukButton({
+                text: "Search"
+            }) }}
+            <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+
+        {% endcall %}
+    </form>
+
+    <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+
+    {% set paginationItems = [] %}
+    {% set paginationPrevious = {
+            text: "Previous",
+            href: "/search/" + query + "/page/" + pagination.currentPage - 1
+        }
+    %}
+    {% set paginationNext = {
+            text: "Next",
+            href: "/search/" + query + "/page/" + pagination.currentPage + 1
+        }
+    %}
+    {% for i in range(1, pagination.pageCount + 1) %}
+        {%
+            set paginationItems = (paginationItems.push({
+                text: i,
+                href: "/search/" + query + "/page/" + i,
+                selected: i == pagination.currentPage
+            }), paginationItems)
+        %}
+    {% endfor %}
+    {% if pagination.firstPage %}
+        {% set paginationPrevious = null  %}
+    {% endif %}
+    {% if pagination.lastPage %}
+        {% set paginationNext = null  %}
+    {% endif %}
+
+    {{ mojPagination({
+        items: paginationItems,
+        results: {
+            count: pagination.itemCount,
+            from: pagination.from,
+            to: pagination.to,
+            text: "results"
+        },
+        previous: paginationPrevious,
+        next: paginationNext
+    }) }}
+
+    <p class="govuk-body govuk-!-margin-top-4">You searched for: <strong>{{ query }}</strong>
+
+    <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+
+    {% for result in searchResults %}
+        {# {{ searchResultItem(result) }} #}
+        {% call searchResultItem(result) -%}
+            {% if not loop.last %}
+                <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+            {%endif %}
+        {%- endcall %}
+    {% else %}
+        <p class="govuk-body-l"><strong>No matches found!</strong></p>
+    {% endfor %}
+
+    <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+
+    {{ mojPagination({
+        items: paginationItems,
+        results: {
+            count: pagination.itemCount,
+            from: pagination.from,
+            to: pagination.to,
+            text: "results"
+        },
+        previous: {
+            text: "Previous",
+            href: ""
+        },
+        next: {
+            text: "Next",
+            href: ""
+        }
+    }) }}
+
+{% endblock %}
