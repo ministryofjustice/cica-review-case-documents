@@ -11,7 +11,6 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-    console.log(req.body);
     const query = req.body.q;
     res.redirect(`/search/${query}`);
 });

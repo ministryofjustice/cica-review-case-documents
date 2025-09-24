@@ -11,6 +11,7 @@ import {doubleCsrfProtection, generateCsrfToken} from './middleware/csrf/index.j
 import createTemplateEngineService from './templateEngine/index.js';
 import indexRouter from './index/routes.js';
 import searchRouter from './search/routes.js';
+import caseRouter from './case/routes.js';
 
 const __dirname = import.meta.dirname;
 
@@ -118,6 +119,7 @@ app.use((req, res, next) => {
 
 app.use('/', indexRouter);
 app.use('/search', searchRouter);
+app.use('/case', caseRouter);
 app.use('/*splat', (req, res) => {
     res.status(404).render('404.njk');
 });

@@ -1,0 +1,102 @@
+{% extends "page.njk" %}
+{% block pageTitle %}{{ query }} - Search - {{ super() }}{% endblock %}
+
+{%- from "govuk/components/button/macro.njk" import govukButton -%}
+{%- from "govuk/components/date-input/macro.njk" import govukDateInput -%}
+{%- from "govuk/components/table/macro.njk" import govukTable -%}
+
+{% block innerContent %}
+    <form method="post" action="/case">
+        {{ govukDateInput({
+            id: "crn",
+            namePrefix: "crn",
+            fieldset: {
+                legend: {
+                    text: "Case Reference Number",
+                    isPageHeading: true,
+                    classes: "govuk-fieldset__legend--l"
+                }
+            },
+            hint: {
+                text: "For example, 24 123456"
+            },
+            items: [
+                {
+                    name: 'prefix',
+                    label: 'Year',
+                    classes: 'govuk-input--width-2'
+                },
+                {
+                    name: 'suffix',
+                    label: 'Unique ID',
+                    classes: 'govuk-input--width-4'
+                }
+            ]
+        }) }}
+
+        {{ govukButton({
+            text: "Find case"
+        }) }}
+
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    </form>
+
+    <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+
+    {{ govukTable({
+        caption: "Case Information",
+        captionClasses: "govuk-table__caption--m",
+        firstCellIsHeader: true,
+        head: [
+            {
+                text: "Item"
+            },
+            {
+                text: "Value"
+            }
+        ],
+        rows: [
+            [
+                {
+                    text: "Case Reference Number"
+                },
+                {
+                    text: caseReference
+                }
+            ],
+            [
+                {
+                    text: "Applicant Name"
+                },
+                {
+                    text: applicantName
+                }
+            ],
+            [
+                {
+                    text: "Creation Date"
+                },
+                {
+                    text: creationDate
+                }
+            ],
+            [
+                {
+                    text: "Document Count"
+                },
+                {
+                    text: documentsCount
+                }
+            ],
+            [
+                {
+                    text: "Document Names"
+                },
+                {
+                    text: documents
+                }
+            ]
+        ]
+    }) }}
+
+{% endblock %}
