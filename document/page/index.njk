@@ -1,0 +1,15 @@
+{% extends "page.njk" %}
+{% block pageTitle %}{{ documentId }} - Document - {{ super() }}{% endblock %}
+
+{%- from "moj/components/pagination/macro.njk" import mojPagination -%}
+{%- from "search/macro/search-result-item/macro.njk" import searchResultItem %}
+
+{% block innerContent %}
+    <ul class="govuk-list govuk-list--bullet">
+        {% for document in documentsResource %}
+            <li><a href="/document/{{ document.document_id }}" class="govuk-link">{{ document.document_title }}</a></li>
+        {% else %}
+            <li>No document found!</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

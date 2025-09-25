@@ -1,5 +1,5 @@
 {% extends "page.njk" %}
-{% block pageTitle %}{{ query }} - Search - {{ super() }}{% endblock %}
+{% block pageTitle %}{{ crnPrefix }}/{{ crnSuffix }} - Case select - {{ super() }}{% endblock %}
 
 {%- from "govuk/components/button/macro.njk" import govukButton -%}
 {%- from "govuk/components/date-input/macro.njk" import govukDateInput -%}
@@ -24,12 +24,20 @@
                 {
                     name: 'prefix',
                     label: 'Year',
-                    classes: 'govuk-input--width-2'
+                    classes: 'govuk-input--width-2',
+                    value: crnPrefix,
+                    attributes: {
+                        'maxlength': '2'
+                    }
                 },
                 {
                     name: 'suffix',
                     label: 'Unique ID',
-                    classes: 'govuk-input--width-4'
+                    classes: 'govuk-input--width-4',
+                    value: crnSuffix,
+                    attributes: {
+                        'maxlength': '6'
+                    }
                 }
             ]
         }) }}
@@ -42,6 +50,10 @@
     </form>
 
     <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+    {% set documentList = '' %}
+    {% for document in documents %}
+        {% set documentList = documentList + '<a href="' + document.url + '" class="govuk-link">' + document.name + '</a>, ' %}
+    {% endfor %}
 
     {{ govukTable({
         caption: "Case Information",
@@ -93,7 +105,7 @@
                     text: "Document Names"
                 },
                 {
-                    text: documents
+                    text: documentList | safe
                 }
             ]
         ]

@@ -27,7 +27,7 @@
 <p class="govuk-hint">Received on {{ params.received_date }}</p>
 <p class="govuk-body">{{ params.chunk_text }}</p>
 
-<p class="govuk-body"><strong>Found on:</strong> <a href="/case/{{ params.case_ref }}/documents/{{ params.source_file_name }}/page/{{ params.page_number }}/?highlight=blahblahblah" class="govuk-link">Page {{ params.page_number }}</a></p>
+<p class="govuk-body"><strong>Found on:</strong> <a href="/documents/{{ params.source_file_name }}/page/{{ params.page_number }}/?highlight=blahblahblah" class="govuk-link">Page {{ params.page_number }}</a></p>
 
 {% if caller %}
     {{ caller() }}

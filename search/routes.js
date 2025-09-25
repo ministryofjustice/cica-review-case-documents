@@ -5,18 +5,21 @@ import express from 'express';
 const router = express.Router();
 
 router.get('/', (req, res) => {
-    res.render('search/page/index.njk', {
-        csrfToken: res.locals.csrfToken
+    return res.render('search/page/index.njk', {
+        csrfToken: res.locals.csrfToken,
+        caseSelected: req.session.caseSelected,
+        caseData: req.session.caseData,
+        pageType: 'search'
     });
 });
 
 router.post('/', (req, res) => {
     const query = req.body.q;
-    res.redirect(`/search/${query}`);
+    return res.redirect(`/search/${query}`);
 });
 
 router.get('/:query', (req, res) => {
-    res.redirect(`/search/${req.params.query}/page/1`);
+    return res.redirect(`/search/${req.params.query}/page/1`);
 });
 
 router.get('/:query/page/:page', (req, res) => {
@@ -484,7 +487,7 @@ router.get('/:query/page/:page', (req, res) => {
     ];
 
     const totalResultsLength = resultsResource.length;
-    const totalPageCount = Math.ceil(resultsResource.length / process.env.CRDC_PAGINATION_ITEMS_PER_PAGE);
+    const totalPageCount = Math.ceil(resultsResource.length / process.env.CRDC_SEARCH_PAGINATION_ITEMS_PER_PAGE);
 
     let currentPage = Number(req.params.page);
 
@@ -495,14 +498,16 @@ router.get('/:query/page/:page', (req, res) => {
     if (currentPage > totalPageCount) {
         return res.redirect(`/search/${req.params.query}/page/${totalPageCount}`);
     }
-    const from = (currentPage - 1) * process.env.CRDC_PAGINATION_ITEMS_PER_PAGE + 1;
-    const to = Math.min(currentPage * process.env.CRDC_PAGINATION_ITEMS_PER_PAGE, resultsResource.length);
+    const from = (currentPage - 1) * process.env.CRDC_SEARCH_PAGINATION_ITEMS_PER_PAGE + 1;
+    const to = Math.min(currentPage * process.env.CRDC_SEARCH_PAGINATION_ITEMS_PER_PAGE, resultsResource.length);
 
     return res.render('search/page/results.njk', {
+        caseSelected: req.session.caseSelected,
+        caseData: req.session.caseData,
+        pageType: 'search',
         query: req.params.query,
         pagination: {
             itemCount: totalResultsLength,
-            // itemsPerPage: process.env.CRDC_PAGINATION_ITEMS_PER_PAGE,
             pageCount: totalPageCount,
             currentPage: currentPage,
             from,

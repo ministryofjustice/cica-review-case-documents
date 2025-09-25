@@ -32,31 +32,42 @@
             }]
             }
     }) }}
-    {% call mojIdentityBar({
-        title: {
-            html: "<strong>John Smith - XHA/12658 SA</strong>"
-        }
-    }) %}
-    {{ mojSubNavigation({
-        label: "Sub navigation",
-        items: [
-            {
-                text: "Search",
-                href: "/search",
-                active: true
-            },{
-                text: "Documents",
-                href: "/documents"
-            },{
-                text: "Nav item 3",
-                href: "#3"
-            }
-        ]
-    }) }}
-    {% endcall %}
+    
+    {% set identityBarTitle = '' %}
+    {% if caseSelected %}
+        {% set identityBarTitle = '<strong>' + caseData.applicant.name + ' - ' + caseData.case_ref + '</strong> - <a href="/case/clear" class="govuk-link">Search another case</a>' %}
+    {% endif %}
 
-    <div class="govuk-width-container" role="navigation">
-        {% block innerHeader %}{% endblock %}
+    <div class="govuk-width-container">
+        {% block innerHeader %}
+            {% call mojIdentityBar({
+                title: {
+                    html: identityBarTitle
+                },
+                classes: 'moj-identity-bar--nested-moj-sub-navigation'
+            }) %}
+                {{ mojSubNavigation({
+                    label: "Sub navigation",
+                    items: [
+                        {
+                            text: "Case select",
+                            href: "/case",
+                            active: pageType == "case"
+                        },
+                        {
+                            text: "Search",
+                            href: "/search",
+                            active: pageType == "search"
+                        },
+                        {
+                            text: "Documents",
+                            href: "/document",
+                            active: pageType == "documents"
+                        }
+                    ]
+                }) }}
+            {% endcall %}
+        {% endblock %}
     </div>
 {% endblock %}
 
@@ -64,7 +75,7 @@
 
 {% block content %}
     <div class="govuk-grid-row">
-        <div class="govuk-grid-column-two-thirds">
+        <div class="govuk-grid-column-full">
             {% if CRCD_MAINTENANCE_MESSAGE_ENABLED %}
 
                 {% set bannerHtml %}

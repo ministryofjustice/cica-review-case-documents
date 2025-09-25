@@ -8,10 +8,12 @@ import helmet from 'helmet';
 import {nanoid} from 'nanoid';
 import session from 'express-session';
 import {doubleCsrfProtection, generateCsrfToken} from './middleware/csrf/index.js';
+import {caseSelected} from './middleware/caseSelected/index.js';
 import createTemplateEngineService from './templateEngine/index.js';
 import indexRouter from './index/routes.js';
 import searchRouter from './search/routes.js';
 import caseRouter from './case/routes.js';
+import documentRouter from './document/routes.js';
 
 const __dirname = import.meta.dirname;
 
@@ -71,7 +73,7 @@ app.use(
                     (req, res) => `'nonce-${res.locals.cspNonce}'`,
                     'https:'
                 ],
-                imgSrc: ["'self'", 'data:', '*.google-analytics.com', 'www.googletagmanager.com'],
+                imgSrc: ["'self'", 'data:', '*.google-analytics.com', 'www.googletagmanager.com', 'picsum.photos', 'fastly.picsum.photos'],
                 objectSrc: ["'none'"],
                 frameSrc: ['*.ccng.bt.com'],
                 connectSrc: ["'self'", '*.google-analytics.com'],
@@ -118,10 +120,14 @@ app.use((req, res, next) => {
 });
 
 app.use('/', indexRouter);
-app.use('/search', searchRouter);
 app.use('/case', caseRouter);
+app.use('/search', caseSelected, searchRouter);
+app.use('/document', caseSelected, documentRouter);
 app.use('/*splat', (req, res) => {
-    res.status(404).render('404.njk');
+    res.status(404).render('404.njk', {
+        caseSelected: req.session.caseSelected,
+        caseData: req.session.caseData
+    });
 });
 
 export default app;

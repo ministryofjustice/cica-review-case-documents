@@ -1,0 +1,53 @@
+{#
+    template parameters - passed in from document/route.js
+    {
+        caseSelected: Boolean,
+        caseData:  Object,
+        pageType: String,
+        documentId: String,
+        pagination: {
+            itemCount: Integer,
+            pageCount: Integer,
+            currentPage: Integer,
+            from: Integer,
+            to: Integer,
+            firstPage: Boolean,
+            lastPage: Boolean
+        },
+        documentResource: Object
+    }
+#}
+
+{% extends "page.njk" %}
+{% block pageTitle %}{{ documentId }} - Document - {{ super() }}{% endblock %}
+
+{% block innerContent %}
+    <h1 class="govuk-heading-xl">{{ documentResource.document_title }}</h1>
+
+    {{ mojSubNavigation({
+        label: "Sub navigation",
+        items: [
+            {
+                text: "Image",
+                href: "/document/" + documentId + "/view/image/page/" + pagination.currentPage,
+                active: pageType == "document"
+            },
+            {
+                text: "Text",
+                href: "/document/" + documentId + "/view/text/page/" + pagination.currentPage,
+                active: pageType == "document"
+            }
+        ]
+    }) }}
+
+    {% block paginationTopContent %}
+    {% endblock %}
+
+    {% block documentContent %}
+        {# custom imports from document-image.njk, and document-text.njk will ender here. #}
+    {% endblock %}
+
+    {% block paginationBottomContent %}
+    {% endblock %}
+
+{% endblock %}
