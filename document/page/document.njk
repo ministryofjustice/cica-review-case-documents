@@ -22,20 +22,20 @@
 {% block pageTitle %}{{ documentId }} - Document - {{ super() }}{% endblock %}
 
 {% block innerContent %}
-    <h1 class="govuk-heading-xl">{{ documentResource.document_title }}</h1>
+    <h1 class="govuk-heading-xl">{{ documentResource.correspondence_type }} - {{ documentResource.source_file_name }}</h1>
 
     {{ mojSubNavigation({
         label: "Sub navigation",
         items: [
             {
-                text: "Image",
+                text: "Document image",
                 href: "/document/" + documentId + "/view/image/page/" + pagination.currentPage,
-                active: pageType == "document"
+                active: "document-image" in pageType
             },
             {
-                text: "Text",
+                text: "Document text",
                 href: "/document/" + documentId + "/view/text/page/" + pagination.currentPage,
-                active: pageType == "document"
+                active: "document-text" in pageType
             }
         ]
     }) }}

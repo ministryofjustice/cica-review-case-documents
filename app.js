@@ -126,7 +126,8 @@ app.use('/document', caseSelected, documentRouter);
 app.use('/*splat', (req, res) => {
     res.status(404).render('404.njk', {
         caseSelected: req.session.caseSelected,
-        caseData: req.session.caseData
+        caseData: req.session.caseData,
+        pageType: ['root']
     });
 });
 

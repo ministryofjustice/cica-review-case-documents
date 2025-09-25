@@ -7,7 +7,7 @@
 {% block innerContent %}
     <ul class="govuk-list govuk-list--bullet">
         {% for document in documentsResource %}
-            <li><a href="/document/{{ document.document_id }}" class="govuk-link">{{ document.document_title }}</a></li>
+            <li><a href="/document/{{ document.document_id }}" class="govuk-link">{{ document.correspondence_type }} - {{ document.source_file_name }}</a></li>
         {% else %}
             <li>No document found!</li>
         {% endfor %}

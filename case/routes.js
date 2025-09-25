@@ -9,7 +9,7 @@ router.get('/', (req, res) => {
         csrfToken: res.locals.csrfToken,
         caseSelected: req.session.caseSelected,
         caseData: req.session.caseData,
-        pageType: 'case'
+        pageType: ['case']
     });
 });
 
@@ -61,7 +61,7 @@ router.get('/:crnPrefix/:crnSuffix', (req, res) => {
     return res.render('case/page/results.njk', {
         caseData: req.session.caseData,
         caseSelected: req.session.caseSelected,
-        pageType: 'case',
+        pageType: ['case'],
         crnPrefix: req.params['crnPrefix'],
         crnSuffix: req.params['crnSuffix'],
         // dummy data from here down.

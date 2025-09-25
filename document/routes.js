@@ -5,17 +5,16 @@ import createDocumentService from './document-service.js';
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     const documentService = createDocumentService();
-    const response = documentService.getAllDocuments();
-    const documentsResource = response.data;
+    const response = await documentService.getAllDocuments();
 
     return res.render('document/page/index.njk', {
         csrfToken: res.locals.csrfToken,
         caseSelected: req.session.caseSelected,
         caseData: req.session.caseData,
-        pageType: 'document',
-        documentsResource
+        pageType: ['document'],
+        documentsResource: response
     });
 });
 
@@ -35,15 +34,14 @@ router.get('/:documentId/view/text', (req, res) => {
     return res.redirect(`/document/${req.params.documentId}/view/text/page/1`);
 });
 
-router.get('/:documentId/view/image/page/:page', (req, res) => {
+router.get('/:documentId/view/image/page/:page', async (req, res) => {
     const documentService = createDocumentService();
+    const response = await documentService.getDocument(req.params.documentId); // , currentPage);
 
-    let currentPage = Number(req.params.page);
-    const response = documentService.getDocumentPageByDocumentId(req.params.documentId, currentPage);
-    const documentResource = response;
-    const documentPageCount = documentResource.pagesCount;
+    const documentPageCount = response.page_count;
     const totalPageCount = Math.ceil(documentPageCount / process.env.CRDC_DOCUMENT_PAGINATION_ITEMS_PER_PAGE);
 
+    let currentPage = Number(req.params.page);
     if (currentPage < 1 || isNaN(currentPage)) {
         return res.redirect(`/document/${req.params.query}/view/image/page/1`);
     }
@@ -51,7 +49,6 @@ router.get('/:documentId/view/image/page/:page', (req, res) => {
     if (currentPage > totalPageCount) {
         return res.redirect(`/document/${req.params.query}/view/image/page/${totalPageCount}`);
     }
-
 
     const from = (currentPage - 1) * process.env.CRDC_DOCUMENT_PAGINATION_ITEMS_PER_PAGE + 1;
     const to = Math.min(currentPage * process.env.CRDC_DOCUMENT_PAGINATION_ITEMS_PER_PAGE, documentPageCount);
@@ -59,7 +56,7 @@ router.get('/:documentId/view/image/page/:page', (req, res) => {
     return res.render('document/page/document-image.njk', {
         caseSelected: req.session.caseSelected,
         caseData: req.session.caseData,
-        pageType: 'document',
+        pageType: ['document', 'document-image'],
         documentId: req.params.documentId,
         pagination: {
             itemCount: documentPageCount,
@@ -70,19 +67,18 @@ router.get('/:documentId/view/image/page/:page', (req, res) => {
             firstPage: currentPage <= 1,
             lastPage: currentPage >= totalPageCount
         },
-        documentResource
+        documentResource: response
     });
 });
 
-router.get('/:documentId/view/text/page/:page', (req, res) => {
+router.get('/:documentId/view/text/page/:page', async (req, res) => {
     const documentService = createDocumentService();
+    const response = await documentService.getDocument(req.params.documentId); // , currentPage);
 
-    let currentPage = Number(req.params.page);
-    const response = documentService.getDocumentPageByDocumentId(req.params.documentId, currentPage);
-    const documentResource = response;
-    const documentPageCount = documentResource.pagesCount;
+    const documentPageCount = response.page_count;
     const totalPageCount = Math.ceil(documentPageCount / process.env.CRDC_DOCUMENT_PAGINATION_ITEMS_PER_PAGE);
 
+    let currentPage = Number(req.params.page);
     if (currentPage < 1 || isNaN(currentPage)) {
         return res.redirect(`/document/${req.params.query}/view/image/page/1`);
     }
@@ -91,14 +87,13 @@ router.get('/:documentId/view/text/page/:page', (req, res) => {
         return res.redirect(`/document/${req.params.query}/view/image/page/${totalPageCount}`);
     }
 
-
     const from = (currentPage - 1) * process.env.CRDC_DOCUMENT_PAGINATION_ITEMS_PER_PAGE + 1;
     const to = Math.min(currentPage * process.env.CRDC_DOCUMENT_PAGINATION_ITEMS_PER_PAGE, documentPageCount);
 
     return res.render('document/page/document-text.njk', {
         caseSelected: req.session.caseSelected,
         caseData: req.session.caseData,
-        pageType: 'document',
+        pageType: ['document', 'document-text'],
         documentId: req.params.documentId,
         pagination: {
             itemCount: documentPageCount,
@@ -109,7 +104,7 @@ router.get('/:documentId/view/text/page/:page', (req, res) => {
             firstPage: currentPage <= 1,
             lastPage: currentPage >= totalPageCount
         },
-        documentResource
+        documentResource: response
     });
 });
 

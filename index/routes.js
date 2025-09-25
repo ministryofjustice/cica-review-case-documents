@@ -8,7 +8,7 @@ router.get('/', (req, res) => {
     return res.render('index/index.njk', {
         caseSelected: req.session.caseSelected,
         caseData: req.session.caseData,
-        pageType: 'root'
+        pageType: ['root']
     });
 });
 
