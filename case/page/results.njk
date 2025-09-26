@@ -14,7 +14,7 @@
                 legend: {
                     text: "Case Reference Number",
                     isPageHeading: true,
-                    classes: "govuk-fieldset__legend--l"
+                    classes: "govuk-fieldset__legend--xl"
                 }
             },
             hint: {
@@ -39,11 +39,15 @@
                         'maxlength': '6'
                     }
                 }
-            ]
-        }) }}
-
-        {{ govukButton({
-            text: "Find case"
+            ],
+                formGroup: {
+                    afterInputs: {
+                        html: govukButton({
+                            text: "Find case",
+                            classes: "govuk-!-margin-top-6"
+                        })
+                    }
+                }
         }) }}
 
         <input type="hidden" name="_csrf" value="{{ csrfToken }}">

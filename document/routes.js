@@ -43,15 +43,18 @@ router.get('/:documentId/view/image/page/:page', async (req, res) => {
 
     let currentPage = Number(req.params.page);
     if (currentPage < 1 || isNaN(currentPage)) {
-        return res.redirect(`/document/${req.params.query}/view/image/page/1`);
+        return res.redirect(`/document/${req.params.documentId}/view/image/page/1`);
     }
 
     if (currentPage > totalPageCount) {
-        return res.redirect(`/document/${req.params.query}/view/image/page/${totalPageCount}`);
+        return res.redirect(`/document/${req.params.documentId}/view/image/page/${totalPageCount}`);
     }
 
     const from = (currentPage - 1) * process.env.CRDC_DOCUMENT_PAGINATION_ITEMS_PER_PAGE + 1;
     const to = Math.min(currentPage * process.env.CRDC_DOCUMENT_PAGINATION_ITEMS_PER_PAGE, documentPageCount);
+
+    const highlightData = req.query.h;
+    console.log({highlightData});
 
     return res.render('document/page/document-image.njk', {
         caseSelected: req.session.caseSelected,
@@ -67,7 +70,8 @@ router.get('/:documentId/view/image/page/:page', async (req, res) => {
             firstPage: currentPage <= 1,
             lastPage: currentPage >= totalPageCount
         },
-        documentResource: response
+        documentResource: response,
+        highlights: highlightData.split('-')
     });
 });
 

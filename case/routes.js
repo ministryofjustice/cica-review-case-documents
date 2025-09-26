@@ -5,6 +5,11 @@ import express from 'express';
 const router = express.Router();
 
 router.get('/', (req, res) => {
+
+    if (req.session.caseSelected) {
+        return res.redirect(`case/${req.session.caseData.case_ref}`);
+    }
+
     return res.render('case/page/index.njk', {
         csrfToken: res.locals.csrfToken,
         caseSelected: req.session.caseSelected,

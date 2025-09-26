@@ -1,28 +1,8 @@
-{#
-    template parameters - passed in from document/route.js
-    {
-        caseSelected: Boolean,
-        caseData:  Object,
-        pageType: String,
-        documentId: String,
-        pagination: {
-            itemCount: Integer,
-            pageCount: Integer,
-            currentPage: Integer,
-            from: Integer,
-            to: Integer,
-            firstPage: Boolean,
-            lastPage: Boolean
-        },
-        documentResource: Object
-    }
-#}
-
 {% extends "page.njk" %}
 {% block pageTitle %}{{ documentId }} - Document - {{ super() }}{% endblock %}
 
 {% block innerContent %}
-    <h1 class="govuk-heading-xl">{{ documentResource.correspondence_type }} - {{ documentResource.source_file_name }}</h1>
+    <h1 class="govuk-heading-xl">{{ documentResource.source_file_name }}</h1>
 
     {{ mojSubNavigation({
         label: "Sub navigation",

@@ -1,15 +1,44 @@
 {% extends "page.njk" %}
 {% block pageTitle %}{{ documentId }} - Document - {{ super() }}{% endblock %}
 
-{%- from "moj/components/pagination/macro.njk" import mojPagination -%}
-{%- from "search/macro/search-result-item/macro.njk" import searchResultItem %}
+{%- from "govuk/components/table/macro.njk" import govukTable -%}
 
 {% block innerContent %}
-    <ul class="govuk-list govuk-list--bullet">
+    <h1 class="govuk-heading-xl">Documents</h1>
+    {% set documentTableRows = [] %}
         {% for document in documentsResource %}
-            <li><a href="/document/{{ document.document_id }}" class="govuk-link">{{ document.correspondence_type }} - {{ document.source_file_name }}</a></li>
+            {%
+                set documentTableRows = (documentTableRows.push([
+                    {
+                        text: 'document.correspondence_type'
+                    },
+                    {
+                        html: '<a href="/document/' + document.document_id + '/view/image/" class="govuk-link">' + document.source_file_name + '</a>'
+                    },
+                    {
+                        html: '<a href="/document/' + document.document_id + '/view/image/">Images</a> / <a href="/document/' + document.ingested_doc_id + '/view/text/">Text</a>'
+                    }
+                ]), documentTableRows)
+            %}
         {% else %}
-            <li>No document found!</li>
+            <p class="govuk-body">No document found!</p>
         {% endfor %}
-    </ul>
+
+    {{ govukTable({
+        caption: "Documents list",
+        captionClasses: "govuk-table__caption--m",
+        firstCellIsHeader: true,
+        head: [
+            {
+                text: "Type"
+            },
+            {
+                text: "Name"
+            },
+            {
+                text: "View document data"
+            }
+        ],
+        rows: documentTableRows
+    }) }}
 {% endblock %}

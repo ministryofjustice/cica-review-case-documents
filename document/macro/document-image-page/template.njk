@@ -1,1 +1,12 @@
-<img src="{{ documentResource.s3_pages_image[pagination.currentPage - 1].image }}" />
+<div class="document-image">
+    <div class="document-image_image-container">
+        <img class="document-image_image-container-image" src="{{ documentResource.s3_pages_image[pagination.currentPage - 1].image }}" />
+    </div>
+    <div class="document-image-overlay">
+        <div class="document-highlights">
+            {# display a highlight box for each all the highlights for this document. supporting 1 at the moment. #}
+            <span id="somechunk_id" class="document-highlights_highlight"
+            style="top: {{highlights[0] * 100}}%; left: {{highlights[1] * 100}}%; width: {{highlights[2] * 100}}%; height: {{highlights[3] * 100}}%;"></span>
+        </div>
+    </div>
+</div>

@@ -1,8 +1,9 @@
 {% extends "page.njk" %}
 {% block pageTitle %}Case select - {{ super() }}{% endblock %}
 
-{%- from "govuk/components/button/macro.njk" import govukButton -%}
+
 {%- from "govuk/components/date-input/macro.njk" import govukDateInput -%}
+{%- from "govuk/components/button/macro.njk" import govukButton -%}
 
 {% block innerContent %}
     <form method="post" action="/case">
@@ -13,7 +14,7 @@
                 legend: {
                     text: "Case Reference Number",
                     isPageHeading: true,
-                    classes: "govuk-fieldset__legend--l"
+                    classes: "govuk-fieldset__legend--xl"
                 }
             },
             hint: {
@@ -23,18 +24,30 @@
                 {
                     name: 'prefix',
                     label: 'Year',
-                    classes: 'govuk-input--width-2'
+                    classes: 'govuk-input--width-2',
+                    value: '23',
+                    attributes: {
+                        'maxlength': '2'
+                    }
                 },
                 {
                     name: 'suffix',
                     label: 'Unique ID',
-                    classes: 'govuk-input--width-4'
+                    classes: 'govuk-input--width-4',
+                    value: '123456',
+                    attributes: {
+                        'maxlength': '6'
+                    }
                 }
-            ]
-        }) }}
-
-        {{ govukButton({
-            text: "Find case"
+            ],
+            formGroup: {
+                afterInputs: {
+                    html: govukButton({
+                        text: "Find case",
+                        classes: "govuk-!-margin-top-6"
+                    })
+                }
+            }
         }) }}
 
         <input type="hidden" name="_csrf" value="{{ csrfToken }}">
