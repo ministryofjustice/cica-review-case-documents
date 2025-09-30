@@ -10,6 +10,7 @@ import session from 'express-session';
 import {doubleCsrfProtection, generateCsrfToken} from './middleware/csrf/index.js';
 import {caseSelected} from './middleware/caseSelected/index.js';
 import createTemplateEngineService from './templateEngine/index.js';
+import apiRouter from './api/routes.js';
 import indexRouter from './index/routes.js';
 import searchRouter from './search/routes.js';
 import caseRouter from './case/routes.js';
@@ -118,6 +119,9 @@ app.use((req, res, next) => {
     res.locals.csrfToken = generateCsrfToken(req, res);
     next();
 });
+
+
+app.use('/api', apiRouter);
 
 app.use('/', indexRouter);
 app.use('/case', caseRouter);

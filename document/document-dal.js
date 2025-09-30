@@ -7,7 +7,9 @@ import {
     DUMMY_DOCUMENTS
 } from '../dummy/index.js';
 
-function createDocumentDAL() {
+function createDocumentDAL({
+    caseReferenceNumber
+}) {
     const db = createDBQuery();
 
     async function getAllDocuments(caseReferenceNumber) {
@@ -35,7 +37,7 @@ function createDocumentDAL() {
         return DUMMY_DOCUMENTS;
     }
 
-    async function getDocument(documentId) {
+    async function getDocument(documentId, caseReferenceNumber) {
         // let document;
 
         // try {
@@ -60,13 +62,13 @@ function createDocumentDAL() {
         return DUMMY_DOCUMENTS.filter(document => document.document_id === documentId)[0];
     }
 
-    async function getDocumentsChunksByKeyword(query) {
+    async function getDocumentsChunksByKeyword(query, caseReferenceNumber, pageNumber, itemsPerPage) {
         // let document;
 
         // try {
         //     document = await db.query(
         //         'SELECT document FROM documents WHERE keyword = $1',
-        //         [query]
+        //         [query, caseReferenceNumber]
         //     );
 
         //     if (document.rowCount === 0) {
@@ -82,7 +84,17 @@ function createDocumentDAL() {
         // }
 
         // return document.rows;
-        return DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD;
+
+        const from = (pageNumber - 1) * process.env.CRDC_SEARCH_PAGINATION_ITEMS_PER_PAGE + 1;
+        const to = Math.min(pageNumber * process.env.CRDC_SEARCH_PAGINATION_ITEMS_PER_PAGE, DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD.length);
+        return {
+            pagesTotal: Math.ceil(DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD.length / process.env.CRDC_SEARCH_PAGINATION_ITEMS_PER_PAGE),
+            pageCurrent: pageNumber,
+            itemsTotal: DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD.length,
+            from: from,
+            to: to,
+            results: DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD.slice(from - 1, to)
+        };
     }
 
     return Object.freeze({

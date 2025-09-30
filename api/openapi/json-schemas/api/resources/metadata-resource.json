@@ -1,0 +1,48 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Metadata resource",
+    "allOf": [
+        {"$ref": "../json-api-base-resource.json"},
+        {
+            "properties": {
+                "type": {
+                    "const": "metadata"
+                },
+                "attributes": {
+                    "allOf": [
+                        {
+                            "required": [
+                                "questionnaire-id",
+                                "created",
+                                "modified",
+                                "submission-status",
+                                "expires",
+                                "external-id"
+                            ],
+                            "properties": {
+                                "questionnaire-id": {
+                                    "$ref": "../../models/definitions/uuid-v4.json"
+                                },
+                                "created": {
+                                    "$ref": "../../models/definitions/timestamp.json"
+                                },
+                                "modified": {
+                                    "$ref": "../../models/definitions/timestamp.json"
+                                },
+                                "submission-status": {
+                                    "enum": ["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "FAILED"]
+                                },
+                                "expires": {
+                                    "$ref": "../../models/definitions/timestamp.json"
+                                },
+                                "external-id": {
+                                    "$ref": "../../models/definitions/external-id.json"
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

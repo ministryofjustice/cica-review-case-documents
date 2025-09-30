@@ -1,16 +1,25 @@
 'use strict';
 
-import createDocumentDAL from '../document/document-dal.js';
+import createRequestService from '../service/request/index.js'
 
-function createSearchService() {
-    const db = createDocumentDAL();
+function createSearchService(options = {
+}) {
+    const {get} = createRequestService();
 
-    async function getSearchResultsByKeyword(keyword) {
-        return db.getDocumentsChunksByKeyword(keyword);
+    async function getSearchResults(query, pageNumber, itemsPerPage) {
+        const opts = {
+            url: `${process.env.CRCD_API_URL}/api/search/${query}/${pageNumber}/${itemsPerPage}`,
+            headers: {
+                // Authorization: `Bearer ${process.env.CW_DCS_JWT}`,
+                'On-Behalf-Of': options.caseReferenceNumber
+            }
+        };
+
+        return get(opts);
     }
 
     return Object.freeze({
-        getSearchResultsByKeyword
+        getSearchResults
     });
 }
 

@@ -1,0 +1,27 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["data"],
+    "properties": {
+        "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "attributes"],
+            "properties": {
+                "type": {
+                    "const": "submissions"
+                },
+                "attributes": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "questionnaireId": {
+                            "$ref": "../../../../models/definitions/uuid-v4.json"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
