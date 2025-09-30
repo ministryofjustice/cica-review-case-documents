@@ -64,7 +64,7 @@ function createSearchService({
         }
     }
 
-    async function getSearchResultsByKeyword(keyword, caseReferenceNumber, pageNumber, itemsPerPage) {
+    async function getSearchResultsByKeyword(keyword, pageNumber, itemsPerPage) {
         // validateQuery(keyword);
         return db.getDocumentsChunksByKeyword(keyword, caseReferenceNumber, pageNumber, itemsPerPage);
     }

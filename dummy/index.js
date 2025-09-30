@@ -32,6 +32,346 @@ const DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD = [
             width: 0.846,
             height: 0.523
         }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
+    },
+    {
+        chunk_id: 'doc-abc-456_p9_h6',
+        ingested_doc_id: 'doc-abc-456',
+        chunk_text: "Text for an imaginary medical report for document creation and retrieval purposes.",
+        source_file_name: "loreum_ipsum_18-08-2925.pdf",
+        page_count: 6,
+        page_number: 2,
+        chunk_index: 'p9_h6',
+        chunk_type: 'LAYOUT_HEADER',
+        confidence: 0.052,
+        bounding_box: {
+            top: 0.072,
+            left: 0.059,
+            width: 0.846,
+            height: 0.523
+        }
     }
 ];
 

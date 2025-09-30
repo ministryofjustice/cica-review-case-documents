@@ -55,6 +55,7 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res) => {
             itemCount: searchResultsResource.itemsTotal,
             pageCount: searchResultsResource.pagesTotal,
             currentPage: searchResultsResource.pageCurrent,
+            itemsPerPage: req.params.itemsPerPage,
             from: searchResultsResource.from,
             to: searchResultsResource.to,
             firstPage: searchResultsResource.pageCurrent <= 1,
