@@ -19,9 +19,14 @@ spec:
           image: ${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}
           ports:
             - containerPort: 8080
-          env:
-            - APP_COOKIE_NAME: ${{ secrets.APP_COOKIE_NAME }}
-            - APP_COOKIE_SECRET: ${{ secrets.APP_COOKIE_SECRET }}
-            - APP_SEARCH_PAGINATION_ITEMS_PER_PAGE: ${{ vars.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE }}
-            - APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE: ${{ vars.APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE }}
-            - APP_API_URL: ${{ vars.APP_API_URL }}
+          environment:
+            - name: APP_COOKIE_NAME
+              value: ${{ secrets.APP_COOKIE_NAME }}
+            - name: APP_COOKIE_SECRET
+              value: ${{ secrets.APP_COOKIE_SECRET }}
+            - name: APP_SEARCH_PAGINATION_ITEMS_PER_PAGE
+              value: ${{ secrets.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE }}
+            - name: APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE
+              value: ${{ secrets.APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE }}
+            - name: APP_API_URL
+              value: ${{ secrets.APP_API_URL }}
