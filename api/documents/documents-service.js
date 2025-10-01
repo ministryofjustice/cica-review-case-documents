@@ -3,9 +3,9 @@
 import Ajv from 'ajv';
 import AjvErrors from 'ajv-errors';
 import VError from 'verror';
-import createDocumentDAL from '../../document/document-dal.js';
+import createDocumentDAL from '../../document/document-dal.js'
 
-function createSearchService({
+function createDocumentsService({
     caseReferenceNumber
 }) {
     const db = createDocumentDAL({
@@ -64,14 +64,20 @@ function createSearchService({
         }
     }
 
-    async function getSearchResultsByKeyword(keyword, pageNumber, itemsPerPage) {
+    async function getDocuments() {
         // validateQuery(keyword);
-        return db.getDocumentsChunksByKeyword(keyword, pageNumber, itemsPerPage);
+        return db.getDocuments();
+    }
+
+    async function getDocument(documentId, pageNumber) {
+        // validateQuery(keyword);
+        return db.getDocument(documentId, pageNumber);
     }
 
     return Object.freeze({
-        getSearchResultsByKeyword
+        getDocuments,
+        getDocument
     });
 }
 
-export default createSearchService;
+export default createDocumentsService;

@@ -2,7 +2,7 @@
 {% block pageTitle %}Search - {{ super() }}{% endblock %}
 
 {%- from "govuk/components/fieldset/macro.njk" import govukFieldset -%}
-{%- from "govuk/components/details/macro.njk" import govukDetails -%}
+{# {%- from "govuk/components/details/macro.njk" import govukDetails -%} #}
 {%- from "govuk/components/input/macro.njk" import govukInput -%}
 {%- from "govuk/components/button/macro.njk" import govukButton -%}
 
@@ -15,6 +15,19 @@
                 isPageHeading: true
             }
         }) %}
+
+            <p class="govuk-body">You can search the TC-19 medical document for your case here.</p>
+
+            <h2 class="govuk-heading-l">How to use this tool</h2>
+            <p class="govuk-body">You can search using:</p>
+            <ul class='govuk-list govuk-list--bullet'>
+                <li>a word, like 'jaw'</li>
+                <li>a phrase, like 'knee injuries'</li>
+                <li>a whole question, like 'What injuries did the applicant have?'</li>
+            </ul>
+
+            <p class="govuk-body">If you search for 'jaw', for example, it will find similar words like 'mandible'.</p>
+            <p class="govuk-body">The tool might not find all the information you need, so you might have to check the document manually.</p>
 
             {{ govukInput({
                 label: {
@@ -37,7 +50,7 @@
                 }
             }) }}
 
-            {{ govukDetails({
+            {# {{ govukDetails({
                 summaryText: "How to use this tool",
                 html: "
                 <p class='govuk-body'>You can access all the medical documents for your cases here.</p>
@@ -51,7 +64,7 @@
                 <p class='govuk-body'>If you search for 'jaw', for example, it will find similar words like 'mandible'.</p>
                 <p class='govuk-body'>The tool might not find all the information you need, so you might have to check the document manually.</p>
                 "
-            }) }}
+            }) }} #}
             <input type="hidden" name="_csrf" value="{{ csrfToken }}">
 
         {% endcall %}

@@ -5,9 +5,9 @@
 {%- from "moj/components/sub-navigation/macro.njk" import mojSubNavigation -%}
 {% from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner %}
 
-{% block pageTitle %}CICA Review Case Documents - GOV.UK{% endblock %}
+{% block pageTitle %}CICA FIND - GOV.UK{% endblock %}
 {% block head %}
-    <link href="/stylesheets/all.css?v={{CRCD_APP_VERSION}}&c={{CRCD_BUILDTIME_ID}}" rel="stylesheet"/>
+    <link href="/stylesheets/all.css?v={{APP_APP_VERSION}}&c={{APP_BUILDTIME_ID}}" rel="stylesheet"/>
 {% endblock %}
 
 {% block header %}
@@ -17,7 +17,7 @@
             href: '#'
         },
         serviceLabel: {
-            text: 'Review Case Documents',
+            text: 'FIND',
             href: '#'
         },
         navigation: {
@@ -76,10 +76,10 @@
 {% block content %}
     <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
-            {% if CRCD_MAINTENANCE_MESSAGE_ENABLED %}
+            {% if APP_MAINTENANCE_MESSAGE_ENABLED %}
 
                 {% set bannerHtml %}
-                <p class="govuk-body">{{ CRCD_MAINTENANCE_MESSAGE }}</p>
+                <p class="govuk-body">{{ APP_MAINTENANCE_MESSAGE }}</p>
                 {% endset %}
 
                 {{ mojBanner({
@@ -114,7 +114,7 @@
             // SOME_VAR: 'foo'
         };
     </script>
-    <script nonce="{{ cspNonce }}" src="/js/bundle.js?v={{CRCD_APP_VERSION}}&c={{CRCD_BUILDTIME_ID}}"></script>
+    <script nonce="{{ cspNonce }}" src="/js/bundle.js?v={{APP_APP_VERSION}}&c={{APP_BUILDTIME_ID}}"></script>
 {% endblock %}
 
 {% block footer %}

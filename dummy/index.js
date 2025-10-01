@@ -378,7 +378,7 @@ const DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD = [
 const DUMMY_DOCUMENTS = [
     {
         "document_id": "doc-abc-123",
-        "case_ref": "25-781234",
+        "case_ref": "23/123456",
         "received_date": "2025-08-18 11:55:00",
         "source_file_name": "medical_record_18-08-2025.pdf",
         "s3_pages_image": [
@@ -485,8 +485,8 @@ const DUMMY_DOCUMENTS = [
         "page_count": 12
     },
     {
-        "document_id": "doc-abc-456",
-        "case_ref": "25-781234",
+        "document_id": "doc-cacysfa-456",
+        "case_ref": "23/987654",
         "received_date": "2025-08-18 11:55:00",
         "source_file_name": "police_letter_26-9-2025.pdf",
         "s3_pages_image": [
@@ -590,6 +590,222 @@ const DUMMY_DOCUMENTS = [
             }
         ],
         "correspondence_type": "TC19",
+        "page_count": 12
+    },
+    {
+        "document_id": "doc-powewh-32903721",
+        "case_ref": "23/123456",
+        "received_date": "2025-08-18 11:55:00",
+        "source_file_name": "some_letter_18-08-2025.pdf",
+        "s3_pages_image": [
+            {
+                pageId: 1,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 2,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 3,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 4,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 5,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 6,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 7,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 8,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 9,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 10,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 11,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 12,
+                image: 'https://picsum.photos/500/600'
+            }
+        ],
+        "s3_pages_text": [
+            {
+                pageId: 1,
+                text: 'Lorem ipsum 11111111111111111111111111'
+            },
+            {
+                pageId: 2,
+                text: 'Lorem ipsum 22222222222222222222222222'
+            },
+            {
+                pageId: 3,
+                text: 'Lorem ipsum 33333333333333333333333333'
+            },
+            {
+                pageId: 4,
+                text: 'Lorem ipsum 44444444444444444444444444'
+            },
+            {
+                pageId: 5,
+                text: 'Lorem ipsum 55555555555555555555555555'
+            },
+            {
+                pageId: 6,
+                text: 'Lorem ipsum 66666666666666666666666666'
+            },
+            {
+                pageId: 7,
+                text: 'Lorem ipsum 77777777777777777777777777'
+            },
+            {
+                pageId: 8,
+                text: 'Lorem ipsum 88888888888888888888888888'
+            },
+            {
+                pageId: 9,
+                text: 'Lorem ipsum 99999999999999999999999999'
+            },
+            {
+                pageId: 10,
+                text: 'Lorem ipsum 10-10-10-10-10-10-10-10-10'
+            },
+            {
+                pageId: 1,
+                text: 'Lorem ipsum 11-11-11-11-11-11-11-11-11'
+            },
+            {
+                pageId: 12,
+                text: 'Lorem ipsum 12-12-12-12-12-12-12-12-12'
+            }
+        ],
+        "correspondence_type": "TX01",
+        "page_count": 12
+    },
+    {
+        "document_id": "doc-ajbfa-0097432",
+        "case_ref": "23/987654",
+        "received_date": "2025-08-18 11:55:00",
+        "source_file_name": "correspondence_26-9-2025.pdf",
+        "s3_pages_image": [
+            {
+                pageId: 1,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 2,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 3,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 4,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 5,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 6,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 7,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 8,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 9,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 10,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 11,
+                image: 'https://picsum.photos/500/600'
+            },
+            {
+                pageId: 12,
+                image: 'https://picsum.photos/500/600'
+            }
+        ],
+        "s3_pages_text": [
+            {
+                pageId: 1,
+                text: 'Lorem ipsum 11111111111111111111111111'
+            },
+            {
+                pageId: 2,
+                text: 'Lorem ipsum 22222222222222222222222222'
+            },
+            {
+                pageId: 3,
+                text: 'Lorem ipsum 33333333333333333333333333'
+            },
+            {
+                pageId: 4,
+                text: 'Lorem ipsum 44444444444444444444444444'
+            },
+            {
+                pageId: 5,
+                text: 'Lorem ipsum 55555555555555555555555555'
+            },
+            {
+                pageId: 6,
+                text: 'Lorem ipsum 66666666666666666666666666'
+            },
+            {
+                pageId: 7,
+                text: 'Lorem ipsum 77777777777777777777777777'
+            },
+            {
+                pageId: 8,
+                text: 'Lorem ipsum 88888888888888888888888888'
+            },
+            {
+                pageId: 9,
+                text: 'Lorem ipsum 99999999999999999999999999'
+            },
+            {
+                pageId: 10,
+                text: 'Lorem ipsum 10-10-10-10-10-10-10-10-10'
+            },
+            {
+                pageId: 1,
+                text: 'Lorem ipsum 11-11-11-11-11-11-11-11-11'
+            },
+            {
+                pageId: 12,
+                text: 'Lorem ipsum 12-12-12-12-12-12-12-12-12'
+            }
+        ],
+        "correspondence_type": "AB12",
         "page_count": 12
     }
 ];

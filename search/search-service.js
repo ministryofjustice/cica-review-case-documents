@@ -8,13 +8,12 @@ function createSearchService(options = {
 
     async function getSearchResults(query, pageNumber, itemsPerPage) {
         const opts = {
-            url: `${process.env.CRCD_API_URL}/api/search/${query}/${pageNumber}/${itemsPerPage}`,
+            url: `${process.env.APP_API_URL}/search/${query}/${pageNumber}/${itemsPerPage}`,
             headers: {
                 // Authorization: `Bearer ${process.env.CW_DCS_JWT}`,
                 'On-Behalf-Of': options.caseReferenceNumber
             }
         };
-
         return get(opts);
     }
 

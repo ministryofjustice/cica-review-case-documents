@@ -7,7 +7,7 @@ const {
     generateCsrfToken
 
 } = doubleCsrf({
-    getSecret: () => process.env.CRCD_COOKIE_SECRET,
+    getSecret: () => process.env.APP_COOKIE_SECRET,
     getSessionIdentifier: (req) => req.session.id,
     // eslint-disable-next-line no-underscore-dangle
     getCsrfTokenFromRequest: req => req.body._csrf,

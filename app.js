@@ -10,7 +10,7 @@ import session from 'express-session';
 import {doubleCsrfProtection, generateCsrfToken} from './middleware/csrf/index.js';
 import {caseSelected} from './middleware/caseSelected/index.js';
 import createTemplateEngineService from './templateEngine/index.js';
-import apiRouter from './api/routes.js';
+import apiApp from './api/app.js';
 import indexRouter from './index/routes.js';
 import searchRouter from './search/routes.js';
 import caseRouter from './case/routes.js';
@@ -42,8 +42,8 @@ app.use((req, res, next) => {
 });
 
 app.use(session({
-    name: process.env.CRCD_COOKIE_NAME,
-    secret: process.env.CRCD_COOKIE_SECRET,
+    name: process.env.APP_COOKIE_NAME,
+    secret: process.env.APP_COOKIE_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: {
@@ -120,19 +120,28 @@ app.use((req, res, next) => {
     next();
 });
 
-
-app.use('/api', apiRouter);
+app.use('/api', apiApp);
 
 app.use('/', indexRouter);
 app.use('/case', caseRouter);
 app.use('/search', caseSelected, searchRouter);
 app.use('/document', caseSelected, documentRouter);
-app.use('/*splat', (req, res) => {
-    res.status(404).render('404.njk', {
-        caseSelected: req.session.caseSelected,
-        caseData: req.session.caseData,
-        pageType: ['root']
-    });
-});
+// app.use('/*splat', (req, res) => {
+//     res.status(404).render('404.njk', {
+//         caseSelected: req.session.caseSelected,
+//         caseData: req.session.caseData,
+//         pageType: ['root']
+//     });
+// });
+
+// app.use((err, req, res, next) => {
+//     res.status(err.statusCode || 404).render('error.njk', {
+//         error: err,
+//         caseSelected: req.session.caseSelected,
+//         caseData: req.session.caseData,
+//         pageType: ['root']
+//     });
+//     return next();
+// });
 
 export default app;

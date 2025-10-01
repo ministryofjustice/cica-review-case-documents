@@ -12,7 +12,7 @@ function createDocumentDAL({
 }) {
     const db = createDBQuery();
 
-    async function getAllDocuments(caseReferenceNumber) {
+    async function getDocuments() {
         // let document;
 
         // try {
@@ -34,10 +34,10 @@ function createDocumentDAL({
         // }
 
         // return document.rows[0].document;
-        return DUMMY_DOCUMENTS;
+        return DUMMY_DOCUMENTS.filter(document => document.case_ref === caseReferenceNumber);
     }
 
-    async function getDocument(documentId, caseReferenceNumber) {
+    async function getDocument(documentId) {
         // let document;
 
         // try {
@@ -59,10 +59,11 @@ function createDocumentDAL({
         // }
 
         // return document.rows[0].document;
+        console.log({thing: DUMMY_DOCUMENTS.filter(document => document.document_id === documentId)[0]});
         return DUMMY_DOCUMENTS.filter(document => document.document_id === documentId)[0];
     }
 
-    async function getDocumentsChunksByKeyword(query, caseReferenceNumber, pageNumber, itemsPerPage) {
+    async function getDocumentsChunksByKeyword(query, pageNumber, itemsPerPage) {
         // let document;
 
         // try {
@@ -85,10 +86,10 @@ function createDocumentDAL({
 
         // return document.rows;
 
-        const from = (pageNumber - 1) * process.env.CRDC_SEARCH_PAGINATION_ITEMS_PER_PAGE + 1;
-        const to = Math.min(pageNumber * process.env.CRDC_SEARCH_PAGINATION_ITEMS_PER_PAGE, DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD.length);
+        const from = (pageNumber - 1) * process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE + 1;
+        const to = Math.min(pageNumber * process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE, DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD.length);
         return {
-            pagesTotal: Math.ceil(DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD.length / process.env.CRDC_SEARCH_PAGINATION_ITEMS_PER_PAGE),
+            pagesTotal: Math.ceil(DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD.length / process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE),
             pageCurrent: pageNumber,
             itemsTotal: DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD.length,
             from: from,
@@ -98,7 +99,7 @@ function createDocumentDAL({
     }
 
     return Object.freeze({
-        getAllDocuments,
+        getDocuments,
         getDocument,
         getDocumentsChunksByKeyword
     });

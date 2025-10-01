@@ -5,7 +5,7 @@ import VError from 'verror';
 // Central error handler
 // https://www.joyent.com/node-js/production/design/errors
 // https://github.com/i0natan/nodebestpractices/blob/master/sections/errorhandling/centralizedhandling.md
-export default async (err, req, res, next) => {
+export default (err, req, res, next) => {
     const error = {errors: []};
 
     // handle a malformed JSON request e.g. can't be parsed by the bodyparser (express.json)
@@ -29,7 +29,7 @@ export default async (err, req, res, next) => {
                 source: {pointer: `/${errorObj.path.replace(/\./g, '/')}`}
             });
         });
-
+        console.log(JSON.stringify(error, null, 4));
         return res.status(400).json(error);
     }
 

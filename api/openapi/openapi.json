@@ -84,6 +84,92 @@
                     }
                 }
             }
+        },
+        "/documents": {
+            "get": {
+                "tags": ["Documents"],
+                "summary": "Get all documents for a given case",
+                "description": "Gets all physical documents attached to the case reference number",
+                "operationId": "getDocuments",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "json-schemas/api/_documents/get/res/200.json"
+                                },
+                                "example": {
+                                    "data": [
+                                        {
+                                            "type": "documents",
+                                            "id": "08dbd0d2-6cee-49e5-a55f-35b31ac4aa9e",
+                                            "attributes": {
+                                                
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                }
+            }
+        },
+        "/documents/{documentId}": {
+            "get": {
+                "tags": ["Documents"],
+                "summary": "Get document for a given case",
+                "description": "Gets a single physical document attached to the case reference number",
+                "operationId": "getDocument",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "json-schemas/api/_documents_{documentId}/get/res/200.json"
+                                },
+                                "example": {
+                                    "data": [
+                                        {
+                                            "type": "documents",
+                                            "id": "08dbd0d2-6cee-49e5-a55f-35b31ac4aa9e",
+                                            "attributes": {
+                                                
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                }
+            }
         }
     },
     "components": {

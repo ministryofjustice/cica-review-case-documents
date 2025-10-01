@@ -6,8 +6,8 @@ import {nanoid} from 'nanoid';
 import http from 'http';
 // const debug = require('debug');
 
-process.env.CRCD_BUILDTIME_ID = nanoid();
-console.log(`Build-time ID generated: ${process.env.CRCD_BUILDTIME_ID}`);
+process.env.APP_BUILDTIME_ID = nanoid();
+console.log(`Build-time ID generated: ${process.env.APP_BUILDTIME_ID}`);
 import app from '../app.js';
 
 // const debugInstance = debug('cica-web:server');

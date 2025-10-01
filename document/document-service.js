@@ -1,20 +1,38 @@
 'use strict';
 
-import createDocumentDAL from '../document/document-dal.js';
+// import createDocumentDAL from '../document/document-dal.js';
+import createRequestService from '../service/request/index.js'
 
-function createDocumentService() {
-    const db = createDocumentDAL();
+function createDocumentService(options = {
+}) {
+    const {get} = createRequestService();
 
-    async function getAllDocuments(caseReferenceNumber) { // explicitly pass this in from the session data.
-        return db.getAllDocuments(caseReferenceNumber);
+    async function getDocuments() {
+        const opts = {
+            url: `${process.env.APP_API_URL}/documents`,
+            headers: {
+                // Authorization: `Bearer ${process.env.CW_DCS_JWT}`,
+                'On-Behalf-Of': options.caseReferenceNumber
+            }
+        };
+
+        return get(opts);
     }
 
     async function getDocument(documentId) {
-        return db.getDocument(documentId);
+        const opts = {
+            url: `${process.env.APP_API_URL}/documents/${documentId}`,
+            headers: {
+                // Authorization: `Bearer ${process.env.CW_DCS_JWT}`,
+                'On-Behalf-Of': options.caseReferenceNumber
+            }
+        };
+
+        return get(opts);
     }
 
     return Object.freeze({
-        getAllDocuments,
+        getDocuments,
         getDocument
     });
 }

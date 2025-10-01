@@ -24,7 +24,6 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
             caseReferenceNumber: req.get('On-Behalf-Of')
         });
         const searchResults = await searchService.getSearchResultsByKeyword(query, pageNumber, itemsPerPage);
-
         res.status(200).json(searchResults);
     } catch (err) {
         next(err);
