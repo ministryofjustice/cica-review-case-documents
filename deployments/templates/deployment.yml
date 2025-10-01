@@ -19,7 +19,7 @@ spec:
           image: ${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}
         - ports:
             - containerPort: 8080
-        env:
+        - env:
           - name: APP_COOKIE_NAME
             valueFrom:
               secretKeyRef:
