@@ -14,6 +14,18 @@
 !package-lock.json
 !app.js
 !bin
+!case
+!components
+!db
+!document
+!dummy
+!index
+!middleware
+!package
+!partial
 !public
-
+!search
+!service
+!src
+!templateEngine
 
