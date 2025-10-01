@@ -1,6 +1,6 @@
 FROM node:22.8.0-bookworm-slim AS base
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
 # COPY ./src .
 
@@ -9,7 +9,7 @@ WORKDIR /app
 # where available (npm@5+)
 COPY package*.json ./
 
-EXPOSE 5000
+# EXPOSE 5000
 
 ARG NODE_ENV=production
 # Default to production. npm will ignore devDependencies in production mode
