@@ -1,4 +1,4 @@
-FROM bitnami/nginx:1.25.1 AS base
+FROM bitnami/nginx AS base
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ COPY package*.json ./
 EXPOSE 5000
 
 ARG NODE_ENV=production
-# Defult to production. npm will ignore devDependencies in production mode
+# Default to production. npm will ignore devDependencies in production mode
 FROM base AS production
 
 ENV NODE_ENV=production
