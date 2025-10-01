@@ -17,9 +17,9 @@ spec:
       containers:
         - name: example
           image: ${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}
-          ports:
+        - ports:
             - containerPort: 8080
-          env:
+        - env:
             - name: APP_COOKIE_NAME
               value: ${{ secrets.APP_COOKIE_NAME }}
             - name: APP_COOKIE_SECRET
