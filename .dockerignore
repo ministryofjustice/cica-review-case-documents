@@ -13,6 +13,7 @@
 !package.json
 !package-lock.json
 !app.js
+!api
 !bin
 !case
 !components
