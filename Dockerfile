@@ -1,4 +1,4 @@
-FROM bitnamilegacy/nginx:1.29.1 AS base
+FROM node:22.8.0-bookworm-slim AS base
 
 WORKDIR /app
 
