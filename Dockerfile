@@ -1,4 +1,4 @@
-FROM bitnami/nginx AS base
+FROM bitnamilegacy/nginx:1.29.1 AS base
 
 WORKDIR /app
 
