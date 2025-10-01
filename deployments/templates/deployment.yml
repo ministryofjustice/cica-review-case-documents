@@ -21,12 +21,12 @@ spec:
             - containerPort: 8080
         - env:
             - name: APP_COOKIE_NAME
-              value: ${ secrets.APP_COOKIE_NAME }
+              value: ${ APP_COOKIE_NAME }
             - name: APP_COOKIE_SECRET
-              value: ${ secrets.APP_COOKIE_SECRET }
+              value: ${ APP_COOKIE_SECRET }
             - name: APP_SEARCH_PAGINATION_ITEMS_PER_PAGE
-              value: ${ secrets.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE }
+              value: ${ APP_SEARCH_PAGINATION_ITEMS_PER_PAGE }
             - name: APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE
-              value: ${ secrets.APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE }
+              value: ${ APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE }
             - name: APP_API_URL
-              value: ${ secrets.APP_API_URL }
+              value: ${ APP_API_URL }

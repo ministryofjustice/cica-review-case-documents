@@ -34,6 +34,11 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: ${{ vars.ECR_REPOSITORY }}
           NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
+          APP_COOKIE_NAME: ${{ secrets.APP_COOKIE_NAME }}
+          APP_COOKIE_SECRET: ${{ secrets.APP_COOKIE_SECRET }}
+          APP_SEARCH_PAGINATION_ITEMS_PER_PAGE: ${{ secrets.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE }}
+          APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE: ${{ secrets.APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE }}
+          APP_API_URL: ${{ secrets.APP_API_URL }}
       - run: |
           echo "${{ secrets.KUBE_CERT }}" > ca.crt
           kubectl config set-cluster ${KUBE_CLUSTER} --certificate-authority=./ca.crt --server=https://${KUBE_CLUSTER}
