@@ -9,7 +9,7 @@ WORKDIR /usr/src/app
 # where available (npm@5+)
 COPY package*.json ./
 
-# EXPOSE 5000
+EXPOSE 8080
 
 ARG NODE_ENV=production
 # Default to production. npm will ignore devDependencies in production mode
