@@ -20,4 +20,4 @@ spec:
               service:
                 name: cica-case-review-documents-service # this should match the metadata.name in service.yml
                 port:
-                  number: 8080
+                  number: 5000
