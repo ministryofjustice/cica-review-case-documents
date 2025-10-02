@@ -34,18 +34,7 @@ function createTemplateEngineService(app) {
                 ],
                 configObject
             )
-            .addGlobal(
-                'APP_MAINTENANCE_MESSAGE',
-                !process.env?.CW_MAINTENANCE_MESSAGE?.length
-                    ? 'maintenance message not set'
-                    : process.env.CW_MAINTENANCE_MESSAGE
-            )
-            .addGlobal(
-                'APP_MAINTENANCE_MESSAGE_ENABLED',
-                process.env.CW_MAINTENANCE_MESSAGE_ENABLED === 'true'
-            )
             .addGlobal('APP_APP_VERSION', process.env.npm_package_version)
-            .addGlobal('APP_GOVUK_ACCOUNT_URL', process.env.APP_GOVUK_ACCOUNT_URL)
             .addGlobal('APP_BUILDTIME_ID', process.env.APP_BUILDTIME_ID)
             .addGlobal('govukRebrand', true);
 
