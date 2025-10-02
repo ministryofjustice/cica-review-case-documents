@@ -40,7 +40,7 @@
 
     <div class="govuk-width-container">
         {% block innerHeader %}
-            {% set subNavHtml =  mojSubNavigation({
+            {% set subNavHtml = mojSubNavigation({
                 label: "Sub navigation",
                 items: [
                     {
@@ -66,6 +66,7 @@
                 },
                 classes: 'moj-identity-bar--nested-moj-sub-navigation'
             }) %}
+                <p>THIS IS A TEST</p>
                 {{ subNavHtml }}
             {% endcall %}
         {% endblock %}
