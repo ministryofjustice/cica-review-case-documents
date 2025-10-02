@@ -45,7 +45,7 @@ app.use(session({
     name: process.env.APP_COOKIE_NAME,
     secret: process.env.APP_COOKIE_SECRET,
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
     cookie: {
         secure: process.env.NODE_ENV === 'production'
     }
@@ -103,6 +103,8 @@ app.use(
 app.use(doubleCsrfProtection);
 app.use((req, res, next) => {
     res.locals.csrfToken = generateCsrfToken(req, res);
+    console.log({POSTED_TOKEN: req.body._csrf});
+    console.log({SERVER_TOKEN: res.locals.csrfToken});
     next();
 });
 
