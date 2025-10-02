@@ -100,20 +100,6 @@ app.use(
     express.static(path.join(__dirname, '/node_modules/govuk-frontend/dist/govuk/assets'))
 );
 
-// app.use(
-//     '/govuk-frontend/all.js',
-//     express.static(
-//         path.join(__dirname, '/node_modules/govuk-frontend/dist/govuk/govuk-frontend.min.js')
-//     )
-// );
-
-// app.use(
-//     '/govuk-frontend/govuk-frontend.min.js.map',
-//     express.static(
-//         path.join(__dirname, '/node_modules/govuk-frontend/dist/govuk/govuk-frontend.min.js.map')
-//     )
-// );
-
 app.use(doubleCsrfProtection);
 app.use((req, res, next) => {
     res.locals.csrfToken = generateCsrfToken(req, res);
