@@ -4,9 +4,10 @@
     </div>
     <div class="document-image-overlay">
         <div class="document-highlights">
-            {# display a highlight box for each all the highlights for this document. supporting 1 at the moment. #}
-            <span id="somechunk_id" class="document-highlights_highlight"
-            style="top: {{highlights[0] * 100}}%; left: {{highlights[1] * 100}}%; width: {{highlights[2] * 100}}%; height: {{highlights[3] * 100}}%;"></span>
+            {% for highlight in highlights %}
+                <span id="somechunk_id" class="document-highlights_highlight"
+                style="top: {{highlight.top * 100}}%; left: {{highlight.left * 100}}%; width: {{highlight.width * 100}}%; height: {{highlight.height * 100}}%;"></span>
+            {% endfor %}
         </div>
     </div>
 </div>

@@ -2,6 +2,7 @@
 
 import express from 'express';
 import createDocumentService from './document-service.js';
+import decodeHighlightData from './utils/decodeHighlightData/index.js'
 
 const router = express.Router();
 
@@ -63,8 +64,10 @@ router.get('/:documentId/view/image/page/:page', async (req, res) => {
     const from = (currentPage - 1) * process.env.APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE + 1;
     const to = Math.min(currentPage * process.env.APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE, documentPageCount);
 
-    const highlightData = req.query.h;
-    console.log({highlightData});
+    let highlightData;
+    if (req?.query?.h) {
+        highlightData = decodeHighlightData(req.query.h);
+    }
 
     return res.render('document/page/document-image.njk', {
         caseSelected: req.session.caseSelected,
@@ -81,7 +84,7 @@ router.get('/:documentId/view/image/page/:page', async (req, res) => {
             lastPage: currentPage >= totalPageCount
         },
         documentResource,
-        highlights: [0.1, 0.1, 0.8, 0.1] // highlightData.split('-')
+        highlights: highlightData
     });
 });
 

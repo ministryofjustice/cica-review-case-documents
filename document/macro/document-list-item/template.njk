@@ -1,0 +1,7 @@
+<h2 class="govuk-heading-m"><a href="/document/{{params.document_id}}/view/image/page/1" class="govuk-link">{{ params.source_file_name }}</a></h2>
+<p class="govuk-hint">Received on {{ params.received_date }}</p>
+<p class="govuk-body">{{ params.summary }}</p>
+
+{% if caller %}
+    {{ caller() }}
+{% endif %}

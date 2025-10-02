@@ -2,6 +2,7 @@
 
 import express from 'express';
 import createSearchService from './search-service.js';
+import base64encodeBoundingBoxData from './utils/base64encodeBoundingBoxData/index.js'
 
 const router = express.Router();
 
@@ -79,7 +80,7 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
                 firstPage: searchResultsResource.pageCurrent <= 1,
                 lastPage: searchResultsResource.pageCurrent >= searchResultsResource.pagesTotal
             },
-            searchResults: searchResultsResource.results
+            searchResults: searchResultsResource.results ? base64encodeBoundingBoxData(searchResultsResource.results) : searchResultsResource.results
         });
     } catch (err) {
         next(err);

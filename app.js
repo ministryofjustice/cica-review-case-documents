@@ -112,13 +112,13 @@ app.use('/', indexRouter);
 app.use('/case', caseRouter);
 app.use('/search', caseSelected, searchRouter);
 app.use('/document', caseSelected, documentRouter);
-// app.use('/*splat', (req, res) => {
-//     res.status(404).render('404.njk', {
-//         caseSelected: req.session.caseSelected,
-//         caseData: req.session.caseData,
-//         pageType: ['root']
-//     });
-// });
+app.use('/*splat', (req, res) => {
+    res.status(404).render('404.njk', {
+        caseSelected: req.session.caseSelected,
+        caseData: req.session.caseData,
+        pageType: ['root']
+    });
+});
 
 // app.use((err, req, res, next) => {
 //     res.status(err.statusCode || 404).render('error.njk', {

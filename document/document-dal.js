@@ -59,7 +59,6 @@ function createDocumentDAL({
         // }
 
         // return document.rows[0].document;
-        console.log({thing: DUMMY_DOCUMENTS.filter(document => document.document_id === documentId)[0]});
         return DUMMY_DOCUMENTS.filter(document => document.document_id === documentId)[0];
     }
 
@@ -85,6 +84,10 @@ function createDocumentDAL({
         // }
 
         // return document.rows;
+
+        if (query === 'abc123') {
+            return {};
+        }
 
         const from = (pageNumber - 1) * itemsPerPage + 1;
         const to = Math.min(pageNumber * itemsPerPage, DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD.length);
