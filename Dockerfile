@@ -12,9 +12,9 @@ EXPOSE 5000
 
 ARG NODE_ENV=production
 
-RUN npm ci
-
 COPY . .
+
+RUN npm ci
 
 USER 1015
 
