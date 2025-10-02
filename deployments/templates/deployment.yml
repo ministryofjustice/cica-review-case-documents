@@ -18,9 +18,9 @@ spec:
       containers:
         - name: cica-case-review-documents
           image: ${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}
-        - ports:
+          ports:
             - containerPort: 8080
-        - env:
+          env:
           - name: APP_COOKIE_NAME
             valueFrom:
               secretKeyRef:
