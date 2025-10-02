@@ -86,10 +86,10 @@ function createDocumentDAL({
 
         // return document.rows;
 
-        const from = (pageNumber - 1) * process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE + 1;
-        const to = Math.min(pageNumber * process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE, DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD.length);
+        const from = (pageNumber - 1) * itemsPerPage + 1;
+        const to = Math.min(pageNumber * itemsPerPage, DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD.length);
         return {
-            pagesTotal: Math.ceil(DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD.length / process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE),
+            pagesTotal: Math.ceil(DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD.length / itemsPerPage),
             pageCurrent: pageNumber,
             itemsTotal: DUMMY_DOCUMENTS_CHUNKS_BY_KEYWORD.length,
             from: from,
