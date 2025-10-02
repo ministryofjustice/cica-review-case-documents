@@ -5,6 +5,7 @@ metadata:
   annotations:
     external-dns.alpha.kubernetes.io/set-identifier: cica-case-review-documents-ingress-cica-review-case-documents-dev-green
     external-dns.alpha.kubernetes.io/aws-weight: "100"
+    nginx.ingress.kubernetes.io/affinity: cookie
 spec:
   ingressClassName: default
   tls:
