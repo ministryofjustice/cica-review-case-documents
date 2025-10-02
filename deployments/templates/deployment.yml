@@ -25,6 +25,9 @@ spec:
             capabilities:
               drop:
                 - all
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
           env:
           - name: APP_COOKIE_NAME
             valueFrom:
