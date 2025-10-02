@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: example-deployment
+  name: cica-case-review-documents-deployment
   labels:
-    app: example
+    app: cica-case-review-documents
 spec:
   replicas: 3
   selector:
@@ -15,7 +15,7 @@ spec:
         app: cica-case-review-documents # this should match the selector in service.yml
     spec:
       containers:
-        - name: example
+        - name: cica-case-review-documents
           image: ${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}
         - ports:
             - containerPort: 8080

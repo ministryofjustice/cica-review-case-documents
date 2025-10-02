@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: cica-case-review-documents-ingress
   annotations:
-    external-dns.alpha.kubernetes.io/set-identifier: example-ingress-${NAMESPACE}-green
+    external-dns.alpha.kubernetes.io/set-identifier: cica-case-review-documents-ingress-${NAMESPACE}-green
     external-dns.alpha.kubernetes.io/aws-weight: "100"
 spec:
   ingressClassName: default
