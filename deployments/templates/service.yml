@@ -9,5 +9,5 @@ spec:
     app: cica-case-review-documents # this should match the pod label in deployment.yml
   ports:
     - name: https
-      port: 8080
-      targetPort: 5000
+      port: 8080 # external port for accessing it from the internet.
+      targetPort: 5000 # port number exposed by the docker container.

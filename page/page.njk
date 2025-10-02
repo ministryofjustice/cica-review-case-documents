@@ -40,52 +40,33 @@
 
     <div class="govuk-width-container">
         {% block innerHeader %}
-        {{ mojSubNavigation({
-                    label: "Sub navigation",
-                    items: [
-                        {
-                            text: "Case select",
-                            href: "/case",
-                            active: "case" in pageType
-                        },
-                        {
-                            text: "Search",
-                            href: "/search",
-                            active: "search" in pageType
-                        },
-                        {
-                            text: "Documents",
-                            href: "/document",
-                            active: "document" in pageType
-                        }
-                    ]
-                }) }}
+            {% set subNavHtml =  mojSubNavigation({
+                label: "Sub navigation",
+                items: [
+                    {
+                        text: "Case select",
+                        href: "/case",
+                        active: "case" in pageType
+                    },
+                    {
+                        text: "Search",
+                        href: "/search",
+                        active: "search" in pageType
+                    },
+                    {
+                        text: "Documents",
+                        href: "/document",
+                        active: "document" in pageType
+                    }
+                ]
+            }) %}
             {% call mojIdentityBar({
                 title: {
                     html: identityBarTitle
                 },
                 classes: 'moj-identity-bar--nested-moj-sub-navigation'
             }) %}
-                {{ mojSubNavigation({
-                    label: "Sub navigation",
-                    items: [
-                        {
-                            text: "Case select",
-                            href: "/case",
-                            active: "case" in pageType
-                        },
-                        {
-                            text: "Search",
-                            href: "/search",
-                            active: "search" in pageType
-                        },
-                        {
-                            text: "Documents",
-                            href: "/document",
-                            active: "document" in pageType
-                        }
-                    ]
-                }) }}
+                {{ subNavHtml }}
             {% endcall %}
         {% endblock %}
     </div>

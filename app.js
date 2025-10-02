@@ -103,7 +103,6 @@ app.use(
 app.use(doubleCsrfProtection);
 app.use((req, res, next) => {
     res.locals.csrfToken = generateCsrfToken(req, res);
-    console.log({SERVER_TOKEN: res?.locals?.csrfToken});
     next();
 });
 
