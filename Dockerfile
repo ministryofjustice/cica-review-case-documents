@@ -4,7 +4,7 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 
-EXPOSE 8080
+EXPOSE 5000
 
 ARG NODE_ENV=production
 
