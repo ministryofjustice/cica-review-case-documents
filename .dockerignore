@@ -10,9 +10,6 @@
 # Works with directories in Npm
 # e.g. !my_directory/**/*
 
-!package.json
-!package-lock.json
-!app.js
 !api
 !bin
 !case
@@ -22,7 +19,7 @@
 !dummy
 !index
 !middleware
-!package
+!page
 !partial
 !public
 !search
@@ -30,3 +27,6 @@
 !src
 !templateEngine
 
+!app.js
+!package.json
+!package-lock.json
