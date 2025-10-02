@@ -40,6 +40,26 @@
 
     <div class="govuk-width-container">
         {% block innerHeader %}
+        {{ mojSubNavigation({
+                    label: "Sub navigation",
+                    items: [
+                        {
+                            text: "Case select",
+                            href: "/case",
+                            active: "case" in pageType
+                        },
+                        {
+                            text: "Search",
+                            href: "/search",
+                            active: "search" in pageType
+                        },
+                        {
+                            text: "Documents",
+                            href: "/document",
+                            active: "document" in pageType
+                        }
+                    ]
+                }) }}
             {% call mojIdentityBar({
                 title: {
                     html: identityBarTitle
@@ -76,19 +96,6 @@
 {% block content %}
     <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
-            {% if APP_MAINTENANCE_MESSAGE_ENABLED %}
-
-                {% set bannerHtml %}
-                <p class="govuk-body">{{ APP_MAINTENANCE_MESSAGE }}</p>
-                {% endset %}
-
-                {{ mojBanner({
-                    type: 'information',
-                    html: bannerHtml
-                }) }}
-
-            {% endif %}
-
             {% block innerContent %}{% endblock %}
         </div>
     </div>
