@@ -31,8 +31,8 @@ spec:
                 name: cica-case-review-documents-secrets
                 key: app_cookie_secret
           - name: APP_SEARCH_PAGINATION_ITEMS_PER_PAGE
-            value: 5
+            value: "5"
           - name: APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE
-            value: 1
+            value: "1"
           - name: APP_API_URL
             value: https://cica-review-case-documents-dev.apps.live.cloud-platform.service.justice.gov.uk/api
