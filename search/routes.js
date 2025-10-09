@@ -55,15 +55,15 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
         const response = await searchService.getSearchResults(req.params.query, req.params.pageNumber, req.params.itemsPerPage);
         const searchResultsResource = response.body;
 
-        let currentPage = Number(req.params.pageNumber);
+        // let currentPage = Number(req.params.pageNumber);
 
-        // if (currentPage < 1 || isNaN(currentPage)) {
-        //     return res.redirect(`/search/${req.params.query}/page/1`);
+        // // if (currentPage < 1 || isNaN(currentPage)) {
+        // //     return res.redirect(`/search/${req.params.query}/page/1`);
+        // // }
+
+        // if (currentPage > searchResultsResource.pagesTotal) {
+        //     return res.redirect(`/search/${req.params.query}/${searchResultsResource.pagesTotal}/${req.params.itemsPerPage}`);
         // }
-
-        if (currentPage > searchResultsResource.pagesTotal) {
-            return res.redirect(`/search/${req.params.query}/${searchResultsResource.pagesTotal}/${req.params.itemsPerPage}`);
-        }
 
         return res.render('search/page/results.njk', {
             caseSelected: req.session.caseSelected,
@@ -71,16 +71,17 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
             pageType: 'search',
             query: req.params.query,
             pagination: {
-                itemCount: Number(searchResultsResource.itemsTotal),
-                pageCount: Number(searchResultsResource.pagesTotal),
-                currentPage: Number(searchResultsResource.pageCurrent),
+                totalItemCount: Number(searchResultsResource.total.value),
+                totalPageCount: Math.ceil(Number(searchResultsResource.total.value) / Number(process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE)),
+                currentPageIndex: Number(req.params.pageNumber),
                 itemsPerPage:  Number(req.params.itemsPerPage),
-                from:  Number(searchResultsResource.from),
-                to:  Number(searchResultsResource.to),
-                firstPage: searchResultsResource.pageCurrent <= 1,
-                lastPage: searchResultsResource.pageCurrent >= searchResultsResource.pagesTotal
+                from: Number(req.params.itemsPerPage) * (Number(req.params.pageNumber) - 1) + 1,
+                to: Math.min(Number(req.params.pageNumber) * Number(req.params.itemsPerPage), Number(searchResultsResource.total.value)),
+                firstPage: Number(req.params.pageNumber) <= 1,
+                lastPage: Number(req.params.pageNumber) >= Math.ceil(Number(searchResultsResource.total.value) / Number(process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE))
             },
-            searchResults: searchResultsResource.results ? base64encodeBoundingBoxData(searchResultsResource.results) : searchResultsResource.results
+            // searchResults: searchResultsResource.results ? base64encodeBoundingBoxData(searchResultsResource.results) : searchResultsResource.results
+            searchResults: searchResultsResource.hits
         });
     } catch (err) {
         next(err);

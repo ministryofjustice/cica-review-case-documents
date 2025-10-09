@@ -27,6 +27,7 @@
                 },
                 id: "q",
                 name: "q",
+                value: query,
                 classes: "govuk-input--width-20 govuk-!-margin-right-4",
                 formGroup: {
                     afterInput: {
@@ -48,21 +49,21 @@
     {% set paginationItems = [] %}
     {% set paginationPrevious = {
             text: "Previous",
-            href: ["/search/", query, "/", pagination.currentPage - 1, "/", pagination.itemsPerPage] | join
+            href: ["/search/", query, "/", pagination.currentPageIndex - 1, "/", pagination.itemsPerPage] | join
         }
     %}
     {% set paginationNext = {
             text: "Next",
-            href: ["/search/", query, "/", pagination.currentPage + 1, "/", pagination.itemsPerPage] | join
+            href: ["/search/", query, "/", pagination.currentPageIndex + 1, "/", pagination.itemsPerPage] | join
         }
     %}
-    {% for i in range(1, pagination.pageCount + 1) %}
+    {% for i in range(1, pagination.totalPageCount + 1) %}
         {%
             set paginationItems = (paginationItems.push({
                 text: i,
                 href: "/search/" + query + "/" + i + "/" + pagination.itemsPerPage,
                 href: ["/search/", query, "/", i, "/", pagination.itemsPerPage] | join,
-                selected: i == pagination.currentPage
+                selected: i == pagination.currentPageIndex
             }), paginationItems)
         %}
     {% endfor %}
@@ -76,7 +77,7 @@
     {{ mojPagination({
         items: paginationItems,
         results: {
-            count: pagination.itemCount,
+            count: pagination.totalItemCount,
             from: pagination.from,
             to: pagination.to,
             text: "results"
@@ -106,7 +107,7 @@
     {{ mojPagination({
         items: paginationItems,
         results: {
-            count: pagination.itemCount,
+            count: pagination.totalItemCount,
             from: pagination.from,
             to: pagination.to,
             text: "results"
