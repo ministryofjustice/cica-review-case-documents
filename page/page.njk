@@ -7,7 +7,7 @@
 
 {% block pageTitle %}CICA FIND - GOV.UK{% endblock %}
 {% block head %}
-    <link href="/stylesheets/all.css?v={{APP_APP_VERSION}}&c={{APP_BUILDTIME_ID}}" rel="stylesheet"/>
+    <link href="/stylesheets/all.css?v={{APP_VERSION}}&c={{APP_BUILDTIME_ID}}" rel="stylesheet"/>
 {% endblock %}
 
 {% block header %}
@@ -33,33 +33,13 @@
             }
     }) }}
     
-    {% set identityBarTitle = '' %}
+    {% set identityBarTitle = ' ' %}
     {% if caseSelected %}
-        {% set identityBarTitle = '<strong>CRN: ' + caseReferenceNumber + '</strong> - <a href="/case/clear" class="govuk-link">Search another case</a>' %}
+        {% set identityBarTitle = '<strong>CRN: ' + caseReferenceNumber + '</strong>' %}
     {% endif %}
 
     <div class="govuk-width-container">
         {% block innerHeader %}
-            {{ mojSubNavigation({
-                label: "Sub navigation",
-                items: [
-                    {
-                        text: "Case select",
-                        href: "/case",
-                        active: "case" in pageType
-                    },
-                    {
-                        text: "Search",
-                        href: "/search",
-                        active: "search" in pageType
-                    },
-                    {
-                        text: "Documents",
-                        href: "/document",
-                        active: "document" in pageType
-                    }
-                ]
-            }) }}
             {% call mojIdentityBar({
                 title: {
                     html: identityBarTitle
@@ -69,11 +49,6 @@
                 {{ mojSubNavigation({
                     label: "Sub navigation",
                     items: [
-                        {
-                            text: "Case select",
-                            href: "/case",
-                            active: "case" in pageType
-                        },
                         {
                             text: "Search",
                             href: "/search",
@@ -117,11 +92,10 @@
 {% block bodyEnd %}
     {# Run JavaScript at end of the <body>, to avoid blocking the initial render. #}
     <script nonce="{{ cspNonce }}">
-        window.CRCD = {
-            // SOME_VAR: 'foo'
+        window.FIND = {
         };
     </script>
-    <script nonce="{{ cspNonce }}" src="/js/bundle.js?v={{APP_APP_VERSION}}&c={{APP_BUILDTIME_ID}}"></script>
+    <script nonce="{{ cspNonce }}" src="/js/bundle.js?v={{APP_VERSION}}&c={{APP_BUILDTIME_ID}}"></script>
 {% endblock %}
 
 {% block footer %}
