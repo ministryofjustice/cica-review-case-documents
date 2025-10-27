@@ -1,0 +1,17 @@
+[
+    {
+        "_source": {
+            "chunk_text": "foo bar baz qux quux corge grault garply waldo fred plugh xyzzy and thud"
+        }
+    },
+    {
+        "_source": {
+            "chunk_text": "This is another chunk baz qux quux corge grault garply waldo fred plugh xyzzy and thud foo"
+        }
+    },
+    {
+        "_source": {
+            "chunk_text": "foo bar baz qux this is yet another chunk"
+        }
+    }
+]

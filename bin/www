@@ -1,0 +1,68 @@
+#!/usr/bin/env node
+
+'use strict';
+
+import {nanoid} from 'nanoid';
+import http from 'http';
+// const debug = require('debug');
+
+process.env.APP_BUILDTIME_ID = nanoid();
+console.log(`Build-time ID generated: ${process.env.APP_BUILDTIME_ID}`);
+import app from '../app.js';
+
+// const debugInstance = debug('cica-web:server');
+
+// normalize a port into a number, string, or false.
+function normalizePort(port) {
+    const parsedPort = parseInt(port, 10);
+    if (Number.isNaN(parsedPort)) {
+        // named pipe.
+        return port;
+    }
+
+    if (parsedPort >= 0) {
+        return parsedPort;
+    }
+    return false;
+}
+
+function onError(error, port) {
+    if (error.syscall !== 'listen') {
+        throw error;
+    }
+
+    const bind = typeof port === 'string' ? `Pipe ${port}` : `Port ${port}`;
+
+    // handle specific listen errors with friendly messages
+    switch (error.code) {
+        case 'EACCES':
+            console.error(`${bind} requires elevated privileges`);
+            process.exit(1);
+            break;
+        case 'EADDRINUSE':
+            console.error(`${bind} is already in use`);
+            process.exit(1);
+            break;
+        default:
+            throw error;
+    }
+}
+
+function onListening(server) {
+    const serverAddress = server.address();
+    const bind =
+        typeof serverAddress === 'string' ? `pipe ${serverAddress}` : `port ${serverAddress.port}`;
+    console.info(`Listening on ${bind}`);
+}
+
+const port = normalizePort(process.env.PORT || '5000');
+app.set('port', port);
+const server = http.createServer(app);
+
+server.listen(port);
+server.on('error', error => {
+    onError(error, port);
+});
+server.on('listening', () => {
+    onListening(server);
+});

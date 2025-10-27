@@ -1,0 +1,9 @@
+<h2 class="govuk-heading-m">{{ params._source.correspondence_type }} - {{ params._source.source_file_name }}</h2>
+<p class="govuk-hint">Received on {{ params._source.received_date }}</p>
+<p class="govuk-body">{{ params._source.chunk_text | safe }}</p>
+
+<p class="govuk-body"><strong>Found on:</strong> <a href="/document/{{ params._source.ingested_doc_id }}/view/image/page/{{ params._source.page_number }}/?h={{params.bounding_box_base64}}" class="govuk-link">Page {{ params._source.page_number }}</a></p>
+
+{% if caller %}
+    {{ caller() }}
+{% endif %}
