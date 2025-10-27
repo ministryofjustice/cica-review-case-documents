@@ -70,7 +70,7 @@
                                                 "max_score": 10.590174,
                                                 "hits": [
                                                     {
-                                                        "_index": "case-documents",
+                                                        "_index": "page_chunks",
                                                         "_id": "38de7490-785c-5eaa-b49d-ffbfe5afb99c_p6_c4",
                                                         "_score": 10.590174,
                                                         "_source": {

@@ -69,7 +69,6 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
         const response = await searchService.getSearchResults(templateParams.query, pageNumber, itemsPerPage);
 
         if ('errors' in response.body) {
-            // [{"status":400,"title":"400 Bad Request","detail":"must NOT have fewer than 2 characters","source":{"pointer":"//params/query"}}]
             const errors = response.body.errors.map((error) => {
                 return {
                     text: error.detail,
