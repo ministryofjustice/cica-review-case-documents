@@ -1,11 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: example-service
+  name: cica-case-review-documents-service
+  labels:
+    app: cica-case-review-documents-service
 spec:
   selector:
-    app: example # this should match the pod label in deployment.yml
+    app: cica-case-review-documents # this should match the pod label in deployment.yml
   ports:
     - name: https
-      port: 8080
-      targetPort: 8080
+      port: 8080 # external port for accessing it from the internet.
+      targetPort: 5000 # port number exposed by the docker container.
