@@ -1,0 +1,14 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Documents resource",
+    "allOf": [
+        {"$ref": "../json-api-base-resource.json"},
+        {
+            "properties": {
+                "type": {
+                    "const": "documents"
+                }
+            }
+        }
+    ]
+}
