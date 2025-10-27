@@ -1,5 +1,21 @@
-FROM bitnami/nginx:1.25.1
+FROM node:22.8.0-bookworm-slim
 
-WORKDIR /app
+RUN groupadd -g 1014 dc_user && useradd -rm -d /usr/src/app -u 1015 -g dc_user dc_user
 
-COPY ./src .
+USER dc_user
+
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+
+EXPOSE 5000
+
+ARG NODE_ENV=production
+
+COPY . .
+
+RUN npm ci
+
+USER 1015
+
+CMD [ "npm", "start" ]
