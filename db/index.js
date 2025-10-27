@@ -2,12 +2,8 @@
 
 import { Client } from '@opensearch-project/opensearch';
 
-const host = "localhost";
-const protocol = "http";
-const port = 9200;
-
 const client = new Client({
-  node: protocol + "://" + host + ":" + port
+  node: process.env.APP_DATABASE_URL
 });
 
 function createDBQuery() {
