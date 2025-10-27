@@ -13,6 +13,7 @@ import {caseSelected} from './middleware/caseSelected/index.js';
 import defaultCreateLogger from './middleware/logger/index.js';
 import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
 import createTemplateEngineService from './templateEngine/index.js';
+import apiApp from './api/app.js';
 import indexRouter from './index/routes.js';
 import searchRouter from './search/routes.js';
 
@@ -112,6 +113,7 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
         next();
     });
     
+    app.use('/api', apiApp);
     app.use('/', indexRouter);
     app.use('/search', getCaseReferenceNumberFromQueryString, caseSelected, searchRouter);
     app.use((req, res) => {
