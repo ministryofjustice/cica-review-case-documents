@@ -1,0 +1,21 @@
+{% extends "page.njk" %}
+{% block pageTitle %}{{ documentId }} - Document - {{ super() }}{% endblock %}
+
+{% from "govuk/components/table/macro.njk" import govukTable %}
+{% from "document/macro/document-list-item/macro.njk" import documentListItem %}
+
+{% block innerContent %}
+    <h1 class="govuk-heading-xl">Documents</h1>
+
+    <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+    {% for document in documentsResource %}
+        {% call documentListItem(document) -%}
+            {% if not loop.last %}
+                <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+            {%endif %}
+        {% endcall %}
+    {% else %}
+        <p class="govuk-body-l"><strong>No documents found!</strong></p>
+    {% endfor %}
+
+{% endblock %}

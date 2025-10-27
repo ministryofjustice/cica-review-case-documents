@@ -1,0 +1,118 @@
+{% extends "page.njk" %}
+{% block pageTitle %}{{ crnPrefix }}/{{ crnSuffix }} - Case select - {{ super() }}{% endblock %}
+
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/date-input/macro.njk" import govukDateInput %}
+{% from "govuk/components/table/macro.njk" import govukTable %}
+
+{% block innerContent %}
+    <form method="post" action="/case">
+        {{ govukDateInput({
+            id: "crn",
+            namePrefix: "crn",
+            fieldset: {
+                legend: {
+                    text: "Case Reference Number",
+                    isPageHeading: true,
+                    classes: "govuk-fieldset__legend--xl"
+                }
+            },
+            hint: {
+                text: "For example, 24 123456"
+            },
+            items: [
+                {
+                    name: 'prefix',
+                    label: 'Year',
+                    classes: 'govuk-input--width-2',
+                    value: crnPrefix,
+                    attributes: {
+                        'maxlength': '2'
+                    }
+                },
+                {
+                    name: 'suffix',
+                    label: 'Unique ID',
+                    classes: 'govuk-input--width-4',
+                    value: crnSuffix,
+                    attributes: {
+                        'maxlength': '6'
+                    }
+                }
+            ],
+                formGroup: {
+                    afterInputs: {
+                        html: govukButton({
+                            text: "Find case",
+                            classes: "govuk-!-margin-top-6"
+                        })
+                    }
+                }
+        }) }}
+
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    </form>
+
+    <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+    {% set documentList = '' %}
+    {% for document in documents %}
+        {% set documentList = documentList + '<a href="' + document.url + '" class="govuk-link">' + document.name + '</a>, ' %}
+    {% endfor %}
+
+    {{ govukTable({
+        caption: "Case Information",
+        captionClasses: "govuk-table__caption--m",
+        firstCellIsHeader: true,
+        head: [
+            {
+                text: "Item"
+            },
+            {
+                text: "Value"
+            }
+        ],
+        rows: [
+            [
+                {
+                    text: "Case Reference Number"
+                },
+                {
+                    text: caseReference
+                }
+            ],
+            [
+                {
+                    text: "Applicant Name"
+                },
+                {
+                    text: applicantName
+                }
+            ],
+            [
+                {
+                    text: "Creation Date"
+                },
+                {
+                    text: creationDate
+                }
+            ],
+            [
+                {
+                    text: "Document Count"
+                },
+                {
+                    text: documentsCount
+                }
+            ],
+            [
+                {
+                    text: "Document Names"
+                },
+                {
+                    text: documentList | safe
+                }
+            ]
+        ]
+    }) }}
+
+{% endblock %}

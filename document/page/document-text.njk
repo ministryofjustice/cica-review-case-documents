@@ -1,0 +1,22 @@
+{% extends "document/page/document.njk" %}
+{% from "document/macro/document-text-page/macro.njk" import documentTextPage %}
+{% from "document/macro/document-pagination/macro.njk" import documentPagination %}
+
+{% block paginationTopContent %}
+    {{ super() }}
+    {{ documentPagination(pagination, {
+        hrefPrefix: "/document/" + documentId + "/view/text/page/"
+    }) }}
+{% endblock %}
+
+{% block documentContent %}
+    {{ super() }}
+    {{ documentTextPage(documentResource, pagination) }}
+{% endblock %}
+
+{% block paginationBottomContent %}
+    {{ super() }}
+    {{ documentPagination(pagination, {
+        hrefPrefix: "/document/" + documentId + "/view/text/page/"
+    }) }}
+{% endblock %}

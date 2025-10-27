@@ -1,0 +1,29 @@
+.document-image {
+    position: relative;
+
+    .document-image_image-container {
+        width: 100%;
+
+        .document-image_image-container-image {
+            width: 100%;
+        }
+    }
+
+    .document-image-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+
+        .document-highlights {
+            .document-highlights_highlight {
+                opacity: 0.5;
+                position: absolute;
+                display: block;
+                background: #ffe5cc;
+                border-bottom: 2px solid #ffb266;
+            }
+        }
+    }
+}

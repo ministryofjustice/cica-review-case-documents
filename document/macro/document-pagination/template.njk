@@ -1,0 +1,46 @@
+{#
+    template parameters
+    {
+        pagination: Object - passed in from document.njk -> document-{image|text}.njk.
+        options: { - Determines whether the config is included or not.
+            hrefPrefix: String - passed in from document-{image|text}.njk.
+        }
+    }
+#}
+
+{% from "moj/components/pagination/macro.njk" import mojPagination %}
+
+{% if options %}
+    {% set paginationItems = [] %}
+    {% set paginationPrevious = {
+            text: "Previous",
+            href: options.hrefPrefix + pagination.currentPage - 1
+        }
+    %}
+    {% set paginationNext = {
+            text: "Next",
+            href: options.hrefPrefix + pagination.currentPage + 1
+        }
+    %}
+    {% for i in range(1, pagination.pageCount + 1) %}
+        {%
+            set paginationItems = (paginationItems.push({
+                text: i,
+                href: options.hrefPrefix + i,
+                selected: i == pagination.currentPage
+            }), paginationItems)
+        %}
+    {% endfor %}
+    {% if pagination.firstPage %}
+        {% set paginationPrevious = null  %}
+    {% endif %}
+    {% if pagination.lastPage %}
+        {% set paginationNext = null  %}
+    {% endif %}
+{% endif %}
+
+{{ mojPagination({
+    items: paginationItems,
+    previous: paginationPrevious,
+    next: paginationNext
+}) }}
