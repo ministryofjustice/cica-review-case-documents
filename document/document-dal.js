@@ -1,6 +1,7 @@
 'use strict';
 
 import createDBQuery from '../db/index.js';
+import createEmbeddings from './embeddings.js';
 
 function createDocumentDAL({
     caseReferenceNumber
@@ -17,6 +18,8 @@ function createDocumentDAL({
 
     async function getDocumentsChunksByKeyword(keyword, pageNumber, itemsPerPage) {
         let response;
+        const thing = await createEmbeddings();
+        console.log(thing);
         try {
             response = await db.query({
                 index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
