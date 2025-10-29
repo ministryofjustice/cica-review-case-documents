@@ -35,7 +35,7 @@
     
     {% set identityBarTitle = '' %}
     {% if caseSelected %}
-        {% set identityBarTitle = '<strong>CRN: ' + caseReferenceNumber + '</strong> - <a href="/case/clear" class="govuk-link">Search another case</a>' %}
+        {% set identityBarTitle = '<strong>CRN: ' + caseReferenceNumber + '</strong>' %}
     {% endif %}
 
     <div class="govuk-width-container">
@@ -43,11 +43,6 @@
             {{ mojSubNavigation({
                 label: "Sub navigation",
                 items: [
-                    {
-                        text: "Case select",
-                        href: "/case",
-                        active: "case" in pageType
-                    },
                     {
                         text: "Search",
                         href: "/search",
@@ -69,11 +64,6 @@
                 {{ mojSubNavigation({
                     label: "Sub navigation",
                     items: [
-                        {
-                            text: "Case select",
-                            href: "/case",
-                            active: "case" in pageType
-                        },
                         {
                             text: "Search",
                             href: "/search",
