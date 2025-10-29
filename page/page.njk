@@ -1,0 +1,150 @@
+{% extends "template.njk" %}
+{% from "moj/components/banner/macro.njk" import mojBanner %}
+{% from "moj/components/header/macro.njk" import mojHeader %}
+{% from "moj/components/identity-bar/macro.njk" import mojIdentityBar %}
+{% from "moj/components/sub-navigation/macro.njk" import mojSubNavigation %}
+{% from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner %}
+
+{% block pageTitle %}CICA FIND - GOV.UK{% endblock %}
+{% block head %}
+    <link href="/stylesheets/all.css?v={{APP_APP_VERSION}}&c={{APP_BUILDTIME_ID}}" rel="stylesheet"/>
+{% endblock %}
+
+{% block header %}
+    {{ mojHeader({
+        organisationLabel: {
+            text: 'CICA',
+            href: '#'
+        },
+        serviceLabel: {
+            text: 'FIND',
+            href: '#'
+        },
+        navigation: {
+            label: 'Account navigation',
+            items: [{
+                text: 'User One',
+                href: '#',
+                active: true
+            }, {
+                text: 'Sign out',
+                href: '#'
+            }]
+            }
+    }) }}
+    
+    {% set identityBarTitle = '' %}
+    {% if caseSelected %}
+        {% set identityBarTitle = '<strong>CRN: ' + caseReferenceNumber + '</strong> - <a href="/case/clear" class="govuk-link">Search another case</a>' %}
+    {% endif %}
+
+    <div class="govuk-width-container">
+        {% block innerHeader %}
+            {{ mojSubNavigation({
+                label: "Sub navigation",
+                items: [
+                    {
+                        text: "Case select",
+                        href: "/case",
+                        active: "case" in pageType
+                    },
+                    {
+                        text: "Search",
+                        href: "/search",
+                        active: "search" in pageType
+                    },
+                    {
+                        text: "Documents",
+                        href: "/document",
+                        active: "document" in pageType
+                    }
+                ]
+            }) }}
+            {% call mojIdentityBar({
+                title: {
+                    html: identityBarTitle
+                },
+                classes: 'moj-identity-bar--nested-moj-sub-navigation'
+            }) %}
+                {{ mojSubNavigation({
+                    label: "Sub navigation",
+                    items: [
+                        {
+                            text: "Case select",
+                            href: "/case",
+                            active: "case" in pageType
+                        },
+                        {
+                            text: "Search",
+                            href: "/search",
+                            active: "search" in pageType
+                        },
+                        {
+                            text: "Documents",
+                            href: "/document",
+                            active: "document" in pageType
+                        }
+                    ]
+                }) }}
+            {% endcall %}
+        {% endblock %}
+    </div>
+{% endblock %}
+
+{% block beforeContent %}{% endblock %}
+
+{% block content %}
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+            {% block innerContent %}{% endblock %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block main %}
+    {{ super() }}
+    <div class="govuk-width-container govuk-!-margin-bottom-7">
+        <hr class="govuk-section-break govuk-section-break--m govuk-!-margin-bottom-0 govuk-section-break--visible">
+        {{ govukPhaseBanner({
+            tag: {
+                text: "Beta"
+            },
+            html: 'This is a new service. Help us improve it and <a class="govuk-link" href="#">give your feedback (opens in new tab)</a>.'
+        }) }}
+    </div>
+{% endblock %}
+
+{% block bodyEnd %}
+    {# Run JavaScript at end of the <body>, to avoid blocking the initial render. #}
+    <script nonce="{{ cspNonce }}">
+        window.CRCD = {
+            // SOME_VAR: 'foo'
+        };
+    </script>
+    <script nonce="{{ cspNonce }}" src="/js/bundle.js?v={{APP_APP_VERSION}}&c={{APP_BUILDTIME_ID}}"></script>
+{% endblock %}
+
+{% block footer %}
+    {{ govukFooter({
+      meta: {
+        items: [
+          {
+            href: "https://www.gov.uk/guidance/cica-privacy-notice",
+            text: "Privacy"
+          },
+          {
+            href: "/cookies",
+            text: "Cookies"
+          },
+          {
+            href: "/contact-us",
+            text: "Contact"
+          },
+          {
+            href: "/accessibility-statement",
+            text: "Accessibility statement"
+          }
+        ]
+      }
+    }) }}
+{% endblock %}
