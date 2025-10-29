@@ -45,3 +45,10 @@ spec:
             value: "1"
           - name: APP_API_URL
             value: https://cica-review-case-documents-dev.apps.live.cloud-platform.service.justice.gov.uk/api
+          - name: APP_DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: cica-review-case-documents-opensearch-proxy-url
+                key: proxy_url
+          - name: OPENSEARCH_INDEX_CHUNKS_NAME
+            value: page_chunks
