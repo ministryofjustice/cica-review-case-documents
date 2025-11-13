@@ -1,5 +1,5 @@
-import { describe, it, afterEach, mock } from 'node:test';
 import assert from 'node:assert/strict';
+import { afterEach, describe, it, mock } from 'node:test';
 
 import createDBQuery from './index.js';
 
@@ -13,7 +13,6 @@ describe('DB Service', () => {
         const searchSpy = mock.fn(async () => ({ hits: { hits: [] } }));
 
         class FakeClient {
-            constructor() {}
             search = searchSpy;
         }
         const fakeLogger = mock.fn(() => {});
@@ -51,7 +50,9 @@ describe('DB Service', () => {
 
     it('Should propagate search errors', async () => {
         const fakeError = new Error('Search failed');
-        const searchSpy = mock.fn(async () => { throw fakeError; });
+        const searchSpy = mock.fn(async () => {
+            throw fakeError;
+        });
 
         class FakeClient {
             search = searchSpy;

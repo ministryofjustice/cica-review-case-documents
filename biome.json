@@ -1,0 +1,82 @@
+{
+    "$schema": "https://biomejs.dev/schemas/2.3.5/schema.json",
+    "files": {
+        "ignoreUnknown": false,
+        "includes": [
+            "**",
+            "!node_modules",
+            "!stuff",
+            "!public",
+            "!src/js/scripts.babel.generated.js"
+        ]
+    },
+    "formatter": {
+        "enabled": true,
+        "indentStyle": "space",
+        "indentWidth": 4,
+        "lineWidth": 100,
+        "bracketSpacing": true,
+        "lineEnding": "lf"
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "recommended": true,
+            "correctness": {
+                "noUnusedFunctionParameters": "off",
+                "noUnusedVariables": "error",
+                "noUnreachable": "error"
+            },
+            "suspicious": {
+                "noExplicitAny": "error"
+            },
+            "style": {
+                "useConst": "error"
+            },
+            "a11y": {
+                "recommended": true
+            },
+            "complexity": {
+                "recommended": true
+            },
+            "performance": {
+                "recommended": true
+            },
+            "security": {
+                "recommended": true
+            }
+        }
+    },
+    "assist": {
+        "enabled": true,
+        "actions": {
+            "source": {
+                "organizeImports": "on"
+            }
+        }
+    },
+    "vcs": {
+        "enabled": true,
+        "clientKind": "git",
+        "useIgnoreFile": true
+    },
+    "javascript": {
+        "formatter": {
+            "quoteStyle": "single",
+            "trailingCommas": "none",
+            "semicolons": "always",
+            "indentStyle": "space",
+            "indentWidth": 4,
+            "lineWidth": 100,
+            "quoteProperties": "asNeeded"
+        }
+    },
+    "json": {
+        "formatter": {
+            "trailingCommas": "none",
+            "indentStyle": "space",
+            "indentWidth": 4,
+            "lineWidth": 100
+        }
+    }
+}

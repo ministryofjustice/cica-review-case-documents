@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Checks whether a passed-in logger looks like a valid pino or pino-http logger.
  *
@@ -26,12 +24,11 @@ function isLogger(logger) {
         typeof logger === 'function' &&
         typeof logger.logger?.info === 'function' &&
         typeof logger.logger?.child === 'function';
-  
+
     // bare pino instance.
     const isPinoInstance =
-        typeof logger?.info === 'function' &&
-        typeof logger?.child === 'function';
-  
+        typeof logger?.info === 'function' && typeof logger?.child === 'function';
+
     return isPinoHttp || isPinoInstance;
 }
 

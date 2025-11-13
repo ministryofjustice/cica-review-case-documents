@@ -1,8 +1,6 @@
-'use strict';
-
 import express from 'express';
-import createSearchService from './search-service.js';
 import createTemplateEngineService from '../templateEngine/index.js';
+import createSearchService from './search-service.js';
 
 const router = express.Router();
 
@@ -25,7 +23,7 @@ router.get('/', (req, res, next) => {
 
 router.post('/', (req, res, next) => {
     try {
-        const {query} = req.body;
+        const { query } = req.body;
         return res.redirect(`/search/${query}`);
     } catch (err) {
         next(err);
@@ -34,7 +32,9 @@ router.post('/', (req, res, next) => {
 
 router.get('/:query', (req, res, next) => {
     try {
-        return res.redirect(`/search/${req.params.query}/1/${process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE}`);
+        return res.redirect(
+            `/search/${req.params.query}/1/${process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE}`
+        );
     } catch (err) {
         next(err);
     }
@@ -42,7 +42,9 @@ router.get('/:query', (req, res, next) => {
 
 router.get('/:query/:pageNumber', (req, res, next) => {
     try {
-        return res.redirect(`/search/${req.params.query}/${req.params.pageNumber}/${process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE}`);
+        return res.redirect(
+            `/search/${req.params.query}/${req.params.pageNumber}/${process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE}`
+        );
     } catch (err) {
         next(err);
     }
@@ -63,7 +65,7 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
             pageType: 'search',
             csrfToken: res.locals.csrfToken,
             cspNonce: res.locals.cspNonce,
-            query,
+            query
         };
 
         const searchService = createSearchService({
@@ -75,9 +77,9 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
         const { body } = response || {};
 
         if (body?.errors) {
-            templateParams.errors = body.errors.map(error => ({
+            templateParams.errors = body.errors.map((error) => ({
                 text: error.detail,
-                href: `#${error.source?.pointer?.split('/')?.pop() || 'error'}`,
+                href: `#${error.source?.pointer?.split('/')?.pop() || 'error'}`
             }));
 
             const html = render('search/page/results.njk', templateParams);
@@ -103,13 +105,12 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
                 from: (currentPageIndex - 1) * itemsPerPage + 1,
                 to: Math.min(currentPageIndex * itemsPerPage, totalItemCount),
                 isFirstPage: currentPageIndex <= 1,
-                isLastPage: currentPageIndex >= totalPageCount,
+                isLastPage: currentPageIndex >= totalPageCount
             };
         }
 
         const html = render('search/page/results.njk', templateParams);
         return res.status(200).send(html);
-
     } catch (error) {
         next(error);
     }

@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Checks whether a given string matches a simple file path pattern.
  *

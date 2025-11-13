@@ -1,9 +1,7 @@
-'use strict';
-
-import { describe, it, before, after} from 'node:test';
 import assert from 'node:assert';
+import { describe, it } from 'node:test';
 
-import isFilePath from './index.js'
+import isFilePath from './index.js';
 
 const FILEPATHS = {
     FILE_NAME_WITH_EXTENSION: 'file.njk',

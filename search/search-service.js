@@ -1,12 +1,10 @@
-'use strict';
-
-import createRequestServiceDefault from '../service/request/index.js'
+import createRequestServiceDefault from '../service/request/index.js';
 
 function createSearchService({
     caseReferenceNumber,
     createRequestService = createRequestServiceDefault
 } = {}) {
-    const {get} = createRequestService();
+    const { get } = createRequestService();
 
     /**
      * Fetches search results from the API.

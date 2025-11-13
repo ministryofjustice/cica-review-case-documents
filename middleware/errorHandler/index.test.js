@@ -1,5 +1,5 @@
-import { describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
+import { describe, it, mock } from 'node:test';
 import errorHandler from './index.js';
 
 function createMemoryLogger() {
@@ -9,7 +9,7 @@ function createMemoryLogger() {
         logger: {
             info: mock.fn((obj, msg) => logs.push({ level: 'info', obj, msg })),
             warn: mock.fn((obj, msg) => logs.push({ level: 'warn', obj, msg })),
-            error: mock.fn((obj, msg) => logs.push({ level: 'error', obj, msg })),
+            error: mock.fn((obj, msg) => logs.push({ level: 'error', obj, msg }))
         }
     };
 }
@@ -40,7 +40,7 @@ describe('errorHandler', () => {
         assert.strictEqual(logs[0].level, 'warn');
         assert.match(logs[0].msg, /UNHANDLED ERROR/);
     });
-      
+
     it('Should log and respond correctly for unhandled server error', () => {
         const { logger, logs } = createMemoryLogger();
 
@@ -69,7 +69,7 @@ describe('errorHandler', () => {
         assert.strictEqual(logs[0].obj.status, 500);
         assert.match(logs[0].msg, /UNHANDLED ERROR/);
     });
-      
+
     it('Should log warn-level logging for known 4xx error', () => {
         const { logger, logs } = createMemoryLogger();
 

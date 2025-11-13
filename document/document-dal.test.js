@@ -1,16 +1,16 @@
-import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
+import { beforeEach, describe, it } from 'node:test';
 import VError from 'verror';
 import createDocumentDAL from './document-dal.js';
 
 describe('document-dal', () => {
     const ENV_ORIGINAL = {
-         ...process.env,
-         OPENSEARCH_INDEX_CHUNKS_NAME: 'test-idex'
-        };
+        ...process.env,
+        OPENSEARCH_INDEX_CHUNKS_NAME: 'test-idex'
+    };
     const CREATE_DB_QUERY_INSTANCE = {
         SUCCESS: {
-            query: async (query) => {
+            query: async () => {
                 return {
                     body: {
                         hits: [
@@ -21,7 +21,9 @@ describe('document-dal', () => {
             }
         },
         FAILURE: {
-            query: async () => { throw new Error('db failure'); }
+            query: async () => {
+                throw new Error('db failure');
+            }
         },
         EMPTY: {
             query: async () => {
@@ -32,8 +34,7 @@ describe('document-dal', () => {
                 };
             }
         }
-    
-    }
+    };
     beforeEach(() => {
         process.env = { ...ENV_ORIGINAL };
     });
@@ -41,14 +42,15 @@ describe('document-dal', () => {
     it('Should throw if OPENSEARCH_INDEX_CHUNKS_NAME is not set', () => {
         delete process.env.OPENSEARCH_INDEX_CHUNKS_NAME;
         assert.throws(
-            () => createDocumentDAL({
-                caseReferenceNumber: '12-345678',
-                createDBQuery: () => CREATE_DB_QUERY_INSTANCE.SUCCESS
-            }),
+            () =>
+                createDocumentDAL({
+                    caseReferenceNumber: '12-345678',
+                    createDBQuery: () => CREATE_DB_QUERY_INSTANCE.SUCCESS
+                }),
             (err) =>
-              err.name === 'ConfigurationError' &&
-              /Environment variable "OPENSEARCH_INDEX_CHUNKS_NAME" must be set/.test(err.message)
-          );
+                err.name === 'ConfigurationError' &&
+                /Environment variable "OPENSEARCH_INDEX_CHUNKS_NAME" must be set/.test(err.message)
+        );
     });
 
     it('Should return body.hits from DB response', async () => {

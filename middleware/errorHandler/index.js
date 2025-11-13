@@ -1,5 +1,3 @@
-'use strict';
-
 const STATUS_TITLES_MAP = {
     400: 'Bad Request',
     401: 'Unauthorized',
@@ -13,19 +11,13 @@ const STATUS_TITLES_MAP = {
 };
 
 const NAME_STATUS_MAP = {
-    'UnauthorizedError': 401,
-    'ResourceNotFound': 404,
-    'ConfigurationError': 500,
+    UnauthorizedError: 401,
+    ResourceNotFound: 404,
+    ConfigurationError: 500,
     default: 500
 };
 
-function formatError({
-    status,
-    detail,
-    source,
-    code,
-    meta
-}) {
+function formatError({ status, detail, source, code, meta }) {
     const errorData = {
         status: status.toString(),
         title: STATUS_TITLES_MAP[status] || STATUS_TITLES_MAP.default
@@ -60,30 +52,37 @@ export default (err, req, res, next) => {
             detail: 'Request JSON is malformed'
         });
         errorResponse.errors.push(formattedError);
-        log.warn({
-            err,
-            error: formattedError
-        }, 'UNHANDLED ERROR');
+        log.warn(
+            {
+                err,
+                error: formattedError
+            },
+            'UNHANDLED ERROR'
+        );
         return res.status(400).json(errorResponse);
     }
 
-    let status = err.status || err.statusCode || NAME_STATUS_MAP[err.name] || NAME_STATUS_MAP.default;
+    const status =
+        err.status || err.statusCode || NAME_STATUS_MAP[err.name] || NAME_STATUS_MAP.default;
 
     if (Array.isArray(err.errors)) {
-        err.errors.forEach(e => {
+        err.errors.forEach((e) => {
             const formattedError = formatError({
                 status,
                 detail: e.message,
                 source: e.path ? { pointer: `/${e.path.replace(/\./g, '/')}` } : undefined
-            })
+            });
             errorResponse.errors.push(formattedError);
         });
 
-        log.error({
-            err,
-            errors: errorResponse.errors,
-            status
-        }, 'UNHANDLED ERRORS');
+        log.error(
+            {
+                err,
+                errors: errorResponse.errors,
+                status
+            },
+            'UNHANDLED ERRORS'
+        );
         return res.status(status).json(errorResponse);
     }
 
@@ -93,11 +92,14 @@ export default (err, req, res, next) => {
     });
     errorResponse.errors.push(formattedError);
 
-    log.error({
-        err,
-        errors: errorResponse.errors,
-        status
-    }, 'UNHANDLED ERROR');
+    log.error(
+        {
+            err,
+            errors: errorResponse.errors,
+            status
+        },
+        'UNHANDLED ERROR'
+    );
 
     return res.status(status).json(errorResponse);
 };

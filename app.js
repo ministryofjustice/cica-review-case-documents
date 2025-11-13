@@ -1,34 +1,32 @@
-'use strict';
-
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import cookieParser from 'cookie-parser';
-import helmet from 'helmet';
-import {nanoid} from 'nanoid';
+import express from 'express';
 import session from 'express-session';
-import createCsrf from './middleware/csrf/index.js';
-import getCaseReferenceNumberFromQueryString from './middleware/getCaseReferenceNumberFromQueryString/index.js';
-import {caseSelected} from './middleware/caseSelected/index.js';
-import defaultCreateLogger from './middleware/logger/index.js';
-import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
-import createTemplateEngineService from './templateEngine/index.js';
+import helmet from 'helmet';
+import { nanoid } from 'nanoid';
 import apiApp from './api/app.js';
 import indexRouter from './index/routes.js';
+import { caseSelected } from './middleware/caseSelected/index.js';
+import createCsrf from './middleware/csrf/index.js';
+import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
+import getCaseReferenceNumberFromQueryString from './middleware/getCaseReferenceNumberFromQueryString/index.js';
+import defaultCreateLogger from './middleware/logger/index.js';
 import searchRouter from './search/routes.js';
+import createTemplateEngineService from './templateEngine/index.js';
 
-function createApp({createLogger = defaultCreateLogger} = {}) {
+function createApp({ createLogger = defaultCreateLogger } = {}) {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
 
     const app = express();
-    
-    const {doubleCsrfProtection, generateCsrfToken} = createCsrf();
-    
+
+    const { doubleCsrfProtection, generateCsrfToken } = createCsrf();
+
     // https://expressjs.com/en/api.html#express.json
     app.use(express.json());
     // https://expressjs.com/en/api.html#express.urlencoded
-    app.use(express.urlencoded({extended: true}));
+    app.use(express.urlencoded({ extended: true }));
     app.use(
         cookieParser(null, {
             httpOnly: true
@@ -36,7 +34,7 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
     );
 
     app.use(createLogger());
-    
+
     app.use((req, res, next) => {
         res.set({
             'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -48,23 +46,25 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
     });
 
     app.use(ensureEnvVarsAreValid);
-    
-    app.use(session({
-        name: process.env.APP_COOKIE_NAME,
-        secret: process.env.APP_COOKIE_SECRET,
-        resave: false,
-        saveUninitialized: true,
-        cookie: {
-            secure: process.env.NODE_ENV === 'production'
-        }
-    }));
-    
+
+    app.use(
+        session({
+            name: process.env.APP_COOKIE_NAME,
+            secret: process.env.APP_COOKIE_SECRET,
+            resave: false,
+            saveUninitialized: true,
+            cookie: {
+                secure: process.env.NODE_ENV === 'production'
+            }
+        })
+    );
+
     app.use((req, res, next) => {
         res.locals.cspNonce = nanoid();
         res.set('Application-Version', process.env.npm_package_version);
         next();
     });
-    
+
     app.use(
         helmet({
             contentSecurityPolicy: {
@@ -82,37 +82,41 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
                         (req, res) => `'nonce-${res.locals.cspNonce}'`,
                         'https:'
                     ],
-                    imgSrc: ["'self'", 'data:', '*.google-analytics.com', 'www.googletagmanager.com'],
+                    imgSrc: [
+                        "'self'",
+                        'data:',
+                        '*.google-analytics.com',
+                        'www.googletagmanager.com'
+                    ],
                     objectSrc: ["'none'"],
                     connectSrc: ["'self'", '*.google-analytics.com'],
                     // https://www.therobinlord.com/ga4-is-being-blocked-by-content-security-policy/
                     formAction: ["'self'", '*.account.gov.uk']
                 }
             },
-            xFrameOptions: {action: 'deny'},
+            xFrameOptions: { action: 'deny' },
             strictTransportSecurity: {
                 maxAge: 60 * 60 * 24 * 365,
                 includeSubDomains: true
             }
         })
     );
-    
+
     const templateEngineService = createTemplateEngineService(app);
     templateEngineService.init();
-    
+
     app.use(express.static(path.join(__dirname, 'public')));
-    
+
     app.use(
         '/assets',
         express.static(path.join(__dirname, '/node_modules/govuk-frontend/dist/govuk/assets'))
     );
-    
+
     app.use(doubleCsrfProtection);
     app.use((req, res, next) => {
         res.locals.csrfToken = generateCsrfToken(req, res);
         next();
     });
-    
     app.use('/api', apiApp);
     app.use('/', indexRouter);
     app.use('/search', getCaseReferenceNumberFromQueryString, caseSelected, searchRouter);

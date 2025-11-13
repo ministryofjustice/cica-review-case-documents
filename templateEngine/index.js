@@ -1,5 +1,3 @@
-'use strict';
-
 import nunjucks from 'nunjucks';
 import VError from 'verror';
 import isFilePath from './utils/isFilePath/index.js';
@@ -31,7 +29,7 @@ function createTemplateEngineService(app) {
                     name: 'MissingExpressAppError'
                 },
                 'Cannot initialize Nunjucks environment: Express app instance is required. ' +
-                'Please pass the Express app when calling createTemplateEngineService(app).'
+                    'Please pass the Express app when calling createTemplateEngineService(app).'
             );
         }
 
@@ -58,8 +56,8 @@ function createTemplateEngineService(app) {
             'components/'
         ]);
         environment = new nunjucks.Environment(loader, configObject);
-        environment.addGlobal('APP_VERSION', process.env.npm_package_version)
-        environment.addGlobal('APP_BUILDTIME_ID', process.env.APP_BUILDTIME_ID)
+        environment.addGlobal('APP_VERSION', process.env.npm_package_version);
+        environment.addGlobal('APP_BUILDTIME_ID', process.env.APP_BUILDTIME_ID);
         environment.addGlobal('govukRebrand', true);
         environment.express(app);
         app.engine('njk', environment.render.bind(environment));

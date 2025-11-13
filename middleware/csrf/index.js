@@ -1,5 +1,3 @@
-'use strict';
-
 import VError from 'verror';
 
 // import {doubleCsrf} from 'csrf-csrf';
@@ -29,20 +27,16 @@ import VError from 'verror';
  *
  * @see {@link https://www.npmjs.com/package/csrf-csrf|csrf-csrf on npm}
  *
- * @returns {{doubleCsrfProtection: import('express').RequestHandler, generateCsrfToken: Function}} 
+ * @returns {{doubleCsrfProtection: import('express').RequestHandler, generateCsrfToken: Function}}
  * Returns an object containing:
  * - `doubleCsrfProtection`: Express middleware to validate CSRF tokens.
  * - `generateCsrfToken`: Function to generate a new CSRF token.
  */
 
-import { doubleCsrf as defaultDoubleCsrf} from 'csrf-csrf';
+import { doubleCsrf as defaultDoubleCsrf } from 'csrf-csrf';
 
 function createCsrf(doubleCsrf = defaultDoubleCsrf) {
-    const {
-        doubleCsrfProtection,
-        generateCsrfToken
-    
-    } = doubleCsrf({
+    const { doubleCsrfProtection, generateCsrfToken } = doubleCsrf({
         /**
          * Retrieves the secret key used for signing CSRF cookies.
          *
@@ -81,8 +75,9 @@ function createCsrf(doubleCsrf = defaultDoubleCsrf) {
             return req.session.id;
         },
         // eslint-disable-next-line no-underscore-dangle
-        getCsrfTokenFromRequest: req => req.body._csrf,
-        cookieName: process.env.NODE_ENV === 'production' ? '__Host-request-config' : 'request-config', // renamed `_csrf` cookie name.
+        getCsrfTokenFromRequest: (req) => req.body._csrf,
+        cookieName:
+            process.env.NODE_ENV === 'production' ? '__Host-request-config' : 'request-config', // renamed `_csrf` cookie name.
         cookieOptions: {
             path: '/',
             secure: process.env.NODE_ENV === 'production',
@@ -94,7 +89,7 @@ function createCsrf(doubleCsrf = defaultDoubleCsrf) {
     return {
         doubleCsrfProtection,
         generateCsrfToken
-    }; 
+    };
 }
 
 export default createCsrf;

@@ -1,5 +1,3 @@
-'use strict';
-
 import { Client as defaultClient } from '@opensearch-project/opensearch';
 import VError from 'verror';
 
@@ -45,10 +43,7 @@ import VError from 'verror';
  * @returns {{ query: (query: OpenSearchQuery) => Promise<OpenSearchResponse> }}
  *   A frozen object exposing a single `query` method to execute OpenSearch queries.
  */
-function createDBQuery({
-    Client = defaultClient,
-    logger
-}) {
+function createDBQuery({ Client = defaultClient, logger }) {
     if (process.env.APP_DATABASE_URL === undefined) {
         throw new VError(
             {
@@ -90,7 +85,7 @@ function createDBQuery({
                         rows: results.hits?.hits?.length ?? 0
                     },
                     executionTime: `${seconds}s ${milliseconds.toFixed(3)}ms`,
-                    executionTimeNs: (seconds * 1e9) + nanoseconds,
+                    executionTimeNs: seconds * 1e9 + nanoseconds
                 },
                 'DB QUERY'
             );

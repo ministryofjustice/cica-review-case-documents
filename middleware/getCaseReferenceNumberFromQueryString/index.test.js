@@ -1,14 +1,12 @@
-'use strict';
-
-import { describe, it, before, after} from 'node:test';
 import assert from 'node:assert';
+import { describe, it } from 'node:test';
 
 import getCaseReferenceNumberFromQueryString from './index.js';
 
 function deepMerge(obj1, obj2) {
     const result = { ...obj1 };
-    for (let key in obj2) {
-        if (obj2.hasOwnProperty(key)) {
+    for (const key in obj2) {
+        if (Object.hasOwn(obj2, key)) {
             if (obj2[key] instanceof Object && obj1[key] instanceof Object) {
                 result[key] = deepMerge(obj1[key], obj2[key]);
             } else {
@@ -25,10 +23,14 @@ function getMockRequest(...propsToMerge) {
         session: {}
     };
 
-    const mergedProps = JSON.parse(JSON.stringify(propsToMerge.reduce((merged, propsObject) => {
-        merged = deepMerge(merged, propsObject);
-        return merged;
-    }, baseReq)));
+    const mergedProps = JSON.parse(
+        JSON.stringify(
+            propsToMerge.reduce((merged, propsObject) => {
+                merged = deepMerge(merged, propsObject);
+                return merged;
+            }, baseReq)
+        )
+    );
 
     return mergedProps;
 }
@@ -48,9 +50,7 @@ const REQUESTS = {
                 }
             },
             NONE: {
-                query: {
-
-                }
+                query: {}
             }
         },
         INVALID: {
@@ -98,28 +98,40 @@ describe('getCaseReferenceNumberFromQueryString', () => {
     });
 
     it('Should update the session when a valid crn and a valid caseReferenceNumber are provided', () => {
-        const req = getMockRequest(REQUESTS.QUERY.VALID.CRN, REQUESTS.QUERY.VALID.CASEREFERENCENUMBER);
+        const req = getMockRequest(
+            REQUESTS.QUERY.VALID.CRN,
+            REQUESTS.QUERY.VALID.CASEREFERENCENUMBER
+        );
         getCaseReferenceNumberFromQueryString(req, {}, () => {});
         assert.equal(req.session.caseSelected, true);
         assert.equal(req.session.caseReferenceNumber, VALID_CRN);
     });
 
     it('Should update the session when a valid crn and an invalid caseReferenceNumber are provided', () => {
-        const req = getMockRequest(REQUESTS.QUERY.VALID.CRN, REQUESTS.QUERY.INVALID.CASEREFERENCENUMBER);
+        const req = getMockRequest(
+            REQUESTS.QUERY.VALID.CRN,
+            REQUESTS.QUERY.INVALID.CASEREFERENCENUMBER
+        );
         getCaseReferenceNumberFromQueryString(req, {}, () => {});
         assert.equal(req.session.caseSelected, true);
         assert.equal(req.session.caseReferenceNumber, VALID_CRN);
     });
 
     it('Should update the session when an invalid crn and a valid caseReferenceNumber are provided', () => {
-        const req = getMockRequest(REQUESTS.QUERY.INVALID.CRN, REQUESTS.QUERY.VALID.CASEREFERENCENUMBER);
+        const req = getMockRequest(
+            REQUESTS.QUERY.INVALID.CRN,
+            REQUESTS.QUERY.VALID.CASEREFERENCENUMBER
+        );
         getCaseReferenceNumberFromQueryString(req, {}, () => {});
         assert.equal(req.session.caseSelected, true);
         assert.equal(req.session.caseReferenceNumber, VALID_CRN);
     });
 
     it('Should not update the session when an invalid crn and caseReferenceNumber are provided', () => {
-        const req = getMockRequest(REQUESTS.QUERY.INVALID.CRN, REQUESTS.QUERY.INVALID.CASEREFERENCENUMBER);
+        const req = getMockRequest(
+            REQUESTS.QUERY.INVALID.CRN,
+            REQUESTS.QUERY.INVALID.CASEREFERENCENUMBER
+        );
         getCaseReferenceNumberFromQueryString(req, {}, () => {});
         assert.equal(req.session.caseSelected, undefined);
         assert.equal(req.session.caseReferenceNumber, undefined);
@@ -134,8 +146,10 @@ describe('getCaseReferenceNumberFromQueryString', () => {
 
     it('Should call next() every time the middleware runs', () => {
         let nextCallCount = 0;
-        const nextMock = () => { nextCallCount += 1 };
-    
+        const nextMock = () => {
+            nextCallCount += 1;
+        };
+
         const allRequests = [
             getMockRequest(REQUESTS.QUERY.VALID.CRN),
             getMockRequest(REQUESTS.QUERY.VALID.CASEREFERENCENUMBER),
@@ -147,11 +161,15 @@ describe('getCaseReferenceNumberFromQueryString', () => {
             getMockRequest(REQUESTS.QUERY.INVALID.CRN, REQUESTS.QUERY.INVALID.CASEREFERENCENUMBER),
             getMockRequest(REQUESTS.QUERY.VALID.NONE)
         ];
-    
-        allRequests.forEach(req => {
+
+        allRequests.forEach((req) => {
             getCaseReferenceNumberFromQueryString(req, {}, nextMock);
         });
-    
-        assert.equal(nextCallCount, allRequests.length, 'next() should be called once per middleware invocation');
+
+        assert.equal(
+            nextCallCount,
+            allRequests.length,
+            'next() should be called once per middleware invocation'
+        );
     });
 });

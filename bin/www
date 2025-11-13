@@ -1,7 +1,4 @@
 #!/usr/bin/env node
-
-'use strict';
-
 import {nanoid} from 'nanoid';
 import http from 'http';
 

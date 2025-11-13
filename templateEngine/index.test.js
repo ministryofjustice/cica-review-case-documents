@@ -1,8 +1,6 @@
-import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
 import express from 'express';
-import fs from 'fs';
-import path from 'path';
 import createTemplateEngineService from './index.js';
 
 describe('createTemplateEngineService', () => {
@@ -12,15 +10,20 @@ describe('createTemplateEngineService', () => {
             const templateEngineService = createTemplateEngineService(app);
             const environment = templateEngineService.init();
             assert.ok(environment, 'Environment should be created');
-            assert.strictEqual(typeof environment.render, 'function', 'Environment has render function');
+            assert.strictEqual(
+                typeof environment.render,
+                'function',
+                'Environment has render function'
+            );
         });
-    
+
         it('Should throw MissingExpressAppError if app not provided', () => {
             const templateEngineService = createTemplateEngineService();
             assert.throws(
                 () => templateEngineService.init(),
-                err => err.name === 'MissingExpressAppError' &&
-                       /Express app instance is required/.test(err.message)
+                (err) =>
+                    err.name === 'MissingExpressAppError' &&
+                    /Express app instance is required/.test(err.message)
             );
         });
     });
@@ -30,7 +33,9 @@ describe('createTemplateEngineService', () => {
             const app = express();
             const templateEngineService = createTemplateEngineService(app);
             templateEngineService.init();
-            const html = templateEngineService.render('templateEngine/fixture/render-test.njk', { value: 123 });
+            const html = templateEngineService.render('templateEngine/fixture/render-test.njk', {
+                value: 123
+            });
             assert.strictEqual(html, 'File template: 123');
         });
 
@@ -38,7 +43,9 @@ describe('createTemplateEngineService', () => {
             const app = express();
             const templateEngineService = createTemplateEngineService(app);
             templateEngineService.init();
-            const html = templateEngineService.render('Hello {{ name }}', { name: 'World' });
+            const html = templateEngineService.render('Hello {{ name }}', {
+                name: 'World'
+            });
             assert.strictEqual(html, 'Hello World');
         });
     });
@@ -58,7 +65,11 @@ describe('createTemplateEngineService', () => {
             const app = express();
             const templateEngineService = createTemplateEngineService(app);
             const environment = templateEngineService.init();
-            assert.strictEqual(templateEngineService.getEnvironment(), environment, 'getEnvironment() returns same instance');
+            assert.strictEqual(
+                templateEngineService.getEnvironment(),
+                environment,
+                'getEnvironment() returns same instance'
+            );
         });
         it('Should return undefined if init has not been called', () => {
             const app = express();
