@@ -102,38 +102,26 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
                     }
                 }
             };
-
-            logger.info({
-                    index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
-                    queryBody,
-                    keyword,
-                    caseReferenceNumber,
-                    pageNumber,
-                    itemsPerPage
-                }, 'OpenSearch Performing search');
-
+            console.info('[OpenSearch] Performing search:', {
+                index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
+                queryBody,
+                keyword,
+                caseReferenceNumber,
+                pageNumber,
+                itemsPerPage
+            });
             const response = await db.query({
                 index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
                 body: queryBody
             });
             const hits = response?.body?.hits?.hits || [];
-
-            logger.info({ hitsCount: hits.length }, 'OpenSearch Search response');
-        
+            console.info(`[OpenSearch] Search response: ${hits.length} hits returned.`);
             if (hits.length === 0) {
-                if (logger && typeof logger.warn === 'function') {
-                    logger.warn({ keyword, caseReferenceNumber }, '[OpenSearch] No results found for query');
-                } else {
-                    console.warn('[OpenSearch] No results found for query:', { keyword, caseReferenceNumber });
-                }
+                console.warn('[OpenSearch] No results found for query:', { keyword, caseReferenceNumber });
             }
             return response?.body?.hits ?? [];
         } catch (err) {
-            if (logger && typeof logger.error === 'function') {
-                logger.error({ err }, '[OpenSearch] Search error');
-            } else {
-                console.error('[OpenSearch] Search error:', err);
-            }
+            console.error('[OpenSearch] Search error:', err);
             throw new VError(err, `Failed to execute search query on index "${process.env.OPENSEARCH_INDEX_CHUNKS_NAME}"`);
         }
     }
