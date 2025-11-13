@@ -63,7 +63,9 @@ function checkOptionalEnvVars(optionalEnvVars = getOptionalEnvVars(), logger) {
 
     optionalEnvVars.forEach((optionalEnvVar) => {
         if (!(optionalEnvVar in process.env) || process.env[optionalEnvVar] === undefined) {
-            logger.info(
+            // Optional environment variable not set
+            // TODO review
+            logger.debug(
                 {
                     data: {
                         environmentVariableName: optionalEnvVar
