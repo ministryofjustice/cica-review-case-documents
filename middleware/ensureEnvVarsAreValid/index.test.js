@@ -1,12 +1,7 @@
-import { describe, it, beforeEach }  from 'node:test';
 import assert from 'node:assert/strict';
+import { beforeEach, describe, it } from 'node:test';
 
-import * as isLoggerModule from '../logger/utils/isLogger/index.js';
-
-import ensureEnvVarsAreValid, {
-    getMandatoryEnvVars,
-    getOptionalEnvVars,
-} from './index.js';
+import ensureEnvVarsAreValid, { getMandatoryEnvVars, getOptionalEnvVars } from './index.js';
 
 const fakeLogger = {
     info: () => {},
@@ -23,11 +18,12 @@ describe('ensureEnvVarsAreValid', () => {
         resetEnv();
     });
     it('Should calls next() if everything is valid', async () => {
-        // const middleware = ensureEnvVarsAreValid(getMandatoryEnvVars(), getOptionalEnvVars(), fakeLogger);
         let nextCalled = false;
         const req = { log: fakeLogger };
         const res = {};
-        const next = () => { nextCalled = true; };
+        const next = () => {
+            nextCalled = true;
+        };
 
         ensureEnvVarsAreValid(req, res, next);
         assert.equal(nextCalled, true);
@@ -47,33 +43,42 @@ describe('ensureEnvVarsAreValid', () => {
 
         it('Should throw ConfigurationError if mandatoryEnvVars is not an array', async () => {
             const { checkEnvVars } = await import('./index.js');
-            assert.throws(() => checkEnvVars({mandatoryEnvVars: 'not an array'}), (err) => {
-                assert.equal(err.name, 'ConfigurationError');
-                assert.match(err.message, /must be a non-empty array/);
-                return true;
-            });
+            assert.throws(
+                () => checkEnvVars({ mandatoryEnvVars: 'not an array', logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /must be a non-empty array/);
+                    return true;
+                }
+            );
         });
-        
+
         it('Should throw ConfigurationError if mandatoryEnvVars is an empty array', async () => {
             const { checkEnvVars } = await import('./index.js');
-            assert.throws(() => checkEnvVars({mandatoryEnvVars: []}), (err) => {
-                assert.equal(err.name, 'ConfigurationError');
-                assert.match(err.message, /must be a non-empty array/);
-                return true;
-            });
+            assert.throws(
+                () => checkEnvVars({ mandatoryEnvVars: [], logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /must be a non-empty array/);
+                    return true;
+                }
+            );
         });
-        
+
         it('Should throw ConfigurationError if required env var missing', async () => {
             const { checkEnvVars } = await import('./index.js');
             delete process.env.APP_COOKIE_NAME;
-            assert.throws(() => checkEnvVars(), (err) => {
-                assert.equal(err.name, 'ConfigurationError');
-                assert.match(err.message, /Environment variable "APP_COOKIE_NAME" must be set/);
-                return true;
-            });
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /Environment variable "APP_COOKIE_NAME" must be set/);
+                    return true;
+                }
+            );
         });
     });
-    
+
     describe('getOptionalEnvVars', () => {
         it('Should return the expected keys', () => {
             const vars = getOptionalEnvVars();
@@ -83,17 +88,20 @@ describe('ensureEnvVarsAreValid', () => {
                 'APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE',
                 'APP_LOG_LEVEL',
                 'APP_LOG_REDACT_EXTRA',
-                'APP_LOG_REDACT_DISABLE',
+                'APP_LOG_REDACT_DISABLE'
             ]);
         });
-        
+
         it('Should throw ConfigurationError if optionalEnvVars is not an array', async () => {
             const { checkEnvVars } = await import('./index.js');
-            assert.throws(() => checkEnvVars({optionalEnvVars: 'not an array'}), (err) => {
-                assert.equal(err.name, 'ConfigurationError');
-                assert.match(err.message, /must be a non-empty array/);
-                return true;
-            });
+            assert.throws(
+                () => checkEnvVars({ optionalEnvVars: 'not an array', logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /must be a non-empty array/);
+                    return true;
+                }
+            );
         });
     });
 });

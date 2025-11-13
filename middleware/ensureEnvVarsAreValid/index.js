@@ -1,5 +1,3 @@
-'use strict';
-
 import VError from 'verror';
 import isLogger from '../logger/utils/isLogger/index.js';
 
@@ -18,10 +16,10 @@ const defaults = {
             'APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE',
             'APP_LOG_LEVEL',
             'APP_LOG_REDACT_EXTRA',
-            'APP_LOG_REDACT_DISABLE',
+            'APP_LOG_REDACT_DISABLE'
         ]
     }
-}
+};
 
 function getMandatoryEnvVars() {
     return defaults.envVars.mandatory;
@@ -41,7 +39,7 @@ function checkMandatoryEnvVars(mandatoryEnvVars = getMandatoryEnvVars()) {
         );
     }
 
-    mandatoryEnvVars.forEach(mandatoryEnvVar => {
+    mandatoryEnvVars.forEach((mandatoryEnvVar) => {
         if (!(mandatoryEnvVar in process.env) || process.env[mandatoryEnvVar] === undefined) {
             throw new VError(
                 {
@@ -63,12 +61,12 @@ function checkOptionalEnvVars(optionalEnvVars = getOptionalEnvVars(), logger) {
         );
     }
 
-    optionalEnvVars.forEach(optionalEnvVar => {
+    optionalEnvVars.forEach((optionalEnvVar) => {
         if (!(optionalEnvVar in process.env) || process.env[optionalEnvVar] === undefined) {
             logger.info(
                 {
                     data: {
-                        environmentVariableName: optionalEnvVar,
+                        environmentVariableName: optionalEnvVar
                     }
                 },
                 'OPTIONAL ENV VAR NOT SET'
@@ -88,7 +86,11 @@ function checkIsLogger(logger) {
     }
 }
 
-function checkEnvVars({mandatoryEnvVars = getMandatoryEnvVars(), optionalEnvVars = getOptionalEnvVars(), logger} = {}) {
+function checkEnvVars({
+    mandatoryEnvVars = getMandatoryEnvVars(),
+    optionalEnvVars = getOptionalEnvVars(),
+    logger
+} = {}) {
     checkIsLogger(logger);
     checkMandatoryEnvVars(mandatoryEnvVars, logger);
     checkOptionalEnvVars(optionalEnvVars, logger);
@@ -103,10 +105,6 @@ function ensureEnvVarsAreValid(req, res, next) {
     next();
 }
 
-export {
-    getMandatoryEnvVars,
-    getOptionalEnvVars,
-    checkEnvVars
-}
+export { getMandatoryEnvVars, getOptionalEnvVars, checkEnvVars };
 
 export default ensureEnvVarsAreValid;

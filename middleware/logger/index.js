@@ -1,7 +1,5 @@
-'use strict';
-
-import pinoHttp from 'pino-http';
 import pino from 'pino';
+import pinoHttp from 'pino-http';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -81,24 +79,27 @@ function createLogger(options = {}) {
     const { stream, ...pinoOptions } = options;
     const useTransport = !isProd && !stream;
     const logger = pinoHttp({
-        logger: pino({
-            level: process.env.APP_LOG_LEVEL || (isProd ? 'info' : 'debug'),
-            ...(useTransport
-                ? {
-                    transport: {
-                    target: 'pino-pretty',
-                    options: {
-                        colorize: true,
-                        levelFirst: true,
-                        translateTime: 'SYS:standard',
-                        ignore: 'pid,hostname',
-                        singleLine: true
-                    }
-                }
-            }
-            : {}),
-            ...pinoOptions
-        }, stream),
+        logger: pino(
+            {
+                level: process.env.APP_LOG_LEVEL || (isProd ? 'info' : 'debug'),
+                ...(useTransport
+                    ? {
+                          transport: {
+                              target: 'pino-pretty',
+                              options: {
+                                  colorize: true,
+                                  levelFirst: true,
+                                  translateTime: 'SYS:standard',
+                                  ignore: 'pid,hostname',
+                                  singleLine: true
+                              }
+                          }
+                      }
+                    : {}),
+                ...pinoOptions
+            },
+            stream
+        ),
         redact: (() => {
             const base = [
                 'req.headers.authorization',
@@ -111,7 +112,7 @@ function createLogger(options = {}) {
             ];
             const extra = (process.env.APP_LOG_REDACT_EXTRA || '')
                 .split(',')
-                .map(s => s.trim())
+                .map((s) => s.trim())
                 .filter(Boolean);
             if (process.env.APP_LOG_REDACT_DISABLE === 'true') {
                 return undefined;
@@ -126,7 +127,7 @@ function createLogger(options = {}) {
             if (res.statusCode >= 400) return 'warn';
             return 'info';
         },
-        genReqId: req => {
+        genReqId: (req) => {
             return (
                 req.headers['x-correlation-id'] ||
                 req.headers['x-request-id'] ||
@@ -135,9 +136,7 @@ function createLogger(options = {}) {
         },
         customProps: (req, res) => {
             const correlationId =
-                req.headers['x-correlation-id'] ||
-                req.headers['x-request-id'] ||
-                req.id; // result of genReqId().
+                req.headers['x-correlation-id'] || req.headers['x-request-id'] || req.id; // result of genReqId().
             return {
                 correlationId
             };

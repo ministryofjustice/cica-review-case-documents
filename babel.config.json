@@ -8,10 +8,7 @@
                 "modules": false,
                 "targets": {
                     "node": "current",
-                    "browsers": [
-                        "last 2 versions",
-                        "not dead"
-                    ]
+                    "browsers": ["last 2 versions", "not dead"]
                 }
             }
         ]

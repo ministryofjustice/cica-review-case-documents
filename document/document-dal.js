@@ -1,5 +1,3 @@
-'use strict';
-
 import VError from 'verror';
 import createDBQueryDefault from '../db/index.js';
 
@@ -50,11 +48,7 @@ import createDBQueryDefault from '../db/index.js';
  * }}
  *   A frozen object exposing document and chunk retrieval methods.
  */
-function createDocumentDAL({
-    caseReferenceNumber,
-    createDBQuery = createDBQueryDefault,
-    logger
-}) {
+function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryDefault, logger }) {
     if (process.env.OPENSEARCH_INDEX_CHUNKS_NAME === undefined) {
         throw new VError(
             {
@@ -63,15 +57,15 @@ function createDocumentDAL({
             'Environment variable "OPENSEARCH_INDEX_CHUNKS_NAME" must be set'
         );
     }
-    const db = createDBQuery({logger});
+    const db = createDBQuery({ logger });
 
-    // TODO: implements documents retrieval. 
+    // TODO: implements documents retrieval.
     async function getDocuments() {
         return [];
     }
 
-    // TODO: implements document retrieval. 
-    async function getDocument(documentId) {
+    // TODO: implements document retrieval.
+    async function getDocument() {
         return [];
     }
 
@@ -101,7 +95,7 @@ function createDocumentDAL({
                                     // Instead of match you have to use term query, as the documentation describe:
                                     // The term query finds documents that contain the exact term specified in the inverted index
                                     match: {
-                                        'chunk_text': keyword
+                                        chunk_text: keyword
                                     }
                                 },
                                 {
@@ -117,7 +111,10 @@ function createDocumentDAL({
 
             return response?.body?.hits ?? [];
         } catch (err) {
-            throw new VError(err, `Failed to execute search query on index "${process.env.OPENSEARCH_INDEX_CHUNKS_NAME}"`);
+            throw new VError(
+                err,
+                `Failed to execute search query on index "${process.env.OPENSEARCH_INDEX_CHUNKS_NAME}"`
+            );
         }
     }
 

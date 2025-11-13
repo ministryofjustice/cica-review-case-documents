@@ -1,5 +1,3 @@
-'use strict';
-
 import got from 'got';
 import merge from 'lodash.merge';
 

@@ -1,9 +1,7 @@
-'use strict';
-
-import { describe, it, before, after} from 'node:test';
 import assert from 'node:assert';
+import http from 'node:http';
+import { after, before, describe, it } from 'node:test';
 
-import http from 'http';
 import createRequestService from './index.js';
 
 const simpleServer = http.createServer((req, res) => {
@@ -17,7 +15,7 @@ const simpleServer = http.createServer((req, res) => {
     if (req.method === 'POST') {
         let reqBody = '';
 
-        req.on('data', chunk => {
+        req.on('data', (chunk) => {
             reqBody += chunk;
         });
 
@@ -43,7 +41,7 @@ describe('createRequestService', () => {
         };
         const response = await requestService.get(requestOptions);
 
-        assert.deepStrictEqual(response.body, {get_test: 'success'});
+        assert.deepStrictEqual(response.body, { get_test: 'success' });
     });
 
     it('should POST JSON', async () => {

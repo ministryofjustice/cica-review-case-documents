@@ -1,6 +1,6 @@
-import createCsrf from './index.js';
-import { describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
+import { describe, it, mock } from 'node:test';
+import createCsrf from './index.js';
 
 describe('csrf module', () => {
     it('calls doubleCsrf with correct config in development', () => {
@@ -9,7 +9,7 @@ describe('csrf module', () => {
             return {
                 doubleCsrfProtection: mock.fn(),
                 generateCsrfToken: mock.fn()
-            }
+            };
         });
 
         createCsrf(doubleCsrfSpy);
@@ -33,7 +33,7 @@ describe('csrf module', () => {
             return {
                 doubleCsrfProtection: mock.fn(),
                 generateCsrfToken: mock.fn()
-            }
+            };
         });
 
         createCsrf(doubleCsrfSpy);

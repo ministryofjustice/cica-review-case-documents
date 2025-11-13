@@ -1,42 +1,22 @@
-import { describe, it, beforeEach, afterEach, mock } from 'node:test';
 import assert from 'node:assert';
+import { afterEach, beforeEach, describe, it, mock } from 'node:test';
+
 import request from 'supertest';
-import { Writable } from 'stream';
-import createLogger from '../middleware/logger/index.js';
 
 import createDBQuery from '../db/index.js';
 
 describe('search router', () => {
-    let app
-    let logStream;
-    let lines = [];
-
-    function LogCaptureStream() {
-        return new Writable({
-            write(chunk, encoding, callback) {
-                try {
-                    const parsed = JSON.parse(chunk.toString());
-                    lines.push(parsed);
-                } catch {
-                    // ignore non-JSON chunks
-                }
-                callback();
-            }
-        });
-    }
+    let app;
 
     beforeEach(async () => {
         const fakeResults = { hits: { hits: [{ _id: 1 }] } };
         const searchSpy = mock.fn(async () => fakeResults);
         class FakeClient {
-            constructor() {}
             search = searchSpy;
         }
-        const db = createDBQuery({
+        createDBQuery({
             Client: FakeClient
         });
-
-        lines = [];
 
         const { default: importedApp } = await import('../app.js');
         app = importedApp({

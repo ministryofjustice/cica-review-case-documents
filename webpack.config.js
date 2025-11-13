@@ -1,6 +1,5 @@
-'use strict';
+import path from 'node:path';
 
-import path from 'path';
 const __dirname = import.meta.dirname;
 
 const config = {

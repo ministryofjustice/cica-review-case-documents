@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Middleware to verify that a case has been selected in the current session.
  *
@@ -25,6 +23,4 @@ const caseSelected = (req, res, next) => {
     next();
 };
 
-export {
-    caseSelected
-};
+export { caseSelected };

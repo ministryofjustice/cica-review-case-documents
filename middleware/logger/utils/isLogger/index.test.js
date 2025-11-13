@@ -1,5 +1,5 @@
-import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
 import pino from 'pino';
 import pinoHttp from 'pino-http';
 import isLogger from './index.js';

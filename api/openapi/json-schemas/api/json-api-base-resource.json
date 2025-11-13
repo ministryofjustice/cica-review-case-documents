@@ -10,9 +10,7 @@
         },
         "id": {
             "type": "string",
-            "anyOf": [
-                {"$ref": "../models/definitions/uuid-v4.json"}
-            ]
+            "anyOf": [{ "$ref": "../models/definitions/uuid-v4.json" }]
         },
         "attributes": {
             "type": "object",

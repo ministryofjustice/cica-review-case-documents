@@ -1,22 +1,21 @@
-import { describe, it, beforeEach, mock } from 'node:test';
 import assert from 'node:assert';
+import { beforeEach, describe, it, mock } from 'node:test';
 
 import createSearchService from './search-service.js';
 
 describe('search-service', () => {
     let mockGet;
-    let mockCreateRequestService
+    let mockCreateRequestService;
 
     beforeEach(() => {
-        // process.env.APP_API_URL = 'http://find-tool.local'
-        mockGet = mock.fn(options => {
+        mockGet = mock.fn(() => {
             return {
                 body: {
                     data: 'fake results'
                 }
-            }
+            };
         });
-        
+
         mockCreateRequestService = mock.fn(() => {
             return {
                 get: mockGet
@@ -37,7 +36,10 @@ describe('search-service', () => {
         assert.deepEqual(result, { body: { data: 'fake results' } });
         assert.equal(mockCreateRequestService.mock.callCount(), 1);
         const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
-        assert.equal(mockGetCallArguments.url, `${process.env.APP_API_URL}/search/${query}/${pageNumber}/${itemsPerPage}`);
+        assert.equal(
+            mockGetCallArguments.url,
+            `${process.env.APP_API_URL}/search/${query}/${pageNumber}/${itemsPerPage}`
+        );
         assert.equal(mockGetCallArguments.headers['On-Behalf-Of'], '12-345678');
     });
 });
