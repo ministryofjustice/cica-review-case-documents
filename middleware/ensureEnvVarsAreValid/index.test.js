@@ -41,10 +41,7 @@ describe('ensureEnvVarsAreValid', () => {
                 'APP_COOKIE_SECRET',
                 'APP_API_URL',
                 'APP_DATABASE_URL',
-                'OPENSEARCH_INDEX_CHUNKS_NAME',
-                'AWS_REGION',
-                'AWS_ACCESS_KEY_ID',
-                'AWS_SECRET_ACCESS_KEY',
+                'OPENSEARCH_INDEX_CHUNKS_NAME'
             ]);
         });
 

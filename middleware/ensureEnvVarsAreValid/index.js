@@ -10,10 +10,7 @@ const defaults = {
             'APP_COOKIE_SECRET',
             'APP_API_URL',
             'APP_DATABASE_URL',
-            'OPENSEARCH_INDEX_CHUNKS_NAME',
-            'AWS_REGION',
-            'AWS_ACCESS_KEY_ID',
-            'AWS_SECRET_ACCESS_KEY'
+            'OPENSEARCH_INDEX_CHUNKS_NAME'
         ],
         optional: [
             'PORT',
@@ -56,7 +53,7 @@ function checkMandatoryEnvVars(mandatoryEnvVars = getMandatoryEnvVars()) {
     });
 }
 
-function checkOptionalEnvVars(optionalEnvVars = getOptionalEnvVars()) {
+function checkOptionalEnvVars(optionalEnvVars = getOptionalEnvVars(), logger) {
     if (!Array.isArray(optionalEnvVars)) {
         throw new VError(
             {
@@ -92,9 +89,9 @@ function checkIsLogger(logger) {
 }
 
 function checkEnvVars({mandatoryEnvVars = getMandatoryEnvVars(), optionalEnvVars = getOptionalEnvVars(), logger} = {}) {
-    checkMandatoryEnvVars(mandatoryEnvVars);
-    checkOptionalEnvVars(optionalEnvVars);
     checkIsLogger(logger);
+    checkMandatoryEnvVars(mandatoryEnvVars, logger);
+    checkOptionalEnvVars(optionalEnvVars, logger);
 }
 
 function ensureEnvVarsAreValid(req, res, next) {
