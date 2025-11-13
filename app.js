@@ -16,6 +16,7 @@ import createTemplateEngineService from './templateEngine/index.js';
 import apiApp from './api/app.js';
 import indexRouter from './index/routes.js';
 import searchRouter from './search/routes.js';
+import { checkOpenSearchHealth } from './db/healthcheck.js';
 
 function createApp({createLogger = defaultCreateLogger} = {}) {
     const __filename = fileURLToPath(import.meta.url);
@@ -126,3 +127,22 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
 }
 
 export default createApp;
+
+const app = createApp();
+
+
+// App startup sequence: env vars validated inside createApp middleware chain.
+// Only start listening if OpenSearch cluster is healthy.
+const PORT = process.env.PORT || 5000;
+const OPENSEARCH_URL = process.env.APP_DATABASE_URL || 'http://localhost:9200';
+
+checkOpenSearchHealth(OPENSEARCH_URL).then(isHealthy => {
+    if (isHealthy) {
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    } else {
+        console.error('OpenSearch is unhealthy. Exiting.');
+        process.exit(1);
+    }
+});
