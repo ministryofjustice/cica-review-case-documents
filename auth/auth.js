@@ -26,11 +26,11 @@ router.post('/login', (req, res) => {
     const redirectUrl = req.session.returnTo || '/';
     if (password === AUTH_SECRET_PASSWORD) {
         req.session.loggedIn = true;
-        res.cookie('session_id', req.sessionID, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'Lax'
-        });
+        // res.cookie('session_id', req.sessionID, {
+        //     httpOnly: true,
+        //     secure: process.env.NODE_ENV === 'production',
+        //     sameSite: 'Lax'
+        // });
         return res.redirect(redirectUrl);
     }
     console.warn(`Failed login attempt from IP: ${req.ip}`);
