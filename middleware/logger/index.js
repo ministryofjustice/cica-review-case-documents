@@ -125,7 +125,7 @@ function createLogger(options = {}) {
         customLogLevel: (req, res, err) => {
             if (err || res.statusCode >= 500) return 'error';
             if (res.statusCode >= 400) return 'warn';
-            return 'info';
+            return 'debug';
         },
         genReqId: (req) => {
             return (
