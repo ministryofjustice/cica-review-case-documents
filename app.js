@@ -13,7 +13,6 @@ import {caseSelected} from './middleware/caseSelected/index.js';
 import defaultCreateLogger from './middleware/logger/index.js';
 import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
 import createTemplateEngineService from './templateEngine/index.js';
-import apiApp from './api/app.js';
 import indexRouter from './index/routes.js';
 import searchRouter from './search/routes.js';
 import { checkOpenSearchHealth } from './db/healthcheck.js';
@@ -29,19 +28,26 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
 
     const app = express();
     
-    app.set('trust proxy', 1); // TODO temporary setting for proxy
-    // remove when the api is refactored out of this code base
+    // MUST be before session middleware
+    app.set('trust proxy', 1);
+
+    app.use(cookieParser());
     const {doubleCsrfProtection, generateCsrfToken} = createCsrf();
-    
-    // https://expressjs.com/en/api.html#express.json
-    app.use(express.json());
-    // https://expressjs.com/en/api.html#express.urlencoded
-    app.use(express.urlencoded({extended: true}));
+
     app.use(
-        cookieParser(null, {
-            httpOnly: true
+        session({
+            name: process.env.APP_COOKIE_NAME,
+            secret: process.env.APP_COOKIE_SECRET,
+            resave: false,
+            saveUninitialized: false,
+            cookie: {
+                secure: process.env.NODE_ENV === 'production',
+                httpOnly: true,
+                sameSite: 'lax'
+            }
         })
     );
+
 
     app.use(createLogger());
     
@@ -56,16 +62,6 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
     });
 
     app.use(ensureEnvVarsAreValid);
-    
-    app.use(session({
-        name: process.env.APP_COOKIE_NAME,
-        secret: process.env.APP_COOKIE_SECRET,
-        resave: false,
-        saveUninitialized: true,
-        cookie: {
-            secure: process.env.NODE_ENV === 'production'
-        }
-    }));
     
     app.use((req, res, next) => {
         res.locals.cspNonce = nanoid();
@@ -109,22 +105,30 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
     templateEngineService.init();
     
     app.use(express.static(path.join(__dirname, 'public')));
-    
+
     app.use(
         '/assets',
         express.static(path.join(__dirname, '/node_modules/govuk-frontend/dist/govuk/assets'))
     );
-    
-    app.use(doubleCsrfProtection);
+
+    // Add body parser for urlencoded form data
+    app.use(express.urlencoded({ extended: false }));
+
     app.use((req, res, next) => {
         res.locals.csrfToken = generateCsrfToken(req, res);
         next();
     });
-    
+
     app.use('/auth', authRouter);
 
     // Protect routes below this line
     app.use((req, res, next) => {
+        req.log.info({
+            sessionID: req.sessionID,
+            session: req.session,
+            loggedIn: req.session?.loggedIn,
+            cookies: req.cookies
+        }, 'Session check');
         const isApiRequest = req.path.startsWith('/api');
         if (!req.session.loggedIn && req.path !== '/auth/login') {
             if (isApiRequest) {
@@ -138,7 +142,6 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
 
     app.use('/', indexRouter);
     app.use('/search', getCaseReferenceNumberFromQueryString, caseSelected, searchRouter);
-    // ...existing code...
     app.use('/api', apiRouter); 
 
     return app;

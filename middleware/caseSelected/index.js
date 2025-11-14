@@ -19,6 +19,9 @@
  * @returns {void} Does not return a value; either redirects the response or calls `next()`.
  */
 const caseSelected = (req, res, next) => {
+    if (req.path.startsWith('/auth/login')) {
+        return next();
+    }
     if (req?.session?.caseSelected !== true) {
         return res.redirect('/case');
     }
