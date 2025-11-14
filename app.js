@@ -20,6 +20,11 @@ import apiRouter from './api/app.js';
 
 
 
+import authRouter from './auth/auth.js';
+import apiRouter from './api/app.js';
+
+
+
 function createApp({createLogger = defaultCreateLogger} = {}) {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);

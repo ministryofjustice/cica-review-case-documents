@@ -17,7 +17,7 @@ function createSearchService({
      * @param {object} req - The request object.
      * @returns {Promise<object>} A promise that resolves to the search results.
      */
-    async function getSearchResults(query, pageNumber, itemsPerPage) {
+    async function getSearchResults(query, pageNumber, itemsPerPage, req) {
         logger.info({ query, pageNumber, itemsPerPage }, "Fetching search results");
         const opts = {
             url: `${process.env.APP_API_URL}/search/${query}/${pageNumber}/${itemsPerPage}`,
