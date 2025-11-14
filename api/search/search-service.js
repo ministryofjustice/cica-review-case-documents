@@ -12,12 +12,17 @@ import createDocumentDAL from '../../document/document-dal.js';
  *
  * @param {Object} params - The parameters for creating the search service.
  * @param {string} params.caseReferenceNumber - The unique identifier for the case.
+ * @param {Object} params.logger - The logger instance to use for logging.
  * @returns {Object} The search service instance.
  * @returns {Function} return.getSearchResultsByKeyword - Retrieves paginated search results by keyword.
  */
-function createSearchService({ caseReferenceNumber }) {
+function createSearchService({
+    caseReferenceNumber,
+    logger
+}) {
     const db = createDocumentDAL({
-        caseReferenceNumber
+        caseReferenceNumber,
+        logger
     });
 
     /**

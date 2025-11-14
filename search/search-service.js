@@ -2,6 +2,7 @@ import createRequestServiceDefault from '../service/request/index.js';
 
 function createSearchService({
     caseReferenceNumber,
+    logger,
     createRequestService = createRequestServiceDefault
 } = {}) {
     const { get } = createRequestService();
@@ -16,6 +17,7 @@ function createSearchService({
      * @returns {Promise<object>} A promise that resolves to the search results.
      */
     async function getSearchResults(query, pageNumber, itemsPerPage) {
+        logger.info({ query, pageNumber, itemsPerPage });
         const opts = {
             url: `${process.env.APP_API_URL}/search/${query}/${pageNumber}/${itemsPerPage}`,
             headers: {
