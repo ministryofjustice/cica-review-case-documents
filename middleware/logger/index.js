@@ -82,7 +82,7 @@ function createLogger(options = {}) {
     const useTransport = !isProd && !stream;
     const logger = pinoHttp({
         logger: pino({
-            level: process.env.APP_LOG_LEVEL || (isProd ? 'info' : 'debug'),
+            level: process.env.APP_LOG_LEVEL || (isProd ? 'info' : 'info'),
             ...(useTransport
                 ? {
                     transport: {
