@@ -108,35 +108,24 @@ function createDocumentDAL({
                     }
                 }
             };
-            if (logger && typeof logger.info === 'function') {
-                logger.info({
+
+            logger.info({
                     index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
                     queryBody,
                     keyword,
                     caseReferenceNumber,
                     pageNumber,
                     itemsPerPage
-                }, '[OpenSearch] Performing search');
-            } else {
-                console.info('[OpenSearch] Performing search:', {
-                    index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
-                    queryBody,
-                    keyword,
-                    caseReferenceNumber,
-                    pageNumber,
-                    itemsPerPage
-                });
-            }
+                }, 'OpenSearch Performing search');
+
             const response = await db.query({
                 index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
                 body: queryBody
             });
             const hits = response?.body?.hits?.hits || [];
-            if (logger && typeof logger.info === 'function') {
-                logger.info({ hitsCount: hits.length }, '[OpenSearch] Search response');
-            } else {
-                console.info(`[OpenSearch] Search response: ${hits.length} hits returned.`);
-            }
+
+            logger.info({ hitsCount: hits.length }, 'OpenSearch Search response');
+        
             if (hits.length === 0) {
                 if (logger && typeof logger.warn === 'function') {
                     logger.warn({ keyword, caseReferenceNumber }, '[OpenSearch] No results found for query');
