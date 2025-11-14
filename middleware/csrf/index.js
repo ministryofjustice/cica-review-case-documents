@@ -65,12 +65,12 @@ function createCsrf(doubleCsrf = defaultDoubleCsrf) {
          *
          * @param {Object} req - Express request object.
          * @param {Object} req.session - Session object attached by session middleware.
-         * @param {string} req.session.id - Session ID.
+         * @param {string} req.sessionID - Session ID.
          * @throws {VError} Throws a ConfigurationError if session is not defined, or is invalid.
          * @returns {string} Session ID to associate with the CSRF token.
          */
         getSessionIdentifier: (req) => {
-            if (!req.session || !req.session.id) {
+            if (!req.session || !req.sessionID) {
                 throw new VError(
                     {
                         name: 'ConfigurationError'
@@ -78,7 +78,7 @@ function createCsrf(doubleCsrf = defaultDoubleCsrf) {
                     'Session is missing or invalid. CSRF protection requires a valid session'
                 );
             }
-            return req.session.id;
+            return req.sessionID;
         },
         // eslint-disable-next-line no-underscore-dangle
         getCsrfTokenFromRequest: req => req.body._csrf,

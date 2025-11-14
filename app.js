@@ -13,7 +13,6 @@ import {caseSelected} from './middleware/caseSelected/index.js';
 import defaultCreateLogger from './middleware/logger/index.js';
 import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
 import createTemplateEngineService from './templateEngine/index.js';
-import apiApp from './api/app.js';
 import indexRouter from './index/routes.js';
 import searchRouter from './search/routes.js';
 import { checkOpenSearchHealth } from './db/healthcheck.js';
@@ -29,20 +28,22 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
 
     const app = express();
     
-    app.set('trust proxy', 1); // TODO temporary setting for proxy
-    // remove when the api is refactored out of this code base
+    // MUST be before session middleware
+    app.set('trust proxy', 1);
+  
+
+    app.use(session({
+        name: process.env.APP_COOKIE_NAME,
+        secret: process.env.APP_COOKIE_SECRET,
+        resave: false,
+        saveUninitialized: true,
+        cookie: {
+            secure: process.env.NODE_ENV === 'production'
+        }
+    }));
+
     const {doubleCsrfProtection, generateCsrfToken} = createCsrf();
     
-    // https://expressjs.com/en/api.html#express.json
-    app.use(express.json());
-    // https://expressjs.com/en/api.html#express.urlencoded
-    app.use(express.urlencoded({extended: true}));
-    app.use(
-        cookieParser(null, {
-            httpOnly: true
-        })
-    );
-
     app.use(createLogger());
     
     app.use((req, res, next) => {
@@ -56,16 +57,6 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
     });
 
     app.use(ensureEnvVarsAreValid);
-    
-    app.use(session({
-        name: process.env.APP_COOKIE_NAME,
-        secret: process.env.APP_COOKIE_SECRET,
-        resave: false,
-        saveUninitialized: true,
-        cookie: {
-            secure: process.env.NODE_ENV === 'production'
-        }
-    }));
     
     app.use((req, res, next) => {
         res.locals.cspNonce = nanoid();
@@ -117,6 +108,14 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
     
     app.use(doubleCsrfProtection);
     app.use((req, res, next) => {
+        // Skip CSRF for GET requests to /auth/login
+        if (req.method === 'GET' && req.path === '/auth/login') {
+            return next();
+        }
+        doubleCsrfProtection(req, res, next);
+    });
+    
+    app.use((req, res, next) => {
         res.locals.csrfToken = generateCsrfToken(req, res);
         next();
     });
@@ -125,6 +124,12 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
 
     // Protect routes below this line
     app.use((req, res, next) => {
+        console.log('Session check:', {
+            sessionID: req.sessionID,
+            session: req.session,
+            loggedIn: req.session?.loggedIn,
+            cookies: req.cookies
+        });
         const isApiRequest = req.path.startsWith('/api');
         if (!req.session.loggedIn && req.path !== '/auth/login') {
             if (isApiRequest) {
@@ -138,7 +143,6 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
 
     app.use('/', indexRouter);
     app.use('/search', getCaseReferenceNumberFromQueryString, caseSelected, searchRouter);
-    // ...existing code...
     app.use('/api', apiRouter); 
 
     return app;

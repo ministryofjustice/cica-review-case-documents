@@ -5,7 +5,7 @@ import createTemplateEngineService from '../templateEngine/index.js';
 const router = express.Router();
 router.use(bodyParser.json());
 
-const AUTH_SECRET_PASSWORD = process.env.AUTH_SECRET_PASSWORD;
+const APP_SECRET_PASSWORD = process.env.APP_SECRET_PASSWORD;
 
 router.get('/login', (req, res, next) => {
     try {
@@ -24,7 +24,7 @@ router.get('/login', (req, res, next) => {
 router.post('/login', (req, res) => {
     const { password } = req.body;
     const redirectUrl = req.session.returnTo || '/';
-    if (password === AUTH_SECRET_PASSWORD) {
+    if (password === APP_SECRET_PASSWORD) {
         req.session.loggedIn = true;
         // res.cookie('session_id', req.sessionID, {
         //     httpOnly: true,
