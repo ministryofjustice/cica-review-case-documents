@@ -1,0 +1,38 @@
+{% extends "page.njk" %}
+{% block pageTitle %}Login{% endblock %}
+
+{% block innerContent %}
+    <h1 class="govuk-heading-l">Sign in</h1>
+    {% if error %}
+        <div class="govuk-error-summary" role="alert" aria-labelledby="error-summary-title" tabindex="-1">
+            <h2 class="govuk-error-summary__title" id="error-summary-title">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list">
+                    <li>{{ error }}</li>
+                </ul>
+            </div>
+        </div>
+    {% endif %}
+    <form method="POST" action="/auth/login" class="govuk-form-group {% if error %}govuk-form-group--error{% endif %}">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+
+        <label class="govuk-label" for="username">Username</label>
+        <input class="govuk-input {% if error %}govuk-input--error{% endif %}" id="username" name="username" type="text" autocomplete="username">
+
+        <hr class="govuk-section-break govuk-section-break--m govuk-section-break">
+
+        <label class="govuk-label" for="password">Password</label>
+        {% if error %}
+            <span class="govuk-error-message">
+                <span class="govuk-visually-hidden">Error:</span>
+                {{ error }}
+            </span>
+        {% endif %}
+
+        <input class="govuk-input {% if error %}govuk-input--error{% endif %}" id="password" name="password" type="password" autocomplete="current-password">
+
+        <hr class="govuk-section-break govuk-section-break--m govuk-section-break">
+
+        <button class="govuk-button" data-module="govuk-button" type="submit">Sign in</button>
+    </form>
+{% endblock %}
