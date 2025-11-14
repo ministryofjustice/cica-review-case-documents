@@ -29,26 +29,26 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           env:
-          - name: APP_COOKIE_NAME
-            valueFrom:
-              secretKeyRef:
-                name: cica-case-review-documents-secrets
-                key: app_cookie_name
-          - name: APP_COOKIE_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: cica-case-review-documents-secrets
-                key: app_cookie_secret
-          - name: APP_SEARCH_PAGINATION_ITEMS_PER_PAGE
-            value: "5"
-          - name: APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE
-            value: "1"
-          - name: APP_API_URL
-            value: https://cica-review-case-documents-dev.apps.live.cloud-platform.service.justice.gov.uk/api
-          - name: APP_DATABASE_URL
-            valueFrom:
-              secretKeyRef:
-                name: cica-review-case-documents-opensearch-proxy-url
-                key: proxy_url
-          - name: OPENSEARCH_INDEX_CHUNKS_NAME
-            value: page_chunks
+            - name: APP_COOKIE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: cica-case-review-documents-secrets
+                  key: app_cookie_name
+            - name: APP_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cica-case-review-documents-secrets
+                  key: app_cookie_secret
+            - name: APP_SEARCH_PAGINATION_ITEMS_PER_PAGE
+              value: "5"
+            - name: APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE
+              value: "1"
+            - name: APP_API_URL
+              value: http://cica-case-review-documents-service:8080/api
+            - name: APP_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: cica-review-case-documents-opensearch-proxy-url
+                  key: proxy_url
+            - name: OPENSEARCH_INDEX_CHUNKS_NAME
+              value: page_chunks
