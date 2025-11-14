@@ -65,7 +65,8 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
         const searchResults = await searchService.getSearchResultsByKeyword(
             query,
             pageNumber,
-            itemsPerPage
+            itemsPerPage,
+            req
         );
 
         const searchResultsResource = {
