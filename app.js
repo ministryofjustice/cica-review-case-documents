@@ -25,9 +25,11 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
     const __dirname = path.dirname(__filename);
 
     const app = express();
-
-    const { doubleCsrfProtection, generateCsrfToken } = createCsrf();
-
+    
+    app.set('trust proxy', 1); // TODO temporary setting for proxy
+    // remove when the api is refactored out of this code base
+    const {doubleCsrfProtection, generateCsrfToken} = createCsrf();
+    
     // https://expressjs.com/en/api.html#express.json
     app.use(express.json());
     // https://expressjs.com/en/api.html#express.urlencoded
