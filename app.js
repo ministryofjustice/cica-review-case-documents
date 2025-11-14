@@ -29,6 +29,8 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
 
     const app = express();
     
+    app.set('trust proxy', 1); // TODO temporary setting for proxy
+    // remove when the api is refactored out of this code base
     const {doubleCsrfProtection, generateCsrfToken} = createCsrf();
     
     // https://expressjs.com/en/api.html#express.json
