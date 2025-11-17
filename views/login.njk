@@ -1,6 +1,9 @@
 {% extends "page.njk" %}
 {% block pageTitle %}Login{% endblock %}
 
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
 {% block innerContent %}
     <h1 class="govuk-heading-l">Sign in</h1>
     {% if error %}
@@ -13,26 +16,44 @@
             </div>
         </div>
     {% endif %}
-    <form method="POST" action="/auth/login" class="govuk-form-group {% if error %}govuk-form-group--error{% endif %}">
+    <form method="POST" action="/auth/login" autocomplete="off">
         <input type="hidden" name="_csrf" value="{{ csrfToken }}">
 
-        {# <label class="govuk-label" for="username">Username</label>
-        <input class="govuk-input {% if error %}govuk-input--error{% endif %}" id="username" name="username" type="text" autocomplete="username">
-
-        <hr class="govuk-section-break govuk-section-break--m govuk-section-break"> #}
-
-        <label class="govuk-label" for="password">Password</label>
+        {% set inputClasses = "govuk-input--width-20 govuk-!-margin-right-4" %}
         {% if error %}
-            <span class="govuk-error-message">
-                <span class="govuk-visually-hidden">Error:</span>
-                {{ error }}
-            </span>
+            {% set inputClasses = inputClasses + " govuk-input--error" %}
         {% endif %}
 
-        <input class="govuk-input {% if error %}govuk-input--error{% endif %}" id="password" name="password" type="password" autocomplete="current-password">
+        {{ govukInput({
+            label: {
+                text: "Username"
+            },
+            id: "username",
+            name: "username",
+            autocomplete: "username",
+            spellcheck: false,
+            autocapitalize: "off",
+            classes: inputClasses,
+            value: username or ""
+        }) }}
 
-        <hr class="govuk-section-break govuk-section-break--m govuk-section-break">
+        {{ govukInput({
+            label: {
+                text: "Password"
+            },
+            id: "password",
+            name: "password",
+            type: "password",
+            autocomplete: "current-password",
+            spellcheck: false,
+            autocapitalize: "off",
+            classes: inputClasses,
+            value: ""
+        }) }}
 
-        <button class="govuk-button" data-module="govuk-button" type="submit">Sign in</button>
+        {{ govukButton({
+            text: "Sign in",
+            classes: "govuk-!-margin-bottom-0"
+        }) }}
     </form>
 {% endblock %}

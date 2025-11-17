@@ -7,6 +7,8 @@ router.use(bodyParser.json());
 
 const AUTH_SECRET_PASSWORD = process.env.AUTH_SECRET_PASSWORD;
 
+const AUTH_USERNAMES = (process.env.AUTH_USERNAMES || '').split(',').map(u => u.trim());
+
 router.get('/login', (req, res, next) => {
     try {
         const templateEngineService = createTemplateEngineService();
@@ -22,20 +24,31 @@ router.get('/login', (req, res, next) => {
 });
 
 router.post('/login', (req, res) => {
-    const { password } = req.body;
+    const { username,password } = req.body;
     const redirectUrl = req.session.returnTo || '/';
-    if (password === AUTH_SECRET_PASSWORD) {
+
+    var error = "Invalid credentials."
+
+    if(!password && !username){
+        error = "Enter your username and password."
+        res.redirect(`/auth/login?error=${encodeURIComponent(error)}`);
+    }
+    if(!password){
+        error = "Enter your password."
+        res.redirect(`/auth/login?error=${encodeURIComponent(error)}`);
+    }
+    if(!username){
+        error = "Enter your username."
+        res.redirect(`/auth/login?error=${encodeURIComponent(error)}`);
+    }
+
+    if (password === AUTH_SECRET_PASSWORD && AUTH_USERNAMES.includes(username)) {
         req.session.loggedIn = true;
-        // res.cookie('session_id', req.sessionID, {
-        //     httpOnly: true,
-        //     secure: process.env.NODE_ENV === 'production',
-        //     sameSite: 'Lax'
-        // });
         return res.redirect(redirectUrl);
     }
     console.warn(`Failed login attempt from IP: ${req.ip}`);
     // Redirect with error as query param
-    res.redirect('/auth/login?error=Invalid%20password.');
+    res.redirect(`/auth/login?error=${encodeURIComponent(error)}`);
 });
 
 export default router;
