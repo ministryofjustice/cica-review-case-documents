@@ -25,6 +25,8 @@
 !service
 !src
 !templateEngine
+!auth
+!views
 
 !app.js
 !.env
