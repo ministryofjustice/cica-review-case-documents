@@ -9,7 +9,7 @@ process.env.APP_BUILDTIME_ID = nanoid();
 console.log(`Build-time ID generated: ${process.env.APP_BUILDTIME_ID}`);
 import createApp from '../app.js';
 
-const app = createApp();
+const { app } = createApp();
 
 // normalize a port into a number, string, or false.
 function normalizePort(port) {

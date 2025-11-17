@@ -30,8 +30,13 @@ function createSearchService({
      */
     async function getSearchResults(query, pageNumber, itemsPerPage) {
         logger.info({ query, pageNumber, itemsPerPage }, "Fetching search results");
-        // Use the configured searchApi client
-        return searchApi.get(`search/${query}/${pageNumber}/${itemsPerPage}`);
+        try {
+            //TODO change this.... 
+            return await searchApi.get(`search/${query}/${pageNumber}/${itemsPerPage}`);
+        } catch (error) {
+            logger.error({ error }, 'Error in searchService.getSearchResults');
+            throw error; // Let the main app handle rendering the error view
+        }
     }
 
     return Object.freeze({
@@ -40,3 +45,4 @@ function createSearchService({
 }
 
 export default createSearchService;
+

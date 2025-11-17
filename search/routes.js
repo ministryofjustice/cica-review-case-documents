@@ -1,7 +1,7 @@
 'use strict';
 
 import express from 'express';
-import createSearchService from './search-service.js';
+import createSearchService from '../api/search/search-service.js';
 import createTemplateEngineService from '../templateEngine/index.js';
 
 const router = express.Router();
@@ -70,16 +70,34 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
         const searchService = createSearchService({
             caseReferenceNumber: req.session?.caseReferenceNumber,
             logger: req.log,
-            session: {
-                id: req.session.id,
-                cookieName: process.env.APP_COOKIE_NAME
-            }
+            // session: {
+            //     id: req.session.id,
+            //     cookieName: process.env.APP_COOKIE_NAME
+            // }
         });
 
-        const response = await searchService.getSearchResults(query, pageNumber, itemsPerPage);
+        // Directly call the service instead of making an HTTP request
+        let response;
+        try {
+            response = await searchService.getSearchResultsByKeyword(query, pageNumber, itemsPerPage);
+        } catch (serviceError) {
+            req.log.error({
+                message: 'Error in searchService.getSearchResults',
+                error: serviceError,
+                query,
+                pageNumber,
+                itemsPerPage,
+                session: req.session
+            }, 'Search service error');
+            return res.status(500).render('error.njk', {
+                message: 'Internal server error while fetching search results.',
+                error: serviceError
+            });
+        }
         const { body } = response || {};
 
         if (body?.errors) {
+            req.log.warn({ errors: body.errors }, 'Search results returned errors');
             templateParams.errors = body.errors.map(error => ({
                 text: error.detail,
                 href: `#${error.source?.pointer?.split('/')?.pop() || 'error'}`,
@@ -116,6 +134,14 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
         return res.status(200).send(html);
 
     } catch (error) {
+        req.log.error({
+            message: 'Unhandled error in /search/:query/:pageNumber/:itemsPerPage',
+            error,
+            query: req.params.query,
+            pageNumber: req.params.pageNumber,
+            itemsPerPage: req.params.itemsPerPage,
+            session: req.session
+        }, 'Route handler error');
         next(error);
     }
 });

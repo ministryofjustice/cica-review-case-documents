@@ -22,6 +22,7 @@
     "dependencies": {
         "@ministryofjustice/frontend": "^5.1.5",
         "@opensearch-project/opensearch": "^3.5.1",
+        "connect-redis": "^9.0.0",
         "cookie-parser": "^1.4.7",
         "csrf-csrf": "^4.0.3",
         "express": "^5.1.0",

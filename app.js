@@ -32,6 +32,8 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
 
     const app = express();
     
+    app.use(createLogger());
+    app.use(ensureEnvVarsAreValid);
     // MUST be before session middleware
     if (process.env.NODE_ENV === 'production') {
         app.set('trust proxy', 1);
@@ -39,18 +41,16 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
     }
 
     const sessionMiddleware = session({
-        store: sessionStore,
+        name: process.env.APP_COOKIE_NAME,
         secret: process.env.APP_COOKIE_SECRET,
         resave: false,
-        saveUninitialized: false,
+        saveUninitialized: false, // recommended for auth
         cookie: {
             secure: process.env.NODE_ENV === 'production',
             httpOnly: true,
             sameSite: 'lax'
-        },
-        name: process.env.APP_COOKIE_NAME
+        }
     });
-
     app.use(sessionMiddleware);
 
     app.use(cookieParser());
@@ -110,6 +110,8 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
         next();
     });
 
+    app.use(doubleCsrfProtection);
+
     app.use('/auth', authRouter);
     app.use('/api', apiRouter);
 
@@ -133,19 +135,19 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
     });
 
     app.use('/', indexRouter);
-    app.use('/search', searchRouter);
+    app.use('/search', getCaseReferenceNumberFromQueryString, caseSelected, searchRouter);
 
     // Page not found handler
     app.use((req, res) => {
         res.status(404).render('404.njk');
     });
 
-    return app;
+    return { app, sessionMiddleware };
 }
 
 export default createApp;
 
-const app = createApp();
+const { app } = createApp();
 
 
 // App startup sequence: env vars validated inside createApp middleware chain.
@@ -163,3 +165,5 @@ checkOpenSearchHealth(OPENSEARCH_URL).then(isHealthy => {
         process.exit(1);
     }
 });
+
+

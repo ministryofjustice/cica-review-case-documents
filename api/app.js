@@ -3,21 +3,27 @@
 import express from 'express';
 import helmet from 'helmet';
 import pino from 'pino-http';
+import session from 'express-session';
 import searchRouter from './search/routes.js';
-import createLogger from '../logger/index.js';
-import createApp from '../app.js';
 
 const router = express.Router();
-const {sessionMiddleware} = createApp();
+
+const sessionMiddleware = session({
+    secret: process.env.APP_COOKIE_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        sameSite: 'lax'
+    },
+    name: process.env.APP_COOKIE_NAME
+});
 
 router.use(express.json({type: 'application/vnd.api+json'}));
-router.use(
-    pino({
-        logger: createLogger()
-    })
-);
-router.use(sessionMiddleware);
+router.use(pino());
 router.use(helmet());
+router.use(sessionMiddleware);
 
 // Protect all API routes
 router.use((req, res, next) => {
