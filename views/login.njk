@@ -16,10 +16,10 @@
     <form method="POST" action="/auth/login" class="govuk-form-group {% if error %}govuk-form-group--error{% endif %}">
         <input type="hidden" name="_csrf" value="{{ csrfToken }}">
 
-        <label class="govuk-label" for="username">Username</label>
+        {# <label class="govuk-label" for="username">Username</label>
         <input class="govuk-input {% if error %}govuk-input--error{% endif %}" id="username" name="username" type="text" autocomplete="username">
 
-        <hr class="govuk-section-break govuk-section-break--m govuk-section-break">
+        <hr class="govuk-section-break govuk-section-break--m govuk-section-break"> #}
 
         <label class="govuk-label" for="password">Password</label>
         {% if error %}
