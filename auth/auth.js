@@ -8,6 +8,8 @@ router.use(bodyParser.json());
 const AUTH_SECRET_PASSWORD = process.env.AUTH_SECRET_PASSWORD;
 const AUTH_USERNAMES = (process.env.AUTH_USERNAMES || '').split(',').map(u => u.trim().toLowerCase());
 
+const AUTH_USERNAMES = (process.env.AUTH_USERNAMES || '').split(',').map(u => u.trim());
+
 router.get('/login', (req, res, next) => {
     try {
         const templateEngineService = createTemplateEngineService();
