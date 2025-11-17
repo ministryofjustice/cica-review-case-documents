@@ -69,10 +69,14 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
         req.log.info({ query, pageNumber, itemsPerPage }, "Creating search service");
         const searchService = createSearchService({
             caseReferenceNumber: req.session?.caseReferenceNumber,
-            logger: req.log
+            logger: req.log,
+            session: {
+                id: req.session.id,
+                cookieName: process.env.APP_COOKIE_NAME
+            }
         });
 
-        const response = await searchService.getSearchResults(query, pageNumber, itemsPerPage, req);
+        const response = await searchService.getSearchResults(query, pageNumber, itemsPerPage);
         const { body } = response || {};
 
         if (body?.errors) {

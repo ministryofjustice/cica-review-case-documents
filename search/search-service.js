@@ -1,13 +1,23 @@
 'use strict';
 
-import createRequestServiceDefault from '../service/request/index.js'
+import got from 'got';
 
 function createSearchService({
     caseReferenceNumber,
     logger,
-    createRequestService = createRequestServiceDefault
-} = {}) {
-    const {get} = createRequestService();
+    session
+}) {
+    const searchApi = got.extend({
+        prefixUrl: process.env.APP_API_URL,
+        headers: {
+            'on-behalf-of': caseReferenceNumber,
+            'Cookie': `${session.cookieName}=${session.id}`
+        },
+        responseType: 'json',
+        context: {
+            logger
+        }
+    });
 
     /**
      * Fetches search results from the API.
@@ -16,19 +26,12 @@ function createSearchService({
      * @param {string} query - The search query string.
      * @param {number} pageNumber - The page number of results to fetch.
      * @param {number} itemsPerPage - Number of items per page.
-     * @param {object} req - The request object.
      * @returns {Promise<object>} A promise that resolves to the search results.
      */
-    async function getSearchResults(query, pageNumber, itemsPerPage, req) {
+    async function getSearchResults(query, pageNumber, itemsPerPage) {
         logger.info({ query, pageNumber, itemsPerPage }, "Fetching search results");
-        const opts = {
-            url: `${process.env.APP_API_URL}/search/${query}/${pageNumber}/${itemsPerPage}`,
-            headers: {
-                'On-Behalf-Of': caseReferenceNumber,
-                'Cookie': `${process.env.SESSION_COOKIE_NAME}=${req.session.id}`
-            }
-        };
-        return get(opts);
+        // Use the configured searchApi client
+        return searchApi.get(`search/${query}/${pageNumber}/${itemsPerPage}`);
     }
 
     return Object.freeze({

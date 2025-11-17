@@ -1,48 +1,34 @@
 'use strict';
 
 import express from 'express';
-import OpenApiValidator from 'express-openapi-validator';
-import apiRouter from './routes.js';
-import errorHandler from '../middleware/errorHandler/index.js';
+import helmet from 'helmet';
+import pino from 'pino-http';
+import searchRouter from './search/routes.js';
+import createLogger from '../logger/index.js';
+import createApp from '../app.js';
 
 const router = express.Router();
+const {sessionMiddleware} = createApp();
 
 router.use(express.json({type: 'application/vnd.api+json'}));
-router.use(express.urlencoded({extended: true}));
+router.use(
+    pino({
+        logger: createLogger()
+    })
+);
+router.use(sessionMiddleware);
+router.use(helmet());
+
+// Protect all API routes
 router.use((req, res, next) => {
-    res.type('application/vnd.api+json');
-    res.set('Application-Version', process.env.npm_package_version);
+    if (!req.session.loggedIn) {
+        const err = new Error('Unauthorized');
+        err.status = 401;
+        return next(err);
+    }
     next();
 });
 
-router.use(
-    '/',
-    OpenApiValidator.middleware({
-        apiSpec: './api/openapi/openapi.json',
-        validateRequests: true,
-        validateResponses: true,
-        validateSecurity: false,
-    }),
-    apiRouter
-);
-
-router.use(req => {
-    const err = Error(`Endpoint ${req.url} does not exist`);
-    err.name = 'HTTPError';
-    err.statusCode = 404;
-    err.error = '404 Not Found';
-    throw err;
-});
-
-router.use((err, req, res, next) => {
-    res.err = {
-        name: err.name,
-        message: err.message,
-        stack: err.stack
-    };
-    next(err);
-});
-
-router.use(errorHandler);
+router.use('/search', searchRouter);
 
 export default router;

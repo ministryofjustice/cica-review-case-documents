@@ -7,6 +7,8 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import {nanoid} from 'nanoid';
 import session from 'express-session';
+import createRedisStore from './session/redis-store.js';
+
 import createCsrf from './middleware/csrf/index.js';
 import getCaseReferenceNumberFromQueryString from './middleware/getCaseReferenceNumberFromQueryString/index.js';
 import {caseSelected} from './middleware/caseSelected/index.js';
@@ -22,6 +24,8 @@ import apiRouter from './api/app.js';
 
 
 
+let sessionStore;
+
 function createApp({createLogger = defaultCreateLogger} = {}) {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
@@ -29,53 +33,40 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
     const app = express();
     
     // MUST be before session middleware
-    app.set('trust proxy', 1);
+    if (process.env.NODE_ENV === 'production') {
+        app.set('trust proxy', 1);
+        sessionStore = createRedisStore(session);
+    }
+
+    const sessionMiddleware = session({
+        store: sessionStore,
+        secret: process.env.APP_COOKIE_SECRET,
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            secure: process.env.NODE_ENV === 'production',
+            httpOnly: true,
+            sameSite: 'lax'
+        },
+        name: process.env.APP_COOKIE_NAME
+    });
+
+    app.use(sessionMiddleware);
 
     app.use(cookieParser());
     const {doubleCsrfProtection, generateCsrfToken} = createCsrf();
 
-    app.use(
-        session({
-            name: process.env.APP_COOKIE_NAME,
-            secret: process.env.APP_COOKIE_SECRET,
-            resave: false,
-            saveUninitialized: false,
-            cookie: {
-                secure: process.env.NODE_ENV === 'production',
-                httpOnly: true,
-                sameSite: 'lax'
-            }
-        })
-    );
-
-
     app.use(createLogger());
     
     app.use((req, res, next) => {
-        res.set({
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-            Pragma: 'no-cache',
-            Expires: '0',
-            'Surrogate-Control': 'no-store'
-        });
+        res.locals.cspNonce = nanoid();
         next();
     });
 
-    app.use(ensureEnvVarsAreValid);
-    
-    app.use((req, res, next) => {
-        res.locals.cspNonce = nanoid();
-        res.set('Application-Version', process.env.npm_package_version);
-        next();
-    });
-    
     app.use(
         helmet({
             contentSecurityPolicy: {
-                useDefaults: true,
-                xXssProtection: false,
                 directives: {
-                    baseUri: ["'self'"],
                     defaultSrc: ["'self'"],
                     scriptSrc: [
                         "'self'",
@@ -120,6 +111,7 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
     });
 
     app.use('/auth', authRouter);
+    app.use('/api', apiRouter);
 
     // Protect routes below this line
     app.use((req, res, next) => {
@@ -141,8 +133,12 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
     });
 
     app.use('/', indexRouter);
-    app.use('/search', getCaseReferenceNumberFromQueryString, caseSelected, searchRouter);
-    app.use('/api', apiRouter); 
+    app.use('/search', searchRouter);
+
+    // Page not found handler
+    app.use((req, res) => {
+        res.status(404).render('404.njk');
+    });
 
     return app;
 }
