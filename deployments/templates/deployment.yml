@@ -44,6 +44,11 @@ spec:
                 secretKeyRef:
                   name: cica-case-review-documents-secrets
                   key: auth_secret_password
+            - name: AUTH_USERNAMES
+              valueFrom:
+                secretKeyRef:
+                  name: cica-case-review-documents-secrets
+                  key: auth_usernames
             - name: APP_SEARCH_PAGINATION_ITEMS_PER_PAGE
               value: "5"
             - name: APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE
