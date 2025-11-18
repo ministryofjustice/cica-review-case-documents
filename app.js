@@ -18,12 +18,19 @@ import indexRouter from './index/routes.js';
 import searchRouter from './search/routes.js';
 import { checkOpenSearchHealth } from './db/healthcheck.js';
 
+import authRouter from './auth/auth.js';
+import apiRouter from './api/app.js';
+
+
+
 function createApp({createLogger = defaultCreateLogger} = {}) {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
 
     const app = express();
     
+    app.set('trust proxy', 1); // TODO temporary setting for proxy
+    // remove when the api is refactored out of this code base
     const {doubleCsrfProtection, generateCsrfToken} = createCsrf();
     
     // https://expressjs.com/en/api.html#express.json
@@ -114,14 +121,25 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
         next();
     });
     
-    app.use('/api', apiApp);
+    app.use('/auth', authRouter);
+
+    // Protect routes below this line
+    app.use((req, res, next) => {
+        const isApiRequest = req.path.startsWith('/api');
+        if (!req.session.loggedIn && req.path !== '/auth/login') {
+            if (isApiRequest) {
+                return res.status(401).json({ error: 'Unauthorized' });
+            }
+            req.session.returnTo = req.originalUrl;
+        return res.redirect('/auth/login');
+        }
+        next();
+    });
+
     app.use('/', indexRouter);
     app.use('/search', getCaseReferenceNumberFromQueryString, caseSelected, searchRouter);
-    app.use((req, res) => {
-        res.status(404).render('404.njk', {
-            pageType: ['root']
-        });
-    });
+    // ...existing code...
+    app.use('/api', apiRouter); 
 
     return app;
 }

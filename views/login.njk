@@ -1,0 +1,59 @@
+{% extends "page.njk" %}
+{% block pageTitle %}Login{% endblock %}
+
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+
+{% block innerContent %}
+    <h1 class="govuk-heading-l">Sign in</h1>
+    {% if error %}
+        <div class="govuk-error-summary" role="alert" aria-labelledby="error-summary-title" tabindex="-1">
+            <h2 class="govuk-error-summary__title" id="error-summary-title">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list">
+                    <li>{{ error }}</li>
+                </ul>
+            </div>
+        </div>
+    {% endif %}
+    <form method="POST" action="/auth/login" autocomplete="off">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+
+        {% set inputClasses = "govuk-input--width-20 govuk-!-margin-right-4" %}
+        {% if error %}
+            {% set inputClasses = inputClasses + " govuk-input--error" %}
+        {% endif %}
+
+        {{ govukInput({
+            label: {
+                text: "Username"
+            },
+            id: "username",
+            name: "username",
+            autocomplete: "username",
+            spellcheck: false,
+            autocapitalize: "off",
+            classes: inputClasses,
+            value: username or ""
+        }) }}
+
+        {{ govukInput({
+            label: {
+                text: "Password"
+            },
+            id: "password",
+            name: "password",
+            type: "password",
+            autocomplete: "current-password",
+            spellcheck: false,
+            autocapitalize: "off",
+            classes: inputClasses,
+            value: ""
+        }) }}
+
+        {{ govukButton({
+            text: "Sign in",
+            classes: "govuk-!-margin-bottom-0"
+        }) }}
+    </form>
+{% endblock %}
