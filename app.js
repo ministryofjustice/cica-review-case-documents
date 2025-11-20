@@ -16,19 +16,12 @@ import searchRouter from './search/routes.js';
 
 import authRouter from './auth/auth.js';
 
-import authRouter from './auth/auth.js';
-import apiRouter from './api/app.js';
-
-
-
 function createApp({createLogger = defaultCreateLogger} = {}) {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
 
     const app = express();
     
-    app.set('trust proxy', 1); // TODO temporary setting for proxy
-    // remove when the api is refactored out of this code base
     const {doubleCsrfProtection, generateCsrfToken} = createCsrf();
     
     // https://expressjs.com/en/api.html#express.json
