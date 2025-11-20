@@ -135,3 +135,17 @@ describe('search router', () => {
         });
     });
 });
+
+// describe('search router (isolated)', () => {
+//     it('Should render the search landing page', async () => {
+//         const app = createIsolatedSearchApp({
+//             caseSelected: true,
+//             caseReferenceNumber: '25-123456'
+//         });
+//         const response = await request(app).get('/search');
+//         assert.equal(response.status, 200);
+//         assert.match(response.text, /<title>Search - CICA FIND - GOV.UK<\/title>/);
+//     });
+
+//     // Add more isolated tests as needed...
+// });
