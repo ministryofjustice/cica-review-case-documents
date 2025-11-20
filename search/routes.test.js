@@ -15,11 +15,13 @@ function createIsolatedSearchApp(sessionData = {}) {
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
 
-    app.use(session({
-        secret: 'test',
-        resave: false,
-        saveUninitialized: true
-    }));
+    app.use(
+        session({
+            secret: 'test',
+            resave: false,
+            saveUninitialized: true
+        })
+    );
 
     app.use((req, res, next) => {
         Object.assign(req.session, sessionData);
@@ -54,7 +56,6 @@ describe('search router', () => {
     }
 
     beforeEach(async () => {
-        
         const fakeResults = { hits: { hits: [{ _id: 1 }] } };
         const searchSpy = mock.fn(async () => fakeResults);
         class FakeClient {
@@ -76,7 +77,7 @@ describe('search router', () => {
                 next();
             },
             authMiddleware: (req, res, next) => {
-                req.session = { 
+                req.session = {
                     user: { id: 1 },
                     passport: { user: { id: 1 } }
                 };

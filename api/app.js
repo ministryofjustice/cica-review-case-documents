@@ -5,9 +5,9 @@ import apiRouter from './routes.js';
 
 const app = express();
 
-app.use(express.json({type: 'application/vnd.api+json'}));
+app.use(express.json({ type: 'application/vnd.api+json' }));
 // https://expressjs.com/en/api.html#express.urlencoded
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
     // Default to JSON:API content type for all subsequent responses
     res.type('application/vnd.api+json');
@@ -24,15 +24,14 @@ app.use(
         apiSpec: './api/openapi/openapi.json',
         validateRequests: true,
         validateResponses: true,
-        validateSecurity: false,
-        
+        validateSecurity: false
     }),
     apiRouter
 );
 
 // Express doesn't treat 404s as errors. If the following handler has been reached then nothing else matched e.g. a 404
 // https://expressjs.com/en/starter/faq.html#how-do-i-handle-404-responses
-app.use(req => {
+app.use((req) => {
     const err = Error(`Endpoint ${req.url} does not exist`);
     err.name = 'HTTPError';
     err.statusCode = 404;
