@@ -16,10 +16,7 @@ import createDocumentDAL from '../../document/document-dal.js';
  * @returns {Object} The search service instance.
  * @returns {Function} return.getSearchResultsByKeyword - Retrieves paginated search results by keyword.
  */
-function createSearchService({
-    caseReferenceNumber,
-    logger
-}) {
+function createSearchService({ caseReferenceNumber, logger }) {
     const db = createDocumentDAL({
         caseReferenceNumber,
         logger

@@ -90,7 +90,7 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
                         must: [
                             {
                                 match: {
-                                    'chunk_text': keyword
+                                    chunk_text: keyword
                                 }
                             },
                             {
@@ -103,14 +103,17 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
                 }
             };
 
-            logger.info({
+            logger.info(
+                {
                     index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
                     queryBody,
                     keyword,
                     caseReferenceNumber,
                     pageNumber,
                     itemsPerPage
-                }, 'OpenSearch Performing search');
+                },
+                'OpenSearch Performing search'
+            );
 
             const response = await db.query({
                 index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
@@ -119,12 +122,18 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
             const hits = response?.body?.hits?.hits || [];
 
             logger.info({ hitsCount: hits.length }, 'OpenSearch Search response');
-        
+
             if (hits.length === 0) {
                 if (logger && typeof logger.warn === 'function') {
-                    logger.warn({ keyword, caseReferenceNumber }, '[OpenSearch] No results found for query');
+                    logger.warn(
+                        { keyword, caseReferenceNumber },
+                        '[OpenSearch] No results found for query'
+                    );
                 } else {
-                    console.warn('[OpenSearch] No results found for query:', { keyword, caseReferenceNumber });
+                    console.warn('[OpenSearch] No results found for query:', {
+                        keyword,
+                        caseReferenceNumber
+                    });
                 }
             }
             return response?.body?.hits ?? [];
@@ -134,7 +143,10 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
             } else {
                 console.error('[OpenSearch] Search error:', err);
             }
-            throw new VError(err, `Failed to execute search query on index "${process.env.OPENSEARCH_INDEX_CHUNKS_NAME}"`);
+            throw new VError(
+                err,
+                `Failed to execute search query on index "${process.env.OPENSEARCH_INDEX_CHUNKS_NAME}"`
+            );
         }
     }
 

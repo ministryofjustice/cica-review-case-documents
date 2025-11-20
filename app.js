@@ -6,6 +6,7 @@ import session from 'express-session';
 import helmet from 'helmet';
 import { nanoid } from 'nanoid';
 import apiApp from './api/app.js';
+import createTemplateEngineService from './templateEngine/index.js';
 import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
@@ -16,14 +17,14 @@ import searchRouter from './search/routes.js';
 
 import authRouter from './auth/auth.js';
 
-function createApp({createLogger = defaultCreateLogger} = {}) {
+function createApp({ createLogger = defaultCreateLogger } = {}) {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
 
     const app = express();
-    
-    const {doubleCsrfProtection, generateCsrfToken} = createCsrf();
-    
+
+    const { doubleCsrfProtection, generateCsrfToken } = createCsrf();
+
     // https://expressjs.com/en/api.html#express.json
     app.use(express.json());
     // https://expressjs.com/en/api.html#express.urlencoded
@@ -40,7 +41,7 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
     app.use(loggerMiddleware);
     // Attach the main logger instance to app.locals for global access
     app.locals.logger = loggerMiddleware.logger;
-    
+
     app.use((req, res, next) => {
         res.set({
             'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -123,12 +124,11 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
         res.locals.csrfToken = generateCsrfToken(req, res);
         next();
     });
-    
 
     app.use('/auth', authRouter);
 
     // Protect routes below this line
-    // NOTE: When API is moved to separate app, replace req.session.loggedIn 
+    // NOTE: When API is moved to separate app, replace req.session.loggedIn
     // authentication with namespace-internal auth (API Key or mTLS)
     app.use((req, res, next) => {
         const isApiRequest = req.path.startsWith('/api');
@@ -137,7 +137,7 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
                 return res.status(401).json({ error: 'Unauthorized' });
             }
             req.session.returnTo = req.originalUrl;
-        return res.redirect('/auth/login');
+            return res.redirect('/auth/login');
         }
         next();
     });
@@ -155,4 +155,3 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
 }
 
 export default createApp;
-

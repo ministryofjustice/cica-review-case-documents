@@ -68,7 +68,7 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
             query
         };
 
-        req.log.info({ query, pageNumber, itemsPerPage }, "Creating search service");
+        req.log.info({ query, pageNumber, itemsPerPage }, 'Creating search service');
         const searchService = createSearchService({
             caseReferenceNumber: req.session?.caseReferenceNumber,
             logger: req.log
