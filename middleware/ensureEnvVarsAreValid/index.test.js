@@ -5,8 +5,10 @@ import ensureEnvVarsAreValid, { getMandatoryEnvVars, getOptionalEnvVars } from '
 
 const fakeLogger = {
     info: () => {},
-    child: () => fakeLogger
+    child: () => fakeLogger,
+    [Symbol.for('pino.logger')]: true
 };
+
 
 const originalEnv = { ...process.env };
 function resetEnv() {

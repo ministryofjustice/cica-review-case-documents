@@ -13,17 +13,8 @@ import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
 import getCaseReferenceNumberFromQueryString from './middleware/getCaseReferenceNumberFromQueryString/index.js';
 import defaultCreateLogger from './middleware/logger/index.js';
 import searchRouter from './search/routes.js';
-import createTemplateEngineService from './templateEngine/index.js';
 
 import authRouter from './auth/auth.js';
-import apiRouter from './api/app.js';
-
-
-
-import authRouter from './auth/auth.js';
-import apiRouter from './api/app.js';
-
-
 
 function createApp({createLogger = defaultCreateLogger} = {}) {
     const __filename = fileURLToPath(import.meta.url);
@@ -31,8 +22,6 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
 
     const app = express();
     
-    app.set('trust proxy', 1); // TODO temporary setting for proxy
-    // remove when the api is refactored out of this code base
     const {doubleCsrfProtection, generateCsrfToken} = createCsrf();
     
     // https://expressjs.com/en/api.html#express.json
@@ -45,8 +34,13 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
         })
     );
 
-    app.use(createLogger());
-
+    // Create the logger instance
+    const loggerMiddleware = createLogger();
+    // Use the middleware for request logging
+    app.use(loggerMiddleware);
+    // Attach the main logger instance to app.locals for global access
+    app.locals.logger = loggerMiddleware.logger;
+    
     app.use((req, res, next) => {
         res.set({
             'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -130,9 +124,12 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
         next();
     });
     
+
     app.use('/auth', authRouter);
 
     // Protect routes below this line
+    // NOTE: When API is moved to separate app, replace req.session.loggedIn 
+    // authentication with namespace-internal auth (API Key or mTLS)
     app.use((req, res, next) => {
         const isApiRequest = req.path.startsWith('/api');
         if (!req.session.loggedIn && req.path !== '/auth/login') {
@@ -145,12 +142,18 @@ function createApp({createLogger = defaultCreateLogger} = {}) {
         next();
     });
 
+    app.use('/api', apiApp);
     app.use('/', indexRouter);
     app.use('/search', getCaseReferenceNumberFromQueryString, caseSelected, searchRouter);
-    // ...existing code...
-    app.use('/api', apiRouter); 
+    app.use((req, res) => {
+        res.status(404).render('404.njk', {
+            pageType: ['root']
+        });
+    });
 
     return app;
 }
 
 export default createApp;
+
+
