@@ -2,6 +2,11 @@ import assert from 'node:assert';
 import { beforeEach, describe, it } from 'node:test';
 import VError from 'verror';
 import createDocumentDAL from './document-dal.js';
+const mockLogger = {
+    info: () => {},
+    error: () => {},
+    warn: () => {}
+};
 
 describe('document-dal', () => {
     const ENV_ORIGINAL = {
@@ -56,7 +61,8 @@ describe('document-dal', () => {
     it('Should return body.hits from DB response', async () => {
         const dal = createDocumentDAL({
             caseReferenceNumber: '12-345678',
-            createDBQuery: () => CREATE_DB_QUERY_INSTANCE.SUCCESS
+            createDBQuery: () => CREATE_DB_QUERY_INSTANCE.SUCCESS,
+            logger: mockLogger
         });
 
         const results = await dal.getDocumentsChunksByKeyword('foo', 1, 10);
@@ -81,7 +87,8 @@ describe('document-dal', () => {
     it('Should return an empty array if response has no hits', async () => {
         const dal = createDocumentDAL({
             caseReferenceNumber: '12-345678',
-            createDBQuery: () => CREATE_DB_QUERY_INSTANCE.EMPTY
+            createDBQuery: () => CREATE_DB_QUERY_INSTANCE.EMPTY,
+            logger: mockLogger
         });
 
         const result = await dal.getDocumentsChunksByKeyword('keyword', 1, 10);
