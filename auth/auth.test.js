@@ -30,9 +30,7 @@ test('POST /auth/login should redirect with error for missing credentials', asyn
     const csrfToken = getRes.text.match(/name="_csrf" value="([^"]+)"/)[1];
 
     // Now, send the POST request with the token but an empty body
-    const response = await agent
-        .post('/auth/login')
-        .send({ _csrf: csrfToken });
+    const response = await agent.post('/auth/login').send({ _csrf: csrfToken });
 
     assert.strictEqual(response.status, 302);
     assert.match(response.headers.location, /error=Enter%20your%20username%20and%20password/);
@@ -43,13 +41,11 @@ test('POST /auth/login should login successfully and redirect to "/" by default'
     const getRes = await agent.get('/auth/login');
     const csrfToken = getRes.text.match(/name="_csrf" value="([^"]+)"/)[1];
 
-    const response = await agent
-        .post('/auth/login')
-        .send({
-            username: 'testuser',
-            password: 'testPassword123',
-            _csrf: csrfToken
-        });
+    const response = await agent.post('/auth/login').send({
+        username: 'testuser',
+        password: 'testPassword123',
+        _csrf: csrfToken
+    });
 
     assert.strictEqual(response.status, 302);
     assert.strictEqual(response.headers.location, '/');
@@ -64,13 +60,11 @@ test('POST /auth/login should redirect to returnTo URL after successful login', 
     const csrfToken = getRes.text.match(/name="_csrf" value="([^"]+)"/)[1];
 
     // Finally, log in
-    const response = await agent
-        .post('/auth/login')
-        .send({
-            username: 'testuser',
-            password: 'testPassword123',
-            _csrf: csrfToken
-        });
+    const response = await agent.post('/auth/login').send({
+        username: 'testuser',
+        password: 'testPassword123',
+        _csrf: csrfToken
+    });
 
     assert.strictEqual(response.status, 302);
     // It should redirect to the original URL we tried to access

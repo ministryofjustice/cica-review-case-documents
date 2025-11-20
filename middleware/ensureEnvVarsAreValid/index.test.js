@@ -9,7 +9,6 @@ const fakeLogger = {
     [Symbol.for('pino.logger')]: true
 };
 
-
 const originalEnv = { ...process.env };
 function resetEnv() {
     process.env = { ...originalEnv };
