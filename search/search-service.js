@@ -23,7 +23,7 @@ function createSearchService({
             url: `${process.env.APP_API_URL}/search/${query}/${pageNumber}/${itemsPerPage}`,
             headers: {
                 'On-Behalf-Of': caseReferenceNumber,
-                'Cookie': req.headers.cookie // <-- Forward the cookie!
+                'Cookie': req.headers.cookie
             }
         };
         return get(opts);

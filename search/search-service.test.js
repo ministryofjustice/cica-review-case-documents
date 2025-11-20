@@ -24,15 +24,19 @@ describe('search-service', () => {
     });
 
     it('Should call get with correct URL and headers', async () => {
+        const fakeLogger = { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} };
         const service = createSearchService({
             caseReferenceNumber: '12-345678',
-            createRequestService: mockCreateRequestService
+            createRequestService: mockCreateRequestService,
+            logger: fakeLogger // <-- use 'logger' here
         });
         const query = 'example';
         const pageNumber = 2;
         const itemsPerPage = 5;
 
-        const result = await service.getSearchResults(query, pageNumber, itemsPerPage);
+        const req = { headers: { cookie: 'session=abc123' } };
+        const result = await service.getSearchResults(query, pageNumber, itemsPerPage, req);
+
         assert.deepEqual(result, { body: { data: 'fake results' } });
         assert.equal(mockCreateRequestService.mock.callCount(), 1);
         const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];

@@ -6,8 +6,7 @@ const router = express.Router();
 router.use(bodyParser.json());
 
 const AUTH_SECRET_PASSWORD = process.env.AUTH_SECRET_PASSWORD;
-
-const AUTH_USERNAMES = (process.env.AUTH_USERNAMES || '').split(',').map(u => u.trim());
+const AUTH_USERNAMES = (process.env.AUTH_USERNAMES || '').split(',').map(u => u.trim().toLowerCase());
 
 router.get('/login', (req, res, next) => {
     try {
@@ -24,31 +23,32 @@ router.get('/login', (req, res, next) => {
 });
 
 router.post('/login', (req, res) => {
-    const { username,password } = req.body;
+    const { username = '', password = '' } = req.body;
     const redirectUrl = req.session.returnTo || '/';
+    let error = '';
 
-    var error = "Invalid credentials."
-
-    if(!password && !username){
-        error = "Enter your username and password."
-        res.redirect(`/auth/login?error=${encodeURIComponent(error)}`);
-    }
-    if(!password){
-        error = "Enter your password."
-        res.redirect(`/auth/login?error=${encodeURIComponent(error)}`);
-    }
-    if(!username){
-        error = "Enter your username."
-        res.redirect(`/auth/login?error=${encodeURIComponent(error)}`);
+    if (!username && !password) {
+        error = 'Enter your username and password';
+    } else if (!username) {
+        error = 'Enter your username';
+    } else if (!password) {
+        error = 'Enter your password';
     }
 
-    if (password === AUTH_SECRET_PASSWORD && AUTH_USERNAMES.includes(username)) {
+    const normalizedUsername = username.toLowerCase();
+
+    if (error) {
+        return res.redirect(`/auth/login?error=${encodeURIComponent(error)}`);
+    }
+
+    if (password === AUTH_SECRET_PASSWORD && AUTH_USERNAMES.includes(normalizedUsername)) {
         req.session.loggedIn = true;
         return res.redirect(redirectUrl);
     }
-    console.warn(`Failed login attempt from IP: ${req.ip}`);
-    // Redirect with error as query param
-    res.redirect(`/auth/login?error=${encodeURIComponent(error)}`);
+
+    req.log.warn(`Failed login attempt from IP: ${req.ip}`);
+    error = 'Invalid credentials';
+    return res.redirect(`/auth/login?error=${encodeURIComponent(error)}`);
 });
 
 export default router;
