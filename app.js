@@ -14,8 +14,8 @@ import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
 import getCaseReferenceNumberFromQueryString from './middleware/getCaseReferenceNumberFromQueryString/index.js';
 import defaultCreateLogger from './middleware/logger/index.js';
 import searchRouter from './search/routes.js';
-
-import authRouter from './auth/auth.js';
+import isAuthenticated from './middleware/isAuthenticated/index.js';
+import authRouter from './auth/routes.js';
 
 function createApp({ createLogger = defaultCreateLogger } = {}) {
     const __filename = fileURLToPath(import.meta.url);
@@ -39,8 +39,6 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
     const loggerMiddleware = createLogger();
     // Use the middleware for request logging
     app.use(loggerMiddleware);
-    // Attach the main logger instance to app.locals for global access
-    app.locals.logger = loggerMiddleware.logger;
 
     app.use((req, res, next) => {
         res.set({
@@ -127,24 +125,16 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
 
     app.use('/auth', authRouter);
 
-    // Protect routes below this line
-    // NOTE: When API is moved to separate app, replace req.session.loggedIn
-    // authentication with namespace-internal auth (API Key or mTLS)
-    app.use((req, res, next) => {
-        const isApiRequest = req.path.startsWith('/api');
-        if (!req.session.loggedIn && req.path !== '/auth/login') {
-            if (isApiRequest) {
-                return res.status(401).json({ error: 'Unauthorized' });
-            }
-            req.session.returnTo = req.originalUrl;
-            return res.redirect('/auth/login');
-        }
-        next();
-    });
+    app.use('/api', isAuthenticated, apiApp);
+    app.use('/', isAuthenticated, indexRouter);
+    app.use(
+        '/search',
+        isAuthenticated,
+        getCaseReferenceNumberFromQueryString,
+        caseSelected,
+        searchRouter
+    );
 
-    app.use('/api', apiApp);
-    app.use('/', indexRouter);
-    app.use('/search', getCaseReferenceNumberFromQueryString, caseSelected, searchRouter);
     app.use((req, res) => {
         res.status(404).render('404.njk', {
             pageType: ['root']

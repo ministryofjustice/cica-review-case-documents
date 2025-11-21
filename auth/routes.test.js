@@ -7,13 +7,9 @@ import createApp from '../app.js';
 let app;
 let agent;
 
-function extractParams(res) {
-    const loc = res.headers.location;
-    const url = new URL('http://local' + loc); // prefix with dummy origin
-    return {
-        location: loc,
-        params: Object.fromEntries(url.searchParams.entries())
-    };
+async function getCsrfToken(agent) {
+    const res = await agent.get('/auth/login');
+    return res.text.match(/name="_csrf" value="([^"]+)"/)[1];
 }
 
 beforeEach(() => {
@@ -35,99 +31,81 @@ test('POST /auth/login with no username and no password shows correct errors', a
     process.env.AUTH_USERNAMES = 'test.user@example.com,valid.user@example.com';
     process.env.AUTH_SECRET_PASSWORD = 'DemoPass123';
 
-    const getRes = await agent.get('/auth/login');
-    const csrfToken = getRes.text.match(/name="_csrf" value="([^"]+)"/)[1];
+    const csrfToken = await getCsrfToken(agent);
 
     const response = await agent.post('/auth/login').send({ _csrf: csrfToken });
 
-    assert.strictEqual(response.status, 302);
-    const { params } = extractParams(response);
-    assert.equal(params.error, 'Enter your username');
-    assert.equal(params.usernameError, 'Enter your username');
-    assert.equal(params.passwordError, 'Enter your password');
+    assert.strictEqual(response.status, 200);
+    assert.match(response.text, /Enter your username/);
+    assert.match(response.text, /Enter your password/);
 });
 
 test('POST /auth/login with no username shows correct errors', async () => {
     process.env.AUTH_USERNAMES = 'test.user@example.com,valid.user@example.com';
     process.env.AUTH_SECRET_PASSWORD = 'DemoPass123';
 
-    const getRes = await agent.get('/auth/login');
-    const csrfToken = getRes.text.match(/name="_csrf" value="([^"]+)"/)[1];
+    const csrfToken = await getCsrfToken(agent);
 
     const response = await agent
         .post('/auth/login')
         .send({ password: 'testPassword123', _csrf: csrfToken });
 
-    assert.strictEqual(response.status, 302);
-    const { params } = extractParams(response);
-    assert.equal(params.error, 'Enter your username');
-    assert.equal(params.usernameError, 'Enter your username');
-    assert.ok(!('passwordError' in params));
+    assert.strictEqual(response.status, 200);
+    assert.match(response.text, /Enter your username/);
+    assert.doesNotMatch(response.text, /Enter your password/);
 });
 
 test('POST /auth/login with no password shows correct errors', async () => {
     process.env.AUTH_USERNAMES = 'test.user@example.com,valid.user@example.com';
     process.env.AUTH_SECRET_PASSWORD = 'DemoPass123';
 
-    const getRes = await agent.get('/auth/login');
-    const csrfToken = getRes.text.match(/name="_csrf" value="([^"]+)"/)[1];
+    const csrfToken = await getCsrfToken(agent);
 
     const response = await agent
         .post('/auth/login')
         .send({ username: 'testuser', _csrf: csrfToken });
 
-    assert.strictEqual(response.status, 302);
-    const { params } = extractParams(response);
-    assert.equal(params.error, 'Enter your password');
-    assert.equal(params.passwordError, 'Enter your password');
-    assert.ok(!('usernameError' in params));
-    assert.equal(params.username, 'testuser');
+    assert.strictEqual(response.status, 200);
+    assert.match(response.text, /Enter your password/);
+    assert.doesNotMatch(response.text, /Enter your username/);
+    assert.match(response.text, /testuser/);
 });
 
 test('POST /auth/login with invalid credentials shows correct errors', async () => {
     process.env.AUTH_USERNAMES = 'test.user@example.com,valid.user@example.com';
     process.env.AUTH_SECRET_PASSWORD = 'DemoPass123';
 
-    const getRes = await agent.get('/auth/login');
-    const csrfToken = getRes.text.match(/name="_csrf" value="([^"]+)"/)[1];
+    const csrfToken = await getCsrfToken(agent);
 
     const response = await agent
         .post('/auth/login')
         .send({ username: 'wronguser', password: 'wrongPassword', _csrf: csrfToken });
 
-    assert.strictEqual(response.status, 302);
-    const { params } = extractParams(response);
-    assert.equal(params.error, 'Enter a valid username and password');
-    assert.equal(params.usernameError, 'Enter a valid username and password');
-    assert.ok(!('passwordError' in params));
-    assert.equal(params.username, 'wronguser');
+    assert.strictEqual(response.status, 200);
+    assert.match(response.text, /Enter a valid username and password/);
+    assert.match(response.text, /wronguser/);
 });
 
 test('POST /auth/login with invalid email format shows correct errors', async () => {
     process.env.AUTH_USERNAMES = 'valid.user@example.com';
     process.env.AUTH_SECRET_PASSWORD = 'DemoPass123';
 
-    const getRes = await agent.get('/auth/login');
-    const csrfToken = getRes.text.match(/name="_csrf" value="([^"]+)"/)[1];
+    const csrfToken = await getCsrfToken(agent);
 
     const response = await agent
         .post('/auth/login')
         .send({ username: 'not-an-email', password: 'DemoPass123', _csrf: csrfToken });
 
-    assert.strictEqual(response.status, 302);
-    const { params } = extractParams(response);
-    assert.equal(params.error, 'Enter a valid username and password');
-    assert.equal(params.usernameError, 'Enter a valid username and password');
-    assert.ok(!('passwordError' in params));
-    assert.equal(params.username, 'not-an-email');
+    assert.strictEqual(response.status, 200);
+    assert.match(response.text, /Enter a valid username and password/);
+    assert.match(response.text, /not-an-email/);
 });
 
 test('POST /auth/login should login successfully and redirect to "/" by default', async () => {
     process.env.AUTH_USERNAMES = 'test.user@example.com,valid.user@example.com';
     process.env.AUTH_SECRET_PASSWORD = 'DemoPass123';
 
-    const getRes = await agent.get('/auth/login');
-    const csrfToken = getRes.text.match(/name="_csrf" value="([^"]+)"/)[1];
+    const csrfToken = await getCsrfToken(agent);
 
     const response = await agent
         .post('/auth/login')
@@ -144,8 +122,7 @@ test('POST /auth/login should redirect to returnTo URL after successful login', 
     // Visit protected route to set returnTo
     await agent.get('/search?caseReferenceNumber=12345').expect(302);
 
-    const getRes = await agent.get('/auth/login');
-    const csrfToken = getRes.text.match(/name="_csrf" value="([^"]+)"/)[1];
+    const csrfToken = await getCsrfToken(agent);
 
     const response = await agent
         .post('/auth/login')
@@ -156,13 +133,11 @@ test('POST /auth/login should redirect to returnTo URL after successful login', 
 });
 
 test('GET /auth/sign-out displays sign out message and case reference link', async () => {
-    // Set up session with a caseReferenceNumber
     process.env.AUTH_USERNAMES = 'test.user@example.com';
     process.env.AUTH_SECRET_PASSWORD = 'DemoPass123';
 
     // Log in to create a session
-    const getRes = await agent.get('/auth/login');
-    const csrfToken = getRes.text.match(/name="_csrf" value="([^"]+)"/)[1];
+    const csrfToken = await getCsrfToken(agent);
     await agent
         .post('/auth/login')
         .send({ username: 'test.user@example.com', password: 'DemoPass123', _csrf: csrfToken });
