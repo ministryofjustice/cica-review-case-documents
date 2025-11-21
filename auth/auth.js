@@ -5,10 +5,14 @@ import createTemplateEngineService from '../templateEngine/index.js';
 const router = express.Router();
 router.use(bodyParser.json());
 
-const AUTH_SECRET_PASSWORD = process.env.AUTH_SECRET_PASSWORD;
-const AUTH_USERNAMES = (process.env.AUTH_USERNAMES || '')
-    .split(',')
-    .map((u) => u.trim().toLowerCase());
+function getAuthConfig() {
+    const secret = process.env.AUTH_SECRET_PASSWORD;
+    const usernames = (process.env.AUTH_USERNAMES || '')
+        .split(',')
+        .map((u) => u.trim().toLowerCase())
+        .filter(Boolean);
+    return { secret, usernames };
+}
 
 router.get('/login', (req, res, next) => {
     try {
@@ -16,7 +20,10 @@ router.get('/login', (req, res, next) => {
         const { render } = templateEngineService;
         const html = render('views/login.njk', {
             csrfToken: res.locals.csrfToken,
-            error: req.query.error
+            error: req.query.error,
+            usernameError: req.query.usernameError,
+            passwordError: req.query.passwordError,
+            username: req.query.username || ''
         });
         res.send(html);
     } catch (err) {
@@ -27,30 +34,45 @@ router.get('/login', (req, res, next) => {
 router.post('/login', (req, res) => {
     const { username = '', password = '' } = req.body;
     const redirectUrl = req.session.returnTo || '/';
-    let error = '';
 
-    if (!username && !password) {
-        error = 'Enter your username and password';
-    } else if (!username) {
-        error = 'Enter your username';
-    } else if (!password) {
-        error = 'Enter your password';
-    }
-
+    const { secret, usernames } = getAuthConfig();
     const normalizedUsername = username.toLowerCase();
 
-    if (error) {
-        return res.redirect(`/auth/login?error=${encodeURIComponent(error)}`);
+    let error = '';
+    let usernameError = '';
+    let passwordError = '';
+
+    if (!username && !password) {
+        // Both missing
+        error = 'Enter your username';
+        usernameError = 'Enter your username';
+        passwordError = 'Enter your password';
+    } else if (!username) {
+        error = 'Enter your username';
+        usernameError = 'Enter your username';
+    } else if (!password) {
+        error = 'Enter your password';
+        passwordError = 'Enter your password';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username)) {
+        error = 'Enter a valid username and password';
+        usernameError = 'Enter a valid username and password';
+    } else if (password !== secret || !usernames.includes(normalizedUsername)) {
+        // Invalid credentials
+        error = 'Enter a valid username and password';
+        usernameError = 'Enter a valid username and password';
     }
 
-    if (password === AUTH_SECRET_PASSWORD && AUTH_USERNAMES.includes(normalizedUsername)) {
-        req.session.loggedIn = true;
-        return res.redirect(redirectUrl);
+    if (error || usernameError || passwordError) {
+        const params = new URLSearchParams();
+        if (error) params.append('error', error);
+        if (usernameError) params.append('usernameError', usernameError);
+        if (passwordError) params.append('passwordError', passwordError);
+        if (username) params.append('username', username);
+        return res.redirect(`/auth/login?${params.toString()}`);
     }
 
-    req.log.warn(`Failed login attempt from IP: ${req.ip}`);
-    error = 'Invalid credentials';
-    return res.redirect(`/auth/login?error=${encodeURIComponent(error)}`);
+    req.session.loggedIn = true;
+    return res.redirect(redirectUrl);
 });
 
 export default router;
