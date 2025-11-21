@@ -154,3 +154,27 @@ test('POST /auth/login should redirect to returnTo URL after successful login', 
     assert.strictEqual(response.status, 302);
     assert.strictEqual(response.headers.location, '/search?caseReferenceNumber=12345');
 });
+
+test('GET /auth/sign-out displays sign out message and case reference link', async () => {
+    // Set up session with a caseReferenceNumber
+    process.env.AUTH_USERNAMES = 'test.user@example.com';
+    process.env.AUTH_SECRET_PASSWORD = 'DemoPass123';
+
+    // Log in to create a session
+    const getRes = await agent.get('/auth/login');
+    const csrfToken = getRes.text.match(/name="_csrf" value="([^"]+)"/)[1];
+    await agent
+        .post('/auth/login')
+        .send({ username: 'test.user@example.com', password: 'DemoPass123', _csrf: csrfToken });
+
+    // Set the caseReferenceNumber in session by visiting a route that sets it
+    await agent.get('/search?caseReferenceNumber=25-111111');
+
+    // Sign out
+    const response = await agent.get('/auth/sign-out');
+    assert.strictEqual(response.status, 200);
+    assert.match(response.text, /You have signed out/);
+    assert.match(response.text, /Sign in/);
+    assert.match(response.text, /25-111111/);
+    assert.match(response.text, /href="\/search\?caseReferenceNumber=25-111111"/);
+});

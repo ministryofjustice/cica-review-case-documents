@@ -75,4 +75,18 @@ router.post('/login', (req, res) => {
     return res.redirect(redirectUrl);
 });
 
+router.get('/sign-out', (req, res, next) => {
+    // Store the caseReferenceNumber before destroying the session
+    const caseReferenceNumber = req.session?.caseReferenceNumber;
+    req.session.destroy(() => {
+        const templateEngineService = createTemplateEngineService();
+        const { render } = templateEngineService;
+        const html = render('views/sign-out.njk', {
+            message: 'You have signed out',
+            caseReferenceNumber
+        });
+        res.send(html);
+    });
+});
+
 export default router;
