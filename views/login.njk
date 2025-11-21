@@ -3,57 +3,88 @@
 
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 
 {% block innerContent %}
-    <h1 class="govuk-heading-l">Sign in</h1>
-    {% if error %}
-        <div class="govuk-error-summary" role="alert" aria-labelledby="error-summary-title" tabindex="-1">
-            <h2 class="govuk-error-summary__title" id="error-summary-title">There is a problem</h2>
-            <div class="govuk-error-summary__body">
-                <ul class="govuk-list govuk-error-summary__list">
-                    <li>{{ error }}</li>
-                </ul>
-            </div>
-        </div>
+
+  {% if usernameError or passwordError %}
+    {% if usernameError and passwordError %}
+      {{ govukErrorSummary({
+        titleText: "There is a problem",
+        errorList: [
+          { href: "#username", text: usernameError },
+          { href: "#password", text: passwordError }
+        ]
+      }) }}
+    {% elif usernameError %}
+      {{ govukErrorSummary({
+        titleText: "There is a problem",
+        errorList: [
+          { href: "#username", text: usernameError }
+        ]
+      }) }}
+    {% elif passwordError %}
+      {{ govukErrorSummary({
+        titleText: "There is a problem",
+        errorList: [
+          { href: "#password", text: passwordError }
+        ]
+      }) }}
     {% endif %}
-    <form method="POST" action="/auth/login" autocomplete="off">
-        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+  {% endif %}
 
-        {% set inputClasses = "govuk-input--width-20 govuk-!-margin-right-4" %}
-        {% if error %}
-            {% set inputClasses = inputClasses + " govuk-input--error" %}
-        {% endif %}
+  <h1 class="govuk-heading-l">Sign in</h1>
+  <form method="POST" action="/auth/login" autocomplete="off" novalidate>
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
 
-        {{ govukInput({
-            label: {
-                text: "Username"
-            },
-            id: "username",
-            name: "username",
-            autocomplete: "username",
-            spellcheck: false,
-            autocapitalize: "off",
-            classes: inputClasses,
-            value: username or ""
-        }) }}
+    {% if usernameError %}
+      {{ govukInput({
+        label: { text: "Username" },
+        id: "username",
+        name: "username",
+        autocomplete: "username",
+        spellcheck: false,
+        classes: "govuk-input--width-20",
+        value: username or "",
+        errorMessage: { text: usernameError }
+      }) }}
+    {% else %}
+      {{ govukInput({
+        label: { text: "Username" },
+        id: "username",
+        name: "username",
+        autocomplete: "username",
+        spellcheck: false,
+        classes: "govuk-input--width-20",
+        value: username or ""
+      }) }}
+    {% endif %}
 
-        {{ govukInput({
-            label: {
-                text: "Password"
-            },
-            id: "password",
-            name: "password",
-            type: "password",
-            autocomplete: "current-password",
-            spellcheck: false,
-            autocapitalize: "off",
-            classes: inputClasses,
-            value: ""
-        }) }}
+    {% if passwordError %}
+      {{ govukInput({
+        label: { text: "Password" },
+        id: "password",
+        name: "password",
+        type: "password",
+        autocomplete: "current-password",
+        spellcheck: false,
+        classes: "govuk-input--width-20",
+        value: "",
+        errorMessage: { text: passwordError }
+      }) }}
+    {% else %}
+      {{ govukInput({
+        label: { text: "Password" },
+        id: "password",
+        name: "password",
+        type: "password",
+        autocomplete: "current-password",
+        spellcheck: false,
+        classes: "govuk-input--width-20",
+        value: ""
+      }) }}
+    {% endif %}
 
-        {{ govukButton({
-            text: "Sign in",
-            classes: "govuk-!-margin-bottom-0"
-        }) }}
-    </form>
+    {{ govukButton({ text: "Sign in" }) }}
+  </form>
 {% endblock %}
