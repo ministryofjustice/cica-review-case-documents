@@ -2,21 +2,31 @@ import express from 'express';
 import OpenApiValidator from 'express-openapi-validator';
 import errorHandler from '../middleware/errorHandler/index.js';
 import apiRouter from './routes.js';
+import jwt from 'jsonwebtoken';
 
 const app = express();
 
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Missing token' });
+
+    jwt.verify(token, process.env.APP_JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ error: 'Invalid token' });
+        req.user = user;
+        next();
+    });
+}
+
 app.use(express.json({ type: 'application/vnd.api+json' }));
-// https://expressjs.com/en/api.html#express.urlencoded
 app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
-    // Default to JSON:API content type for all subsequent responses
     res.type('application/vnd.api+json');
-    // https://stackoverflow.com/a/22339262/2952356
-    // `process.env.npm_package_version` only works if you use npm start to run the app.
     res.set('Application-Version', process.env.npm_package_version);
-
     next();
 });
+
+app.use(authenticateToken);
 
 app.use(
     '/',

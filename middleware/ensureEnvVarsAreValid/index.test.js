@@ -5,8 +5,7 @@ import ensureEnvVarsAreValid, { getMandatoryEnvVars, getOptionalEnvVars } from '
 
 const fakeLogger = {
     info: () => {},
-    child: () => fakeLogger,
-    [Symbol.for('pino.logger')]: true
+    child: () => fakeLogger
 };
 
 const originalEnv = { ...process.env };

@@ -7,7 +7,7 @@ import { URL } from 'url';
  *
  * @param {string} proxyUrl - The OpenSearch proxy/base URL.
  * @param {number} timeout - Maximum seconds to wait for health.
- * @param {number} interval - Seconds between retries.
+ * @param {number} interval - Milliseconds between retries.
  * @returns {Promise<boolean>} True if healthy, False otherwise.
  */
 export async function checkOpenSearchHealth(proxyUrl, timeout = 10, interval = 1000) {
@@ -17,7 +17,8 @@ export async function checkOpenSearchHealth(proxyUrl, timeout = 10, interval = 1
         node: proxyUrl,
         ssl: {
             rejectUnauthorized: false
-        }
+        },
+        requestTimeout: 2000
     });
 
     const start = Date.now();
@@ -28,9 +29,8 @@ export async function checkOpenSearchHealth(proxyUrl, timeout = 10, interval = 1
             if (status === 'green' || status === 'yellow') {
                 console.info(`OpenSearch health check passed: status=${status}`);
                 return true;
-            } else {
-                console.warn(`OpenSearch unhealthy: status=${status}`);
             }
+            console.warn(`OpenSearch unhealthy: status=${status}`);
         } catch (e) {
             console.warn(`OpenSearch not reachable: ${e.message}`);
         }
