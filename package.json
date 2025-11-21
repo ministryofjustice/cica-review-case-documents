@@ -22,7 +22,7 @@
         "format": "biome format"
     },
     "dependencies": {
-        "@ministryofjustice/frontend": "^5.1.5",
+        "@ministryofjustice/frontend": "^7.1.0",
         "@opensearch-project/opensearch": "^3.5.1",
         "cookie-parser": "^1.4.7",
         "csrf-csrf": "^4.0.3",
