@@ -82,35 +82,67 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
      */
     async function getDocumentsChunksByKeyword(keyword, pageNumber, itemsPerPage) {
         try {
-            const response = await db.query({
-                index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
-                body: {
-                    from: itemsPerPage * (pageNumber - 1),
-                    size: itemsPerPage,
-                    query: {
-                        bool: {
-                            must: [
-                                {
-                                    // https://stackoverflow.com/questions/50818424/elasticsearch-query-not-giving-exact-match
-                                    // Instead of match you have to use term query, as the documentation describe:
-                                    // The term query finds documents that contain the exact term specified in the inverted index
-                                    match: {
-                                        chunk_text: keyword
-                                    }
-                                },
-                                {
-                                    match: {
-                                        case_ref: caseReferenceNumber
-                                    }
+            const queryBody = {
+                from: itemsPerPage * (pageNumber - 1),
+                size: itemsPerPage,
+                query: {
+                    bool: {
+                        must: [
+                            {
+                                match: {
+                                    chunk_text: keyword
                                 }
-                            ]
-                        }
+                            },
+                            {
+                                match: {
+                                    case_ref: caseReferenceNumber
+                                }
+                            }
+                        ]
                     }
                 }
-            });
+            };
 
+            logger.info(
+                {
+                    index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
+                    queryBody,
+                    keyword,
+                    caseReferenceNumber,
+                    pageNumber,
+                    itemsPerPage
+                },
+                'OpenSearch Performing search'
+            );
+
+            const response = await db.query({
+                index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
+                body: queryBody
+            });
+            const hits = response?.body?.hits?.hits || [];
+
+            logger.info({ hitsCount: hits.length }, 'OpenSearch Search response');
+
+            if (hits.length === 0) {
+                if (logger && typeof logger.warn === 'function') {
+                    logger.warn(
+                        { keyword, caseReferenceNumber },
+                        '[OpenSearch] No results found for query'
+                    );
+                } else {
+                    console.warn('[OpenSearch] No results found for query:', {
+                        keyword,
+                        caseReferenceNumber
+                    });
+                }
+            }
             return response?.body?.hits ?? [];
         } catch (err) {
+            if (logger && typeof logger.error === 'function') {
+                logger.error({ err }, '[OpenSearch] Search error');
+            } else {
+                console.error('[OpenSearch] Search error:', err);
+            }
             throw new VError(
                 err,
                 `Failed to execute search query on index "${process.env.OPENSEARCH_INDEX_CHUNKS_NAME}"`

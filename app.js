@@ -6,6 +6,7 @@ import session from 'express-session';
 import helmet from 'helmet';
 import { nanoid } from 'nanoid';
 import apiApp from './api/app.js';
+import createTemplateEngineService from './templateEngine/index.js';
 import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
@@ -13,7 +14,8 @@ import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
 import getCaseReferenceNumberFromQueryString from './middleware/getCaseReferenceNumberFromQueryString/index.js';
 import defaultCreateLogger from './middleware/logger/index.js';
 import searchRouter from './search/routes.js';
-import createTemplateEngineService from './templateEngine/index.js';
+import isAuthenticated from './middleware/isAuthenticated/index.js';
+import authRouter from './auth/routes.js';
 
 function createApp({ createLogger = defaultCreateLogger } = {}) {
     const __filename = fileURLToPath(import.meta.url);
@@ -33,7 +35,10 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
         })
     );
 
-    app.use(createLogger());
+    // Create the logger instance
+    const loggerMiddleware = createLogger();
+    // Use the middleware for request logging
+    app.use(loggerMiddleware);
 
     app.use((req, res, next) => {
         res.set({
@@ -117,9 +122,19 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
         res.locals.csrfToken = generateCsrfToken(req, res);
         next();
     });
-    app.use('/api', apiApp);
-    app.use('/', indexRouter);
-    app.use('/search', getCaseReferenceNumberFromQueryString, caseSelected, searchRouter);
+
+    app.use('/auth', authRouter);
+
+    app.use('/api', isAuthenticated, apiApp);
+    app.use('/', isAuthenticated, indexRouter);
+    app.use(
+        '/search',
+        isAuthenticated,
+        getCaseReferenceNumberFromQueryString,
+        caseSelected,
+        searchRouter
+    );
+
     app.use((req, res) => {
         res.status(404).render('404.njk', {
             pageType: ['root']
