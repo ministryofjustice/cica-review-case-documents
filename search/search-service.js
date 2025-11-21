@@ -14,16 +14,16 @@ function createSearchService({
      * @param {string} query - The search query string.
      * @param {number} pageNumber - The page number of results to fetch.
      * @param {number} itemsPerPage - Number of items per page.
-     * @param {object} req - The request object.
+     * @param {string} token - The authentication token.
      * @returns {Promise<object>} A promise that resolves to the search results.
      */
-    async function getSearchResults(query, pageNumber, itemsPerPage, req) {
+    async function getSearchResults(query, pageNumber, itemsPerPage, token) {
         logger.info({ query, pageNumber, itemsPerPage }, 'Fetching search results');
         const opts = {
             url: `${process.env.APP_API_URL}/search/${query}/${pageNumber}/${itemsPerPage}`,
             headers: {
                 'On-Behalf-Of': caseReferenceNumber,
-                Cookie: req.headers.cookie
+                Authorization: `Bearer ${token}`
             }
         };
         return get(opts);

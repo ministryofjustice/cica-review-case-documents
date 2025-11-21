@@ -31,6 +31,7 @@
         "express-session": "^1.18.2",
         "got": "^14.4.9",
         "helmet": "^8.1.0",
+        "jsonwebtoken": "^9.0.2",
         "lodash.merge": "^4.6.2",
         "nanoid": "^5.1.5",
         "nunjucks": "^3.2.4",
@@ -48,7 +49,7 @@
         "@biomejs/biome": "2.3.5",
         "babel-loader": "^10.0.0",
         "core-js": "^3.45.1",
-        "dotenv": "^17.2.3",
+        "husky": "^9.1.7",
         "nodemon": "^3.1.10",
         "sass": "^1.92.1",
         "webpack-cli": "^6.0.1"

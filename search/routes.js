@@ -74,7 +74,13 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
             logger: req.log
         });
 
-        const response = await searchService.getSearchResults(query, pageNumber, itemsPerPage, req);
+        const token = req.cookies?.jwtToken;
+        const response = await searchService.getSearchResults(
+            query,
+            pageNumber,
+            itemsPerPage,
+            token
+        );
         const { body } = response || {};
 
         if (body?.errors) {
