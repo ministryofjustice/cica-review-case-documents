@@ -17,6 +17,11 @@
     }) }}
 
     {% if errors %}
+        {%
+            set errorMessageConfig = {
+                text: errors[0].text
+            }
+        %}
         {{ govukErrorSummary({
             titleText: "There is a problem",
             errorList: errors
@@ -43,6 +48,7 @@
                 id: "query",
                 name: "query",
                 value: query,
+                errorMessage: errorMessageConfig,
                 classes: "govuk-input--width-20 govuk-!-margin-right-4",
                 formGroup: {
                     afterInput: {
