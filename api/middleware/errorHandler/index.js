@@ -1,3 +1,5 @@
+import apiSpec from '../../openapi/openapi-dist.json' with { type: 'json' };
+
 /**
  * Map of HTTP status codes to their corresponding titles.
  * @typedef {Object} STATUS_TITLES_MAP
@@ -11,6 +13,17 @@
  * @property {string} 500 - Internal Server Error
  * @property {string} default - Error
  */
+const STATUS_TITLES_MAP = {
+    400: 'Bad Request',
+    401: 'Unauthorized',
+    403: 'Forbidden',
+    404: 'Not Found',
+    409: 'Conflict',
+    422: 'Unprocessable Entity',
+    429: 'Too Many Requests',
+    500: 'Internal Server Error',
+    default: 'Error'
+};
 
 /**
  * Map of error names to HTTP status codes.
@@ -20,18 +33,51 @@
  * @property {number} ConfigurationError - 500
  * @property {number} default - 500
  */
+const NAME_STATUS_MAP = {
+    UnauthorizedError: 401,
+    ResourceNotFound: 404,
+    ConfigurationError: 500,
+    default: 500
+};
 
 /**
- * Formats an error object into a standardized error response.
- *
- * @param {Object} params - Error parameters.
- * @param {number} params.status - HTTP status code.
- * @param {string} [params.detail] - Detailed error message.
- * @param {Object} [params.source] - Source of the error (e.g., pointer).
- * @param {string} [params.code] - Optional error code.
- * @param {Object} [params.meta] - Optional metadata.
- * @returns {Object} Formatted error object.
+ * Maps query parameter paths to OpenAPI path parameter references.
+ * Used for rendering meaningful error messages from OpenAPI spec.
+ * @type {Object.<string, string>}
  */
+const QUERY_PARAM_OPENAPI_PATH_PARAMETER_MAP = {
+    '/params/query': '#/components/parameters/query'
+};
+
+/**
+ * Maps OpenAPI validation error codes to schema property names.
+ * Used to look up custom error messages in OpenAPI spec.
+ * @type {Object.<string, string>}
+ */
+const OPENAPI_ERRORS_SCHEMA_PROPERTY_ERRORS_MAP = {
+    'minLength.openapi.validation': 'minLength',
+    'maxLength.openapi.validation': 'maxLength',
+    'pattern.openapi.validation': 'pattern'
+};
+
+/**
+ * Resolves a JSON pointer path (e.g., '#/components/parameters/query') to a value in an object.
+ *
+ * @param {Object} obj - The object to resolve the path against.
+ * @param {string} path - The JSON pointer path (e.g., '#/components/parameters/query').
+ * @returns {*} The resolved value, or undefined if not found.
+ */
+function resolveJsonPath(obj, pointer) {
+    if (!pointer?.startsWith('#/')) {
+        return undefined;
+    }
+    return pointer
+        .slice(2)
+        .split('/')
+        .reduce((current, key) => {
+            return current?.[key];
+        }, obj);
+}
 
 /**
  * Centralized Express error handler middleware.
@@ -46,42 +92,58 @@
  * @param {Function} next - Express next middleware function.
  * @returns {void}
  */
-const STATUS_TITLES_MAP = {
-    400: 'Bad Request',
-    401: 'Unauthorized',
-    403: 'Forbidden',
-    404: 'Not Found',
-    409: 'Conflict',
-    422: 'Unprocessable Entity',
-    429: 'Too Many Requests',
-    500: 'Internal Server Error',
-    default: 'Error'
-};
-
-const NAME_STATUS_MAP = {
-    UnauthorizedError: 401,
-    ResourceNotFound: 404,
-    ConfigurationError: 500,
-    default: 500
-};
 
 /**
- * Formats an error object according to the specified structure.
+ * Returns a custom error detail message from the OpenAPI spec if available.
+ * Falls back to the default error message if no custom message is found.
  *
- * @param {Object} params - The error parameters.
- * @param {number|string} params.status - The HTTP status code of the error.
- * @param {string} [params.detail] - A detailed error message.
- * @param {Object} [params.source] - The source of the error (e.g., pointer to the request).
- * @param {string} [params.code] - An application-specific error code.
- * @param {Object} [params.meta] - Additional metadata about the error.
- * @returns {Object} The formatted error object.
+ * @param {Object} fullError - The error object containing path and errorCode.
+ * @param {string} fullError.path - The error path (e.g., '/params/query').
+ * @param {string} fullError.errorCode - The OpenAPI validation error code.
+ * @param {string} fullError.message - The default error message.
+ * @returns {string} The custom error message or the default error message.
  */
-function formatError({ status, detail, source, code, meta }) {
+function getCustomOpenApiErrorDetail(fullError) {
+    const { path, errorCode, message } = fullError;
+
+    const pointer = QUERY_PARAM_OPENAPI_PATH_PARAMETER_MAP[path];
+    if (!pointer) {
+        return message;
+    }
+
+    const schema = resolveJsonPath(apiSpec, pointer)?.schema;
+    if (!schema) {
+        return message;
+    }
+
+    const schemaProperty = OPENAPI_ERRORS_SCHEMA_PROPERTY_ERRORS_MAP[errorCode];
+    if (!schemaProperty) {
+        return message;
+    }
+
+    return schema?.errorMessage?.[schemaProperty] || message;
+}
+
+/**
+ * Formats an error object into a standardized error response.
+ *
+ * @param {Object} params - Error parameters.
+ * @param {number} params.status - HTTP status code.
+ * @param {string} [params.detail] - Detailed error message.
+ * @param {Object} [params.source] - Source of the error (e.g., pointer).
+ * @param {string} [params.code] - Optional error code.
+ * @param {Object} [params.meta] - Optional metadata.
+ * @returns {Object} Formatted error object.
+ */
+function formatError({ status, detail, source, code, meta, fullError }) {
     const errorData = {
         status: status.toString(),
         title: STATUS_TITLES_MAP[status] || STATUS_TITLES_MAP.default
     };
-    if (detail) {
+
+    if (fullError?.errorCode) {
+        errorData.detail = getCustomOpenApiErrorDetail(fullError);
+    } else if (detail) {
         errorData.detail = detail;
     }
     if (source) {
@@ -141,7 +203,8 @@ export default (err, req, res, next) => {
             const formattedError = formatError({
                 status,
                 detail: e.message,
-                source: e.path ? { pointer: `/${e.path.replace(/\./g, '/')}` } : undefined
+                source: e.path ? { pointer: `/${e.path.replace(/\./g, '/')}` } : undefined,
+                fullError: e
             });
             errorResponse.errors.push(formattedError);
         });

@@ -1,5 +1,4 @@
 import assert from 'node:assert';
-
 import { beforeEach, test } from 'node:test';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
