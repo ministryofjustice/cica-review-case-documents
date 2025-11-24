@@ -29,7 +29,7 @@ function createSearchService({
     async function getSearchResults(query, pageNumber, itemsPerPage, token) {
         logger.info({ query, pageNumber, itemsPerPage }, 'Fetching search results');
         const opts = {
-            url: `${process.env.APP_API_URL}/search/${query}/${pageNumber}/${itemsPerPage}`,
+            url: `${process.env.APP_API_URL}/search/?query=${query}&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}`,
             headers: {
                 'On-Behalf-Of': caseReferenceNumber,
                 Authorization: `Bearer ${token}`

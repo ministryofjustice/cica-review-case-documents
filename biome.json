@@ -8,7 +8,8 @@
             "!stuff",
             "!public",
             "!coverage",
-            "!src/js/scripts.babel.generated.js"
+            "!src/js/scripts.babel.generated.js",
+            "!api/openapi/openapi-dist.json"
         ]
     },
     "formatter": {

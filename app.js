@@ -12,16 +12,14 @@ import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
 import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
+import errorHandler from './middleware/errors/globalErrorHandler.js';
+import notFoundHandler from './middleware/errors/notFoundHandler.js';
 import getCaseReferenceNumberFromQueryString from './middleware/getCaseReferenceNumberFromQueryString/index.js';
 import isAuthenticated from './middleware/isAuthenticated/index.js';
 import defaultCreateLogger from './middleware/logger/index.js';
+import generalRateLimiter from './middleware/rateLimiter/index.js';
 import searchRouter from './search/routes.js';
 import createTemplateEngineService from './templateEngine/index.js';
-import './middleware/errors/globalErrorHandler.js';
-import './middleware/errors/notFoundHandler.js';
-import errorHandler from './middleware/errors/globalErrorHandler.js';
-import notFoundHandler from './middleware/errors/notFoundHandler.js';
-import generalRateLimiter from './middleware/rateLimiter/index.js';
 
 /**
  * Creates and configures an Express application with middleware for logging, security, session management,

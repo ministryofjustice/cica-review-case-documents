@@ -42,7 +42,7 @@ describe('search-service', () => {
         const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
         assert.equal(
             mockGetCallArguments.url,
-            `${process.env.APP_API_URL}/search/${query}/${pageNumber}/${itemsPerPage}`
+            `${process.env.APP_API_URL}/search/?query=${query}&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}`
         );
         assert.equal(mockGetCallArguments.headers['On-Behalf-Of'], '12-345678');
     });

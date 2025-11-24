@@ -1,5 +1,27 @@
 import jwt from 'jsonwebtoken';
 
+// TODO review and reduce to only what's necessary
+// only use authHeader do not use cookies
+/**
+ * Extracts token from:
+ *   1. Cookies:      req.cookies.jwtToken
+ *   2. Authorization header: "Bearer <token>"
+ */
+function getTokenFromRequest(req) {
+    // 1. Cookie token
+    if (req.cookies?.jwtToken) return req.cookies.jwtToken;
+
+    // 2. Authorization header
+    const authHeader = req.headers?.authorization;
+    if (!authHeader) return null;
+
+    // Must follow: "Bearer <token>"
+    const [scheme, token] = authHeader.split(' ');
+    if (scheme !== 'Bearer' || !token) return null;
+
+    return token;
+}
+
 /**
  * Middleware to authenticate JWT tokens from cookies or Authorization headers.
  * If a valid token is found, attaches the decoded user object to `req.user`.
@@ -10,7 +32,8 @@ import jwt from 'jsonwebtoken';
  * @param {Function} next - Express next middleware function.
  */
 function authenticateJWTToken(req, res, next) {
-    const token = req.cookies.jwtToken || req.headers.authorization?.split(' ')[1];
+    const token = getTokenFromRequest(req);
+
     if (!token) {
         req.log?.warn({ url: req.originalUrl }, 'Missing authentication token');
         return res.status(401).send('Missing authentication token');
