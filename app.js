@@ -16,6 +16,7 @@ import defaultCreateLogger from './middleware/logger/index.js';
 import searchRouter from './search/routes.js';
 import isAuthenticated from './middleware/isAuthenticated/index.js';
 import authRouter from './auth/routes.js';
+import rateLimitErrorHandler from './middleware/rateLimitErrorHandler.js';
 
 function createApp({ createLogger = defaultCreateLogger } = {}) {
     const __filename = fileURLToPath(import.meta.url);
@@ -135,11 +136,7 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
         searchRouter
     );
 
-    app.use((req, res) => {
-        res.status(404).render('404.njk', {
-            pageType: ['root']
-        });
-    });
+    app.use(rateLimitErrorHandler(app));
 
     return app;
 }

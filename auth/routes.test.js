@@ -35,7 +35,7 @@ test('POST /auth/login with no username and no password shows correct errors', a
 
     const response = await agent.post('/auth/login').send({ _csrf: csrfToken });
 
-    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.status, 400);
     assert.match(response.text, /Enter your username/);
     assert.match(response.text, /Enter your password/);
 });
@@ -50,7 +50,7 @@ test('POST /auth/login with no username shows correct errors', async () => {
         .post('/auth/login')
         .send({ password: 'testPassword123', _csrf: csrfToken });
 
-    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.status, 400);
     assert.match(response.text, /Enter your username/);
     assert.doesNotMatch(response.text, /Enter your password/);
 });
@@ -65,7 +65,7 @@ test('POST /auth/login with no password shows correct errors', async () => {
         .post('/auth/login')
         .send({ username: 'testuser', _csrf: csrfToken });
 
-    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.status, 400);
     assert.match(response.text, /Enter your password/);
     assert.doesNotMatch(response.text, /Enter your username/);
     assert.match(response.text, /testuser/);
@@ -81,7 +81,7 @@ test('POST /auth/login with invalid credentials shows correct errors', async () 
         .post('/auth/login')
         .send({ username: 'wronguser', password: 'wrongPassword', _csrf: csrfToken });
 
-    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.status, 401);
     assert.match(response.text, /Enter a valid username and password/);
     assert.match(response.text, /wronguser/);
 });
@@ -96,7 +96,7 @@ test('POST /auth/login with invalid email format shows correct errors', async ()
         .post('/auth/login')
         .send({ username: 'not-an-email', password: 'DemoPass123', _csrf: csrfToken });
 
-    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.status, 401);
     assert.match(response.text, /Enter a valid username and password/);
     assert.match(response.text, /not-an-email/);
 });
