@@ -1,3 +1,5 @@
+.vscode/
+
 deployments/*.yml
 node_modules/
 stuff/

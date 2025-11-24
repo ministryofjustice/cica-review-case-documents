@@ -1,9 +1,8 @@
 {% extends "template.njk" %}
 {% from "moj/components/banner/macro.njk" import mojBanner %}
 {% from "moj/components/header/macro.njk" import mojHeader %}
-{% from "moj/components/identity-bar/macro.njk" import mojIdentityBar %}
-{% from "moj/components/sub-navigation/macro.njk" import mojSubNavigation %}
 {% from "govuk/components/phase-banner/macro.njk" import govukPhaseBanner %}
+{% from "components/cica/identity-bar-with-sub-nav/macro.njk" import cicaIdentityBarWithSubNav %}
 
 {% block pageTitle %}CICA FIND - GOV.UK{% endblock %}
 {% block head %}
@@ -32,21 +31,15 @@
             }]
             }
     }) }}
-    
-    {% set identityBarTitle = ' ' %}
-    {% if caseSelected %}
-        {% set identityBarTitle = '<strong>CRN: ' + caseReferenceNumber + '</strong>' %}
-    {% endif %}
 
     <div class="govuk-width-container">
         {% block innerHeader %}
-            {% call mojIdentityBar({
+
+            {{ cicaIdentityBarWithSubNav({
                 title: {
-                    html: identityBarTitle
+                    html: ['<strong>CRN: ', (caseReferenceNumber | default('none selected')), '</strong>'] | join('')
                 },
-                classes: 'moj-identity-bar--nested-moj-sub-navigation'
-            }) %}
-                {{ mojSubNavigation({
+                subNav: {
                     label: "Sub navigation",
                     items: [
                         {
@@ -60,8 +53,8 @@
                             active: "document" in pageType
                         }
                     ]
-                }) }}
-            {% endcall %}
+                }
+            }) }}
         {% endblock %}
     </div>
 {% endblock %}
