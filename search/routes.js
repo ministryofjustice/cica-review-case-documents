@@ -4,6 +4,34 @@ import createSearchService from './search-service.js';
 
 const router = express.Router();
 
+function validateSearchQuery(query) {
+    const errors = [];
+    
+    if (!query || query.trim().length === 0) {
+        errors.push({
+            text: 'Enter a search term',
+            href: '#query'
+        });
+    } else if (query.trim().length < 2) {
+        errors.push({
+            text: 'Search term must be at least 2 characters',
+            href: '#query'
+        });
+    } else if (query.length > 200) {
+        errors.push({
+            text: 'Search term must be 200 characters or less',
+            href: '#query'
+        });
+    } else if (!/^[a-zA-Z0-9\s\-'',.?!]+$/.test(query)) {
+        errors.push({
+            text: 'Search term contains invalid characters',
+            href: '#query'
+        });
+    }
+    
+    return errors;
+}
+
 router.get('/', (req, res, next) => {
     try {
         const templateEngineService = createTemplateEngineService();
@@ -24,7 +52,24 @@ router.get('/', (req, res, next) => {
 router.post('/', (req, res, next) => {
     try {
         const { query } = req.body;
-        return res.redirect(`/search/${query}`);
+        const errors = validateSearchQuery(query);
+        
+        if (errors.length > 0) {
+            const templateEngineService = createTemplateEngineService();
+            const { render } = templateEngineService;
+            const html = render('search/page/results.njk', { // results.njk, or index.njk?
+                caseSelected: req.session.caseSelected,
+                caseReferenceNumber: req.session.caseReferenceNumber,
+                pageType: 'search',
+                csrfToken: res.locals.csrfToken,
+                cspNonce: res.locals.cspNonce,
+                errors,
+                query: query || ''
+            });
+            return res.status(400).send(html);
+        }
+
+        return res.redirect(`/search/${encodeURIComponent(query.trim())}`);
     } catch (err) {
         next(err);
     }
