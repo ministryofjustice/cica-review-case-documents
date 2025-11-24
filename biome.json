@@ -17,7 +17,8 @@
         "indentWidth": 4,
         "lineWidth": 100,
         "bracketSpacing": true,
-        "lineEnding": "lf"
+        "lineEnding": "lf",
+        "useEditorconfig": true
     },
     "linter": {
         "enabled": true,
@@ -63,8 +64,10 @@
     },
     "javascript": {
         "formatter": {
+            "enabled": true,
             "quoteStyle": "single",
             "trailingCommas": "none",
+            "arrowParentheses": "always",
             "semicolons": "always",
             "indentStyle": "space",
             "indentWidth": 4,
@@ -74,10 +77,22 @@
     },
     "json": {
         "formatter": {
+            "enabled": true,
             "trailingCommas": "none",
             "indentStyle": "space",
             "indentWidth": 4,
             "lineWidth": 100
+        }
+    },
+    "css": {
+        "formatter": {
+            "enabled": true,
+            "indentStyle": "space",
+            "indentWidth": 4,
+            "lineWidth": 100
+        },
+        "parser": {
+            "cssModules": false
         }
     }
 }

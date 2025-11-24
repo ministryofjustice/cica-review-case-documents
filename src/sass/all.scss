@@ -1,9 +1,8 @@
 // core CSS (immutable).
-@import "node_modules/govuk-frontend/dist/govuk/index";
-@import "node_modules/@ministryofjustice/frontend/moj/components/all";
+@use "node_modules/govuk-frontend/dist/govuk/index";
+@use "node_modules/@ministryofjustice/frontend/moj/components/all";
 
 // custom components.
-@import "components/cica/nested-sub-nav-identity-bar/styles";
+@use "components/cica/identity-bar-with-sub-nav/identity-bar";
 
 // macros
-@import "document/styles/styles";

@@ -1,0 +1,21 @@
+const html = `
+    <div class="moj-identity-bar moj-identity-bar--nested-moj-sub-navigation">
+        <div class="moj-identity-bar__container">
+            <div class="moj-identity-bar__details">
+                <span class="moj-identity-bar__title"><strong>CRN: 25-111111</strong></span>
+            </div>
+            <nav class="moj-sub-navigation" aria-label="Sub navigation">
+                <ul class="moj-sub-navigation__list">
+                    <li class="moj-sub-navigation__item">
+                        <a class="moj-sub-navigation__link" aria-current="page" href="/search">Search</a>
+                    </li>
+                    <li class="moj-sub-navigation__item">
+                        <a class="moj-sub-navigation__link" href="/document">Documents</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+`;
+
+export default html;
