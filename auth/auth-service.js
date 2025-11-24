@@ -1,6 +1,6 @@
 import { getAuthConfig } from './utils/getAuthConfig/index.js';
 
-export function validateLogin(username, password) {
+export function loginParamsValidator(username, password) {
     const { secret, usernames } = getAuthConfig();
     const normalizedUsername = (username || '').toLowerCase();
 

@@ -29,6 +29,7 @@
         "csrf-csrf": "^4.0.3",
         "express": "^5.1.0",
         "express-openapi-validator": "^5.6.0",
+        "express-rate-limit": "^8.2.1",
         "express-session": "^1.18.2",
         "got": "^14.4.9",
         "helmet": "^8.1.0",
