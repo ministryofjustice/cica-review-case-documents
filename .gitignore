@@ -3,3 +3,4 @@ node_modules/
 stuff/
 scan.js
 .env
+coverage/
