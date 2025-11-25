@@ -1,6 +1,6 @@
 import express from 'express';
 import OpenApiValidator from 'express-openapi-validator';
-import errorHandler from '../middleware/errorHandler/index.js';
+import errorHandler from './middleware/errorHandler/index.js';
 import apiRouter from './routes.js';
 import jwt from 'jsonwebtoken';
 
