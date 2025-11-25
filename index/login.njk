@@ -16,14 +16,9 @@
     </div>
 
   {% elif lockoutWarning %}
-    {% set invalidCredentialsErrorText = lockoutWarning + " and you have " + attemptsLeft + " attempt" %}
-    {% if attemptsLeft != 1 %}
-      {% set invalidCredentialsErrorText = invalidCredentialsErrorText + "s" %}
-    {% endif %}
-    {% set invalidCredentialsErrorText = invalidCredentialsErrorText + " remaining." %}
     {{ govukErrorSummary({
       titleText: error,
-      errorList:[{ href: "#username", text: invalidCredentialsErrorText }]
+      errorList:[{ href: "#username", text: lockoutWarning }]
     }) }}
   {% elif usernameError and passwordError %}
     {{ govukErrorSummary({
@@ -56,6 +51,9 @@
     <input type="hidden" name="_csrf" value="{{ csrfToken }}">
 
     {% if usernameError %}
+      {% if lockoutWarning %}
+        {% set usernameError = lockoutWarning %}
+      {% endif %}
       {{ govukInput({
         label: { text: "Username" },
         id: "username",
