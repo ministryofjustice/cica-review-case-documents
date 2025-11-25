@@ -21,9 +21,9 @@
  */
 import express from 'express';
 import createTemplateEngineService from '../templateEngine/index.js';
-import { loginParamsValidator } from './auth-service.js';
+import { loginParamsValidator, signOutUser } from './auth-service.js';
 import jwt from 'jsonwebtoken';
-import failureRateLimiter, { getRateLimitKey } from './rateLimiter.js';
+import failureRateLimiter from './rateLimiter.js';
 import jwtCookieOptions from './jwtCookieOptions.js';
 import { renderLoginResponse, getLoginAttemptContext } from './utils/loginHelpers/login-helpers.js';
 
@@ -42,7 +42,7 @@ router.get('/login', (req, res, next) => {
     }
 });
 
-router.post('/login', failureRateLimiter, (req, res) => {
+router.post('/login', failureRateLimiter, (req, res, next) => {
     const { username = '', password = '' } = req.body;
     const { error, usernameError, passwordError } = loginParamsValidator(username, password);
 
@@ -88,7 +88,8 @@ router.post('/login', failureRateLimiter, (req, res) => {
     try {
         token = jwt.sign(user, process.env.APP_JWT_SECRET, { expiresIn: '1h' });
     } catch (err) {
-        return res.status(500).send('Error generating authentication token');
+        req.log.error({ err }, 'JWT generation error');
+        return next(err);
     }
 
     req.session.username = username;
@@ -99,27 +100,7 @@ router.post('/login', failureRateLimiter, (req, res) => {
 });
 
 router.get('/sign-out', (req, res, next) => {
-    const caseReferenceNumber = req.session?.caseReferenceNumber;
-
-    // Determine the rate limit key (username or IP)
-    let rateLimitKey = getRateLimitKey(req);
-
-    // Reset the rate limiter for this key
-    if (rateLimitKey && typeof failureRateLimiter.resetKey === 'function') {
-        failureRateLimiter.resetKey(rateLimitKey);
-    }
-
-    req.session.destroy(() => {
-        res.clearCookie('jwtToken', jwtCookieOptions);
-
-        const templateEngineService = createTemplateEngineService();
-        const { render } = templateEngineService;
-        const html = render('index/sign-out.njk', {
-            message: 'You have signed out',
-            caseReferenceNumber
-        });
-        res.send(html);
-    });
+    signOutUser(req, res, next);
 });
 
 export default router;
