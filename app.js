@@ -17,6 +17,10 @@ import searchRouter from './search/routes.js';
 import isAuthenticated from './middleware/isAuthenticated/index.js';
 import authRouter from './auth/routes.js';
 import rateLimitErrorHandler from './middleware/rateLimitErrorHandler.js';
+import './middleware/errors/globalErrorHandler.js';
+import './middleware/errors/notFoundHandler.js';
+import notFoundHandler from './middleware/errors/notFoundHandler.js';
+import errorHandler from './middleware/errors/globalErrorHandler.js';
 
 function createApp({ createLogger = defaultCreateLogger } = {}) {
     const __filename = fileURLToPath(import.meta.url);
@@ -136,7 +140,9 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
         searchRouter
     );
 
+    app.use(notFoundHandler);
     app.use(rateLimitErrorHandler(app));
+    app.use(errorHandler);
 
     return app;
 }

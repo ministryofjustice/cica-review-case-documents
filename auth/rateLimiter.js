@@ -50,5 +50,3 @@ export function createFailureRateLimiter(
 
 const failureRateLimiter = createFailureRateLimiter();
 export default failureRateLimiter;
-
-

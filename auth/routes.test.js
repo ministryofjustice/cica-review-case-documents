@@ -1,7 +1,7 @@
-import { test, beforeEach, afterEach } from 'node:test';
+import { test, beforeEach } from 'node:test'; // Removed 'afterEach' and 'mock'
 import assert from 'node:assert';
 import request from 'supertest';
-import { mock } from 'node:test';
+import jwt from 'jsonwebtoken';
 import createApp from '../app.js';
 
 let app;
@@ -13,12 +13,19 @@ async function getCsrfToken(agent) {
 }
 
 beforeEach(() => {
-    app = createApp();
+    app = createApp({
+        createLogger: () => (req, res, next) => {
+            req.log = {
+                error: () => {},
+                info: () => {},
+                warn: () => {},
+                debug: () => {},
+                child: () => req.log // Add this line
+            };
+            next();
+        }
+    });
     agent = request.agent(app);
-});
-
-afterEach(() => {
-    mock.reset();
 });
 
 test('GET /auth/login should render login page', async () => {
@@ -152,4 +159,34 @@ test('GET /auth/sign-out displays sign out message and case reference link', asy
     assert.match(response.text, /Sign in/);
     assert.match(response.text, /25-111111/);
     assert.match(response.text, /href="\/search\?caseReferenceNumber=25-111111"/);
+});
+
+test('POST /auth/login handles JWT signing errors gracefully (500)', async () => {
+    process.env.AUTH_USERNAMES = 'test.user@example.com';
+    process.env.AUTH_SECRET_PASSWORD = 'DemoPass123';
+
+    const csrfToken = await getCsrfToken(agent);
+
+    // 1. Save original method
+    const originalSign = jwt.sign;
+
+    // 2. Manually mock the method
+    jwt.sign = () => {
+        throw new Error('Simulated JWT Signing Error');
+    };
+
+    try {
+        const response = await agent
+            .post('/auth/login')
+            .send({ username: 'test.user@example.com', password: 'DemoPass123', _csrf: csrfToken });
+
+        // Expect a 500 status code (Internal Server Error)
+        assert.strictEqual(response.status, 500);
+
+        // Expect the generic error page content (from error.njk)
+        assert.match(response.text, /Sorry, there is a problem with the service/);
+    } finally {
+        // 3. Restore original method (Critical!)
+        jwt.sign = originalSign;
+    }
 });

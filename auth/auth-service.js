@@ -1,4 +1,7 @@
 import { getAuthConfig } from './utils/getAuthConfig/index.js';
+import createTemplateEngineService from '../templateEngine/index.js';
+import jwtCookieOptions from './jwtCookieOptions.js';
+import failureRateLimiter, { getRateLimitKey } from './rateLimiter.js';
 
 export function loginParamsValidator(username, password) {
     const { secret, usernames } = getAuthConfig();
@@ -31,4 +34,25 @@ export function loginParamsValidator(username, password) {
     }
 
     return { error, usernameError, passwordError };
+}
+
+export function signOutUser(req, res, next) {
+    const caseReferenceNumber = req.session?.caseReferenceNumber;
+    let rateLimitKey = getRateLimitKey(req);
+
+    if (rateLimitKey && typeof failureRateLimiter.resetKey === 'function') {
+        failureRateLimiter.resetKey(rateLimitKey);
+    }
+
+    req.session.destroy(() => {
+        res.clearCookie('jwtToken', jwtCookieOptions);
+
+        const templateEngineService = createTemplateEngineService();
+        const { render } = templateEngineService;
+        const html = render('index/sign-out.njk', {
+            message: 'You have signed out',
+            caseReferenceNumber
+        });
+        res.send(html);
+    });
 }
