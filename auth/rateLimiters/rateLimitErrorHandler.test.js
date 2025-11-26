@@ -1,3 +1,21 @@
+/**
+ * Unit tests for the rateLimitErrorHandler middleware.
+ *
+ * Tests:
+ * - Responds with HTTP 429 and a lockout message when a RateLimitError is thrown.
+ * - Passes non-rate-limit errors to the next error handler, which responds with HTTP 500.
+ *
+ * Mocks:
+ * - Template engine service to simulate rendering lockout messages.
+ *
+ * Dependencies:
+ * - node:test: For running tests.
+ * - node:assert/strict: For assertions.
+ * - express: For creating the test server.
+ * - supertest: For HTTP request simulation.
+ * - rateLimitErrorHandler: The middleware under test.
+ * - RateLimitError: Custom error class for rate limiting.
+ */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';
@@ -5,7 +23,13 @@ import request from 'supertest';
 import rateLimitErrorHandler from './rateLimitErrorHandler.js';
 import { RateLimitError } from './rateLimiter.js';
 
-// Mock template engine service
+/**
+ * Mocks the creation of a template engine service for testing purposes.
+ * Returns an object with a `render` method that generates a string containing the lockout warning.
+ *
+ * @param {Object} app - The Express application instance (unused in mock).
+ * @returns {{ render: function(string, Object): string }} An object with a render function.
+ */
 function mockCreateTemplateEngineService(app) {
     return {
         render: (template, context) => {

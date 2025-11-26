@@ -1,6 +1,70 @@
+/**
+ * Default environment variable configuration.
+ * @typedef {Object} Defaults
+ * @property {Object} envVars
+ * @property {string[]} envVars.mandatory - List of mandatory environment variable names.
+ * @property {string[]} envVars.optional - List of optional environment variable names.
+ */
+
+/**
+ * Returns the list of mandatory environment variable names.
+ * @returns {string[]} Array of mandatory environment variable names.
+ */
+
+/**
+ * Returns the list of optional environment variable names.
+ * @returns {string[]} Array of optional environment variable names.
+ */
+
+/**
+ * Checks that all mandatory environment variables are set in process.env.
+ * Throws a ConfigurationError if any are missing.
+ * @param {string[]} [mandatoryEnvVars] - Array of mandatory environment variable names.
+ * @throws {VError} If mandatoryEnvVars is not a non-empty array or if any mandatory variable is missing.
+ */
+
+/**
+ * Checks that all optional environment variables are set in process.env.
+ * Logs a debug message for any missing optional variable.
+ * @param {string[]} [optionalEnvVars] - Array of optional environment variable names.
+ * @param {Object} logger - Logger instance (pino or pino-http).
+ * @throws {VError} If optionalEnvVars is not an array.
+ */
+
+/**
+ * Checks if the provided logger is a valid logger instance.
+ * Throws a ConfigurationError if not.
+ * @param {Object} logger - Logger instance to validate.
+ * @throws {VError} If logger is not valid.
+ */
+
+/**
+ * Checks both mandatory and optional environment variables and validates the logger.
+ * @param {Object} [options]
+ * @param {string[]} [options.mandatoryEnvVars] - Array of mandatory environment variable names.
+ * @param {string[]} [options.optionalEnvVars] - Array of optional environment variable names.
+ * @param {Object} options.logger - Logger instance.
+ * @throws {VError} If any validation fails.
+ */
+
+/**
+ * Express middleware to ensure environment variables are valid.
+ * Throws if any mandatory variable is missing or logger is invalid.
+ * @param {Object} req - Express request object, must have a `log` property.
+ * @param {Object} res - Express response object.
+ * @param {Function} next - Express next middleware function.
+ */
 import VError from 'verror';
 import isLogger from '../logger/utils/isLogger/index.js';
 
+/**
+ * Default configuration object specifying required and optional environment variables.
+ *
+ * @typedef {Object} Defaults
+ * @property {Object} envVars - Environment variables configuration.
+ * @property {string[]} envVars.mandatory - List of mandatory environment variable names.
+ * @property {string[]} envVars.optional - List of optional environment variable names.
+ */
 const defaults = {
     envVars: {
         mandatory: [
@@ -21,14 +85,31 @@ const defaults = {
     }
 };
 
+/**
+ * Retrieves the list of mandatory environment variables required by the application.
+ *
+ * @returns {string[]} An array of mandatory environment variable names.
+ */
 function getMandatoryEnvVars() {
     return defaults.envVars.mandatory;
 }
 
+/**
+ * Retrieves the list of optional environment variables from the defaults configuration.
+ *
+ * @returns {Array<string>} An array of optional environment variable names.
+ */
 function getOptionalEnvVars() {
     return defaults.envVars.optional;
 }
 
+/**
+ * Checks that all mandatory environment variables are set and valid.
+ * Throws a ConfigurationError if any mandatory environment variable is missing or undefined.
+ *
+ * @param {string[]} [mandatoryEnvVars=getMandatoryEnvVars()] - An array of mandatory environment variable names to check.
+ * @throws {VError} Throws if mandatoryEnvVars is not a non-empty array or if any required environment variable is missing.
+ */
 function checkMandatoryEnvVars(mandatoryEnvVars = getMandatoryEnvVars()) {
     if (!Array.isArray(mandatoryEnvVars) || mandatoryEnvVars.length === 0) {
         throw new VError(
@@ -51,6 +132,13 @@ function checkMandatoryEnvVars(mandatoryEnvVars = getMandatoryEnvVars()) {
     });
 }
 
+/**
+ * Checks the presence of optional environment variables and logs a debug message for each variable that is not set.
+ *
+ * @param {string[]} [optionalEnvVars=getOptionalEnvVars()] - An array of optional environment variable names to check. Defaults to the result of getOptionalEnvVars().
+ * @param {Object} logger - A logger instance with a debug method for logging missing environment variables.
+ * @throws {VError} Throws if optionalEnvVars is not a non-empty array.
+ */
 function checkOptionalEnvVars(optionalEnvVars = getOptionalEnvVars(), logger) {
     if (!Array.isArray(optionalEnvVars)) {
         throw new VError(
@@ -77,6 +165,13 @@ function checkOptionalEnvVars(optionalEnvVars = getOptionalEnvVars(), logger) {
     });
 }
 
+/**
+ * Validates that the provided logger is a valid pino or pino-http logger instance.
+ * Throws a ConfigurationError if the logger is invalid.
+ *
+ * @param {*} logger - The logger instance to validate.
+ * @throws {VError} Throws if the logger is not a valid pino or pino-http logger.
+ */
 function checkIsLogger(logger) {
     if (!isLogger(logger)) {
         throw new VError(
@@ -88,6 +183,16 @@ function checkIsLogger(logger) {
     }
 }
 
+/**
+ * Checks the validity of mandatory and optional environment variables.
+ *
+ * @param {Object} [options={}] - The options object.
+ * @param {string[]} [options.mandatoryEnvVars=getMandatoryEnvVars()] - Array of mandatory environment variable names.
+ * @param {string[]} [options.optionalEnvVars=getOptionalEnvVars()] - Array of optional environment variable names.
+ * @param {Object} options.logger - Logger instance used for logging validation results.
+ *
+ * @throws {Error} If the logger is invalid or mandatory environment variables are missing.
+ */
 function checkEnvVars({
     mandatoryEnvVars = getMandatoryEnvVars(),
     optionalEnvVars = getOptionalEnvVars(),
@@ -98,6 +203,15 @@ function checkEnvVars({
     checkOptionalEnvVars(optionalEnvVars, logger);
 }
 
+/**
+ * Express middleware that validates required and optional environment variables.
+ * Calls `checkEnvVars` with lists of mandatory and optional environment variables,
+ * and logs the results using the request logger.
+ *
+ * @param {import('express').Request} req - Express request object, expected to have a `log` property for logging.
+ * @param {import('express').Response} res - Express response object.
+ * @param {Function} next - Express next middleware function.
+ */
 function ensureEnvVarsAreValid(req, res, next) {
     checkEnvVars({
         mandatoryEnvVars: getMandatoryEnvVars(),

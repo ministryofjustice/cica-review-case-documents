@@ -1,5 +1,27 @@
+/**
+ * Middleware to check if the user is authenticated.
+ *
+ * This function first checks for a session-based login (for backward compatibility).
+ * If not found, it checks for a JWT token in cookies or the Authorization header.
+ * If a valid token is found, it attaches the decoded user object to `req.user` and calls `next()`.
+ * If authentication fails, it logs a warning, saves the original URL to the session,
+ * and redirects the user to the login page.
+ */
 import jwt from 'jsonwebtoken';
 
+/**
+ * Middleware to check if the user is authenticated.
+ *
+ * This function first checks for a session-based login (for backward compatibility).
+ * If not found, it checks for a JWT token in cookies or the Authorization header.
+ * If a valid token is found, it attaches the decoded user object to `req.user` and calls `next()`.
+ * If authentication fails, it logs a warning, saves the original URL to the session,
+ * and redirects the user to the login page.
+ *
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ * @param {import('express').NextFunction} next - Express next middleware function.
+ */
 export default function isAuthenticated(req, res, next) {
     // Check session first (for backward compatibility)
     if (req.session?.loggedIn) {

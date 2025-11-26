@@ -1,3 +1,9 @@
+/**
+ * Creates an Express application configured with session support and the general rate limiter middleware.
+ * The app exposes a single GET endpoint at '/test' for testing rate limiting.
+ *
+ * @returns {express.Application} The configured Express application instance.
+ */
 import express from 'express';
 import session from 'express-session';
 import request from 'supertest';
@@ -5,6 +11,12 @@ import generalRateLimiter from './generalRateLimiter.js';
 import { test } from 'node:test';
 import assert from 'node:assert';
 
+/**
+ * Creates an Express application configured with session middleware and a general rate limiter.
+ * The app exposes a single GET endpoint at '/test' that responds with a 200 status and 'OK'.
+ *
+ * @returns {import('express').Express} The configured Express application instance.
+ */
 function createTestApp() {
     const app = express();
     app.use(

@@ -1,13 +1,12 @@
 /**
- * Returns options for configuring JWT cookies.
+ * Returns the options for configuring a JWT cookie.
  *
- * @returns {Object} Cookie options.
- * @returns {boolean} options.httpOnly - Ensures the cookie is accessible only by the web server.
- * @returns {boolean} options.secure - Sets the cookie to be sent only over HTTPS in production.
- * @returns {string} options.sameSite - Controls whether the cookie is sent with cross-site requests ('lax' mode).
- * @returns {number} options.maxAge - Specifies the cookie's expiration time in milliseconds (default: 1 hour).
+ * @returns {Object} Cookie options for JWT.
+ * @returns {boolean} return.httpOnly - Indicates if the cookie is HTTP only.
+ * @returns {boolean} return.secure - Indicates if the cookie should be sent only over HTTPS (true in production).
+ * @returns {string} return.sameSite - Controls whether the cookie is sent with cross-site requests ('lax').
+ * @returns {number} return.maxAge - Maximum age of the cookie in milliseconds, defaults to 1 hour if not set.
  */
-
 export default function getJwtCookieOptions() {
     return {
         httpOnly: true,

@@ -1,3 +1,13 @@
+/**
+ * Creates and configures an Express application instance for the CICA Review Case Documents app.
+ *
+ * Sets up middleware for security (Helmet, CSP, CSRF), logging, session management, request parsing,
+ * static assets, authentication, routing, and error handling.
+ *
+ * @param {Object} [options] - Optional configuration object.
+ * @param {Function} [options.createLogger=defaultCreateLogger] - Function to create a logger middleware.
+ * @returns {import('express').Express} Configured Express application instance.
+ */
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import cookieParser from 'cookie-parser';
@@ -22,6 +32,15 @@ import './middleware/errors/notFoundHandler.js';
 import notFoundHandler from './middleware/errors/notFoundHandler.js';
 import errorHandler from './middleware/errors/globalErrorHandler.js';
 
+/**
+ * Creates and configures an Express application with middleware for logging, security, session management,
+ * CSRF protection, static assets, and routing.
+ *
+ * @function
+ * @param {Object} [options] - Optional configuration object.
+ * @param {Function} [options.createLogger=defaultCreateLogger] - Factory function to create a request logger middleware.
+ * @returns {import('express').Express} The configured Express application instance.
+ */
 function createApp({ createLogger = defaultCreateLogger } = {}) {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);

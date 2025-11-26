@@ -1,8 +1,31 @@
+/**
+ * Validates login parameters (username and password).
+ *
+ * @param {string} username - The username to validate.
+ * @param {string} password - The password to validate.
+ * @returns {{ error: string, usernameError: string, passwordError: string }} - An object containing error messages for the login attempt.
+ */
+
+/**
+ * Signs out the user by destroying the session, clearing the JWT cookie, and rendering the sign-out page.
+ *
+ * @param {import('express').Request} req - The Express request object.
+ * @param {import('express').Response} res - The Express response object.
+ * @param {Function} next - The next middleware function.
+ */
 import { getAuthConfig } from './utils/getAuthConfig/index.js';
 import createTemplateEngineService from '../templateEngine/index.js';
 import jwtCookieOptions from './jwtCookieOptions.js';
 import failureRateLimiter, { getRateLimitKey } from './rateLimiters/rateLimiter.js';
 
+/**
+ * Validates login parameters (username and password) against authentication configuration.
+ *
+ * @param {string} username - The username to validate.
+ * @param {string} password - The password to validate.
+ * @returns {{ error: string, usernameError: string, passwordError: string }}
+ * An object containing error messages for the overall login, username, and password fields.
+ */
 export function loginParamsValidator(username, password) {
     const { secret, usernames } = getAuthConfig();
     const normalizedUsername = (username || '').toLowerCase();
@@ -36,6 +59,14 @@ export function loginParamsValidator(username, password) {
     return { error, usernameError, passwordError };
 }
 
+/**
+ * Signs out the current user by destroying their session, clearing the JWT cookie,
+ * resetting the rate limiter key if applicable, and rendering the sign-out page.
+ *
+ * @param {import('express').Request} req - The Express request object.
+ * @param {import('express').Response} res - The Express response object.
+ * @param {Function} next - The next middleware function.
+ */
 export function signOutUser(req, res, next) {
     const caseReferenceNumber = req.session?.caseReferenceNumber;
     let rateLimitKey = getRateLimitKey(req);

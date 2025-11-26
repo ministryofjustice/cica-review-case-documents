@@ -1,8 +1,33 @@
+/**
+ * Unit tests for the isAuthenticated middleware.
+ *
+ * These tests cover the following scenarios:
+ * - Middleware calls `next` if `session.loggedIn` is true.
+ * - Middleware redirects to `/auth/login` if no token is present.
+ * - Middleware calls `next` and sets `req.user` if a valid JWT token is present in cookies.
+ * - Middleware calls `next` and sets `req.user` if a valid JWT token is present in the Authorization header.
+ * - Middleware redirects to `/auth/login` if the JWT token is invalid.
+ *
+ * Helper functions:
+ * - `createMockReq`: Creates a mock request object with customizable session, cookies, headers, log, and originalUrl.
+ * - `createMockRes`: Creates a mock response object with a redirect method and a property to check the redirected URL.
+ */
 import { test } from 'node:test';
 import assert from 'node:assert';
 import jwt from 'jsonwebtoken';
 import isAuthenticated from './index.js';
 
+/**
+ * Creates a mock request object for testing purposes.
+ *
+ * @param {Object} [options={}] - Options to customize the mock request.
+ * @param {Object} [options.session={}] - Mock session object.
+ * @param {Object} [options.cookies={}] - Mock cookies object.
+ * @param {Object} [options.headers={}] - Mock headers object.
+ * @param {Object} [options.log={ warn: function() {} }] - Mock logger with a warn method.
+ * @param {string} [options.originalUrl='/test'] - Mock original URL.
+ * @returns {Object} Mock request object with session, cookies, headers, log, and originalUrl properties.
+ */
 function createMockReq({
     session = {},
     cookies = {},
@@ -13,6 +38,14 @@ function createMockReq({
     return { session, cookies, headers, log, originalUrl };
 }
 
+/**
+ * Creates a mock response object for testing purposes.
+ * The mock object provides a `redirect` method to simulate redirection,
+ * and a `redirectedUrl` getter to retrieve the last redirected URL.
+ *
+ * @returns {{redirect: function(string): void, redirectedUrl: string|null}}
+ *   An object with a `redirect` method and a `redirectedUrl` property.
+ */
 function createMockRes() {
     let redirectedUrl = null;
     return {

@@ -1,15 +1,14 @@
-/**
- * Express middleware to handle rate limit errors.
- * If the error is an instance of RateLimitError, renders the login page with a lockout warning.
- * Otherwise, passes the error to the next middleware.
- *
- * @param {import('express').Application} app - The Express application instance.
- * @param {import('../../templateEngine/index.js').TemplateEngineFactory} templateEngineFactory - The template engine factory.
- * @returns {import('express').ErrorRequestHandler} Middleware function to handle rate limit errors.
- */
 import { RateLimitError } from './rateLimiter.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
-
+/**
+ * Express error handler middleware for rate limiting errors.
+ * If the error is an instance of RateLimitError, renders a lockout page using the provided template engine.
+ * Otherwise, passes the error to the next middleware.
+ *
+ * @param {object} app - The Express application instance.
+ * @param {function} [templateEngineFactory=createTemplateEngineService] - Factory function to create the template engine service.
+ * @returns {function} Express error handling middleware.
+ */
 export default function rateLimitErrorHandler(
     app,
     templateEngineFactory = createTemplateEngineService

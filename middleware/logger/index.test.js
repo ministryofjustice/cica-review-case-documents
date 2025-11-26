@@ -1,3 +1,14 @@
+/**
+ * Integration tests for the logger middleware.
+ *
+ * These tests verify that the logger:
+ * - Logs at the correct level (INFO, WARN, ERROR) based on response status codes.
+ * - Includes correlation IDs from headers or generates them if missing.
+ * - Structures logs with request and response fields.
+ * - Redacts sensitive fields according to environment configuration.
+ *
+ * @module logger/index.test
+ */
 import assert from 'node:assert/strict';
 import { Writable } from 'node:stream';
 import { beforeEach, describe, it } from 'node:test';
@@ -11,6 +22,13 @@ describe('Logger integration', () => {
     let logStream;
     let lines = [];
 
+    /**
+     * Creates a writable stream that captures and parses JSON log entries.
+     * Each valid JSON chunk written to the stream is pushed to the `lines` array.
+     * Non-JSON chunks are ignored.
+     *
+     * @returns {Writable} A writable stream for capturing JSON log entries.
+     */
     function LogCaptureStream() {
         return new Writable({
             write(chunk, encoding, callback) {

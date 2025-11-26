@@ -1,16 +1,11 @@
 /**
- * Extracts and validates a case reference number (CRN) from the request query string.
+ * Middleware to extract and validate a case reference number from the query string.
+ * Accepts either `crn` or `caseReferenceNumber` query parameters in the format "NN-NNNNNN".
+ * If a valid case reference number is found, it sets `caseSelected` and `caseReferenceNumber` in the session.
  *
- * If a valid CRN (matching the format `NN-NNNNNN`, e.g. `12-345678`) is found in either
- * the `crn` or `caseReferenceNumber` query parameter, it is stored in the session under
- * `req.session.caseReferenceNumber` and `req.session.caseSelected` is set to `true`.
- *
- * @function getCaseReferenceNumberFromQueryString
- * @param {import('express').Request} req - The Express request object. Should contain a `query` object with potential CRN values and a `session` object for storing session data.
- * @param {import('express').Response} res - The Express response object.
- * @param {import('express').NextFunction} next - The Express middleware next function, called to pass control to the next middleware.
- *
- * @returns {void} This middleware does not return a value. It calls `next()` to continue request processing.
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ * @param {Function} next - Express next middleware function.
  */
 const getCaseReferenceNumberFromQueryString = (req, res, next) => {
     const crnRegex = /^[0-9]{2}-[0-9]{6}$/;
