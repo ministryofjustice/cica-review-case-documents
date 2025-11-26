@@ -1,5 +1,17 @@
+/**
+ * Creates a search service for fetching search results from the API.
+ */
 import createRequestServiceDefault from '../service/request/index.js';
 
+/**
+ * Creates a search service for fetching search results from the API.
+ *
+ * @param {Object} options - The options for creating the search service.
+ * @param {string} options.caseReferenceNumber - The reference number for the case, used in request headers.
+ * @param {Object} options.logger - Logger instance for logging actions.
+ * @param {Function} [options.createRequestService=createRequestServiceDefault] - Factory function to create a request service.
+ * @returns {Object} The search service with a method to fetch search results.
+ */
 function createSearchService({
     caseReferenceNumber,
     logger,

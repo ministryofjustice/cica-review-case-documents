@@ -1,3 +1,7 @@
+/**
+ * The logger can be an instance of a structured logging tool such as `pino` or `pino-http`.
+ * When provided, query execution time, row counts, and query metadata are logged automatically.
+ */
 import VError from 'verror';
 import createDBQueryDefault from '../db/index.js';
 
@@ -60,11 +64,19 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
     const db = createDBQuery({ logger });
 
     // TODO: implements documents retrieval.
+    /**
+     * Retrieves a list of documents.
+     * @returns {Promise<Array>} A promise that resolves to an array of documents.
+     */
     async function getDocuments() {
         return [];
     }
 
     // TODO: implements document retrieval.
+    /**
+     * Asynchronously retrieves a list of documents.
+     * @returns {Promise<Array>} A promise that resolves to an array of documents.
+     */
     async function getDocument() {
         return [];
     }

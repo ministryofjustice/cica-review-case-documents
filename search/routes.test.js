@@ -1,3 +1,6 @@
+/**
+ * Creates an isolated Express application instance for testing the search router.
+ */
 import assert from 'node:assert';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 
@@ -10,6 +13,15 @@ import session from 'express-session';
 import searchRouter from './routes.js';
 import { caseSelected } from '../middleware/caseSelected/index.js'; // Add this import
 
+/**
+ * Creates an isolated Express application instance for testing the search routes.
+ * Sets up JSON and URL-encoded body parsing, session management, and test-specific middleware.
+ * Injects mock session data, CSRF token, CSP nonce, and logger into each request.
+ * Mounts the search router at the '/search' path.
+ *
+ * @param {Object} [sessionData={}] - Optional session data to inject into each request's session.
+ * @returns {import('express').Express} An Express application instance configured for isolated testing.
+ */
 function createIsolatedSearchApp(sessionData = {}) {
     const app = express();
     app.use(express.json());
@@ -38,22 +50,6 @@ function createIsolatedSearchApp(sessionData = {}) {
 describe('search router', () => {
     let app;
     let db;
-    let logStream;
-    let lines = [];
-
-    function LogCaptureStream() {
-        return new Writable({
-            write(chunk, encoding, callback) {
-                try {
-                    const parsed = JSON.parse(chunk.toString());
-                    lines.push(parsed);
-                } catch {
-                    // ignore non-JSON chunks
-                }
-                callback();
-            }
-        });
-    }
 
     beforeEach(async () => {
         const fakeResults = { hits: { hits: [{ _id: 1 }] } };

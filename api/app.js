@@ -1,3 +1,26 @@
+/**
+ * Express application setup for the CICA FIND Case Documents API.
+ *
+ * - Configures JSON and URL-encoded body parsing.
+ * - Sets response headers for content type and application version.
+ * - Secures endpoints using JWT authentication.
+ * - Integrates OpenAPI validation middleware for request and response validation.
+ * - Routes API requests through the main router.
+ * - Handles 404 errors for unmatched endpoints.
+ * - Centralizes error handling and logging.
+ *
+ * @module app
+ */
+
+/**
+ * Middleware to authenticate JWT tokens in the Authorization header.
+ *
+ * @function authenticateToken
+ * @param {express.Request} req - Express request object.
+ * @param {express.Response} res - Express response object.
+ * @param {express.NextFunction} next - Express next middleware function.
+ * @returns {void}
+ */
 import express from 'express';
 import OpenApiValidator from 'express-openapi-validator';
 import errorHandler from './middleware/errorHandler/index.js';
@@ -6,6 +29,16 @@ import jwt from 'jsonwebtoken';
 
 const app = express();
 
+/**
+ * Middleware to authenticate JWT token from the Authorization header.
+ * If the token is missing, responds with 401 Unauthorized.
+ * If the token is invalid, responds with 403 Forbidden.
+ * On success, attaches the decoded user object to req.user and calls next().
+ *
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ * @param {Function} next - Express next middleware function.
+ */
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];

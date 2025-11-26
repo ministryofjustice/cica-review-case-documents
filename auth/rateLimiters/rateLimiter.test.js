@@ -1,9 +1,39 @@
+/**
+ * Test suite for the failure rate limiter middleware used in authentication.
+ *
+ * This suite verifies the following behaviors:
+ * - Locks out a user after 5 failed login attempts within a time window, returning HTTP 429 on the 6th attempt.
+ * - Successful login attempts do not consume the failure quota when `skipSuccessfulRequests` is enabled.
+ * - Rate limits are tracked independently for different usernames.
+ * - IPv6-mapped and plain IPv4 addresses are normalized to the same key for rate limiting.
+ * - The `RateLimit-Remaining` header decreases with each failed attempt and reaches zero when locked out.
+ *
+ * Helper Functions:
+ * - `createApp()`: Creates an Express app with the failure rate limiter and test-specific error handler.
+ * - `setIp(req, ip)`: Sets the `X-Forwarded-For` header to simulate requests from a specific IP address.
+ *
+ * Dependencies:
+ * - `node:test` for test definitions.
+ * - `node:assert/strict` for assertions.
+ * - `express` for the web server.
+ * - `supertest` for HTTP request simulation.
+ * - `createFailureRateLimiter`, `RateLimitError` from the rate limiter implementation.
+ */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';
 import request from 'supertest';
 import { createFailureRateLimiter, RateLimitError } from './rateLimiter.js';
 
+/**
+ * Creates an Express application with a login endpoint protected by a failure rate limiter.
+ *
+ * The app exposes a POST /auth/login route that checks credentials.
+ * If login fails more than the allowed number of times within the time window,
+ * further attempts are blocked with a 429 response and a test-specific message.
+ *
+ * @returns {import('express').Express} Configured Express application instance.
+ */
 function createApp() {
     const app = express();
     app.use(express.json());
@@ -30,6 +60,13 @@ function createApp() {
     return app;
 }
 
+/**
+ * Sets the 'X-Forwarded-For' header on the request object to the specified IP address.
+ *
+ * @param {Object} req - The request object, typically an instance of a test request.
+ * @param {string} ip - The IP address to set in the 'X-Forwarded-For' header.
+ * @returns {Object} The modified request object with the header set.
+ */
 function setIp(req, ip) {
     return req.set('X-Forwarded-For', ip);
 }

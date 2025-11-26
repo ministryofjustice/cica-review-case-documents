@@ -1,21 +1,13 @@
 /**
- * Checks whether a passed-in logger looks like a valid pino or pino-http logger.
+ * Determines if the provided object is a logger instance.
  *
- * This allows both direct pino instances and pino-http middleware.
+ * Supports detection of:
+ * - pino-http middleware (a function with a `.logger` property containing `info` and `child` methods)
+ * - bare pino logger instances (objects with `info` and `child` methods)
  *
- * @param {unknown} logger - The value to check.
- * @returns {boolean} True if the value is a valid logger, false otherwise.
- *
- * @example
- * import pinoHttp from 'pino-http';
- * import pino from 'pino';
- *
- * isLogger(pino()); // true
- * isLogger(pinoHttp()); // true
- * isLogger({ logger: { info: () => {}, child: () => {} } }); // true
- * isLogger({}); // false
+ * @param {*} logger - The object to test for logger characteristics.
+ * @returns {boolean} True if the object is recognized as a logger, false otherwise.
  */
-
 function isLogger(logger) {
     if (!logger) return false;
 
