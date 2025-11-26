@@ -23,13 +23,14 @@ import express from 'express';
 import createTemplateEngineService from '../templateEngine/index.js';
 import { loginParamsValidator, signOutUser } from './auth-service.js';
 import jwt from 'jsonwebtoken';
-import failureRateLimiter from './rateLimiter.js';
+import failureRateLimiter from './rateLimiters/rateLimiter.js';
+import generalRateLimiter from './rateLimiters/generalRateLimiter.js';
 import jwtCookieOptions from './jwtCookieOptions.js';
 import { renderLoginResponse, getLoginAttemptContext } from './utils/loginHelpers/login-helpers.js';
 
 const router = express.Router();
 
-router.get('/login', (req, res, next) => {
+router.get('/login', generalRateLimiter, (req, res, next) => {
     try {
         const templateEngineService = createTemplateEngineService();
         const { render } = templateEngineService;
@@ -99,7 +100,7 @@ router.post('/login', failureRateLimiter, (req, res, next) => {
     return res.redirect(redirectUrl);
 });
 
-router.get('/sign-out', (req, res, next) => {
+router.get('/sign-out', generalRateLimiter, (req, res, next) => {
     signOutUser(req, res, next);
 });
 

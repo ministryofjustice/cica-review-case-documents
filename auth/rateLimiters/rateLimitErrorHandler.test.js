@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import express from 'express';
 import request from 'supertest';
 import rateLimitErrorHandler from './rateLimitErrorHandler.js';
-import { RateLimitError } from '../auth/rateLimiter.js';
+import { RateLimitError } from './rateLimiter.js';
 
 // Mock template engine service
 function mockCreateTemplateEngineService(app) {
