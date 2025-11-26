@@ -4,11 +4,11 @@
  * Otherwise, passes the error to the next middleware.
  *
  * @param {import('express').Application} app - The Express application instance.
- * @param {import('../templateEngine').TemplateEngineFactory} templateEngineFactory - The template engine factory.
+ * @param {import('../../templateEngine/index.js').TemplateEngineFactory} templateEngineFactory - The template engine factory.
  * @returns {import('express').ErrorRequestHandler} Middleware function to handle rate limit errors.
  */
-import { RateLimitError } from '../auth/rateLimiter.js';
-import createTemplateEngineService from '../templateEngine/index.js';
+import { RateLimitError } from './rateLimiter.js';
+import createTemplateEngineService from '../../templateEngine/index.js';
 
 export default function rateLimitErrorHandler(
     app,

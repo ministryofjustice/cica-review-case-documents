@@ -16,7 +16,7 @@ import defaultCreateLogger from './middleware/logger/index.js';
 import searchRouter from './search/routes.js';
 import isAuthenticated from './middleware/isAuthenticated/index.js';
 import authRouter from './auth/routes.js';
-import rateLimitErrorHandler from './middleware/rateLimitErrorHandler.js';
+import rateLimitErrorHandler from './auth/rateLimiters/rateLimitErrorHandler.js';
 import './middleware/errors/globalErrorHandler.js';
 import './middleware/errors/notFoundHandler.js';
 import notFoundHandler from './middleware/errors/notFoundHandler.js';

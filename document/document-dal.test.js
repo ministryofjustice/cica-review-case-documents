@@ -75,7 +75,8 @@ describe('document-dal', () => {
     it('Should rethrow if an error if db.query throws', async () => {
         const dal = createDocumentDAL({
             caseReferenceNumber: '12-345678',
-            createDBQuery: () => CREATE_DB_QUERY_INSTANCE.FAILURE
+            createDBQuery: () => CREATE_DB_QUERY_INSTANCE.FAILURE,
+            logger: mockLogger
         });
 
         await assert.rejects(

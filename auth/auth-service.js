@@ -1,7 +1,7 @@
 import { getAuthConfig } from './utils/getAuthConfig/index.js';
 import createTemplateEngineService from '../templateEngine/index.js';
 import jwtCookieOptions from './jwtCookieOptions.js';
-import failureRateLimiter, { getRateLimitKey } from './rateLimiter.js';
+import failureRateLimiter, { getRateLimitKey } from './rateLimiters/rateLimiter.js';
 
 export function loginParamsValidator(username, password) {
     const { secret, usernames } = getAuthConfig();
