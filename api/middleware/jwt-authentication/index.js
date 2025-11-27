@@ -21,7 +21,7 @@ import jwt from 'jsonwebtoken';
  * @param {import('express').Response} res - Express response object.
  * @param {Function} next - Express next middleware function.
  */
-function authenticateToken(req, res, next) {
+function authenticateJWTToken(req, res, next) {
     const token =
         req.cookies.jwtToken ||
         (req.headers.authorization && req.headers.authorization.split(' ')[1]);
@@ -40,4 +40,4 @@ function authenticateToken(req, res, next) {
     }
 }
 
-export default authenticateToken;
+export default authenticateJWTToken;

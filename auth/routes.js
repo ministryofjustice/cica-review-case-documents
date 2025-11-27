@@ -24,7 +24,7 @@ import createTemplateEngineService from '../templateEngine/index.js';
 import { loginParamsValidator, signOutUser } from './auth-service.js';
 import jwt from 'jsonwebtoken';
 import failureRateLimiter from './rateLimiters/authRateLimiter.js';
-import generalRateLimiter from './rateLimiters/generalRateLimiter.js';
+import generalRateLimiter from '../middleware/rateLimiter/index.js';
 import jwtCookieOptions from './jwtCookieOptions.js';
 import { renderLoginResponse, getLoginAttemptContext } from './utils/loginHelpers/login-helpers.js';
 
