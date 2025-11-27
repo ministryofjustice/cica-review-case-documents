@@ -160,11 +160,11 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
     });
     // --- FIX END ---
 
+    app.use('/', indexRouter);
+
     // Note: auth login will eventually be removed and replaced with SSO
     app.use('/auth', authRouter);
-
     app.use('/api', isAuthenticated, apiApp);
-    app.use('/', isAuthenticated, indexRouter);
     app.use(
         '/search',
         isAuthenticated,
