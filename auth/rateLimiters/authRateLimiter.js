@@ -1,4 +1,4 @@
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 
 export const getRateLimitKey = (req) => {
     if (req.session?.username) return req.session.username.toLowerCase().trim();

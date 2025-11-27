@@ -20,8 +20,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';
 import request from 'supertest';
-import rateLimitErrorHandler from './rateLimitErrorHandler.js';
-import { LoginLockoutError } from './rateLimiter.js';
+import rateLimitErrorHandler from './authRateLimitErrorHandler.js';
+import { LoginLockoutError } from './authRateLimiter.js';
 
 /**
  * Mocks the creation of a template engine service for testing purposes.
