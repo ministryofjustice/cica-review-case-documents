@@ -23,7 +23,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';
 import request from 'supertest';
-import { createFailureRateLimiter, RateLimitError } from './rateLimiter.js';
+import { createFailureRateLimiter, LoginLockoutError } from './rateLimiter.js';
 
 /**
  * Creates an Express application with a login endpoint protected by a failure rate limiter.
@@ -49,9 +49,9 @@ function createApp() {
         return res.redirect(302, '/');
     });
 
-    // Test-specific error handler to catch the RateLimitError
+    // Test-specific error handler to catch the LoginLockoutError
     app.use((err, req, res, next) => {
-        if (err instanceof RateLimitError) {
+        if (err instanceof LoginLockoutError) {
             return res.status(429).send('LOCKED_OUT_TEST_MESSAGE');
         }
         next(err);

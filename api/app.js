@@ -26,6 +26,7 @@ import OpenApiValidator from 'express-openapi-validator';
 import errorHandler from './middleware/errorHandler/index.js';
 import apiRouter from './routes.js';
 import jwt from 'jsonwebtoken';
+import generalRateLimiter from '../auth/rateLimiters/generalRateLimiter.js';
 
 const app = express();
 
@@ -59,7 +60,7 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(authenticateToken);
+app.use(generalRateLimiter);
 
 app.use(
     '/',

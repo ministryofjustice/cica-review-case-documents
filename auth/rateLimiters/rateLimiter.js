@@ -4,10 +4,10 @@ export const getRateLimitKey = (req) => {
     if (req.session?.username) return req.session.username.toLowerCase().trim();
     return req.ip.replace(/^::ffff:/, ''); // Centralized IP logic
 };
-export class RateLimitError extends Error {
+export class LoginLockoutError extends Error {
     constructor(message = 'You have been locked out') {
         super(message);
-        this.name = 'RateLimitError';
+        this.name = 'LoginLockoutError'; // Update name
         this.statusCode = 429;
     }
 }
@@ -43,7 +43,8 @@ export function createFailureRateLimiter(
             return (req.body?.username || '').toLowerCase().trim();
         },
         handler: (req, res, next) => {
-            next(new RateLimitError());
+            // Throw the specific error
+            next(new LoginLockoutError());
         }
     });
 }
