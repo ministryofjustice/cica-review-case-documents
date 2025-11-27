@@ -50,6 +50,10 @@
                 value: query,
                 errorMessage: errorMessageConfig,
                 classes: "govuk-input--width-20 govuk-!-margin-right-4",
+                attributes: {
+                    minlength: "2",
+                    maxlength: "200"
+                },
                 formGroup: {
                     afterInput: {
                         html: govukButton({
@@ -112,7 +116,7 @@
         }) }}
     {% endif %}
 
-    <p class="govuk-body govuk-!-margin-top-4">You searched for: <strong>{{ query }}</strong>
+    <p class="govuk-body govuk-!-margin-top-4 govuk-!-text-break-word">You searched for: <strong>{{ query }}</strong>
 
     <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
 
