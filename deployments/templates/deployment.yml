@@ -8,11 +8,11 @@ spec:
   replicas: 3
   selector:
     matchLabels:
-      app: cica-case-review-documents # this should match the selector in service.yml
+      app: cica-case-review-documents
   template:
     metadata:
       labels:
-        app: cica-case-review-documents # this should match the selector in service.yml
+        app: cica-case-review-documents
     spec:
       serviceAccountName: ${SERVICE_ACCOUNT_NAME}
       containers:
@@ -64,3 +64,15 @@ spec:
               value: page_chunks
             - name: NODE_ENV
               value: "production"
+            - name: API_RATE_LIMIT_WINDOW_MS
+              value: "900000"
+            - name: API_RATE_LIMIT_MAX_PROD
+              value: "300"
+            - name: APP_RATE_LIMIT_WINDOW_MS
+              value: "900000"
+            - name: APP_RATE_LIMIT_MAX
+              value: "100"
+            - name: API_RATE_LIMIT_WINDOW_MS
+              value: "900000"
+            - name: API_RATE_LIMIT_MAX_PROD
+              value: "300"

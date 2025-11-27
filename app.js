@@ -31,7 +31,7 @@ import './middleware/errors/globalErrorHandler.js';
 import './middleware/errors/notFoundHandler.js';
 import notFoundHandler from './middleware/errors/notFoundHandler.js';
 import errorHandler from './middleware/errors/globalErrorHandler.js';
-import generalRateLimiter from './auth/rateLimiters/generalRateLimiter.js';
+import generalRateLimiter from './middleware/rateLimiter/index.js';
 
 /**
  * Creates and configures an Express application with middleware for logging, security, session management,
