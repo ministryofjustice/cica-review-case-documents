@@ -23,7 +23,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';
 import request from 'supertest';
-import { createFailureRateLimiter, LoginLockoutError } from './rateLimiter.js';
+import { createFailureRateLimiter, LoginLockoutError } from './authRateLimiter.js';
 
 /**
  * Creates an Express application with a login endpoint protected by a failure rate limiter.

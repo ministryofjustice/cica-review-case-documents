@@ -1,4 +1,4 @@
-import { LoginLockoutError } from './rateLimiter.js'; // Import new name
+import { LoginLockoutError } from './authRateLimiter.js'; // Import new name
 import createTemplateEngineService from '../../templateEngine/index.js';
 /**
  * Express error handler middleware for rate limiting errors.

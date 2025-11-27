@@ -5,7 +5,6 @@ import assert from 'node:assert';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 
 import request from 'supertest';
-import { Writable } from 'stream';
 import createDBQuery from '../db/index.js';
 
 import express from 'express';

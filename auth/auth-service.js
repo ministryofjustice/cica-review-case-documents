@@ -16,7 +16,7 @@
 import { getAuthConfig } from './utils/getAuthConfig/index.js';
 import createTemplateEngineService from '../templateEngine/index.js';
 import jwtCookieOptions from './jwtCookieOptions.js';
-import failureRateLimiter, { getRateLimitKey } from './rateLimiters/rateLimiter.js';
+import failureRateLimiter, { getRateLimitKey } from './rateLimiters/authRateLimiter.js';
 
 /**
  * Validates login parameters (username and password) against authentication configuration.
