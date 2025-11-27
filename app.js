@@ -1,3 +1,13 @@
+/**
+ * Creates and configures an Express application instance for the CICA Review Case Documents app.
+ *
+ * Sets up middleware for security (Helmet, CSP, CSRF), logging, session management, request parsing,
+ * static assets, authentication, routing, and error handling.
+ *
+ * @param {Object} [options] - Optional configuration object.
+ * @param {Function} [options.createLogger=defaultCreateLogger] - Function to create a logger middleware.
+ * @returns {import('express').Express} Configured Express application instance.
+ */
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import cookieParser from 'cookie-parser';
@@ -6,6 +16,7 @@ import session from 'express-session';
 import helmet from 'helmet';
 import { nanoid } from 'nanoid';
 import apiApp from './api/app.js';
+import createTemplateEngineService from './templateEngine/index.js';
 import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
@@ -13,8 +24,24 @@ import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
 import getCaseReferenceNumberFromQueryString from './middleware/getCaseReferenceNumberFromQueryString/index.js';
 import defaultCreateLogger from './middleware/logger/index.js';
 import searchRouter from './search/routes.js';
-import createTemplateEngineService from './templateEngine/index.js';
+import isAuthenticated from './middleware/isAuthenticated/index.js';
+import authRouter from './auth/routes.js';
+import rateLimitErrorHandler from './auth/rateLimiters/authRateLimitErrorHandler.js';
+import './middleware/errors/globalErrorHandler.js';
+import './middleware/errors/notFoundHandler.js';
+import notFoundHandler from './middleware/errors/notFoundHandler.js';
+import errorHandler from './middleware/errors/globalErrorHandler.js';
+import generalRateLimiter from './middleware/rateLimiter/index.js';
 
+/**
+ * Creates and configures an Express application with middleware for logging, security, session management,
+ * CSRF protection, static assets, and routing.
+ *
+ * @function
+ * @param {Object} [options] - Optional configuration object.
+ * @param {Function} [options.createLogger=defaultCreateLogger] - Factory function to create a request logger middleware.
+ * @returns {import('express').Express} The configured Express application instance.
+ */
 function createApp({ createLogger = defaultCreateLogger } = {}) {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
@@ -33,7 +60,10 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
         })
     );
 
-    app.use(createLogger());
+    // Create the logger instance
+    const loggerMiddleware = createLogger();
+    // Use the middleware for request logging
+    app.use(loggerMiddleware);
 
     app.use((req, res, next) => {
         res.set({
@@ -117,14 +147,35 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
         res.locals.csrfToken = generateCsrfToken(req, res);
         next();
     });
-    app.use('/api', apiApp);
-    app.use('/', indexRouter);
-    app.use('/search', getCaseReferenceNumberFromQueryString, caseSelected, searchRouter);
-    app.use((req, res) => {
-        res.status(404).render('404.njk', {
-            pageType: ['root']
-        });
+
+    // --- FIX START ---
+    // 1. Apply General Rate Limiter GLOBALLY (Fixes CodeQL)
+    // 2. SKIP it for POST /auth/login (Fixes logic conflict)
+    // Note: auth login will eventually be removed and replaced with SSO
+    app.use((req, res, next) => {
+        if (req.method === 'POST' && req.path === '/auth/login') {
+            return next();
+        }
+        return generalRateLimiter(req, res, next);
     });
+    // --- FIX END ---
+
+    app.use('/', indexRouter);
+
+    // Note: auth login will eventually be removed and replaced with SSO
+    app.use('/auth', authRouter);
+    app.use('/api', isAuthenticated, apiApp);
+    app.use(
+        '/search',
+        isAuthenticated,
+        getCaseReferenceNumberFromQueryString,
+        caseSelected,
+        searchRouter
+    );
+
+    app.use(notFoundHandler);
+    app.use(rateLimitErrorHandler(app));
+    app.use(errorHandler);
 
     return app;
 }

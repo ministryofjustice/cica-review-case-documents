@@ -1,7 +1,33 @@
+/**
+ * Unit tests for the errorHandler middleware.
+ *
+ * These tests verify that the errorHandler:
+ * - Logs and responds correctly for a 400 malformed JSON error.
+ * - Logs and responds correctly for unhandled server errors (500).
+ * - Logs warn-level for known 4xx errors (e.g., UnauthorizedError).
+ *
+ * @file index.test.js
+ * @module errorHandler
+ * @requires node:assert/strict
+ * @requires node:test
+ * @requires ./index.js
+ */
 import assert from 'node:assert/strict';
 import { describe, it, mock } from 'node:test';
 import errorHandler from './index.js';
 
+/**
+ * Creates an in-memory logger for capturing log messages during testing.
+ *
+ * @returns {{
+ *   logs: Array<{ level: string, obj: any, msg: string }>,
+ *   logger: {
+ *     info: Function,
+ *     warn: Function,
+ *     error: Function
+ *   }
+ * }} An object containing the logs array and a logger with info, warn, and error methods.
+ */
 function createMemoryLogger() {
     const logs = [];
     return {

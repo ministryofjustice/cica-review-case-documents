@@ -1,8 +1,39 @@
+/**
+ * Test suite for the getCaseReferenceNumberFromQueryString middleware.
+ *
+ * This suite verifies that the middleware correctly updates the session
+ * based on the validity and presence of `crn` or `caseReferenceNumber`
+ * query parameters, and always calls `next()`.
+ *
+ * Helper functions:
+ * - deepMerge: Deeply merges two objects.
+ * - getMockRequest: Generates a mock request object with merged properties.
+ *
+ * Constants:
+ * - VALID_CRN: A valid case reference number string.
+ * - INVALID_CRN: An invalid case reference number string.
+ * - REQUESTS: Predefined mock request objects for various test scenarios.
+ *
+ * Test cases:
+ * - Updates session when valid crn or caseReferenceNumber is provided.
+ * - Does not update session when invalid crn or caseReferenceNumber is provided.
+ * - Handles combinations of valid/invalid crn and caseReferenceNumber.
+ * - Does not update session when neither crn nor caseReferenceNumber is provided.
+ * - Ensures next() is called on every middleware invocation.
+ */
 import assert from 'node:assert';
 import { describe, it } from 'node:test';
 
 import getCaseReferenceNumberFromQueryString from './index.js';
 
+/**
+ * Deeply merges two objects. Properties from the second object will overwrite those in the first object.
+ * If both properties are objects, they are merged recursively.
+ *
+ * @param {Object} obj1 - The target object to merge into.
+ * @param {Object} obj2 - The source object whose properties will be merged into obj1.
+ * @returns {Object} A new object resulting from the deep merge of obj1 and obj2.
+ */
 function deepMerge(obj1, obj2) {
     const result = { ...obj1 };
     for (const key in obj2) {
@@ -17,6 +48,12 @@ function deepMerge(obj1, obj2) {
     return result;
 }
 
+/**
+ * Creates a mock request object by deeply merging provided property objects into a base request structure.
+ *
+ * @param {...Object} propsToMerge - Objects containing properties to merge into the base request.
+ * @returns {Object} The resulting mock request object with merged properties.
+ */
 function getMockRequest(...propsToMerge) {
     const baseReq = {
         query: {},
