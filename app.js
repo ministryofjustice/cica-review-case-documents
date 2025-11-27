@@ -31,6 +31,7 @@ import './middleware/errors/globalErrorHandler.js';
 import './middleware/errors/notFoundHandler.js';
 import notFoundHandler from './middleware/errors/notFoundHandler.js';
 import errorHandler from './middleware/errors/globalErrorHandler.js';
+import generalRateLimiter from './auth/rateLimiters/generalRateLimiter.js';
 
 /**
  * Creates and configures an Express application with middleware for logging, security, session management,
@@ -147,6 +148,19 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
         next();
     });
 
+    // --- FIX START ---
+    // 1. Apply General Rate Limiter GLOBALLY (Fixes CodeQL)
+    // 2. SKIP it for POST /auth/login (Fixes logic conflict)
+    // Note: auth login will eventually be removed and replaced with SSO
+    app.use((req, res, next) => {
+        if (req.method === 'POST' && req.path === '/auth/login') {
+            return next();
+        }
+        return generalRateLimiter(req, res, next);
+    });
+    // --- FIX END ---
+
+    // Note: auth login will eventually be removed and replaced with SSO
     app.use('/auth', authRouter);
 
     app.use('/api', isAuthenticated, apiApp);

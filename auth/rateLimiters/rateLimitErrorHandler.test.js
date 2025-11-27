@@ -21,7 +21,7 @@ import assert from 'node:assert/strict';
 import express from 'express';
 import request from 'supertest';
 import rateLimitErrorHandler from './rateLimitErrorHandler.js';
-import { RateLimitError } from './rateLimiter.js';
+import { LoginLockoutError } from './rateLimiter.js';
 
 /**
  * Mocks the creation of a template engine service for testing purposes.
@@ -38,12 +38,12 @@ function mockCreateTemplateEngineService(app) {
     };
 }
 
-test('responds with 429 and lockout message for RateLimitError', async () => {
+test('responds with 429 and lockout message for LoginLockoutError', async () => {
     const app = express();
     app.use(express.json());
 
     app.get('/test-lockout', (req, res, next) => {
-        next(new RateLimitError());
+        next(new LoginLockoutError());
     });
 
     app.use(rateLimitErrorHandler(app, mockCreateTemplateEngineService));
