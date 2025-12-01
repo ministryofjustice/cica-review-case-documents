@@ -50,10 +50,8 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
         })
     );
 
-    // Create the logger instance
-    const loggerMiddleware = createLogger();
     // Use the middleware for request logging
-    app.use(loggerMiddleware);
+    app.use(createLogger());
 
     app.use((req, res, next) => {
         res.set({
@@ -138,17 +136,9 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
         next();
     });
 
-    // --- FIX START ---
-    // 1. Apply General Rate Limiter GLOBALLY (Fixes CodeQL)
-    // 2. SKIP it for POST /auth/login (Fixes logic conflict)
-    // Note: auth login will eventually be removed and replaced with SSO
-    app.use((req, res, next) => {
-        if (req.method === 'POST' && req.path === '/auth/login') {
-            return next();
-        }
-        return generalRateLimiter(req, res, next);
-    });
-    // --- FIX END ---
+    // Apply General Rate Limiter GLOBALLY (Fixes CodeQL)
+    // Note: auth login exclusion is handled within the limiter configuration
+    app.use(generalRateLimiter);
 
     app.use('/', indexRouter);
 

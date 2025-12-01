@@ -8,24 +8,36 @@ const windowMs = process.env.APP_RATE_LIMIT_WINDOW_MS
 
 const limit = process.env.APP_RATE_LIMIT_MAX ? parseInt(process.env.APP_RATE_LIMIT_MAX, 10) : 100; // Default: 100 requests
 
+
 /**
- * Middleware for general rate limiting of incoming requests.
+ * Express middleware for general rate limiting.
  *
- * @constant
+ * Applies rate limiting to incoming requests based on session ID, except in development mode
+ * and for POST requests to '/auth/login'. The rate limit window and maximum requests are configurable.
+ *
  * @type {import('express').RequestHandler}
- * @param {Object} options - Configuration options for the rate limiter.
- * @param {number} options.windowMs - Time frame for which requests are checked/remembered (in milliseconds).
- * @param {number} options.limit - Maximum number of allowed requests within the windowMs.
- * @param {function} options.skip - Function to determine if rate limiting should be skipped for a request.
- * @param {function} options.keyGenerator - Function to generate a unique key for each request (used for tracking).
  *
- * @description
- * Skips rate limiting if not in production environment. Uses session ID as the key for rate limiting, or 'no-session' if unavailable.
+ * @param {Object} options - Rate limiter configuration options.
+ * @param {number} options.windowMs - Time frame for rate limiting in milliseconds.
+ * @param {number} options.limit - Maximum number of requests allowed per windowMs.
+ * @param {function} options.skip - Function to determine if rate limiting should be skipped for a request.
+ * @param {function} options.keyGenerator - Function to generate a unique key for each client (uses session ID).
+ *
+ * @returns {import('express').RequestHandler} Express middleware for rate limiting.
  */
 const generalRateLimiter = rateLimit({
     windowMs,
     limit: limit,
-    skip: (req, res) => !isProduction, // Function that returns true to skip rate limiting
+    skip: (req, res) => {
+        if (!isProduction) {
+            return true;
+        }
+        // Skip rate limiting for login POST requests (handled by specific limiter)
+        if (req.method === 'POST' && req.path === '/auth/login') {
+            return true;
+        }
+        return false;
+    },
     keyGenerator: (req) => req.session?.id || 'no-session'
 });
 
