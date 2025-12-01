@@ -1,15 +1,3 @@
-/**
- * Express middleware to authenticate JWT tokens from cookies or Authorization header.
- *
- * Checks for a JWT token in the `jwtToken` cookie or in the `Authorization` header.
- * If a valid token is found, attaches the decoded user object to `req.user` and calls `next()`.
- * If no token is found, responds with 401 Unauthorized.
- * If the token is invalid, responds with 403 Forbidden.
- *
- * @param {import('express').Request} req - Express request object.
- * @param {import('express').Response} res - Express response object.
- * @param {import('express').NextFunction} next - Express next middleware function.
- */
 import jwt from 'jsonwebtoken';
 
 /**

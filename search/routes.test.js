@@ -1,6 +1,3 @@
-/**
- * Creates an isolated Express application instance for testing the search router.
- */
 import assert from 'node:assert';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 

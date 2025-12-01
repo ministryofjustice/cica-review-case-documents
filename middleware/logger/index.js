@@ -1,6 +1,3 @@
-/**
- * Creates a configured HTTP logger middleware using pino and pino-http.
- */
 import pino from 'pino';
 import pinoHttp from 'pino-http';
 

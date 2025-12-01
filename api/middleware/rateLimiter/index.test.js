@@ -5,6 +5,14 @@ import rateLimit from 'express-rate-limit';
 import { test } from 'node:test';
 import assert from 'node:assert';
 
+/**
+ * Creates an Express application with the provided rate limiter middleware.
+ * The app exposes a GET endpoint at '/api/test' that returns a 200 OK response.
+ * Includes an error handler to send the correct status and error message.
+ *
+ * @param {Function} limiter - Express middleware function for rate limiting.
+ * @returns {import('express').Express} Configured Express application instance.
+ */
 function createTestApp(limiter) {
     const app = express();
     app.use(limiter);

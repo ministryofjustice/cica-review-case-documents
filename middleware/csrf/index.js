@@ -1,38 +1,4 @@
 import VError from 'verror';
-
-// import {doubleCsrf} from 'csrf-csrf';
-
-/**
- * Initializes CSRF protection and token generation using the `csrf-csrf` library.
- *
- * This configuration provides both a middleware (`doubleCsrfProtection`) that validates
- * incoming CSRF tokens, and a helper function (`generateCsrfToken`) that can be used to
- * generate new tokens for forms or API responses.
- *
- * The configuration uses session-based identification and environment-dependent cookie
- * settings to ensure secure CSRF protection across environments.
- *
- * @example
- * // Example usage in an Express app:
- * import express from 'express';
- * import { doubleCsrfProtection, generateCsrfToken } from './csrf.js';
- *
- * const app = express();
- * app.use(doubleCsrfProtection);
- *
- * app.get('/form', (req, res) => {
- *   const csrfToken = generateCsrfToken(req, res);
- *   res.render('form', { csrfToken });
- * });
- *
- * @see {@link https://www.npmjs.com/package/csrf-csrf|csrf-csrf on npm}
- *
- * @returns {{doubleCsrfProtection: import('express').RequestHandler, generateCsrfToken: Function}}
- * Returns an object containing:
- * - `doubleCsrfProtection`: Express middleware to validate CSRF tokens.
- * - `generateCsrfToken`: Function to generate a new CSRF token.
- */
-
 import { doubleCsrf as defaultDoubleCsrf } from 'csrf-csrf';
 
 /**

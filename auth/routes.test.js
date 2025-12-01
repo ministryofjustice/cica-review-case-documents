@@ -1,34 +1,4 @@
-/**
- * Test suite for authentication routes in the application.
- *
- * Uses `node:test` for test structure and `supertest` for HTTP assertions.
- * Covers the following scenarios:
- * - Rendering the login page.
- * - Handling missing username and/or password on login.
- * - Handling invalid credentials and email formats.
- * - Successful login and redirection logic.
- * - Sign-out flow and session/case reference handling.
- * - Graceful handling of JWT signing errors.
- *
- * Helper Functions:
- * @function getCsrfToken
- * @description Retrieves CSRF token from the login page for use in POST requests.
- * @param {Object} agent - Supertest agent instance.
- * @returns {Promise<string>} - Extracted CSRF token.
- *
- * Test Environment Setup:
- * - Mocks logger to avoid side effects.
- * - Sets up environment variables for authentication.
- * - Uses Supertest agent to maintain session state across requests.
- *
- * Each test case:
- * - Asserts correct HTTP status codes.
- * - Asserts expected content in response bodies.
- * - Ensures session and redirection logic works as intended.
- * - Handles error scenarios, including server errors.
- */
-import { test, beforeEach } from 'node:test'; // Removed 'afterEach' and 'mock'
-import assert from 'node:assert';
+import { test, beforeEach } from 'node:test';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import createApp from '../app.js';

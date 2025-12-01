@@ -1,24 +1,3 @@
-/**
- * Test suite for the failure rate limiter middleware used in authentication.
- *
- * This suite verifies the following behaviors:
- * - Locks out a user after 5 failed login attempts within a time window, returning HTTP 429 on the 6th attempt.
- * - Successful login attempts do not consume the failure quota when `skipSuccessfulRequests` is enabled.
- * - Rate limits are tracked independently for different usernames.
- * - IPv6-mapped and plain IPv4 addresses are normalized to the same key for rate limiting.
- * - The `RateLimit-Remaining` header decreases with each failed attempt and reaches zero when locked out.
- *
- * Helper Functions:
- * - `createApp()`: Creates an Express app with the failure rate limiter and test-specific error handler.
- * - `setIp(req, ip)`: Sets the `X-Forwarded-For` header to simulate requests from a specific IP address.
- *
- * Dependencies:
- * - `node:test` for test definitions.
- * - `node:assert/strict` for assertions.
- * - `express` for the web server.
- * - `supertest` for HTTP request simulation.
- * - `createFailureRateLimiter`, `RateLimitError` from the rate limiter implementation.
- */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import express from 'express';

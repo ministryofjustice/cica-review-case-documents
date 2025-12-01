@@ -1,7 +1,3 @@
-/**
- * The logger can be an instance of a structured logging tool such as `pino` or `pino-http`.
- * When provided, query execution time, row counts, and query metadata are logged automatically.
- */
 import VError from 'verror';
 import createDBQueryDefault from '../db/index.js';
 

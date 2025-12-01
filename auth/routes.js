@@ -1,24 +1,3 @@
-/**
- * Express router for authentication-related routes.
- *
- * Routes:
- * - GET /login: Renders the login page with CSRF token.
- * - POST /login: Handles login form submission, validates credentials, applies rate limiting,
- *   and sets JWT cookie on success. On failure, renders login page with error messages and attempts left.
- * - GET /sign-out: Destroys session, clears JWT cookie, and renders sign-out page.
- *
- * Middleware:
- * - failureRateLimiter: Limits failed login attempts.
- *
- * Dependencies:
- * - express: Web framework.
- * - createTemplateEngineService: Service for rendering templates.
- * - validateLogin: Function to validate login credentials.
- * - jwt: JSON Web Token library for authentication.
- * - jwtCookieOptions: Options for JWT cookie.
- *
- * @module auth/routes
- */
 import express from 'express';
 import createTemplateEngineService from '../templateEngine/index.js';
 import { loginParamsValidator, signOutUser } from './auth-service.js';

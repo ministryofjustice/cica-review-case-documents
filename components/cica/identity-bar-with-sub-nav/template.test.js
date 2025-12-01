@@ -16,6 +16,12 @@ const TITLE_HTML_FRAGMENT =
 let app;
 let templateEngineService;
 
+/**
+ * Removes all whitespace characters from the given string.
+ *
+ * @param {string} str - The input string from which whitespace will be removed.
+ * @returns {string} The string with all whitespace characters removed.
+ */
 function removeWhitespace(str) {
     return str.replace(/\s+/g, '');
 }

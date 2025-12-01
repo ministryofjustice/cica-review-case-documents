@@ -1,35 +1,3 @@
-/**
- * Creates a mock request object for testing JWT authentication middleware.
- * @param {Object} options - Options for the mock request.
- * @param {string} options.token - The JWT token to include.
- * @param {boolean} [options.cookie=false] - Whether to include the token in cookies or headers.
- * @returns {Object} Mock request object.
- */
-
-/**
- * Creates a mock response object for testing JWT authentication middleware.
- * @returns {Object} Mock response object with status and send methods, and statusCode/sentMessage getters.
- */
-
-/**
- * Test: authenticateToken attaches user for valid token in cookie.
- * Ensures that a valid JWT token in cookies attaches the user to the request and calls next().
- */
-
-/**
- * Test: authenticateToken attaches user for valid token in header.
- * Ensures that a valid JWT token in the Authorization header attaches the user to the request and calls next().
- */
-
-/**
- * Test: authenticateToken returns 401 if no token.
- * Ensures that if no JWT token is provided, the middleware responds with 401 and an appropriate message.
- */
-
-/**
- * Test: authenticateToken returns 403 if token is invalid.
- * Ensures that if an invalid JWT token is provided, the middleware responds with 403 and an appropriate message.
- */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import jwt from 'jsonwebtoken';

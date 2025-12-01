@@ -1,18 +1,3 @@
-/**
- * Validates login parameters (username and password).
- *
- * @param {string} username - The username to validate.
- * @param {string} password - The password to validate.
- * @returns {{ error: string, usernameError: string, passwordError: string }} - An object containing error messages for the login attempt.
- */
-
-/**
- * Signs out the user by destroying the session, clearing the JWT cookie, and rendering the sign-out page.
- *
- * @param {import('express').Request} req - The Express request object.
- * @param {import('express').Response} res - The Express response object.
- * @param {Function} next - The next middleware function.
- */
 import { getAuthConfig } from './utils/getAuthConfig/index.js';
 import createTemplateEngineService from '../templateEngine/index.js';
 import jwtCookieOptions from './jwtCookieOptions.js';

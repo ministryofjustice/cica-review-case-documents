@@ -1,7 +1,3 @@
-/**
- * Express middleware to handle 404 Not Found errors.
- * Renders a custom 404 error page using the provided template engine service.
- */
 import createTemplateEngineService from '../../templateEngine/index.js';
 
 /**

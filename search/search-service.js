@@ -1,6 +1,3 @@
-/**
- * Creates a search service for fetching search results from the API.
- */
 import createRequestServiceDefault from '../service/request/index.js';
 
 /**

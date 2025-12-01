@@ -1,13 +1,3 @@
-/**
- * Creates and configures an Express application instance for the CICA Review Case Documents app.
- *
- * Sets up middleware for security (Helmet, CSP, CSRF), logging, session management, request parsing,
- * static assets, authentication, routing, and error handling.
- *
- * @param {Object} [options] - Optional configuration object.
- * @param {Function} [options.createLogger=defaultCreateLogger] - Function to create a logger middleware.
- * @returns {import('express').Express} Configured Express application instance.
- */
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import cookieParser from 'cookie-parser';
