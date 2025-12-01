@@ -1,5 +1,6 @@
 {% extends "page.njk" %}
-{% block pageTitle %}Signed out{% endblock %}
+{% block pageTitle %}Signed out - {{ super() }}
+{% endblock %}
 {% block innerContent %}
   <h1 class="govuk-heading-l">You have signed out</h1>
   {% if caseReferenceNumber %}
@@ -10,6 +11,10 @@
         </a>
       </strong>
       again to view case <span class="govuk-!-font-weight-bold">{{ caseReferenceNumber }}.</span>
+    </p>
+  {% else %}
+    <p class="govuk-body">
+      To sign in again, please click the link from Tempus to access your case.
     </p>
   {% endif %}
 {% endblock %}
