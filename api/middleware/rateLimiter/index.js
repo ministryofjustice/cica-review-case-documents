@@ -10,10 +10,14 @@ const rateLimiter = rateLimit({
     limit: API_RATE_LIMIT_MAX_PROD,
     skip: (req, res) => {
         // Skip rate limiting in non-production
-        if (!isProduction) return true;
+        if (!isProduction) {
+            return true;
+        }
 
         // Skip rate limiting if no Authorization header (let JWT auth handle it)
-        if (!req.headers.authorization) return true;
+        if (!req.headers.authorization) {
+            return true;
+        }
 
         return false;
     },
