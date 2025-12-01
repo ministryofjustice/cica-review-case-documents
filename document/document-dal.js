@@ -100,16 +100,8 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
                 query: {
                     bool: {
                         must: [
-                            {
-                                match: {
-                                    chunk_text: keyword
-                                }
-                            },
-                            {
-                                match: {
-                                    case_ref: caseReferenceNumber
-                                }
-                            }
+                            { match: { chunk_text: keyword } },
+                            { match: { case_ref: caseReferenceNumber } }
                         ]
                     }
                 }
@@ -131,11 +123,11 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
                 index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
                 body: queryBody
             });
-            const hits = response?.body?.hits?.hits || [];
+            const hits = response?.body?.hits ?? {};
 
-            logger.info({ hitsCount: hits.length }, 'OpenSearch Search response');
+            logger.info({ hitsCount: hits?.hits?.length ?? 0 }, 'OpenSearch Search response');
 
-            if (hits.length === 0) {
+            if (hits?.hits?.length === 0) {
                 if (logger && typeof logger.warn === 'function') {
                     logger.warn(
                         { keyword, caseReferenceNumber },
@@ -148,7 +140,7 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
                     });
                 }
             }
-            return response?.body?.hits ?? [];
+            return hits;
         } catch (err) {
             if (logger && typeof logger.error === 'function') {
                 logger.error({ err }, '[OpenSearch] Search error');
