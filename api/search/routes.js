@@ -56,7 +56,8 @@ const router = express.Router();
 router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
     try {
         const { query, pageNumber, itemsPerPage } = req.params;
-        req.log.info({ query, pageNumber, itemsPerPage }, 'Querying items per page');
+        const logger = req.log;
+        logger.info({ query, pageNumber, itemsPerPage }, 'Querying items per page');
         const searchService = createSearchService({
             caseReferenceNumber: req.get('On-Behalf-Of'),
             logger: req.log
