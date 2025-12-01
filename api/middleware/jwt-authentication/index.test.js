@@ -35,7 +35,7 @@ import assert from 'node:assert/strict';
 import jwt from 'jsonwebtoken';
 import authenticateToken from './index.js';
 
-const SECRET = 'testsecret';
+const SECRET = process.env.APP_JWT_SECRET;
 
 /**
  * Creates a mock Express request object with JWT token in either cookies or headers.
