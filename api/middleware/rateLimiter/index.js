@@ -7,7 +7,7 @@ const API_RATE_LIMIT_MAX_PROD = Number(process.env.API_RATE_LIMIT_MAX_PROD) || 3
 
 const rateLimiter = rateLimit({
     windowMs: API_RATE_LIMIT_WINDOW_MS,
-    max: API_RATE_LIMIT_MAX_PROD,
+    limit: API_RATE_LIMIT_MAX_PROD,
     skip: (req, res) => {
         // Skip rate limiting in non-production
         if (!isProduction) return true;

@@ -25,7 +25,7 @@ export function createFailureRateLimiter(
 ) {
     return rateLimit({
         windowMs,
-        max: maxFailures,
+        limit: maxFailures,
         message: 'LOCKED_OUT',
         standardHeaders: true,
         legacyHeaders: false,
