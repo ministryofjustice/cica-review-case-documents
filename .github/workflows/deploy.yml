@@ -59,7 +59,7 @@ jobs:
           REPOSITORY: ${{ vars.ECR_REPOSITORY }}
         run: |
           echo "Building Docker image for $REGISTRY/$REPOSITORY"
-          docker build -t $REGISTRY/$REPOSITORY:${{ github.sha }} .
+          docker build --build-arg NODE_ENV=production -t $REGISTRY/$REPOSITORY:${{ github.sha }} .
 
       - name: Push Docker image
         env:
@@ -75,9 +75,11 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: ${{ vars.ECR_REPOSITORY }}
           NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
-          NODE_ENV: ${{ inputs.environment || 'production' }}
+          DEPLOY_ENV: ${{ inputs.environment || 'uat' }}
         run: |
-          echo "Templating Kubernetes manifests"
+          echo "Templating Kubernetes manifests for $DEPLOY_ENV"
+          export HOST_NAME="cica-review-case-documents-$DEPLOY_ENV.apps.live.cloud-platform.service.justice.gov.uk"
+          echo "HOST_NAME is $HOST_NAME"
           mkdir -p deployments
           cat deployments/templates/deployment.yml | envsubst > deployments/deployment.yml
           cat deployments/templates/ingress.yml | envsubst > deployments/ingress.yml
