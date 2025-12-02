@@ -1,46 +1,110 @@
-name: deploy
+name: Deploy to environment
 
 on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to deploy to
+        required: true
+        type: choice
+        options:
+          - dev
+          - uat
+          # - prod   # Uncomment when ready to support production
+        default: dev
+      ref:
+        description: Git ref (branch, tag, or SHA) to deploy
+        required: true
+        default: main
+        type: string
   push:
-    branches: [dev]
+    branches:
+      - feature/cicads-524-add-login-page
+
+permissions:
+  contents: read
+  id-token: write # Required for OIDC authentication with AWS
 
 jobs:
-  ecr:
+  deploy:
+    name: Deploy to ${{ inputs.environment || 'dev' }}
+    environment: ${{ inputs.environment || 'dev' }}
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write # This is required for requesting the JWT
-      contents: read # This is required for actions/checkout
+
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-      - uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8 #v5.1.0
+      - name: Checkout code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Show deployment info
+        run: |
+          echo "Deploying ref ${{ inputs.ref || github.ref }} to environment ${{ inputs.environment || 'dev' }}"
+          echo "Branch: ${{ github.ref }}"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8 # v5
         with:
           role-to-assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}
           aws-region: ${{ vars.ECR_REGION }}
-      - uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+          audience: sts.amazonaws.com
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2
         id: login-ecr
-      - run: |
-          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
-          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+      - name: Build Docker image
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: ${{ vars.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ github.sha }}
-      - run: |
-          cat deployments/templates/deployment.yml | envsubst > deployments/deployment.yml
-          cat deployments/templates/ingress.yml | envsubst > deployments/ingress.yml
-          cat deployments/templates/service.yml | envsubst > deployments/service.yml
+        run: |
+          echo "Building Docker image for $REGISTRY/$REPOSITORY"
+          docker build -t $REGISTRY/$REPOSITORY:${{ github.sha }} .
+
+      - name: Push Docker image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+        run: |
+          echo "Pushing Docker image to $REGISTRY/$REPOSITORY"
+          docker push $REGISTRY/$REPOSITORY:${{ github.sha }}
+
+      - name: Template Kubernetes manifests
         env:
           IMAGE_TAG: ${{ github.sha }}
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: ${{ vars.ECR_REPOSITORY }}
           NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
-      - run: |
-          echo "${{ secrets.KUBE_CERT }}" > ca.crt
-          kubectl config set-cluster ${KUBE_CLUSTER} --certificate-authority=./ca.crt --server=https://${KUBE_CLUSTER}
-          kubectl config set-credentials deploy-user --token=${{ secrets.KUBE_TOKEN }}
-          kubectl config set-context ${KUBE_CLUSTER} --cluster=${KUBE_CLUSTER} --user=deploy-user --namespace=${KUBE_NAMESPACE}
-          kubectl config use-context ${KUBE_CLUSTER}
-          kubectl -n ${KUBE_NAMESPACE} apply -f deployments/
+        run: |
+          echo "Templating Kubernetes manifests"
+          mkdir -p deployments
+          cat deployments/templates/deployment.yml | envsubst > deployments/deployment.yml
+          cat deployments/templates/ingress.yml | envsubst > deployments/ingress.yml
+          cat deployments/templates/service.yml | envsubst > deployments/service.yml
+
+      - name: Deploy to Kubernetes
         env:
-          KUBE_NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
+          KUBE_CERT: ${{ secrets.KUBE_CERT }}
           KUBE_CLUSTER: ${{ secrets.KUBE_CLUSTER }}
+          KUBE_NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
+          KUBE_TOKEN: ${{ secrets.KUBE_TOKEN }}
+        run: |
+          echo "Deploying to cluster $KUBE_CLUSTER namespace $KUBE_NAMESPACE"
+          echo "$KUBE_CERT" > ca.crt
+          kubectl config set-cluster $KUBE_CLUSTER --certificate-authority=./ca.crt --server=https://$KUBE_CLUSTER
+          kubectl config set-credentials deploy-user --token=$KUBE_TOKEN
+          kubectl config set-context $KUBE_CLUSTER --cluster=$KUBE_CLUSTER --user=deploy-user --namespace=$KUBE_NAMESPACE
+          kubectl config use-context $KUBE_CLUSTER
+          kubectl -n $KUBE_NAMESPACE apply -f deployments/
+
+    # Uncomment and configure for production when ready
+    # environment:
+    #   name: prod
+    #   url: https://your-prod-url
+    #   # In GitHub Environment settings, require deployment approval for prod
+
+# Recommended next steps for prod:
+# - Add 'prod' to the environment options above
+# - Create a 'prod' environment in GitHub with required reviewers/approvals
+# - Restrict prod deployments to main branch or releases
+# - Add notification steps for successful prod deployments

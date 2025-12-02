@@ -72,7 +72,3 @@ spec:
               value: "900000"
             - name: APP_RATE_LIMIT_MAX
               value: "100"
-            - name: API_RATE_LIMIT_WINDOW_MS
-              value: "900000"
-            - name: API_RATE_LIMIT_MAX_PROD
-              value: "300"
