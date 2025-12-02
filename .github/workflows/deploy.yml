@@ -11,7 +11,7 @@ on:
           - dev
           - uat
           # - prod   # Uncomment when ready to support production
-        default: dev
+        default: uat
       ref:
         description: Git ref (branch, tag, or SHA) to deploy
         required: true
