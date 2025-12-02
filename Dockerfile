@@ -11,6 +11,7 @@ COPY package*.json ./
 EXPOSE 5000
 
 ARG NODE_ENV=production
+ENV NODE_ENV=${NODE_ENV}
 
 COPY . .
 
