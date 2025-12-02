@@ -1,14 +1,21 @@
 #!/usr/bin/env node
 import {nanoid} from 'nanoid';
 import http from 'http';
+import { config as dotenvConfig } from 'dotenv';
 
 process.env.APP_BUILDTIME_ID = nanoid();
 console.log(`Build-time ID generated: ${process.env.APP_BUILDTIME_ID}`);
 import createApp from '../app.js';
 import { checkOpenSearchHealth } from '../db/healthcheck.js';
 
+if (process.env.NODE_ENV === undefined) {
+  dotenvConfig();
+}
+
 const app = createApp();
 const OPENSEARCH_URL = process.env.APP_DATABASE_URL || 'http://localhost:9200';
+
+
 
 // normalize a port into a number, string, or false.
 function normalizePort(port) {

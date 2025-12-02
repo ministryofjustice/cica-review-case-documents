@@ -10,7 +10,7 @@
     "license": "MIT",
     "scripts": {
         "start:dev": "nodemon -L --inspect=0.0.0.0:9229 -e .css,.scss,.js,.json,.njk --ignore public/ --ignore src/js/scripts.babel.generated.js npm start",
-        "start": "node --env-file=.env ./bin/www",
+        "start": "node ./bin/www",
         "sass": "sass --load-path=. --style=compressed --no-source-map src/sass/all.scss public/stylesheets/all.css",
         "build:dev": "npm run babel && npm run webpack:dev",
         "build": "npm run babel && npm run webpack",
@@ -28,6 +28,7 @@
         "@opensearch-project/opensearch": "^3.5.1",
         "cookie-parser": "^1.4.7",
         "csrf-csrf": "^4.0.3",
+        "dotenv": "^17.2.3",
         "express": "^5.1.0",
         "express-openapi-validator": "^5.6.0",
         "express-rate-limit": "^8.2.1",
