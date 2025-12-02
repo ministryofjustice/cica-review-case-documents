@@ -44,6 +44,7 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
     app.use(express.json());
     // https://expressjs.com/en/api.html#express.urlencoded
     app.use(express.urlencoded({ extended: true }));
+    // CSRF protection is enforced after cookies are parsed
     app.use(
         cookieParser(null, {
             httpOnly: true
