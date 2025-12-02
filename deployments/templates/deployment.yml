@@ -63,7 +63,7 @@ spec:
             - name: OPENSEARCH_INDEX_CHUNKS_NAME
               value: page_chunks
             - name: NODE_ENV
-              value: "production"
+              value: "${NODE_ENV}"
             - name: API_RATE_LIMIT_WINDOW_MS
               value: "900000"
             - name: API_RATE_LIMIT_MAX_PROD
