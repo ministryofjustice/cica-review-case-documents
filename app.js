@@ -38,6 +38,8 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
 
     const app = express();
 
+
+
     // https://expressjs.com/en/api.html#express.json
     app.use(express.json());
     // https://expressjs.com/en/api.html#express.urlencoded
@@ -66,14 +68,13 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
 
     app.use(
         session({
+            name: process.env.APP_COOKIE_NAME,
             secret: process.env.APP_COOKIE_SECRET,
             resave: false,
             saveUninitialized: true,
             cookie: {
-                secure: process.env.NODE_ENV === 'production',
-                maxAge: Number(process.env.JWT_COOKIE_MAX_AGE) || 60 * 60 * 1000 // Default to 1 hour
-            },
-            name: process.env.APP_COOKIE_NAME
+                secure: process.env.NODE_ENV === 'production'
+            }
         })
     );
 
@@ -130,9 +131,8 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
         express.static(path.join(__dirname, '/node_modules/govuk-frontend/dist/govuk/assets'))
     );
 
-    const { csrfProtection, generateCsrfToken } = createCsrf(app);
-    app.use(csrfProtection);
-
+    const { doubleCsrfProtection, generateCsrfToken } = createCsrf();
+    app.use(doubleCsrfProtection);
     app.use((req, res, next) => {
         res.locals.csrfToken = generateCsrfToken(req, res);
         next();
