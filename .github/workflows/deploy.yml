@@ -27,8 +27,8 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy to ${{ inputs.environment || 'dev' }}
-    environment: ${{ inputs.environment || 'dev' }}
+    name: Deploy to ${{ inputs.environment || 'uat' }}
+    environment: ${{ inputs.environment || 'uat' }}
     runs-on: ubuntu-latest
 
     steps:
