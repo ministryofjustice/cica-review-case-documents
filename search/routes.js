@@ -57,7 +57,10 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
 
         const { query, pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.params;
         const pageNumber = Math.max(Number(rawPageNumber) || 1, 1);
-        const itemsPerPage = Math.max(Number(rawItemsPerPage) || 10, 1);
+        const itemsPerPage = Math.max(
+            Number(rawItemsPerPage) || Number(process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE),
+            1
+        );
 
         const templateParams = {
             caseSelected: req.session.caseSelected,
@@ -98,23 +101,22 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
         const totalItemCount = Number(searchResults?.total?.value || 0);
 
         templateParams.searchResults = hits;
-        templateParams.showPagination = totalItemCount > itemsPerPage;
 
-        if (templateParams.showPagination) {
-            const totalPageCount = Math.ceil(totalItemCount / itemsPerPage);
-            const currentPageIndex = Math.min(pageNumber, totalPageCount);
+        // TODO: move this logic into the view.
+        templateParams.showPaginationItems = totalItemCount > itemsPerPage;
 
-            templateParams.pagination = {
-                totalItemCount,
-                totalPageCount,
-                currentPageIndex,
-                itemsPerPage,
-                from: (currentPageIndex - 1) * itemsPerPage + 1,
-                to: Math.min(currentPageIndex * itemsPerPage, totalItemCount),
-                isFirstPage: currentPageIndex <= 1,
-                isLastPage: currentPageIndex >= totalPageCount
-            };
-        }
+        const totalPageCount = Math.ceil(totalItemCount / itemsPerPage);
+        const currentPageIndex = Math.min(pageNumber, totalPageCount);
+        templateParams.pagination = {
+            totalItemCount,
+            totalPageCount,
+            currentPageIndex,
+            itemsPerPage,
+            from: (currentPageIndex - 1) * itemsPerPage + 1,
+            to: Math.min(currentPageIndex * itemsPerPage, totalItemCount),
+            isFirstPage: currentPageIndex <= 1,
+            isLastPage: currentPageIndex >= totalPageCount
+        };
 
         const html = render('search/page/results.njk', templateParams);
         return res.status(200).send(html);

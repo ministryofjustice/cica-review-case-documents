@@ -59,6 +59,13 @@ function createTemplateEngineService(app) {
         environment.addGlobal('APP_VERSION', process.env.npm_package_version);
         environment.addGlobal('APP_BUILDTIME_ID', process.env.APP_BUILDTIME_ID);
         environment.addGlobal('govukRebrand', true);
+        environment.addFilter('formatDate', (dateString) => {
+            return new Date(dateString).toLocaleString('en-GB', {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric'
+            });
+        });
         environment.express(app);
         app.engine('njk', environment.render.bind(environment));
         app.set('view engine', 'njk');
