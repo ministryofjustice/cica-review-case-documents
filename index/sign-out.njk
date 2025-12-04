@@ -1,6 +1,24 @@
 {% extends "page.njk" %}
 {% block pageTitle %}Signed out - {{ super() }}
 {% endblock %}
+
+{% from "moj/components/header/macro.njk" import mojHeader %}
+
+{% block header %}
+  {{ mojHeader({
+        organisationLabel: {
+            text: 'CICA',
+            href: '#'
+        },
+        serviceLabel: {
+            text: 'FIND',
+            href: '#'
+        }
+    }) }}
+{% endblock %}
+
+{% block innerHeader %}{% endblock %}
+
 {% block innerContent %}
   <h1 class="govuk-heading-l">You have signed out</h1>
   {% if caseReferenceNumber %}
