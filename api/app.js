@@ -1,22 +1,22 @@
 import express from 'express';
 import OpenApiValidator from 'express-openapi-validator';
-import errorHandler from '../middleware/errorHandler/index.js';
+import errorHandler from './middleware/errorHandler/index.js';
 import apiRouter from './routes.js';
+import authenticateJWTToken from './middleware/jwt-authentication/index.js';
+import rateLimiter from './middleware/rateLimiter/index.js';
 
 const app = express();
 
 app.use(express.json({ type: 'application/vnd.api+json' }));
-// https://expressjs.com/en/api.html#express.urlencoded
 app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
-    // Default to JSON:API content type for all subsequent responses
     res.type('application/vnd.api+json');
-    // https://stackoverflow.com/a/22339262/2952356
-    // `process.env.npm_package_version` only works if you use npm start to run the app.
     res.set('Application-Version', process.env.npm_package_version);
-
     next();
 });
+
+app.use(rateLimiter);
+app.use(authenticateJWTToken);
 
 app.use(
     '/',

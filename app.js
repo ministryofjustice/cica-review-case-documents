@@ -6,6 +6,7 @@ import session from 'express-session';
 import helmet from 'helmet';
 import { nanoid } from 'nanoid';
 import apiApp from './api/app.js';
+import createTemplateEngineService from './templateEngine/index.js';
 import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
@@ -13,26 +14,44 @@ import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
 import getCaseReferenceNumberFromQueryString from './middleware/getCaseReferenceNumberFromQueryString/index.js';
 import defaultCreateLogger from './middleware/logger/index.js';
 import searchRouter from './search/routes.js';
-import createTemplateEngineService from './templateEngine/index.js';
+import isAuthenticated from './middleware/isAuthenticated/index.js';
+import authRouter from './auth/routes.js';
+import rateLimitErrorHandler from './auth/rateLimiters/authRateLimitErrorHandler.js';
+import './middleware/errors/globalErrorHandler.js';
+import './middleware/errors/notFoundHandler.js';
+import notFoundHandler from './middleware/errors/notFoundHandler.js';
+import errorHandler from './middleware/errors/globalErrorHandler.js';
+import generalRateLimiter from './middleware/rateLimiter/index.js';
 
+/**
+ * Creates and configures an Express application with middleware for logging, security, session management,
+ * CSRF protection, static assets, and routing.
+ *
+ * @function
+ * @param {Object} [options] - Optional configuration object.
+ * @param {Function} [options.createLogger=defaultCreateLogger] - Factory function to create a request logger middleware.
+ * @returns {import('express').Express} The configured Express application instance.
+ */
 function createApp({ createLogger = defaultCreateLogger } = {}) {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
 
     const app = express();
 
-    const { doubleCsrfProtection, generateCsrfToken } = createCsrf();
+
 
     // https://expressjs.com/en/api.html#express.json
     app.use(express.json());
     // https://expressjs.com/en/api.html#express.urlencoded
     app.use(express.urlencoded({ extended: true }));
+    // CSRF protection is enforced after cookies are parsed
     app.use(
         cookieParser(null, {
             httpOnly: true
         })
     );
 
+    // Use the middleware for request logging
     app.use(createLogger());
 
     app.use((req, res, next) => {
@@ -112,19 +131,33 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
         express.static(path.join(__dirname, '/node_modules/govuk-frontend/dist/govuk/assets'))
     );
 
+    const { doubleCsrfProtection, generateCsrfToken } = createCsrf();
     app.use(doubleCsrfProtection);
     app.use((req, res, next) => {
         res.locals.csrfToken = generateCsrfToken(req, res);
         next();
     });
-    app.use('/api', apiApp);
+
+    // Apply General Rate Limiter GLOBALLY (Fixes CodeQL)
+    // Note: auth login exclusion is handled within the limiter configuration
+    app.use(generalRateLimiter);
+
     app.use('/', indexRouter);
-    app.use('/search', getCaseReferenceNumberFromQueryString, caseSelected, searchRouter);
-    app.use((req, res) => {
-        res.status(404).render('404.njk', {
-            pageType: ['root']
-        });
-    });
+
+    // Note: auth login will eventually be removed and replaced with SSO
+    app.use('/auth', authRouter);
+    app.use('/api', isAuthenticated, apiApp);
+    app.use(
+        '/search',
+        isAuthenticated,
+        getCaseReferenceNumberFromQueryString,
+        caseSelected,
+        searchRouter
+    );
+
+    app.use(notFoundHandler);
+    app.use(rateLimitErrorHandler(app));
+    app.use(errorHandler);
 
     return app;
 }

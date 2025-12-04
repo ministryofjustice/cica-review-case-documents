@@ -27,7 +27,7 @@
                 active: true
             }, {
                 text: 'Sign out',
-                href: '#'
+                href: '/auth/sign-out'
             }]
             }
     }) }}
@@ -45,12 +45,12 @@
                         {
                             text: "Search",
                             href: "/search",
-                            active: "search" in pageType
+                            active: pageType and ("search" in pageType)
                         },
                         {
                             text: "Documents",
                             href: "/document",
-                            active: "document" in pageType
+                            active: pageType and ("document" in pageType)
                         }
                     ]
                 }
@@ -85,8 +85,7 @@
 {% block bodyEnd %}
     {# Run JavaScript at end of the <body>, to avoid blocking the initial render. #}
     <script nonce="{{ cspNonce }}">
-        window.FIND = {
-        };
+        window.FIND = {};
     </script>
     <script nonce="{{ cspNonce }}" src="/js/bundle.js?v={{APP_VERSION}}&c={{APP_BUILDTIME_ID}}"></script>
 {% endblock %}

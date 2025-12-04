@@ -68,12 +68,19 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
             query
         };
 
+        req.log.info({ query, pageNumber, itemsPerPage }, 'Creating search service');
         const searchService = createSearchService({
             caseReferenceNumber: req.session?.caseReferenceNumber,
-            logger: res.log
+            logger: req.log
         });
 
-        const response = await searchService.getSearchResults(query, pageNumber, itemsPerPage);
+        const token = req.cookies?.jwtToken;
+        const response = await searchService.getSearchResults(
+            query,
+            pageNumber,
+            itemsPerPage,
+            token
+        );
         const { body } = response || {};
 
         if (body?.errors) {

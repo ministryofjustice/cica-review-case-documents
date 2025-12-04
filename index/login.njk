@@ -1,0 +1,120 @@
+{% extends "page.njk" %}
+{% block pageTitle %}Login{% endblock %}
+
+{% from "govuk/components/input/macro.njk" import govukInput %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+{% from "moj/components/header/macro.njk" import mojHeader %}
+
+{% block header %}
+    {{ mojHeader({
+        organisationLabel: {
+            text: 'CICA',
+            href: '#'
+        },
+        serviceLabel: {
+            text: 'FIND',
+            href: '#'
+        }
+    }) }}
+{% endblock %}
+
+{% block innerHeader %}{% endblock %}
+
+{% block innerContent %}
+
+  {% if lockedOut %}
+    <div class="govuk-error-summary" role="alert" aria-labelledby="lockout-title">
+      <h2 class="govuk-error-summary__title" id="lockout-title">You have been locked out</h2>
+      <div class="govuk-error-summary__body">
+        <p>You entered the wrong details too many times. Try again in 2 hours.</p>
+      </div>
+    </div>
+
+  {% elif lockoutWarning %}
+    {{ govukErrorSummary({
+      titleText: error,
+      errorList:[{ href: "#username", text: lockoutWarning }]
+    }) }}
+  {% elif usernameError and passwordError %}
+    {{ govukErrorSummary({
+      titleText: "There is a problem",
+      errorList: [
+        { href: "#username", text: usernameError },
+        { href: "#password", text: passwordError }
+      ]
+    }) }}
+  {% elif usernameError %}
+    {{ govukErrorSummary({
+      titleText: "There is a problem",
+      errorList: [
+        { href: "#username", text: usernameError }
+      ]
+    }) }}
+  {% elif passwordError %}
+    {{ govukErrorSummary({
+      titleText: "There is a problem",
+      errorList: [
+        { href: "#password", text: passwordError }
+      ]
+    }) }}
+  {% endif %}
+
+  <h1 class="govuk-heading-l">Sign in</h1>
+  <form method="POST" action="/auth/login" autocomplete="off" novalidate>
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+
+    {% if usernameError %}
+      {% if lockoutWarning %}
+        {% set usernameError = lockoutWarning %}
+      {% endif %}
+      {{ govukInput({
+        label: { text: "Username" },
+        id: "username",
+        name: "username",
+        autocomplete: "off",
+        spellcheck: false,
+        classes: "govuk-input--width-20",
+        value: username or "",
+        errorMessage: { text: usernameError }
+      }) }}
+    {% else %}
+      {{ govukInput({
+        label: { text: "Username" },
+        id: "username",
+        name: "username",
+        autocomplete: "username",
+        spellcheck: false,
+        classes: "govuk-input--width-20",
+        value: username or ""
+      }) }}
+    {% endif %}
+
+    {% if passwordError %}
+      {{ govukInput({
+        label: { text: "Password" },
+        id: "password",
+        name: "password",
+        type: "password",
+        autocomplete: "off",
+        spellcheck: false,
+        classes: "govuk-input--width-20",
+        value: "",
+        errorMessage: { text: passwordError }
+      }) }}
+    {% else %}
+      {{ govukInput({
+        label: { text: "Password" },
+        id: "password",
+        name: "password",
+        type: "password",
+        autocomplete: "off",
+        spellcheck: false,
+        classes: "govuk-input--width-20",
+        value: ""
+      }) }}
+    {% endif %}
+
+    {{ govukButton({ text: "Sign in" }) }}
+  </form>
+{% endblock %}

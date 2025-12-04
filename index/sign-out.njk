@@ -1,0 +1,38 @@
+{% extends "page.njk" %}
+{% block pageTitle %}Signed out - {{ super() }}
+{% endblock %}
+
+{% from "moj/components/header/macro.njk" import mojHeader %}
+
+{% block header %}
+  {{ mojHeader({
+        organisationLabel: {
+            text: 'CICA',
+            href: '#'
+        },
+        serviceLabel: {
+            text: 'FIND',
+            href: '#'
+        }
+    }) }}
+{% endblock %}
+
+{% block innerHeader %}{% endblock %}
+
+{% block innerContent %}
+  <h1 class="govuk-heading-l">You have signed out</h1>
+  {% if caseReferenceNumber %}
+    <p class="govuk-body">
+      <strong>
+        <a class="govuk-link govuk-!-font-weight-bold" href="/search?caseReferenceNumber={{ caseReferenceNumber }}">
+          Sign in
+        </a>
+      </strong>
+      again to view case <span class="govuk-!-font-weight-bold">{{ caseReferenceNumber }}.</span>
+    </p>
+  {% else %}
+    <p class="govuk-body">
+      To sign in again, please click the link from Tempus to access your case.
+    </p>
+  {% endif %}
+{% endblock %}

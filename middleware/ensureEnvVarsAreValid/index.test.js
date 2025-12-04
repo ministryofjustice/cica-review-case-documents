@@ -1,3 +1,14 @@
+/**
+ * Unit tests for ensureEnvVarsAreValid middleware and related functions.
+ *
+ * @fileoverview
+ * - Tests that ensureEnvVarsAreValid calls next() when environment variables are valid.
+ * - Tests getMandatoryEnvVars returns expected mandatory environment variable keys.
+ * - Tests getOptionalEnvVars returns expected optional environment variable keys.
+ * - Tests checkEnvVars throws ConfigurationError for invalid or missing mandatory/optional environment variables.
+ *
+ * @module ensureEnvVarsAreValid/index.test
+ */
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 
@@ -9,6 +20,10 @@ const fakeLogger = {
 };
 
 const originalEnv = { ...process.env };
+/**
+ * Restores the process environment variables to their original state.
+ * Useful for resetting any changes made to process.env during tests.
+ */
 function resetEnv() {
     process.env = { ...originalEnv };
 }
