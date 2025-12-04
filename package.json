@@ -26,6 +26,8 @@
     "dependencies": {
         "@ministryofjustice/frontend": "^5.1.5",
         "@opensearch-project/opensearch": "^3.5.1",
+        "ajv": "^8.17.1",
+        "ajv-errors": "^3.0.0",
         "cookie-parser": "^1.4.7",
         "csrf-csrf": "^4.0.3",
         "dotenv": "^17.2.3",

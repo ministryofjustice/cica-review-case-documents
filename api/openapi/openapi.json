@@ -136,12 +136,17 @@
                 "name": "query",
                 "in": "path",
                 "required": true,
-                "description": "The query that results in the specific search results instance. Format UUIDv4.",
+                "description": "The query that results in the specific search results instance",
                 "schema": {
                     "type": "string",
                     "pattern": "^[a-zA-Z0-9 ]*$",
                     "minLength": 2,
-                    "maxLength": 200
+                    "maxLength": 200,
+                    "errorMessage": {
+                        "minLength": "Username must be at least 3 characters long.",
+                        "maxLength": "Username cannot exceed 20 characters.",
+                        "pattern": "Username can only contain letters, numbers, and underscores."
+                    }
                 },
                 "example": "this is a valid search query"
             },

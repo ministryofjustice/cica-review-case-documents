@@ -1,3 +1,5 @@
+import Ajv from 'ajv';
+import ajvErrors from 'ajv-errors';
 import express from 'express';
 import OpenApiValidator from 'express-openapi-validator';
 import errorHandler from './middleware/errorHandler/index.js';
@@ -6,6 +8,12 @@ import rateLimiter from './middleware/rateLimiter/index.js';
 import apiRouter from './routes.js';
 
 const app = express();
+
+const ajv = new Ajv({
+    allErrors: true,
+    jsonPointers: true
+});
+ajvErrors(ajv);
 
 app.use(express.json({ type: 'application/vnd.api+json' }));
 app.use(express.urlencoded({ extended: true }));
@@ -22,8 +30,10 @@ app.use(
     '/',
     OpenApiValidator.middleware({
         apiSpec: './api/openapi/openapi.json',
-        validateRequests: true,
-        validateResponses: true,
+        validateRequests: {
+            ajv
+        },
+        validateResponses: false,
         validateSecurity: false
     }),
     apiRouter
