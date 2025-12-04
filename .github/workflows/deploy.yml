@@ -27,8 +27,8 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy to ${{ inputs.environment || 'uat' }}
-    environment: ${{ inputs.environment || 'uat' }}
+    name: Deploy to ${{ inputs.environment || 'dev' }}
+    environment: ${{ inputs.environment || 'dev' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -75,7 +75,7 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: ${{ vars.ECR_REPOSITORY }}
           NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
-          DEPLOY_ENV: ${{ inputs.environment || 'uat' }}
+          DEPLOY_ENV: ${{ inputs.environment || 'dev' }}
         run: |
           echo "Templating Kubernetes manifests for $DEPLOY_ENV"
           export HOST_NAME="cica-review-case-documents-$DEPLOY_ENV.apps.live.cloud-platform.service.justice.gov.uk"
