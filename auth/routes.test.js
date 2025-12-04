@@ -1,6 +1,7 @@
 import { test, beforeEach } from 'node:test';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
+import assert from 'node:assert';
 import createApp from '../app.js';
 
 let app;
