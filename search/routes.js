@@ -6,7 +6,7 @@ const router = express.Router();
 
 function validateSearchQuery(query) {
     const errors = [];
-    
+
     if (!query || query.trim().length === 0) {
         errors.push({
             text: 'Enter a search term',
@@ -28,7 +28,7 @@ function validateSearchQuery(query) {
             href: '#query'
         });
     }
-    
+
     return errors;
 }
 
@@ -52,22 +52,23 @@ router.get('/', (req, res, next) => {
 router.post('/', (req, res, next) => {
     try {
         const { query } = req.body;
-        const errors = validateSearchQuery(query);
-        
-        if (errors.length > 0) {
-            const templateEngineService = createTemplateEngineService();
-            const { render } = templateEngineService;
-            const html = render('search/page/results.njk', { // results.njk, or index.njk?
-                caseSelected: req.session.caseSelected,
-                caseReferenceNumber: req.session.caseReferenceNumber,
-                pageType: 'search',
-                csrfToken: res.locals.csrfToken,
-                cspNonce: res.locals.cspNonce,
-                errors,
-                query: query || ''
-            });
-            return res.status(400).send(html);
-        }
+        // const errors = validateSearchQuery(query);
+
+        // if (errors.length > 0) {
+        //     const templateEngineService = createTemplateEngineService();
+        //     const { render } = templateEngineService;
+        //     // results.njk, or index.njk?
+        //     const html = render('search/page/results.njk', {
+        //         caseSelected: req.session.caseSelected,
+        //         caseReferenceNumber: req.session.caseReferenceNumber,
+        //         pageType: 'search',
+        //         csrfToken: res.locals.csrfToken,
+        //         cspNonce: res.locals.cspNonce,
+        //         errors,
+        //         query: query || ''
+        //     });
+        //     return res.status(400).send(html);
+        // }
 
         return res.redirect(`/search/${encodeURIComponent(query.trim())}`);
     } catch (err) {
