@@ -1,9 +1,9 @@
 import express from 'express';
 import OpenApiValidator from 'express-openapi-validator';
 import errorHandler from './middleware/errorHandler/index.js';
-import apiRouter from './routes.js';
 import authenticateJWTToken from './middleware/jwt-authentication/index.js';
 import rateLimiter from './middleware/rateLimiter/index.js';
+import apiRouter from './routes.js';
 
 const app = express();
 

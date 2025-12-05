@@ -1,7 +1,8 @@
-import { test, beforeEach } from 'node:test';
-import request from 'supertest';
-import jwt from 'jsonwebtoken';
 import assert from 'node:assert';
+
+import { beforeEach, test } from 'node:test';
+import jwt from 'jsonwebtoken';
+import request from 'supertest';
 import createApp from '../app.js';
 
 let app;
