@@ -142,10 +142,10 @@
                     "pattern": "^[a-zA-Z0-9 ]*$",
                     "minLength": 2,
                     "maxLength": 200,
-                    "errorMessage": {
-                        "minLength": "Username must be at least 3 characters long.",
-                        "maxLength": "Username cannot exceed 20 characters.",
-                        "pattern": "Username can only contain letters, numbers, and underscores."
+                    "x-errorMessage": {
+                        "minLength": "Must be at least 2 characters long",
+                        "maxLength": "Cannot be more that 200 characters long",
+                        "pattern": "Query can only contain alphanumeric characters and spaces"
                     }
                 },
                 "example": "this is a valid search query"
@@ -181,7 +181,7 @@
                 "schema": {
                     "$ref": "./json-schemas/models/definitions/case-reference-number.json"
                 },
-                "example": "urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+                "example": "25-111111"
             }
         },
         "responses": {
