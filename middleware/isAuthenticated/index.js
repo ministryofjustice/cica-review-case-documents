@@ -20,9 +20,7 @@ export default function isAuthenticated(req, res, next) {
     }
 
     // Check JWT cookie
-    const token =
-        req.cookies.jwtToken ||
-        (req.headers.authorization && req.headers.authorization.split(' ')[1]);
+    const token = req.cookies.jwtToken || req.headers.authorization?.split(' ')[1];
     if (!token) {
         req.log?.warn({ url: req.originalUrl }, 'Missing authentication token');
         req.session.returnTo = req.originalUrl;

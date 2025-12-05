@@ -1,5 +1,5 @@
-import test from 'node:test';
 import assert from 'node:assert/strict';
+import test from 'node:test';
 import notFoundHandler from './notFoundHandler.js';
 
 const mockHtml = '<h1>404 Not Found</h1>';

@@ -1,5 +1,5 @@
-import { LoginLockoutError } from './authRateLimiter.js'; // Import new name
 import createTemplateEngineService from '../../templateEngine/index.js';
+import { LoginLockoutError } from './authRateLimiter.js'; // Import new name
 /**
  * Express error handler middleware for rate limiting errors.
  * If the error is an instance of RateLimitError, renders a lockout page using the provided template engine.
@@ -13,7 +13,7 @@ export default function rateLimitErrorHandler(
     app,
     templateEngineFactory = createTemplateEngineService
 ) {
-    return function (err, req, res, next) {
+    return (err, req, res, next) => {
         // Only handle Login Lockouts here
         if (err instanceof LoginLockoutError) {
             const templateEngineService = templateEngineFactory(app);

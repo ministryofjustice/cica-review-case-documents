@@ -4,12 +4,13 @@
  *
  * @returns {express.Application} The configured Express application instance.
  */
+
+import assert from 'node:assert';
+import { test } from 'node:test';
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import session from 'express-session';
 import request from 'supertest';
-import rateLimit from 'express-rate-limit';
-import { test } from 'node:test';
-import assert from 'node:assert';
 
 /**
  * Creates an Express application configured with session middleware and a general rate limiter.

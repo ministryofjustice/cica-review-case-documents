@@ -2,6 +2,7 @@ import assert from 'node:assert';
 import { beforeEach, describe, it } from 'node:test';
 import VError from 'verror';
 import createDocumentDAL from './document-dal.js';
+
 const mockLogger = {
     info: () => {},
     error: () => {},

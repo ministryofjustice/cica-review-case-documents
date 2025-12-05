@@ -1,5 +1,4 @@
 import { Client } from '@opensearch-project/opensearch';
-import { URL } from 'url';
 
 /**
  * Checks the health of the OpenSearch cluster at the given proxy URL.
@@ -12,7 +11,6 @@ import { URL } from 'url';
  */
 export async function checkOpenSearchHealth(proxyUrl, timeout = 10, interval = 1000) {
     console.info(`OpenSearch ${proxyUrl} health check started`);
-    const parsed = new URL(proxyUrl);
     const client = new Client({
         node: proxyUrl,
         ssl: {

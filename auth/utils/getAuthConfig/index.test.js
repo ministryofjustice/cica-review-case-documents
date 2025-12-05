@@ -1,6 +1,6 @@
-import { getAuthConfig } from './index.js';
+import assert from 'node:assert';
 import test from 'node:test';
-import assert from 'assert';
+import { getAuthConfig } from './index.js';
 
 const OLD_ENV = { ...process.env.test };
 

@@ -6,21 +6,21 @@ import session from 'express-session';
 import helmet from 'helmet';
 import { nanoid } from 'nanoid';
 import apiApp from './api/app.js';
-import createTemplateEngineService from './templateEngine/index.js';
+import rateLimitErrorHandler from './auth/rateLimiters/authRateLimitErrorHandler.js';
+import authRouter from './auth/routes.js';
 import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
 import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
 import getCaseReferenceNumberFromQueryString from './middleware/getCaseReferenceNumberFromQueryString/index.js';
+import isAuthenticated from './middleware/isAuthenticated/index.js';
 import defaultCreateLogger from './middleware/logger/index.js';
 import searchRouter from './search/routes.js';
-import isAuthenticated from './middleware/isAuthenticated/index.js';
-import authRouter from './auth/routes.js';
-import rateLimitErrorHandler from './auth/rateLimiters/authRateLimitErrorHandler.js';
+import createTemplateEngineService from './templateEngine/index.js';
 import './middleware/errors/globalErrorHandler.js';
 import './middleware/errors/notFoundHandler.js';
-import notFoundHandler from './middleware/errors/notFoundHandler.js';
 import errorHandler from './middleware/errors/globalErrorHandler.js';
+import notFoundHandler from './middleware/errors/notFoundHandler.js';
 import generalRateLimiter from './middleware/rateLimiter/index.js';
 
 /**
@@ -38,8 +38,6 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
 
     const app = express();
 
-
-
     // https://expressjs.com/en/api.html#express.json
     app.use(express.json());
     // https://expressjs.com/en/api.html#express.urlencoded
@@ -53,6 +51,7 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
 
     // Use the middleware for request logging
     app.use(createLogger());
+    // test
 
     app.use((req, res, next) => {
         res.set({

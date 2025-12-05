@@ -1,13 +1,11 @@
 import assert from 'node:assert';
 import { afterEach, beforeEach, describe, it, mock } from 'node:test';
-
-import request from 'supertest';
-import createDBQuery from '../db/index.js';
-
 import express from 'express';
 import session from 'express-session';
-import searchRouter from './routes.js';
+import request from 'supertest';
+import createDBQuery from '../db/index.js';
 import { caseSelected } from '../middleware/caseSelected/index.js'; // Add this import
+import searchRouter from './routes.js';
 
 /**
  * Creates an isolated Express application instance for testing the search routes.
@@ -44,7 +42,7 @@ function createIsolatedSearchApp(sessionData = {}) {
 }
 
 describe('search router', () => {
-    let app;
+    let _app;
     let db;
 
     beforeEach(async () => {
@@ -58,7 +56,7 @@ describe('search router', () => {
         });
 
         const { default: importedApp } = await import('../app.js');
-        app = importedApp({
+        _app = importedApp({
             db,
             createLogger: () => (req, res, next) => {
                 const fakeLogger = {

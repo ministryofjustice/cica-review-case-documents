@@ -1,5 +1,5 @@
-import VError from 'verror';
 import { doubleCsrf as defaultDoubleCsrf } from 'csrf-csrf';
+import VError from 'verror';
 
 /**
  * Creates CSRF protection middleware and token generator using double CSRF strategy.

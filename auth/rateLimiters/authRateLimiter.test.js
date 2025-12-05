@@ -1,5 +1,5 @@
-import test from 'node:test';
 import assert from 'node:assert/strict';
+import test from 'node:test';
 import express from 'express';
 import request from 'supertest';
 import { createFailureRateLimiter, LoginLockoutError } from './authRateLimiter.js';

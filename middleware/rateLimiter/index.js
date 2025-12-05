@@ -8,7 +8,6 @@ const windowMs = process.env.APP_RATE_LIMIT_WINDOW_MS
 
 const limit = process.env.APP_RATE_LIMIT_MAX ? parseInt(process.env.APP_RATE_LIMIT_MAX, 10) : 100; // Default: 100 requests
 
-
 /**
  * Express middleware for general rate limiting.
  *

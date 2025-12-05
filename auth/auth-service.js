@@ -1,7 +1,7 @@
-import { getAuthConfig } from './utils/getAuthConfig/index.js';
 import createTemplateEngineService from '../templateEngine/index.js';
 import jwtCookieOptions from './jwtCookieOptions.js';
 import failureRateLimiter, { getRateLimitKey } from './rateLimiters/authRateLimiter.js';
+import { getAuthConfig } from './utils/getAuthConfig/index.js';
 
 /**
  * Validates login parameters (username and password) against authentication configuration.
@@ -54,7 +54,7 @@ export function loginParamsValidator(username, password) {
  */
 export function signOutUser(req, res, next) {
     const caseReferenceNumber = req.session?.caseReferenceNumber;
-    let rateLimitKey = getRateLimitKey(req);
+    const rateLimitKey = getRateLimitKey(req);
 
     if (rateLimitKey && typeof failureRateLimiter.resetKey === 'function') {
         failureRateLimiter.resetKey(rateLimitKey);

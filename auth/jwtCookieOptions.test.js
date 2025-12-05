@@ -1,5 +1,5 @@
-import { test } from 'node:test';
 import assert from 'node:assert';
+import { test } from 'node:test';
 import getJwtCookieOptions from './jwtCookieOptions.js';
 
 test('should set httpOnly to true', () => {
