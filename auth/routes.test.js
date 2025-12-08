@@ -50,8 +50,8 @@ test('POST /auth/login with no username and no password shows correct errors', a
     const response = await agent.post('/auth/login').send({ _csrf: csrfToken });
 
     assert.strictEqual(response.status, 400);
-    assert.match(response.text, /Enter your username/);
-    assert.match(response.text, /Enter your password/);
+    assert.match(response.text, /Enter a username/);
+    assert.match(response.text, /Enter a password/);
 });
 
 test('POST /auth/login with no username shows correct errors', async () => {
@@ -65,8 +65,8 @@ test('POST /auth/login with no username shows correct errors', async () => {
         .send({ password: 'testPassword123', _csrf: csrfToken });
 
     assert.strictEqual(response.status, 400);
-    assert.match(response.text, /Enter your username/);
-    assert.doesNotMatch(response.text, /Enter your password/);
+    assert.match(response.text, /Enter a username/);
+    assert.doesNotMatch(response.text, /Enter a password/);
 });
 
 test('POST /auth/login with no password shows correct errors', async () => {
@@ -80,8 +80,8 @@ test('POST /auth/login with no password shows correct errors', async () => {
         .send({ username: 'testuser', _csrf: csrfToken });
 
     assert.strictEqual(response.status, 400);
-    assert.match(response.text, /Enter your password/);
-    assert.doesNotMatch(response.text, /Enter your username/);
+    assert.match(response.text, /Enter a password/);
+    assert.doesNotMatch(response.text, /Enter a username/);
     assert.match(response.text, /testuser/);
 });
 

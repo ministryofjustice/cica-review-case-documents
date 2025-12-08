@@ -12,23 +12,23 @@ describe('loginParamsValidator', () => {
 
     it('should return errors when username and password are missing', () => {
         const result = authService.loginParamsValidator('', '');
-        assert.equal(result.error, 'Enter your username');
-        assert.equal(result.usernameError, 'Enter your username');
-        assert.equal(result.passwordError, 'Enter your password');
+        assert.equal(result.error, 'Enter a username');
+        assert.equal(result.usernameError, 'Enter a username');
+        assert.equal(result.passwordError, 'Enter a password');
     });
 
     it('should return error when username is missing', () => {
         const result = authService.loginParamsValidator('', 'testpass');
-        assert.equal(result.error, 'Enter your username');
-        assert.equal(result.usernameError, 'Enter your username');
+        assert.equal(result.error, 'Enter a username');
+        assert.equal(result.usernameError, 'Enter a username');
         assert.equal(result.passwordError, '');
     });
 
     it('should return error when password is missing', () => {
         const result = authService.loginParamsValidator('user1@example.com', '');
-        assert.equal(result.error, 'Enter your password');
+        assert.equal(result.error, 'Enter a password');
         assert.equal(result.usernameError, '');
-        assert.equal(result.passwordError, 'Enter your password');
+        assert.equal(result.passwordError, 'Enter a password');
     });
 
     it('should return error for invalid username format', () => {

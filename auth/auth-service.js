@@ -20,15 +20,15 @@ export function loginParamsValidator(username, password) {
     let passwordError = '';
 
     if (!username && !password) {
-        error = 'Enter your username';
-        usernameError = 'Enter your username';
-        passwordError = 'Enter your password';
+        error = 'Enter a username';
+        usernameError = 'Enter a username';
+        passwordError = 'Enter a password';
     } else if (!username) {
-        error = 'Enter your username';
-        usernameError = 'Enter your username';
+        error = 'Enter a username';
+        usernameError = 'Enter a username';
     } else if (!password) {
-        error = 'Enter your password';
-        passwordError = 'Enter your password';
+        error = 'Enter a password';
+        passwordError = 'Enter a password';
     } else if (
         typeof username !== 'string' ||
         !username.includes('@') ||

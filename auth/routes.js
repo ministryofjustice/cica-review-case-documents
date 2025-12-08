@@ -39,7 +39,7 @@ router.post('/login', failureRateLimiter, (req, res, next) => {
     if (!hasBoth) {
         return renderLoginResponse(res, {
             csrfToken: res.locals.csrfToken,
-            error: 'Enter your username and password',
+            error: 'Enter a username and password',
             usernameError,
             passwordError,
             username,
