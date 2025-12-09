@@ -16,8 +16,9 @@
  * - rateLimitErrorHandler: The middleware under test.
  * - RateLimitError: Custom error class for rate limiting.
  */
-import test from 'node:test';
+
 import assert from 'node:assert/strict';
+import test from 'node:test';
 import express from 'express';
 import request from 'supertest';
 import rateLimitErrorHandler from './authRateLimitErrorHandler.js';

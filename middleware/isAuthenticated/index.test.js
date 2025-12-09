@@ -12,8 +12,9 @@
  * - `createMockReq`: Creates a mock request object with customizable session, cookies, headers, log, and originalUrl.
  * - `createMockRes`: Creates a mock response object with a redirect method and a property to check the redirected URL.
  */
-import { test } from 'node:test';
+
 import assert from 'node:assert';
+import { test } from 'node:test';
 import jwt from 'jsonwebtoken';
 import isAuthenticated from './index.js';
 

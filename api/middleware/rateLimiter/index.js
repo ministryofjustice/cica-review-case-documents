@@ -23,7 +23,7 @@ const rateLimiter = rateLimit({
     },
     keyGenerator: (req, res) => {
         const authHeader = req.headers.authorization;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
+        if (authHeader?.startsWith('Bearer ')) {
             return authHeader.substring(7);
         }
         // Fallback (shouldn't reach here due to skip function)

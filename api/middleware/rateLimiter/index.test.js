@@ -1,9 +1,9 @@
+import assert from 'node:assert';
+import { afterEach, beforeEach, test } from 'node:test';
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import request from 'supertest';
 import rateLimiter from './index.js';
-import rateLimit from 'express-rate-limit';
-import { test, beforeEach, afterEach } from 'node:test';
-import assert from 'node:assert';
 
 let originalEnv;
 
@@ -56,13 +56,15 @@ test('blocks requests over the rate limit per token', async () => {
         skip: () => false,
         keyGenerator: (req, res) => {
             const authHeader = req.headers.authorization;
-            if (authHeader && authHeader.startsWith('Bearer ')) {
+            if (authHeader?.startsWith('Bearer ')) {
                 return authHeader.substring(7);
             }
             throw new Error('Missing JWT: rejecting request');
         },
-        handler: (req, res) => {
-            res.status(429).send('Too many requests, please try again later');
+        handler: (req, res, next) => {
+            const err = new Error('Too many requests, please try again later');
+            err.status = 429;
+            next(err);
         }
     });
     const app = createTestApp(limiter);
@@ -84,7 +86,7 @@ test('throws error if JWT is missing', async () => {
         skip: (req, res) => process.env.NODE_ENV !== 'production', // Check NODE_ENV directly
         keyGenerator: (req, res) => {
             const authHeader = req.headers.authorization;
-            if (authHeader && authHeader.startsWith('Bearer ')) {
+            if (authHeader?.startsWith('Bearer ')) {
                 return authHeader.substring(7);
             }
             const err = new Error('Missing JWT: rejecting request');

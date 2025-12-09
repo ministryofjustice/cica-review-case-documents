@@ -1,5 +1,5 @@
-import test from 'node:test';
 import assert from 'node:assert/strict';
+import test from 'node:test';
 import errorHandler from './globalErrorHandler.js';
 
 const mockHtml = '<h1>Error Page</h1>';
