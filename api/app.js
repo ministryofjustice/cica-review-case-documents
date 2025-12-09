@@ -5,16 +5,14 @@ import OpenApiValidator from 'express-openapi-validator';
 import errorHandler from '../middleware/errorHandler/index.js';
 import authenticateJWTToken from './middleware/jwt-authentication/index.js';
 import rateLimiter from './middleware/rateLimiter/index.js';
-import prepareApiSpec from './openapi/utils/prepareApiSpec/index.js';
 import apiRouter from './routes.js';
 
 const app = express();
 
 const ajv = new Ajv({
-    allErrors: true,
-    jsonPointers: true
+    allErrors: true
 });
-ajvErrors(ajv);
+ajvErrors(ajv, { singleError: true });
 
 app.use(express.json({ type: 'application/vnd.api+json' }));
 app.use(express.urlencoded({ extended: true }));
@@ -30,22 +28,15 @@ app.use(authenticateJWTToken);
 app.use(
     '/',
     OpenApiValidator.middleware({
-        apiSpec: await prepareApiSpec('./api/openapi/openapi.json'),
+        apiSpec: './api/openapi/openapi-dist.json',
         validateRequests: true,
         validateResponses: true,
-        ajv: { instance: ajv }
+        ajv: {
+            instance: ajv
+        }
     }),
     apiRouter
 );
-
-// await OpenApiValidator.install(app, {
-//     apiSpec: await prepareApiSpec('./api/openapi/openapi.json'),
-//     validateRequests: true,
-//     validateResponses: true,
-//     ajv: { instance: ajv }
-// });
-
-// app.use('/', apiRouter);
 
 // Express doesn't treat 404s as errors. If the following handler has been reached then nothing else matched e.g. a 404
 // https://expressjs.com/en/starter/faq.html#how-do-i-handle-404-responses

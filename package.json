@@ -11,6 +11,7 @@
     "scripts": {
         "start:dev": "nodemon -L --inspect=0.0.0.0:9229 -e .css,.scss,.js,.json,.njk --ignore public/ --ignore src/js/scripts.babel.generated.js npm start",
         "start": "node ./bin/www",
+        "prestart:dev": "npm run openapi:build",
         "sass": "sass --load-path=. --style=compressed --no-source-map src/sass/all.scss public/stylesheets/all.css",
         "build:dev": "npm run babel && npm run webpack:dev",
         "build": "npm run babel && npm run webpack",
@@ -21,7 +22,8 @@
         "coverage:html": "c8 report --reporter=html",
         "lint": "biome check",
         "format": "biome format",
-        "jsdoc:check": "eslint ."
+        "jsdoc:check": "eslint .",
+        "openapi:build": "node ./api/openapi/buildOpenApiSpec.js"
     },
     "dependencies": {
         "@apidevtools/json-schema-ref-parser": "^15.1.3",

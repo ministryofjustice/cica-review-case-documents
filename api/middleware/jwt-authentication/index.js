@@ -10,7 +10,7 @@ import jwt from 'jsonwebtoken';
  * @param {Function} next - Express next middleware function.
  */
 function authenticateJWTToken(req, res, next) {
-    const token = req.cookies.jwtToken || req.headers.authorization?.split(' ')[1];
+    const token = req.cookies.jwtToken || req.headers?.authorization.split(' ')[1];
     if (!token) {
         req.log?.warn({ url: req.originalUrl }, 'Missing authentication token');
         return res.status(401).send('Missing authentication token');

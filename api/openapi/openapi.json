@@ -143,9 +143,9 @@
                     "minLength": 2,
                     "maxLength": 200,
                     "x-errorMessage": {
-                        "minLength": "Must be at least 2 characters long",
-                        "maxLength": "Cannot be more that 200 characters long",
-                        "pattern": "Query can only contain alphanumeric characters and spaces"
+                        "minLength": "Search terms must be 2 characters or more",
+                        "maxLength": "Search terms must be 200 characters or less",
+                        "pattern": "Search terms can only contain letters, numbers and spaces"
                     }
                 },
                 "example": "this is a valid search query"
