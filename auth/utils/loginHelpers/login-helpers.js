@@ -63,7 +63,7 @@ export function getLoginAttemptContext(req, username, password, usernameError, p
 
     let lockoutWarning;
     if (hasBoth && isInvalid) {
-        lockoutWarning = `Enter a valid username and password. You have ${attemptsLeft} attempts remaining before you are locked out.`;
+        lockoutWarning = `Enter a valid username and password. You have ${attemptsLeft + 1} attempts remaining before you are locked out.`;
     }
 
     return { attemptsLeft, lockoutWarning };

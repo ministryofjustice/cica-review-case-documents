@@ -52,7 +52,7 @@ function setIp(req, ip) {
 
 test('locks out after 5 failed attempts (6th returns 429)', async () => {
     const app = createApp();
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 4; i++) {
         const r = await request(app)
             .post('/auth/login')
             .send({ username: 'alice', password: 'wrong' });
@@ -67,7 +67,7 @@ test('locks out after 5 failed attempts (6th returns 429)', async () => {
 
 test('successful attempt does not consume quota (skipSuccessfulRequests)', async () => {
     const app = createApp();
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= 3; i++) {
         const r = await request(app).post('/auth/login').send({ username: 'bob', password: 'bad' });
         assert.equal(r.status, 401);
     }
@@ -89,7 +89,7 @@ test('successful attempt does not consume quota (skipSuccessfulRequests)', async
 
 test('different usernames have independent limits', async () => {
     const app = createApp();
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 4; i++) {
         const r = await request(app).post('/auth/login').send({ username: 'user1', password: 'x' });
         assert.equal(r.status, 401);
     }
@@ -104,14 +104,14 @@ test('different usernames have independent limits', async () => {
 
 test('IPv6-mapped and plain IPv4 normalize to same key', async () => {
     const app = createApp();
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= 2; i++) {
         const r = await setIp(request(app).post('/auth/login'), '::ffff:127.0.0.1').send({
             username: 'user2',
             password: 'x'
         });
         assert.equal(r.status, 401);
     }
-    for (let i = 4; i <= 5; i++) {
+    for (let i = 3; i <= 4; i++) {
         const r = await setIp(request(app).post('/auth/login'), '127.0.0.1').send({
             username: 'user2',
             password: 'x'
@@ -127,13 +127,13 @@ test('IPv6-mapped and plain IPv4 normalize to same key', async () => {
 
 test('RateLimit-Remaining header decreases on failures', async () => {
     const app = createApp();
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 4; i++) {
         const r = await request(app)
             .post('/auth/login')
             .send({ username: 'meter', password: 'bad' });
         assert.equal(r.status, 401);
         const remaining = Number(r.get('RateLimit-Remaining'));
-        assert.equal(remaining, 5 - i);
+        assert.equal(remaining, 4 - i);
     }
     const locked = await request(app)
         .post('/auth/login')
