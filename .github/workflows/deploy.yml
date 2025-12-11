@@ -97,12 +97,21 @@ jobs:
           kubectl config use-context $KUBE_CLUSTER
           kubectl -n $KUBE_NAMESPACE apply -f deployments/
 
+  trivy-image-scan:
+    needs: deploy
+    uses: ./.github/workflows/trivy-image-scan.yml
+    with:
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      ECR_REGION: ${{ vars.ECR_REGION }}
+    secrets:
+      ECR_REGISTRY_URL: ${{ secrets.ECR_REGISTRY_URL }}
+      ECR_ROLE_TO_ASSUME: ${{ secrets.ECR_ROLE_TO_ASSUME }}
+
     # Uncomment and configure for production when ready
     # environment:
     #   name: prod
     #   url: https://your-prod-url
     #   # In GitHub Environment settings, require deployment approval for prod
-
 # Recommended next steps for prod:
 # - Add 'prod' to the environment options above
 # - Create a 'prod' environment in GitHub with required reviewers/approvals
