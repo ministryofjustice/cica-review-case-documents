@@ -28,7 +28,7 @@
         }
     ],
     "paths": {
-        "/search/{query}/{pageNumber}/{itemsPerPage}": {
+        "/search": {
             "get": {
                 "tags": ["Search"],
                 "summary": "Search documents for a given case",
@@ -134,26 +134,24 @@
         "parameters": {
             "query": {
                 "name": "query",
-                "in": "path",
+                "in": "query",
                 "required": true,
                 "description": "The query that results in the specific search results instance",
                 "schema": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9 ]*$",
                     "minLength": 2,
                     "maxLength": 200,
                     "x-errorMessage": {
                         "minLength": "Search terms must be 2 characters or more",
-                        "maxLength": "Search terms must be 200 characters or less",
-                        "pattern": "Search terms can only contain letters, numbers and spaces"
+                        "maxLength": "Search terms must be 200 characters or less"
                     }
                 },
                 "example": "this is a valid search query"
             },
             "pageNumber": {
                 "name": "pageNumber",
-                "in": "path",
-                "required": true,
+                "in": "query",
+                "required": false,
                 "description": "Page number of search results",
                 "schema": {
                     "type": "integer",
@@ -163,8 +161,8 @@
             },
             "itemsPerPage": {
                 "name": "itemsPerPage",
-                "in": "path",
-                "required": true,
+                "in": "query",
+                "required": false,
                 "description": "Number of items per page of search results",
                 "schema": {
                     "type": "integer",

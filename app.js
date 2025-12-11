@@ -144,6 +144,24 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
     // Note: auth login will eventually be removed and replaced with SSO
     app.use('/auth', authRouter);
     app.use('/api', isAuthenticated, apiApp);
+    app.use((req, res, next) => {
+        if (req.method === 'GET') {
+            if (req?.session?.caseSelected === true) {
+                // we know it is a valid CRN from the `getCaseReferenceNumberFromQueryString` middleware.
+                if (!req.query?.crn) {
+                    const newQuery = {
+                        ...req.query,
+                        crn: req.session.caseReferenceNumber
+                    };
+                    delete newQuery.caseReferenceNumber;
+
+                    const queryString = new URLSearchParams(newQuery).toString();
+                    return res.redirect(`${req.baseUrl}?${queryString}`);
+                }
+            }
+        }
+        next();
+    });
     app.use(
         '/search',
         isAuthenticated,

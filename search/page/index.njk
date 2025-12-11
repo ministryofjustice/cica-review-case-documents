@@ -24,7 +24,7 @@
     <form method="post" action="/search">
         {% call govukFieldset({
             legend: {
-                text: "Search",
+                text: "Find",
                 classes: "govuk-fieldset__legend--xl",
                 isPageHeading: true
             }
@@ -43,13 +43,12 @@
             <p class="govuk-body">If you search for 'jaw', for example, it will find similar words like 'mandible'.</p>
             <p class="govuk-body">The tool might not find all the information you need, so you might have to check the document manually.</p>
 
+            <h2 class="govuk-heading-l govuk-!-margin-bottom-2">Search</h2>
+
             {{ govukInput({
                 label: {
                     text: "Search",
                     classes: "govuk-visually-hidden"
-                },
-                hint: {
-                    text: "For example, 'assault'"
                 },
                 id: "query",
                 name: "query",
