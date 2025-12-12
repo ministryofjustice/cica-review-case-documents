@@ -17,27 +17,46 @@ on:
         required: true
         default: main
         type: string
+      skip_security_scan:
+        description: Skip security vulnerability scan (emergency deployments only)
+        required: false
+        type: boolean
+        default: false
+  push:
+    branches:
+      - chore/update-github-actions
 
 permissions:
   contents: read
   id-token: write # Required for OIDC authentication with AWS
 
 jobs:
-  deploy:
-    name: Deploy to ${{ inputs.environment || 'dev' }}
+  build-and-scan:
+    name: Build and scan image for ${{ inputs.environment || 'dev' }}
     environment: ${{ inputs.environment || 'dev' }}
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      image-tag: ${{ github.sha }}
+      registry: ${{ steps.login-ecr.outputs.registry }}
+      repository: ${{ vars.ECR_REPOSITORY }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ inputs.ref || github.sha }}
 
       - name: Show deployment info
         run: |
-          echo "Deploying ref ${{ inputs.ref || github.ref }} to environment ${{ inputs.environment || 'dev' }}"
-          echo "Branch: ${{ github.ref }}"
+          echo "Building and scanning for environment ${{ inputs.environment || 'dev' }}"
+          echo "Workflow triggered from branch: ${{ github.ref_name }}"
+          echo "Workflow triggered by: ${{ github.event_name }}"
+          echo "Deploying ref/branch: ${{ inputs.ref || github.ref_name }}"
+          echo "Commit SHA being deployed: ${{ github.sha }}"
+          echo "Skip security scan: ${{ inputs.skip_security_scan || 'false' }}"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5
@@ -58,6 +77,36 @@ jobs:
           echo "Building Docker image for $REGISTRY/$REPOSITORY"
           docker build --build-arg NODE_ENV=production -t $REGISTRY/$REPOSITORY:${{ github.sha }} .
 
+      - name: Security scan bypassed warning
+        if: ${{ inputs.skip_security_scan }}
+        run: |
+          echo "::warning::⚠️ SECURITY SCAN BYPASSED - This is an emergency deployment without vulnerability scanning"
+
+      - name: Scan for breaking vulnerabilities
+        if: ${{ !inputs.skip_security_scan }}
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      - name: Scan for vulnerabilities (informative, non-breaking)
+        if: ${{ !inputs.skip_security_scan }}
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+          format: "table"
+          exit-code: "0"
+          ignore-unfixed: false
+          vuln-type: "os,library"
+          severity: "UNKNOWN,LOW,MEDIUM,CRITICAL,HIGH"
+        env:
+          TRIVY_SKIP_DB_UPDATE: true
+          TRIVY_SKIP_JAVA_DB_UPDATE: true
+
       - name: Push Docker image
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -66,11 +115,34 @@ jobs:
           echo "Pushing Docker image to $REGISTRY/$REPOSITORY"
           docker push $REGISTRY/$REPOSITORY:${{ github.sha }}
 
+  deploy:
+    needs: build-and-scan
+    name: Deploy to environment
+    environment: ${{ inputs.environment || 'dev' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5
+        with:
+          role-to-assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.ECR_REGION }}
+          audience: sts.amazonaws.com
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2
+        id: login-ecr
+
       - name: Template Kubernetes manifests
         env:
-          IMAGE_TAG: ${{ github.sha }}
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ needs.build-and-scan.outputs.image-tag }}
+          REGISTRY: ${{ needs.build-and-scan.outputs.registry }}
+          REPOSITORY: ${{ needs.build-and-scan.outputs.repository }}
           NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
           DEPLOY_ENV: ${{ inputs.environment || 'dev' }}
         run: |
@@ -97,21 +169,6 @@ jobs:
           kubectl config use-context $KUBE_CLUSTER
           kubectl -n $KUBE_NAMESPACE apply -f deployments/
 
-  trivy-image-scan:
-    needs: deploy
-    uses: ./.github/workflows/trivy-image-scan.yml
-    with:
-      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
-      ECR_REGION: ${{ vars.ECR_REGION }}
-    secrets:
-      ECR_REGISTRY_URL: ${{ secrets.ECR_REGISTRY_URL }}
-      ECR_ROLE_TO_ASSUME: ${{ secrets.ECR_ROLE_TO_ASSUME }}
-
-    # Uncomment and configure for production when ready
-    # environment:
-    #   name: prod
-    #   url: https://your-prod-url
-    #   # In GitHub Environment settings, require deployment approval for prod
 # Recommended next steps for prod:
 # - Add 'prod' to the environment options above
 # - Create a 'prod' environment in GitHub with required reviewers/approvals
