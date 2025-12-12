@@ -17,6 +17,9 @@ on:
         required: true
         default: main
         type: string
+  push:
+    branches:
+      - chore/update-github-actions
 
 permissions:
   contents: read
