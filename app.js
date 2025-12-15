@@ -72,7 +72,9 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
             resave: false,
             saveUninitialized: true,
             cookie: {
-                secure: process.env.NODE_ENV === 'production'
+                secure:
+                    process.env.NODE_ENV === 'production' &&
+                    process.env.APP_ALLOW_INSECURE_COOKIE !== 'true'
             }
         })
     );
