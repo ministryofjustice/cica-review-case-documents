@@ -1,4 +1,4 @@
-FROM node:22.8.0-bookworm-slim
+FROM node:25.2.1-bookworm-slim
 
 RUN groupadd -g 1014 dc_user && useradd -rm -d /usr/src/app -u 1015 -g dc_user dc_user
 
