@@ -22,9 +22,6 @@ on:
         required: false
         type: boolean
         default: false
-  push:
-    branches:
-      - chore/update-github-actions
 
 permissions:
   contents: read
