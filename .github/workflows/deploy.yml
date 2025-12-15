@@ -89,6 +89,8 @@ jobs:
           ignore-unfixed: true
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
+        env:
+          TRIVY_IGNOREFILE: .trivyignore
 
       - name: Scan for vulnerabilities (informative, non-breaking)
         if: ${{ !inputs.skip_security_scan }}
@@ -101,6 +103,7 @@ jobs:
           vuln-type: "os,library"
           severity: "UNKNOWN,LOW,MEDIUM,CRITICAL,HIGH"
         env:
+          TRIVY_IGNOREFILE: .trivyignore
           TRIVY_SKIP_DB_UPDATE: true
           TRIVY_SKIP_JAVA_DB_UPDATE: true
 
