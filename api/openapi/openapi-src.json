@@ -1,0 +1,282 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Case Review Documents API",
+        "description": "Search pre-existing case documents",
+        "version": "1.0.0",
+        "license": {
+            "name": "MIT"
+        },
+        "contact": {
+            "name": "API Support",
+            "email": "IET@cica.gov.uk"
+        }
+    },
+    "servers": [
+        {
+            "url": "/api"
+        }
+    ],
+    "security": [
+        {
+            "bearerAuth": []
+        }
+    ],
+    "tags": [
+        {
+            "name": "Search"
+        }
+    ],
+    "paths": {
+        "/search": {
+            "get": {
+                "tags": ["Search"],
+                "summary": "Search documents for a given case",
+                "description": "Gets all matching occurrences of text from case documents",
+                "operationId": "getSearchResults",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/query"
+                    },
+                    {
+                        "$ref": "#/components/parameters/pageNumber"
+                    },
+                    {
+                        "$ref": "#/components/parameters/itemsPerPage"
+                    },
+                    {
+                        "$ref": "#/components/parameters/onBehalfOf"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$ref": "json-schemas/api/_search_{query}_{pageNumber}_{itemsPerPage}/get/res/200.json"
+                                },
+                                "example": {
+                                    "data": {
+                                        "type": "search-results",
+                                        "id": "08dbd0d2-6cee-49e5-a55f-35b31ac4aa9e",
+                                        "attributes": {
+                                            "query": "gabapentin",
+                                            "results": {
+                                                "total": {
+                                                    "value": 1,
+                                                    "relation": "eq"
+                                                },
+                                                "max_score": 10.590174,
+                                                "hits": [
+                                                    {
+                                                        "_index": "page_chunks",
+                                                        "_id": "38de7490-785c-5eaa-b49d-ffbfe5afb99c_p6_c4",
+                                                        "_score": 10.590174,
+                                                        "_source": {
+                                                            "chunk_id": "38de7490-785c-5eaa-b49d-ffbfe5afb99c_p6_c4",
+                                                            "ingested_doc_id": "38de7490-785c-5eaa-b49d-ffbfe5afb99c",
+                                                            "chunk_text": "28-Nov-2022 Gabapentin 600mg tablets Acute Medication (Past) 56 tablet - Take ONE tablet at NIGHT 26-Sept-2022 Gabapentin 600mg tablets Acute Medication (Past) 56 tablet - Take ONE tablet at NIGHT 05-Aug-2022 Gabapentin 600mg tablets Acute Medication (Past) 56 tablet - Take ONE tablet at NIGHT 28-Nov-2022 Gabapentin 600mg tablets Repeat Medication (Past) 56 tablet - Take ONE tablet at NIGHT 08-Jun-2022 Gabapentin 600mg tablets Acute Medication (Past) 56 tablet - Take ONE tablet at NIGHT",
+                                                            "source_file_name": "Case1_TC19_50_pages_brain_injury.pdf",
+                                                            "page_count": 50,
+                                                            "page_number": 6,
+                                                            "chunk_index": 4,
+                                                            "chunk_type": "LAYOUT_TEXT",
+                                                            "confidence": 0.0067822265625,
+                                                            "bounding_box": {
+                                                                "width": 0.4132622182369232,
+                                                                "height": 0.12280497141182423,
+                                                                "left": 0.0894956961274147,
+                                                                "top": 0.7214852571487427,
+                                                                "right": 0.5027579143643379,
+                                                                "bottom": 0.8442902285605669
+                                                            },
+                                                            "embedding": null,
+                                                            "case_ref": "25-111111",
+                                                            "received_date": "2025-10-06",
+                                                            "correspondence_type": "TC19",
+                                                            "character_count": 491,
+                                                            "word_count": 75
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        },
+        "parameters": {
+            "query": {
+                "name": "query",
+                "in": "query",
+                "required": true,
+                "description": "The query that results in the specific search results instance",
+                "schema": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 200,
+                    "x-errorMessage": {
+                        "minLength": "Search terms must be 2 characters or more",
+                        "maxLength": "Search terms must be 200 characters or less"
+                    }
+                },
+                "example": "this is a valid search query"
+            },
+            "pageNumber": {
+                "name": "pageNumber",
+                "in": "query",
+                "required": false,
+                "description": "Page number of search results",
+                "schema": {
+                    "type": "integer",
+                    "min": 1
+                },
+                "example": 2
+            },
+            "itemsPerPage": {
+                "name": "itemsPerPage",
+                "in": "query",
+                "required": false,
+                "description": "Number of items per page of search results",
+                "schema": {
+                    "type": "integer",
+                    "min": 1,
+                    "max": 100
+                },
+                "example": 2
+            },
+            "onBehalfOf": {
+                "name": "On-Behalf-Of",
+                "in": "header",
+                "required": true,
+                "description": "Specify the owner of the resource.",
+                "schema": {
+                    "$ref": "./json-schemas/models/definitions/case-reference-number.json"
+                },
+                "example": "25-111111"
+            }
+        },
+        "responses": {
+            "BadRequest": {
+                "description": "There is an issue with the request",
+                "content": {
+                    "application/vnd.api+json": {
+                        "schema": {
+                            "$ref": "./json-schemas/api/responses/400.json"
+                        },
+                        "example": {
+                            "errors": [
+                                {
+                                    "status": 400,
+                                    "title": "400 Bad Request",
+                                    "detail": "Request JSON is malformed"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "UnauthorizedError": {
+                "description": "Access token is missing or invalid",
+                "content": {
+                    "application/vnd.api+json": {
+                        "schema": {
+                            "$ref": "./json-schemas/api/responses/401.json"
+                        },
+                        "example": {
+                            "errors": [
+                                {
+                                    "status": 401,
+                                    "detail": "No authorization token was found"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "Forbidden": {
+                "description": "The JWT doesn't permit access to this endpoint",
+                "content": {
+                    "application/vnd.api+json": {
+                        "schema": {
+                            "$ref": "./json-schemas/api/responses/403.json"
+                        },
+                        "example": {
+                            "errors": [
+                                {
+                                    "status": 403,
+                                    "title": "403 Forbidden",
+                                    "detail": "Insufficient scope"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "NotFound": {
+                "description": "The specified resource was not found",
+                "content": {
+                    "application/vnd.api+json": {
+                        "schema": {
+                            "$ref": "./json-schemas/api/responses/404.json"
+                        },
+                        "example": {
+                            "errors": [
+                                {
+                                    "status": 404,
+                                    "title": "404 Not Found",
+                                    "detail": "Resource /api/v1/questionnaires/2d7caf89-2c72-469f-b19d-17f2a22270b6/sections/answers does not exist"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "Conflict": {
+                "description": "Conflict",
+                "content": {
+                    "application/vnd.api+json": {
+                        "schema": {
+                            "$ref": "./json-schemas/api/responses/409.json"
+                        },
+                        "example": {
+                            "errors": [
+                                {
+                                    "status": 409,
+                                    "title": "409 conflict",
+                                    "detail": "Submission resource with ID \"68653be7-877f-4106-b91e-4ba8dac883f3\" already exists"
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

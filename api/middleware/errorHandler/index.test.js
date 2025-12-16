@@ -14,7 +14,7 @@
  */
 import assert from 'node:assert/strict';
 import { describe, it, mock } from 'node:test';
-import errorHandler from './index.js';
+import errorHandler, { OPENAPI_VALIDATOR_ERROR_CODES } from './index.js';
 
 /**
  * Creates an in-memory logger for capturing log messages during testing.
@@ -58,12 +58,12 @@ describe('errorHandler', () => {
                 {
                     message: 'must be a string',
                     path: 'body.name',
-                    errorCode: 'minLength.openapi.validation'
+                    errorCode: OPENAPI_VALIDATOR_ERROR_CODES.MIN_LENGTH
                 },
                 {
                     message: 'must be numeric',
                     path: 'body.age',
-                    errorCode: 'pattern.openapi.validation'
+                    errorCode: OPENAPI_VALIDATOR_ERROR_CODES.PATTERN
                 }
             ]
         };
@@ -173,7 +173,7 @@ describe('errorHandler', () => {
                 {
                     message: 'default message',
                     path: '/params/query',
-                    errorCode: 'minLength.openapi.validation'
+                    errorCode: OPENAPI_VALIDATOR_ERROR_CODES.MIN_LENGTH
                 }
             ]
         };

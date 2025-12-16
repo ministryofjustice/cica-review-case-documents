@@ -1,4 +1,4 @@
-import apiSpec from '../../openapi/openapi-dist.json' with { type: 'json' };
+import apiSpec from '../../openapi/openapi.json' with { type: 'json' };
 
 /**
  * Map of HTTP status codes to their corresponding titles.
@@ -41,12 +41,54 @@ const NAME_STATUS_MAP = {
 };
 
 /**
- * Maps query parameter paths to OpenAPI path parameter references.
- * Used for rendering meaningful error messages from OpenAPI spec.
+ * Maps express-openapi-validator error paths to OpenAPI specification references.
+ *
+ * When express-openapi-validator encounters a validation error, it provides a path
+ * indicating where the error occurred (e.g., '/params/query' for the query parameter).
+ * This map connects those error paths to their corresponding OpenAPI spec references,
+ * allowing us to extract custom error messages defined in the spec's errorMessage property.
+ *
+ * HOW IT WORKS:
+ * 1. express-openapi-validator validates requests against openapi.json
+ * 2. On validation failure, it returns an error with a path (e.g., '/params/query')
+ * 3. This map translates that path to a JSON Pointer in the OpenAPI spec
+ * 4. We resolve the pointer to get the parameter's schema with custom errorMessage
+ *
+ * MAINTENANCE:
+ * - Add entries here whenever you define custom errorMessages for new parameters
+ * - The key is the error path from express-openapi-validator (format: '/params/{paramName}')
+ * - The value is a JSON Pointer to the parameter in openapi.json (format: '#/components/parameters/{paramName}')
+ *
+ * CURRENTLY MAPPED:
+ * - query: Has custom minLength/maxLength error messages in openapi-src.json
+ *
+ * NOT MAPPED (no custom error messages defined):
+ * - pageNumber: Uses default validation messages
+ * - itemsPerPage: Uses default validation messages
+ * - onBehalfOf (On-Behalf-Of header): Uses default validation messages
+ *
+ * EXAMPLE: To add custom messages for pageNumber:
+ * 1. Add x-errorMessage to pageNumber schema in openapi-src.json
+ * 2. Add mapping: '/params/pageNumber': '#/components/parameters/pageNumber'
+ * 3. Rebuild the spec with: npm run build:openapi
+ *
  * @type {Object.<string, string>}
  */
 const QUERY_PARAM_OPENAPI_PATH_PARAMETER_MAP = {
     '/params/query': '#/components/parameters/query'
+};
+
+/**
+ * Error codes emitted by express-openapi-validator for JSON Schema validation failures.
+ * These codes follow the pattern: {validationType}.openapi.validation
+ *
+ * @see https://github.com/cdimascio/express-openapi-validator
+ * @type {Object.<string, string>}
+ */
+const OPENAPI_VALIDATOR_ERROR_CODES = {
+    MIN_LENGTH: 'minLength.openapi.validation',
+    MAX_LENGTH: 'maxLength.openapi.validation',
+    PATTERN: 'pattern.openapi.validation'
 };
 
 /**
@@ -55,25 +97,32 @@ const QUERY_PARAM_OPENAPI_PATH_PARAMETER_MAP = {
  * @type {Object.<string, string>}
  */
 const OPENAPI_ERRORS_SCHEMA_PROPERTY_ERRORS_MAP = {
-    'minLength.openapi.validation': 'minLength',
-    'maxLength.openapi.validation': 'maxLength',
-    'pattern.openapi.validation': 'pattern'
+    [OPENAPI_VALIDATOR_ERROR_CODES.MIN_LENGTH]: 'minLength',
+    [OPENAPI_VALIDATOR_ERROR_CODES.MAX_LENGTH]: 'maxLength',
+    [OPENAPI_VALIDATOR_ERROR_CODES.PATTERN]: 'pattern'
 };
 
 /**
  * Resolves a JSON pointer path (e.g., '#/components/parameters/query') to a value in an object.
  *
+ * JSON Pointers (RFC 6901) use the '#/' prefix followed by path segments separated by '/'.
+ * Example: '#/components/parameters/query' resolves to obj.components.parameters.query
+ *
  * @param {Object} obj - The object to resolve the path against.
- * @param {string} path - The JSON pointer path (e.g., '#/components/parameters/query').
+ * @param {string} pointer - The JSON pointer path (must start with '#/').
  * @returns {*} The resolved value, or undefined if not found.
  */
 function resolveJsonPath(obj, pointer) {
+    if (!obj || typeof obj !== 'object') {
+        return undefined;
+    }
+    // JSON Pointers must start with '#/' per RFC 6901
     if (!pointer?.startsWith('#/')) {
         return undefined;
     }
     return pointer
-        .slice(2)
-        .split('/')
+        .slice(2) // Remove the '#/' prefix
+        .split('/') // Split into path segments
         .reduce((current, key) => {
             return current?.[key];
         }, obj);
@@ -237,3 +286,5 @@ export default (err, req, res, next) => {
 
     return res.status(status).json(errorResponse);
 };
+
+export { OPENAPI_VALIDATOR_ERROR_CODES };
