@@ -1,0 +1,114 @@
+{% from "govuk/components/pagination/macro.njk" import govukPagination %}
+
+{# -------------------------------
+    Default parameter values
+    ------------------------------- #}
+
+{% set window = 2 %}
+{% set showEllipses = true %}
+{% set showPrevNext = true %}
+{% set baseUrl = "/search?" %}
+{% set query = "" %}
+
+{% if params.window %}
+    {% set window = params.window %}
+{% endif %}
+
+{% if params.showEllipses %}
+    {% set showEllipses = params.showEllipses %}
+{% endif %}
+
+{% if params.showPrevNext %}
+    {% set showPrevNext = params.showPrevNext %}
+{% endif %}
+
+{% if params.baseUrl %}
+    {% set baseUrl = params.baseUrl %}
+{% endif %}
+
+{% if params.query %}
+    {% set query = "query=" ~ params.query %}
+{% endif %}
+
+{% set total = params.pagination.totalPageCount %}
+{% set current = params.pagination.currentPageIndex %}
+
+{% set pages = [] %}
+
+{% if total <= 10 %}
+    {# Simple case: show all pages #}
+    {% for i in range(1, total + 1) %}
+        {% set pages = (pages.push(i), pages) %}
+    {% endfor %}
+{% else %}
+    {# Always add first page #}
+    {% set pages = (pages.push(1), pages) %}
+
+    {# Add pages around current #}
+    {% for i in range(current - window, current + window + 1) %}
+        {% if i > 1 and i < total %}
+            {% if not (i in pages) %}
+                {% set pages = (pages.push(i), pages) %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+
+
+    {# Always add last page #}
+    {% if not (total in pages) %}
+        {% set pages = (pages.push(total), pages) %}
+    {% endif %}
+
+    {# Sort numerically #}
+    {% set sorted = [] %}
+    {% for i in range(1, total + 1) %}
+        {% if i in pages %}
+            {% set sorted = (sorted.push(i), sorted) %}
+        {% endif %}
+    {% endfor %}
+    {% set pages = sorted %}
+{% endif %}
+
+{% set items = [] %}
+{% set last = null %}
+
+{% for p in pages %}
+    {# add ellipsis #}
+    {% if showEllipses and last and p > last + 1 %}
+        {% set items = (items.push({ ellipsis: true }), items) %}
+    {% endif %}
+
+    {# generate pagination items #}
+    {% set items = (items.push({
+        number: p,
+        href: [baseUrl, query, "&pageNumber=", p] | join,
+        current: p == current
+    }), items) %}
+
+    {% set last = p %}
+{% endfor %}
+
+{% set previousItem = null %}
+{% set nextItem = null %}
+
+{% if showPrevNext %}
+    {% if current > 1 %}
+        {% set previousItem = {
+            label: "Previous",
+            href: [baseUrl, query, "&pageNumber=", current - 1] | join
+        } %}
+    {% endif %}
+
+    {% if current < total %}
+        {% set nextItem = {
+            label: "Next",
+            href: [baseUrl, query, "&pageNumber=", current + 1] | join
+        } %}
+    {% endif %}
+{% endif %}
+
+{{ govukPagination({
+    previous: previousItem,
+    next: nextItem,
+    items: items
+}) }}
