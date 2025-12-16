@@ -4,58 +4,33 @@ import createSearchService from './search-service.js';
 
 const router = express.Router();
 
-router.get('/', (req, res, next) => {
-    try {
-        const templateEngineService = createTemplateEngineService();
-        const { render } = templateEngineService;
-        const html = render('search/page/index.njk', {
-            caseSelected: req.session.caseSelected,
-            caseReferenceNumber: req.session.caseReferenceNumber,
-            pageType: 'search',
-            csrfToken: res.locals.csrfToken,
-            cspNonce: res.locals.cspNonce
-        });
-        res.send(html);
-    } catch (err) {
-        next(err);
-    }
-});
-
 router.post('/', (req, res, next) => {
     try {
         const { query } = req.body;
-        return res.redirect(`/search/${query}`);
+        return res.redirect(`/search?query=${encodeURIComponent(query.trim())}`);
     } catch (err) {
         next(err);
     }
 });
 
-router.get('/:query', (req, res, next) => {
-    try {
-        return res.redirect(
-            `/search/${req.params.query}/1/${process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE}`
-        );
-    } catch (err) {
-        next(err);
-    }
-});
-
-router.get('/:query/:pageNumber', (req, res, next) => {
-    try {
-        return res.redirect(
-            `/search/${req.params.query}/${req.params.pageNumber}/${process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE}`
-        );
-    } catch (err) {
-        next(err);
-    }
-});
-
-router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
+router.get('/', async (req, res, next) => {
     try {
         const templateEngineService = createTemplateEngineService();
         const { render } = templateEngineService;
 
-        const { query, pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.params;
+        const { query, pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.query;
+
+        if (!query) {
+            const html = render('search/page/index.njk', {
+                caseSelected: req.session.caseSelected,
+                caseReferenceNumber: req.session.caseReferenceNumber,
+                pageType: 'search',
+                csrfToken: res.locals.csrfToken,
+                cspNonce: res.locals.cspNonce
+            });
+            return res.send(html);
+        }
+
         const pageNumber = Math.max(Number(rawPageNumber) || 1, 1);
         const itemsPerPage = Math.max(
             Number(rawItemsPerPage) || Number(process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE),
@@ -79,7 +54,7 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
 
         const token = req.cookies?.jwtToken;
         const response = await searchService.getSearchResults(
-            query,
+            encodeURIComponent(query),
             pageNumber,
             itemsPerPage,
             token
@@ -121,6 +96,7 @@ router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
         const html = render('search/page/results.njk', templateParams);
         return res.status(200).send(html);
     } catch (error) {
+        console.log({ error });
         next(error);
     }
 });
