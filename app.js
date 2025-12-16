@@ -11,6 +11,7 @@ import authRouter from './auth/routes.js';
 import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
+import ensureCrnIsInQueryParameters from './middleware/ensureCrnIsInQueryParameters/index.js';
 import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
 import errorHandler from './middleware/errors/globalErrorHandler.js';
 import notFoundHandler from './middleware/errors/notFoundHandler.js';
@@ -144,6 +145,7 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
     // Note: auth login will eventually be removed and replaced with SSO
     app.use('/auth', authRouter);
     app.use('/api', isAuthenticated, apiApp);
+    app.use(ensureCrnIsInQueryParameters);
     app.use(
         '/search',
         isAuthenticated,
