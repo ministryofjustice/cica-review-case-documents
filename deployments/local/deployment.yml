@@ -69,5 +69,7 @@ spec:
               value: page_chunks
             - name: NODE_ENV
               value: "production"
+            # Required for local Docker/K8s testing: allows insecure cookies when running
+            # with NODE_ENV=production but without HTTPS (not needed for 'npm run start:dev')
             - name: APP_ALLOW_INSECURE_COOKIE
               value: "true"
