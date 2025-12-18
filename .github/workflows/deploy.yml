@@ -120,6 +120,9 @@ jobs:
     name: Deploy to environment
     environment: ${{ inputs.environment || 'dev' }}
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout code
