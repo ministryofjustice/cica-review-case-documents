@@ -4,7 +4,7 @@
     Default parameter values
     ------------------------------- #}
 
-{% set window = 2 %}
+{% set window = 1 %}
 {% set showEllipses = true %}
 {% set showPrevNext = true %}
 {% set baseUrl = "/search?" %}
@@ -72,20 +72,20 @@
 {% set items = [] %}
 {% set last = null %}
 
-{% for p in pages %}
+{% for page in pages %}
     {# add ellipsis #}
-    {% if showEllipses and last and p > last + 1 %}
+    {% if showEllipses and last and page > last + 1 %}
         {% set items = (items.push({ ellipsis: true }), items) %}
     {% endif %}
 
     {# generate pagination items #}
     {% set items = (items.push({
-        number: p,
-        href: [baseUrl, query, "&pageNumber=", p] | join,
-        current: p == current
+        number: page,
+        href: [baseUrl, query, "&pageNumber=", page] | join,
+        current: page == current
     }), items) %}
 
-    {% set last = p %}
+    {% set last = page %}
 {% endfor %}
 
 {% set previousItem = null %}

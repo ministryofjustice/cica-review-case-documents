@@ -6,7 +6,7 @@
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
 {% from "search/macro/search-result-item/macro.njk" import searchResultItem %}
-{% from "search/macro/fancy-pagination/macro.njk" import cicaFancyGovukPagination %}
+{% from "search/macro/cicaEnhancedGovukPagination/macro.njk" import cicaEnhancedGovukPagination %}
 {% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 
 {% block innerContent %}
@@ -62,14 +62,11 @@
         {% endcall %}
     </form>
 
-    <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
-
-    {{ cicaFancyGovukPagination({
-        pagination: pagination,
-        query: query
-    }) }}
-
-    <p class="govuk-body govuk-!-margin-top-4 govuk-!-text-break-word">You searched for: <strong>{{ query }}</strong>
+    {% if searchResults | length %}
+        <p class="govuk-body govuk-!-margin-top-4 govuk-!-text-break-word">Showing {{ pagination.from }} to {{ pagination.to }} of {{ pagination.totalItemCount }} results for <em>{{ query }}</em></p>
+    {% else %}
+        <p class="govuk-body govuk-!-margin-top-4 govuk-!-text-break-word">Showing 0 results for {{ query }}</p>
+    {% endif %}
 
     <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
 
@@ -80,12 +77,19 @@
             {%endif %}
         {% endcall %}
     {% else %}
-        <p class="govuk-body">No results found.</p>
+        <p class="govuk-body"><strong>No results found</strong></p>
         <p class="govuk-body">Please try searching again using different word, phrase or question.</p>
     {% endfor %}
 
     <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
 
-    {{ cicaFancyGovukPagination(pagination, query) }}
+    {{ cicaEnhancedGovukPagination({
+        pagination: pagination,
+        query: query
+    }) }}
+
+    {% if searchResults | length %}
+        <p class="govuk-body govuk-!-margin-top-4 govuk-!-text-break-word">Showing {{ pagination.from }} to {{ pagination.to }} of {{ pagination.totalItemCount }} results for <em>{{ query }}</em></p>
+    {% endif %}
 
 {% endblock %}
