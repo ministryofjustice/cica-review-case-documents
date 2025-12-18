@@ -1,3 +1,5 @@
-# CVE-2025-64756: glob: Command Injection Vulnerability via Malicious Filenames
-# Testing this file for exclusion from Trivy scans
+# CVE-2025-64756: glob Command Injection Vulnerability
+# This vulnerability exists in npm's bundled dependencies (node-gyp) in the Node.js base image
+# It does not affect the application runtime as glob CLI is not used by the application
+# Will be resolved when Node.js updates their bundled npm version
 CVE-2025-64756
