@@ -6,8 +6,6 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN groupadd -g 1014 dc_user && useradd -rm -d /usr/src/app -u 1015 -g dc_user dc_user
-
 WORKDIR /usr/src/app
 
 COPY package*.json ./
@@ -16,9 +14,10 @@ RUN npm ci --omit=dev --ignore-scripts
 
 COPY . .
 
+RUN groupadd -g 1014 dc_user && useradd -rm -d /usr/src/app -u 1015 -g dc_user dc_user
 RUN chown -R dc_user:dc_user /usr/src/app
 
-USER 1015
+USER dc_user
 
 EXPOSE 5000
 
