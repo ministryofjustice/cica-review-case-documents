@@ -72,7 +72,13 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
             resave: false,
             saveUninitialized: true,
             cookie: {
-                secure: process.env.NODE_ENV === 'production'
+                // Secure cookies are enabled in production by default
+                // APP_ALLOW_INSECURE_COOKIE=true is only needed for local Docker/Kubernetes testing
+                // (where NODE_ENV=production but HTTPS is not available)
+                // Not needed for 'npm run start:dev' which runs with NODE_ENV=development
+                secure:
+                    process.env.NODE_ENV === 'production' &&
+                    process.env.APP_ALLOW_INSECURE_COOKIE !== 'true'
             }
         })
     );
