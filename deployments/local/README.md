@@ -18,6 +18,8 @@ This local Kubernetes deployment should be used when you need to test changes th
 *   **Testing environment variable interactions:** See how the application behaves with production-like environment variables.
 *   **Debugging production-specific issues:** Replicate and diagnose problems that only appear when `NODE_ENV` is set to `production`.
 
+**Note:** This setup uses `APP_ALLOW_INSECURE_COOKIE=true` because it runs with `NODE_ENV=production` but without HTTPS. When using `npm run start:dev`, this variable is not needed as the app automatically uses insecure cookies in development mode.
+
 ## Prerequisites
 
 1.  **Docker Desktop:** Ensure Docker Desktop is installed and running.
@@ -29,7 +31,15 @@ This local Kubernetes deployment should be used when you need to test changes th
 
 Before running any `kubectl` commands for this local setup, ensure you are targeting your local Docker Desktop cluster.
 
-**1. List available contexts:**
+**1. Save your current context (important!):**
+Before switching contexts, capture your current context so you can easily switch back when finished.
+```shell
+# Save current context to a variable (for use later)
+$PREVIOUS_CONTEXT = kubectl config current-context
+echo "Current context: $PREVIOUS_CONTEXT"
+```
+
+**2. List available contexts:**
 This command shows all configured clusters. The one with the `*` is currently active.
 ```shell
 kubectl config get-contexts
@@ -37,20 +47,21 @@ kubectl config get-contexts
 *Example Output:*
 ```
 CURRENT   NAME                                         CLUSTER                                      AUTHINFO              NAMESPACE
-*         docker-desktop                               docker-desktop                               docker-desktop
-          live.cloud-platform.service.justice.gov.uk   live.cloud-platform.service.justice.gov.uk   someone@live   cica-namespace
+          docker-desktop                               docker-desktop                               docker-desktop
+*         live.cloud-platform.service.justice.gov.uk   live.cloud-platform.service.justice.gov.uk   someone@live   cica-namespace
 ```
 
-**2. Switch to the local context:**
+**3. Switch to the local context:**
 Use this command to target your local Kubernetes cluster for this setup.
 ```shell
 kubectl config use-context docker-desktop
 ```
 
-**3. When you are finished:**
-Remember to switch back to your remote cluster context when you are done with local development to avoid accidentally running commands against the wrong environment.
+**4. When you are finished:**
+Switch back to your previous context to avoid accidentally running commands against the wrong environment.
 ```shell
-kubectl config use-context live.cloud-platform.service.justice.gov.uk
+# Switch back to the context you saved earlier
+kubectl config use-context $PREVIOUS_CONTEXT
 ```
 
 ## First-Time Setup: Creating Secrets
