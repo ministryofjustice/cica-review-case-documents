@@ -1,7 +1,7 @@
 {
     "openapi": "3.1.0",
     "info": {
-        "title": "Case eview Documents API",
+        "title": "Case Review Documents API",
         "description": "Search pre-existing case documents",
         "version": "1.0.0",
         "license": {
@@ -28,7 +28,7 @@
         }
     ],
     "paths": {
-        "/search/{query}/{pageNumber}/{itemsPerPage}": {
+        "/search": {
             "get": {
                 "tags": ["Search"],
                 "summary": "Search documents for a given case",
@@ -36,16 +36,57 @@
                 "operationId": "getSearchResults",
                 "parameters": [
                     {
-                        "$ref": "#/components/parameters/query"
+                        "name": "query",
+                        "in": "query",
+                        "required": true,
+                        "description": "The query that results in the specific search results instance",
+                        "schema": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 200,
+                            "errorMessage": {
+                                "minLength": "Search terms must be 2 characters or more",
+                                "maxLength": "Search terms must be 200 characters or less"
+                            }
+                        },
+                        "example": "this is a valid search query"
                     },
                     {
-                        "$ref": "#/components/parameters/pageNumber"
+                        "name": "pageNumber",
+                        "in": "query",
+                        "required": false,
+                        "description": "Page number of search results",
+                        "schema": {
+                            "type": "integer",
+                            "min": 1
+                        },
+                        "example": 2
                     },
                     {
-                        "$ref": "#/components/parameters/itemsPerPage"
+                        "name": "itemsPerPage",
+                        "in": "query",
+                        "required": false,
+                        "description": "Number of items per page of search results",
+                        "schema": {
+                            "type": "integer",
+                            "min": 1,
+                            "max": 100
+                        },
+                        "example": 2
                     },
                     {
-                        "$ref": "#/components/parameters/onBehalfOf"
+                        "name": "On-Behalf-Of",
+                        "in": "header",
+                        "required": true,
+                        "description": "Specify the owner of the resource.",
+                        "schema": {
+                            "$schema": "http://json-schema.org/draft-07/schema#",
+                            "title": "Case Reference Number",
+                            "type": "string",
+                            "maxLength": 9,
+                            "pattern": "^[0-9]{2}-[0-9]{6}$"
+                        },
+                        "example": "25-111111"
                     }
                 ],
                 "responses": {
@@ -54,7 +95,114 @@
                         "content": {
                             "application/vnd.api+json": {
                                 "schema": {
-                                    "$ref": "json-schemas/api/_search_{query}_{pageNumber}_{itemsPerPage}/get/res/200.json"
+                                    "$schema": "http://json-schema.org/draft-07/schema#",
+                                    "title": "Search query document",
+                                    "allOf": [
+                                        {
+                                            "$schema": "http://json-schema.org/draft-07/schema#",
+                                            "title": "Loosely describes the JSON:API document format",
+                                            "type": "object",
+                                            "additionalProperties": false,
+                                            "required": ["data"],
+                                            "properties": {
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object"
+                                                        },
+                                                        {
+                                                            "type": "array"
+                                                        }
+                                                    ]
+                                                },
+                                                "included": {
+                                                    "type": "array"
+                                                },
+                                                "links": {
+                                                    "type": "object"
+                                                },
+                                                "meta": {
+                                                    "type": "object"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "properties": {
+                                                "data": {
+                                                    "$schema": "http://json-schema.org/draft-07/schema#",
+                                                    "title": "Metadata resource",
+                                                    "allOf": [
+                                                        {
+                                                            "$schema": "http://json-schema.org/draft-07/schema#",
+                                                            "title": "Loosely describes the JSON:API resource format",
+                                                            "type": "object",
+                                                            "additionalProperties": false,
+                                                            "required": [
+                                                                "type",
+                                                                "id",
+                                                                "attributes"
+                                                            ],
+                                                            "properties": {
+                                                                "type": {
+                                                                    "type": "string"
+                                                                },
+                                                                "id": {
+                                                                    "type": "string",
+                                                                    "anyOf": [
+                                                                        {
+                                                                            "$schema": "http://json-schema.org/draft-07/schema#",
+                                                                            "title": "UUID v4",
+                                                                            "type": "string",
+                                                                            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                "attributes": {
+                                                                    "type": "object",
+                                                                    "title": "Any valid resource"
+                                                                },
+                                                                "relationships": {
+                                                                    "type": "object"
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "properties": {
+                                                                "type": {
+                                                                    "const": "search-results"
+                                                                },
+                                                                "id": {
+                                                                    "$schema": "http://json-schema.org/draft-07/schema#",
+                                                                    "title": "UUID v4",
+                                                                    "type": "string",
+                                                                    "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+                                                                },
+                                                                "attributes": {
+                                                                    "allOf": [
+                                                                        {
+                                                                            "required": [
+                                                                                "query"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "query": {
+                                                                                    "type": "string",
+                                                                                    "minLength": 2,
+                                                                                    "maxLength": 200
+                                                                                },
+                                                                                "results": {
+                                                                                    "type": "object"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    ]
                                 },
                                 "example": {
                                     "data": {
@@ -108,16 +256,183 @@
                         }
                     },
                     "400": {
-                        "$ref": "#/components/responses/BadRequest"
+                        "description": "There is an issue with the request",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$schema": "http://json-schema.org/draft-07/schema#",
+                                    "type": "object",
+                                    "required": ["errors"],
+                                    "properties": {
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "required": [
+                                                    "status",
+                                                    "title",
+                                                    "detail"
+                                                ],
+                                                "properties": {
+                                                    "status": {
+                                                        "const": 400
+                                                    },
+                                                    "title": {
+                                                        "const": "400 Bad Request"
+                                                    },
+                                                    "detail": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "errors": [
+                                        {
+                                            "status": 400,
+                                            "title": "400 Bad Request",
+                                            "detail": "Request JSON is malformed"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
                     },
                     "401": {
-                        "$ref": "#/components/responses/UnauthorizedError"
+                        "description": "Access token is missing or invalid",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$schema": "http://json-schema.org/draft-07/schema#",
+                                    "type": "object",
+                                    "required": ["errors"],
+                                    "properties": {
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "required": [
+                                                    "status",
+                                                    "title",
+                                                    "detail"
+                                                ],
+                                                "properties": {
+                                                    "status": {
+                                                        "const": 401
+                                                    },
+                                                    "title": {
+                                                        "const": "401 Unauthorized"
+                                                    },
+                                                    "detail": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "errors": [
+                                        {
+                                            "status": 401,
+                                            "detail": "No authorization token was found"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
                     },
                     "403": {
-                        "$ref": "#/components/responses/Forbidden"
+                        "description": "The JWT doesn't permit access to this endpoint",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$schema": "http://json-schema.org/draft-07/schema#",
+                                    "type": "object",
+                                    "required": ["errors"],
+                                    "properties": {
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "required": [
+                                                    "status",
+                                                    "title",
+                                                    "detail"
+                                                ],
+                                                "properties": {
+                                                    "status": {
+                                                        "const": 403
+                                                    },
+                                                    "title": {
+                                                        "const": "403 Forbidden"
+                                                    },
+                                                    "detail": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "errors": [
+                                        {
+                                            "status": 403,
+                                            "title": "403 Forbidden",
+                                            "detail": "Insufficient scope"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
                     },
                     "404": {
-                        "$ref": "#/components/responses/NotFound"
+                        "description": "The specified resource was not found",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$schema": "http://json-schema.org/draft-07/schema#",
+                                    "type": "object",
+                                    "required": ["errors"],
+                                    "properties": {
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "required": [
+                                                    "status",
+                                                    "title",
+                                                    "detail"
+                                                ],
+                                                "properties": {
+                                                    "status": {
+                                                        "const": 404
+                                                    },
+                                                    "title": {
+                                                        "const": "404 Not Found"
+                                                    },
+                                                    "detail": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "errors": [
+                                        {
+                                            "status": 404,
+                                            "title": "404 Not Found",
+                                            "detail": "Resource /api/v1/questionnaires/2d7caf89-2c72-469f-b19d-17f2a22270b6/sections/answers does not exist"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -134,21 +449,24 @@
         "parameters": {
             "query": {
                 "name": "query",
-                "in": "path",
+                "in": "query",
                 "required": true,
-                "description": "The query that results in the specific search results instance. Format UUIDv4.",
+                "description": "The query that results in the specific search results instance",
                 "schema": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9 ]*$",
                     "minLength": 2,
-                    "maxLength": 200
+                    "maxLength": 200,
+                    "errorMessage": {
+                        "minLength": "Search terms must be 2 characters or more",
+                        "maxLength": "Search terms must be 200 characters or less"
+                    }
                 },
                 "example": "this is a valid search query"
             },
             "pageNumber": {
                 "name": "pageNumber",
-                "in": "path",
-                "required": true,
+                "in": "query",
+                "required": false,
                 "description": "Page number of search results",
                 "schema": {
                     "type": "integer",
@@ -158,8 +476,8 @@
             },
             "itemsPerPage": {
                 "name": "itemsPerPage",
-                "in": "path",
-                "required": true,
+                "in": "query",
+                "required": false,
                 "description": "Number of items per page of search results",
                 "schema": {
                     "type": "integer",
@@ -174,9 +492,13 @@
                 "required": true,
                 "description": "Specify the owner of the resource.",
                 "schema": {
-                    "$ref": "./json-schemas/models/definitions/case-reference-number.json"
+                    "$schema": "http://json-schema.org/draft-07/schema#",
+                    "title": "Case Reference Number",
+                    "type": "string",
+                    "maxLength": 9,
+                    "pattern": "^[0-9]{2}-[0-9]{6}$"
                 },
-                "example": "urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+                "example": "25-111111"
             }
         },
         "responses": {
@@ -185,7 +507,33 @@
                 "content": {
                     "application/vnd.api+json": {
                         "schema": {
-                            "$ref": "./json-schemas/api/responses/400.json"
+                            "$schema": "http://json-schema.org/draft-07/schema#",
+                            "type": "object",
+                            "required": ["errors"],
+                            "properties": {
+                                "errors": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "status",
+                                            "title",
+                                            "detail"
+                                        ],
+                                        "properties": {
+                                            "status": {
+                                                "const": 400
+                                            },
+                                            "title": {
+                                                "const": "400 Bad Request"
+                                            },
+                                            "detail": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         },
                         "example": {
                             "errors": [
@@ -204,7 +552,33 @@
                 "content": {
                     "application/vnd.api+json": {
                         "schema": {
-                            "$ref": "./json-schemas/api/responses/401.json"
+                            "$schema": "http://json-schema.org/draft-07/schema#",
+                            "type": "object",
+                            "required": ["errors"],
+                            "properties": {
+                                "errors": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "status",
+                                            "title",
+                                            "detail"
+                                        ],
+                                        "properties": {
+                                            "status": {
+                                                "const": 401
+                                            },
+                                            "title": {
+                                                "const": "401 Unauthorized"
+                                            },
+                                            "detail": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         },
                         "example": {
                             "errors": [
@@ -222,7 +596,33 @@
                 "content": {
                     "application/vnd.api+json": {
                         "schema": {
-                            "$ref": "./json-schemas/api/responses/403.json"
+                            "$schema": "http://json-schema.org/draft-07/schema#",
+                            "type": "object",
+                            "required": ["errors"],
+                            "properties": {
+                                "errors": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "status",
+                                            "title",
+                                            "detail"
+                                        ],
+                                        "properties": {
+                                            "status": {
+                                                "const": 403
+                                            },
+                                            "title": {
+                                                "const": "403 Forbidden"
+                                            },
+                                            "detail": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         },
                         "example": {
                             "errors": [
@@ -241,7 +641,33 @@
                 "content": {
                     "application/vnd.api+json": {
                         "schema": {
-                            "$ref": "./json-schemas/api/responses/404.json"
+                            "$schema": "http://json-schema.org/draft-07/schema#",
+                            "type": "object",
+                            "required": ["errors"],
+                            "properties": {
+                                "errors": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "status",
+                                            "title",
+                                            "detail"
+                                        ],
+                                        "properties": {
+                                            "status": {
+                                                "const": 404
+                                            },
+                                            "title": {
+                                                "const": "404 Not Found"
+                                            },
+                                            "detail": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         },
                         "example": {
                             "errors": [
@@ -260,7 +686,33 @@
                 "content": {
                     "application/vnd.api+json": {
                         "schema": {
-                            "$ref": "./json-schemas/api/responses/409.json"
+                            "$schema": "http://json-schema.org/draft-07/schema#",
+                            "type": "object",
+                            "required": ["errors"],
+                            "properties": {
+                                "errors": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "status",
+                                            "title",
+                                            "detail"
+                                        ],
+                                        "properties": {
+                                            "status": {
+                                                "const": 409
+                                            },
+                                            "title": {
+                                                "const": "409 Conflict"
+                                            },
+                                            "detail": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         },
                         "example": {
                             "errors": [
