@@ -17,7 +17,7 @@ COPY . .
 RUN groupadd -g 1014 dc_user && useradd -rm -d /usr/src/app -u 1015 -g dc_user dc_user
 RUN chown -R dc_user:dc_user /usr/src/app
 
-USER dc_user
+USER 1015
 
 EXPOSE 5000
 
