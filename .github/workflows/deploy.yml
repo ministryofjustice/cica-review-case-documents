@@ -104,6 +104,7 @@ jobs:
           severity: "UNKNOWN,LOW,MEDIUM,CRITICAL,HIGH"
         env:
           TRIVY_IGNOREFILE: .trivyignore
+          TRIVY_SHOW_SUPPRESSED: true
           TRIVY_SKIP_DB_UPDATE: true
           TRIVY_SKIP_JAVA_DB_UPDATE: true
 
