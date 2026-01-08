@@ -26,6 +26,7 @@ This local Kubernetes deployment should be used when you need to test changes th
 2.  **Kubernetes Enabled:** In Docker Desktop settings, go to the `Kubernetes` section and check `Enable Kubernetes`.
 3.  **Kubeadm Provider:** It is highly recommended to use the `Kubeadm` default cluster provider for a smoother experience, as it shares the image store with the Docker engine. If you use the `kind` provider, you will need to load your local image into the cluster's image store manually.
 4.  **kubectl:** Ensure `kubectl` is installed and configured to point to the `docker-desktop` context.
+5.  **Local Opensearch database running** see [airflow local dev environment](https://github.com/ministryofjustice/cica-review-case-documents-airflow/blob/main/local-dev-environment/README.md)
 
 ### Managing Kubernetes Context
 
@@ -66,7 +67,7 @@ kubectl config use-context $PREVIOUS_CONTEXT
 
 ## First-Time Setup: Creating Secrets
 
-The deployment requires Kubernetes secrets that are not checked into source control. You only need to create these once, or whenever the values in your root `.env` file change.
+The deployment requires [Kubernetes secrets](https://kubernetes.io/docs/tasks/configmap-secret/managing-secret-using-kubectl/) that are not checked into source control. You only need to create these once, or whenever the values in your root `.env` file change.
 
 These commands read values from the file in the project root to create the secrets.
 
@@ -99,6 +100,7 @@ These commands read values from the file in the project root to create the secre
     kubectl create secret generic cica-review-case-documents-opensearch-proxy-url ^
         --from-literal=proxy_url="%APP_DATABASE_URL%"
     ```
+
 
 ## How to Run
 
