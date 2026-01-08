@@ -71,7 +71,7 @@ The deployment requires Kubernetes secrets that are not checked into source cont
 These commands read values from the file in the project root to create the secrets.
 
 1.  **Create the main application secret:**
-    ```shell
+    ```wsl macos shell
     kubectl create secret generic cica-case-review-documents-secrets \
       --from-literal=app_cookie_name=$(grep -E '^APP_COOKIE_NAME=' .env | cut -d '=' -f2) \
       --from-literal=app_cookie_secret=$(grep -E '^APP_COOKIE_SECRET=' .env | cut -d '=' -f2) \
@@ -80,15 +80,29 @@ These commands read values from the file in the project root to create the secre
       --from-literal=app_jwt_secret=$(grep -E '^APP_JWT_SECRET=' .env | cut -d '=' -f2)
     ```
 
+    ```cmder windows
+    kubectl create secret generic cica-case-review-documents-secrets ^
+        --from-literal=app_cookie_name="%APP_COOKIE_NAME%" ^
+        --from-literal=app_cookie_secret="%APP_COOKIE_SECRET%" ^
+        --from-literal=auth_secret_password="%AUTH_SECRET_PASSWORD%" ^
+        --from-literal=auth_usernames="%AUTH_USERNAMES%" ^
+        --from-literal=app_jwt_secret="%APP_JWT_SECRET%"
+    ```
+
 2.  **Create the OpenSearch proxy URL secret:**
     ```shell
     kubectl create secret generic cica-review-case-documents-opensearch-proxy-url \
       --from-literal=proxy_url=$(grep -E '^APP_DATABASE_URL=' .env | cut -d '=' -f2)
     ```
 
+    ```cmder windows
+    kubectl create secret generic cica-review-case-documents-opensearch-proxy-url ^
+        --from-literal=proxy_url="%APP_DATABASE_URL%"
+    ```
+
 ## How to Run
 
-1.  **Build the Docker Image:**
+1.  **Build/Rebuild the Docker Image:**
     From the root of the repository, build the image and tag it as `latest`. The `imagePullPolicy: Never` in the deployment manifest requires the image to exist locally.
     ```shell
     docker build -t cica-review-case-documents:latest .
@@ -98,6 +112,12 @@ These commands read values from the file in the project root to create the secre
     Apply the deployment, service, and ingress manifests from this directory.
     ```shell
     kubectl apply -f deployments/local/
+    ```
+
+    **Rebuilding the image:**
+    If you are rebuilding a new image also run.
+    ```shell
+    kubectl rollout restart deployment/cica-case-review-documents-deployment
     ```
 
 3.  **Access the Application:**
@@ -112,6 +132,38 @@ These commands read values from the file in the project root to create the secre
 
     *   **Method 2: Ingress (May require restart)**
         The `ingress.yml` manifest is configured to expose the service at `http://localhost`. Sometimes, the Docker Desktop Ingress controller can be slow to assign an address. If `http://localhost` does not work after a few minutes, a restart of Docker Desktop usually resolves the issue.
+
+## Debugging with the Built-in Sidecar Container
+
+For local development and troubleshooting, this deployment includes a debug sidecar container using the [`nicolaka/netshoot`](https://hub.docker.com/r/nicolaka/netshoot) image. This container provides common networking and diagnostic tools (such as `curl`, `netstat`, `dig`, etc.) that are not present in the main application image.
+
+### How to Use the Debug Sidecar
+
+1. **Get the running pod name:**
+   ```sh
+   kubectl get pods
+   ```
+
+2. **Exec into the debug sidecar:**
+   ```sh
+   kubectl exec -it <pod-name> -c debug -- sh
+   ```
+
+3. **Run diagnostic commands:**
+   - Check open ports:
+     ```sh
+     netstat -tlnp
+     ```
+   - Test connectivity to the main app container:
+     ```sh
+     curl http://localhost:5000/
+     ```
+   - Use other tools like `dig`, `nslookup`, `ping`, etc.
+
+### Notes
+
+- The debug sidecar is included **only for local development**. Do not include it in production deployments.
+- You can remove the debug container from `deployment.yml` when you no longer need it for troubleshooting.
 
 ## Troubleshooting
 

@@ -73,3 +73,7 @@ spec:
             # with NODE_ENV=production but without HTTPS (not needed for 'npm run start:dev')
             - name: APP_ALLOW_INSECURE_COOKIE
               value: "true"
+          # Added for debugging purposes
+        - name: debug
+          image: nicolaka/netshoot
+          command: ["sleep", "infinity"]
