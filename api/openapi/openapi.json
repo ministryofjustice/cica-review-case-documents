@@ -1,7 +1,7 @@
 {
     "openapi": "3.1.0",
     "info": {
-        "title": "Case eview Documents API",
+        "title": "Case Review Documents API",
         "description": "Search pre-existing case documents",
         "version": "1.0.0",
         "license": {

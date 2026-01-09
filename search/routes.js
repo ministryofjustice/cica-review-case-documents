@@ -96,7 +96,7 @@ router.get('/', async (req, res, next) => {
         const html = render('search/page/results.njk', templateParams);
         return res.status(200).send(html);
     } catch (error) {
-        console.log({ error });
+        req.log.error('Error occurred while processing search request:', error);
         next(error);
     }
 });

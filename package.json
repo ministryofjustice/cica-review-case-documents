@@ -26,8 +26,8 @@
         "openapi:build": "node ./api/openapi/buildOpenApiSpec.js"
     },
     "dependencies": {
-        "@ministryofjustice/frontend": "^7.1.1",
         "@apidevtools/json-schema-ref-parser": "^15.1.3",
+        "@ministryofjustice/frontend": "^7.1.1",
         "@opensearch-project/opensearch": "^3.5.1",
         "ajv": "^8.17.1",
         "ajv-errors": "^3.0.0",

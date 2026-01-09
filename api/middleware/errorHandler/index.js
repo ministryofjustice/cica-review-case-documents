@@ -46,7 +46,7 @@ const NAME_STATUS_MAP = {
  * @type {Object.<string, string>}
  */
 const QUERY_PARAM_OPENAPI_PATH_PARAMETER_MAP = {
-    '/params/query': '#/components/parameters/query'
+    '/query/query': '#/components/parameters/query'
 };
 
 /**

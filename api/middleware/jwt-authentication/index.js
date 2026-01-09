@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken';
 
+// TODO review and reduce to only what's necessary
+// only use authHeader do not use cookies
 /**
  * Extracts token from:
  *   1. Cookies:      req.cookies.jwtToken
