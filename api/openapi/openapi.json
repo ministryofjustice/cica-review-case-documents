@@ -1,7 +1,7 @@
 {
     "openapi": "3.1.0",
     "info": {
-        "title": "Case eview Documents API",
+        "title": "Case Review Documents API",
         "description": "Search pre-existing case documents",
         "version": "1.0.0",
         "license": {
@@ -28,7 +28,7 @@
         }
     ],
     "paths": {
-        "/search/{query}/{pageNumber}/{itemsPerPage}": {
+        "/search": {
             "get": {
                 "tags": ["Search"],
                 "summary": "Search documents for a given case",
@@ -134,21 +134,24 @@
         "parameters": {
             "query": {
                 "name": "query",
-                "in": "path",
+                "in": "query",
                 "required": true,
-                "description": "The query that results in the specific search results instance. Format UUIDv4.",
+                "description": "The query that results in the specific search results instance",
                 "schema": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9 ]*$",
                     "minLength": 2,
-                    "maxLength": 200
+                    "maxLength": 200,
+                    "x-errorMessage": {
+                        "minLength": "Search terms must be 2 characters or more",
+                        "maxLength": "Search terms must be 200 characters or less"
+                    }
                 },
                 "example": "this is a valid search query"
             },
             "pageNumber": {
                 "name": "pageNumber",
-                "in": "path",
-                "required": true,
+                "in": "query",
+                "required": false,
                 "description": "Page number of search results",
                 "schema": {
                     "type": "integer",
@@ -158,8 +161,8 @@
             },
             "itemsPerPage": {
                 "name": "itemsPerPage",
-                "in": "path",
-                "required": true,
+                "in": "query",
+                "required": false,
                 "description": "Number of items per page of search results",
                 "schema": {
                     "type": "integer",
@@ -176,7 +179,7 @@
                 "schema": {
                     "$ref": "./json-schemas/models/definitions/case-reference-number.json"
                 },
-                "example": "urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+                "example": "25-111111"
             }
         },
         "responses": {

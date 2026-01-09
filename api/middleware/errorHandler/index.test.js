@@ -41,6 +41,45 @@ function createMemoryLogger() {
 }
 
 describe('errorHandler', () => {
+    it('Should handle array of validation errors correctly', () => {
+        const { logger, logs } = createMemoryLogger();
+        const req = { log: logger };
+        const res = {
+            statusCode: null,
+            status(code) {
+                this.statusCode = code;
+                return this;
+            },
+            json: mock.fn()
+        };
+
+        const err = {
+            errors: [
+                {
+                    message: 'must be a string',
+                    path: 'body.name',
+                    errorCode: 'minLength.openapi.validation'
+                },
+                {
+                    message: 'must be numeric',
+                    path: 'body.age',
+                    errorCode: 'pattern.openapi.validation'
+                }
+            ]
+        };
+
+        errorHandler(err, req, res);
+
+        assert.strictEqual(res.statusCode, 500); // default for unknown array errors
+        const payload = res.json.mock.calls[0].arguments[0];
+        assert.strictEqual(payload.errors.length, 2);
+        assert.strictEqual(payload.errors[0].source.pointer, '/body/name');
+        assert.strictEqual(payload.errors[1].source.pointer, '/body/age');
+        assert.strictEqual(logger.error.mock.callCount(), 1);
+        assert.strictEqual(logs[0].level, 'error');
+        assert.match(logs[0].msg, /UNHANDLED ERROR/);
+    });
+
     it('Should log and respond correctly for a 400 malformed JSON error', () => {
         const { logger, logs } = createMemoryLogger();
         const req = { log: logger };
@@ -116,5 +155,76 @@ describe('errorHandler', () => {
         assert.strictEqual(logger.error.mock.callCount(), 1);
         assert.match(logs[0].msg, /UNHANDLED ERROR/);
         assert.strictEqual(logs[0].obj.status, 401);
+    });
+    it('Should use OpenAPI custom error message if available', () => {
+        const { logger } = createMemoryLogger();
+        const req = { log: logger };
+        const res = {
+            statusCode: null,
+            status(code) {
+                this.statusCode = code;
+                return this;
+            },
+            json: mock.fn()
+        };
+
+        const err = {
+            errors: [
+                {
+                    message: 'default message',
+                    path: '/query/query',
+                    errorCode: 'minLength.openapi.validation'
+                }
+            ]
+        };
+
+        errorHandler(err, req, res);
+
+        const payload = res.json.mock.calls[0].arguments[0];
+        assert.strictEqual(payload.errors[0].detail, 'Search terms must be 2 characters or more');
+    });
+
+    it('Should fallback to default message if OpenAPI code not mapped', () => {
+        const { logger } = createMemoryLogger();
+        const req = { log: logger };
+        const res = {
+            statusCode: null,
+            status(code) {
+                this.statusCode = code;
+                return this;
+            },
+            json: mock.fn()
+        };
+
+        const err = {
+            errors: [
+                { message: 'default message', path: '/params/query', errorCode: 'unknownCode' }
+            ]
+        };
+
+        errorHandler(err, req, res);
+
+        const payload = res.json.mock.calls[0].arguments[0];
+        assert.strictEqual(payload.errors[0].detail, 'default message');
+    });
+
+    it('Should fallback to default status code if error name unknown', () => {
+        const { logger } = createMemoryLogger();
+        const req = { log: logger };
+        const res = {
+            statusCode: null,
+            status(code) {
+                this.statusCode = code;
+                return this;
+            },
+            json: mock.fn()
+        };
+
+        const err = { name: 'SomeRandomError', message: 'Unknown error' };
+        errorHandler(err, req, res);
+
+        assert.strictEqual(res.statusCode, 500);
+        const payload = res.json.mock.calls[0].arguments[0];
+        assert.strictEqual(payload.errors[0].detail, 'Unknown error');
     });
 });

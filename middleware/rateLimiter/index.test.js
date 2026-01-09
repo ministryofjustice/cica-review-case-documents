@@ -4,7 +4,6 @@
  *
  * @returns {express.Application} The configured Express application instance.
  */
-
 import assert from 'node:assert';
 import { test } from 'node:test';
 import express from 'express';
