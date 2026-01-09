@@ -172,7 +172,7 @@ describe('errorHandler', () => {
             errors: [
                 {
                     message: 'default message',
-                    path: '/params/query',
+                    path: '/query/query',
                     errorCode: 'minLength.openapi.validation'
                 }
             ]
