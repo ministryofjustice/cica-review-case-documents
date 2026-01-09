@@ -33,6 +33,7 @@
                 "noExplicitAny": "error"
             },
             "style": {
+                "recommended": true,
                 "useConst": "error"
             },
             "a11y": {
@@ -46,14 +47,6 @@
             },
             "security": {
                 "recommended": true
-            }
-        }
-    },
-    "assist": {
-        "enabled": true,
-        "actions": {
-            "source": {
-                "organizeImports": "on"
             }
         }
     },
