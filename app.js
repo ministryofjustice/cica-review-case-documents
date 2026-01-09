@@ -149,12 +149,17 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
 
     app.use('/', indexRouter);
 
-    // Note: auth login will eventually be removed and replaced with SSO
+    // Auth routes (login, etc.)
     app.use('/auth', authRouter);
-    app.use('/api', isAuthenticated, apiApp);
+
+    // API routes: only rate limit if not authenticated
+    app.use('/api', isAuthenticated, generalRateLimiter, apiApp);
+
+    // Search routes: only rate limit if not authenticated
     app.use(
         '/search',
         isAuthenticated,
+        generalRateLimiter,
         getCaseReferenceNumberFromQueryString,
         caseSelected,
         searchRouter
