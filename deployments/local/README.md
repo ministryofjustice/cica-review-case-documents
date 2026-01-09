@@ -128,9 +128,9 @@ These commands read values from the file in the project root to create the secre
     *   **Method 1: Port-Forwarding (Reliable)**
         This is the most reliable way to connect. It forwards a local port on your machine directly to the service running in the cluster.
         ```shell
-        kubectl port-forward service/cica-case-review-documents-service 8080:80
+        kubectl port-forward service/cica-case-review-documents-service 5000:80
         ```
-        You can now access the application at **http://localhost:8080**.
+        You can now access the application at **http://localhost:5000**.
 
     *   **Method 2: Ingress (May require restart)**
         The `ingress.yml` manifest is configured to expose the service at `http://localhost`. Sometimes, the Docker Desktop Ingress controller can be slow to assign an address. If `http://localhost` does not work after a few minutes, a restart of Docker Desktop usually resolves the issue.
@@ -212,6 +212,6 @@ If you make a change to the production Kubernetes manifests that involves:
 You **must** update the files in this  directory as part of the **same pull request**.
 
 1.  Update `deployment.yml` with the new environment variable.
-2.  Update the `kubectl create secret` commands in this  if a new secret is required.
+2.  Update the `kubectl create secret` commands in this file if a new secret is required.
 
 This process ensures that any developer pulling the latest code will have a local environment that accurately reflects the state of production.
