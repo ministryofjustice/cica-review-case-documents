@@ -21,7 +21,7 @@
         "test": "c8 node --env-file=.env.test --test --test-reporter=spec",
         "coverage:html": "c8 report --reporter=html",
         "lint": "biome check",
-        "format": "biome format",
+        "format": "biome format --write",
         "jsdoc:check": "eslint .",
         "openapi:build": "node ./api/openapi/buildOpenApiSpec.js"
     },
