@@ -1,7 +1,7 @@
 # If making any changes to this file, please ensure you test building and running 
 # kube deployment local
 # see deployment/local/README.md for instructions
-FROM node:24-trixie-slim
+FROM node:25-trixie-slim
 
 # Security: Update base image packages
 RUN apt-get update && \
