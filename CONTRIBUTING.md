@@ -17,9 +17,8 @@ Thank you for contributing to the CICA Review Case Documents (FIND) application!
 ## Development Workflow
 
 ### Branching Strategy
-- `main` - Production-ready code
-- `dev` - Development branch (auto-deploys via GitHub Actions)
 - Feature branches: Create from `main`, merge back to `main` via PR
+- see [Branching Strategy](https://dsdmoj.atlassian.net/wiki/spaces/CICAIET/pages/5582979882/Branching+Strategy)
 
 ### Making Changes
 1. Create a feature branch from `main`
@@ -45,16 +44,36 @@ The project uses Husky for Git hooks:
 | pre-commit | npm run lint | Runs Biome linter before commit      |
 | pre-push   | npm test     | Runs all tests before push           |
 
-### Deployment
-Merging to `dev` triggers automatic deployment:
-1. GitHub Actions builds Docker image
-2. Image pushed to AWS ECR
-3. Kubernetes deployment updated in the cluster
 
-Deployment manifests are in `deployments/templates/`:
-- `deployment.yml` - Pod configuration
-- `service.yml` - Service definition
-- `ingress.yml` - Ingress rules
+### CI/CD Pipeline
+
+#### Automated Tests (`tests.yml`)
+- **Triggers**: Runs on every push and pull request
+- **Actions**: Linting, JSDoc validation, and unit tests
+- **Node.js version**: 22.8.0
+
+#### Deployment Workflow (`deploy.yml`)
+The deployment process consists of two stages:
+
+##### 1. Build and Scan
+- Builds Docker image with the commit SHA as the tag
+- Runs Trivy security scanning:
+  - **Breaking scan**: Fails on CRITICAL/HIGH vulnerabilities
+  - **Informative scan**: Reports all vulnerabilities without failing
+- Pushes image to Amazon ECR
+
+##### 2. Deploy
+- Templates Kubernetes manifests with the built image
+- Deploys to the specified environment (dev/prod)
+
+##### Manual Deployment
+Deployments can be triggered manually via workflow dispatch:
+- Select environment (dev/prod)
+- Specify branch/ref to deploy
+- Optional: Skip security scan for emergency deployments (not recommended)
+
+##### Security Scanning
+Uses Trivy to scan for vulnerabilities. See `.trivyignore` for suppressed CVEs.
 
 Environment variables are substituted during CI/CD deployment.
 
@@ -489,8 +508,27 @@ docker run -p 5000:5000 \
   cica-review-case-documents
 ```
 
+#### Database Connection
+
+The application connects to an OpenSearch database. The connection URL is configured via the `APP_DATABASE_URL` environment variable in the `.env` file.
+
+-   **For standard local development**, the database is expected to be running on `localhost`:
+    ```
+    APP_DATABASE_URL=http://127.0.0.1:9200
+    ```
+
+-   **When running in a local Kubernetes cluster (e.g., via Docker Desktop)**, the application container needs to connect to a service running on the host machine. Use `host.docker.internal` to allow the container to resolve the host's IP address:
+    ```
+    APP_DATABASE_URL=http://host.docker.internal:9200
+    ```
+    see [local docker desktop kube deployments](/deployments/local/README.md)
+
 ### Docker Compose
 *(To be documented)*
+
+### Local docker desktop production like environment changes and testing
+
+see [local docker desktop kube deployments](/deployments/local/README.md)
 
 ## Additional Resources
 

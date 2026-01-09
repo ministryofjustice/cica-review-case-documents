@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cica-case-review-documents-service
+spec:
+  selector:
+    app: cica-case-review-documents
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000

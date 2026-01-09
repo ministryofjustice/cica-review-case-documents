@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-import {nanoid} from 'nanoid';
-import http from 'http';
+import http from 'node:http';
 import { config as dotenvConfig } from 'dotenv';
+import {nanoid} from 'nanoid';
 
 process.env.APP_BUILDTIME_ID = nanoid();
 console.log(`Build-time ID generated: ${process.env.APP_BUILDTIME_ID}`);
+
 import createApp from '../app.js';
 import { checkOpenSearchHealth } from '../db/healthcheck.js';
 
@@ -72,7 +73,7 @@ checkOpenSearchHealth(OPENSEARCH_URL)
         }
 
         const server = http.createServer(app);
-        server.listen(port);
+        server.listen(port, '0.0.0.0');
         server.on('error', error => {
             onError(error, port);
         });
