@@ -46,6 +46,11 @@ jobs:
         with:
           ref: ${{ inputs.ref || github.sha }}
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24.12.0"
+
       - name: Show deployment info
         run: |
           echo "Building and scanning for environment ${{ inputs.environment || 'dev' }}"
