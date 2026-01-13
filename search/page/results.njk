@@ -17,6 +17,11 @@
     }) }}
 
     {% if errors %}
+        {%
+            set errorMessageConfig = {
+                text: errors[0].text
+            }
+        %}
         {{ govukErrorSummary({
             titleText: "There is a problem",
             errorList: errors
@@ -26,7 +31,7 @@
     <form method="post" action="/search">
         {% call govukFieldset({
             legend: {
-                text: "Search",
+                text: "Search results",
                 classes: "govuk-fieldset__legend--xl",
                 isPageHeading: true
             }
@@ -37,12 +42,10 @@
                     text: "Search",
                     classes: "govuk-visually-hidden"
                 },
-                hint: {
-                    text: "For example, 'assault'"
-                },
                 id: "query",
                 name: "query",
                 value: query,
+                errorMessage: errorMessageConfig,
                 classes: "govuk-input--width-20 govuk-!-margin-right-4",
                 formGroup: {
                     afterInput: {
@@ -64,12 +67,12 @@
     {% set paginationItems = [] %}
     {% set paginationPrevious = {
             text: "Previous",
-            href: ["/search/", query, "/", pagination.currentPageIndex - 1, "/", pagination.itemsPerPage] | join
+            href: ["/search/?query=", query, "&pageNumber=", pagination.currentPageIndex - 1] | join
         }
     %}
     {% set paginationNext = {
             text: "Next",
-            href: ["/search/", query, "/", pagination.currentPageIndex + 1, "/", pagination.itemsPerPage] | join
+            href: ["/search/?query=", query, "&pageNumber=", pagination.currentPageIndex + 1] | join
         }
     %}
     {# only show pagination item links if there is more than one page #}
@@ -78,8 +81,7 @@
             {%
                 set paginationItems = (paginationItems.push({
                     text: i,
-                    href: "/search/" + query + "/" + i + "/" + pagination.itemsPerPage,
-                    href: ["/search/", query, "/", i, "/", pagination.itemsPerPage] | join,
+                    href: ["/search/?query=", query, "&pageNumber=", i] | join,
                     selected: i == pagination.currentPageIndex
                 }), paginationItems)
             %}
@@ -106,7 +108,7 @@
         }) }}
     {% endif %}
 
-    <p class="govuk-body govuk-!-margin-top-4">You searched for: <strong>{{ query }}</strong>
+    <p class="govuk-body govuk-!-margin-top-4 govuk-!-text-break-word">You searched for: <strong>{{ query }}</strong>
 
     <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
 

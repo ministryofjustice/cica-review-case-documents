@@ -12,16 +12,15 @@ import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
 import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
+import errorHandler from './middleware/errors/globalErrorHandler.js';
+import notFoundHandler from './middleware/errors/notFoundHandler.js';
 import getCaseReferenceNumberFromQueryString from './middleware/getCaseReferenceNumberFromQueryString/index.js';
 import isAuthenticated from './middleware/isAuthenticated/index.js';
 import defaultCreateLogger from './middleware/logger/index.js';
-import searchRouter from './search/routes.js';
-import createTemplateEngineService from './templateEngine/index.js';
-import './middleware/errors/globalErrorHandler.js';
-import './middleware/errors/notFoundHandler.js';
-import errorHandler from './middleware/errors/globalErrorHandler.js';
-import notFoundHandler from './middleware/errors/notFoundHandler.js';
 import generalRateLimiter from './middleware/rateLimiter/index.js';
+import searchRouter from './search/routes.js';
+import createSearchService from './search/search-service.js';
+import createTemplateEngineService from './templateEngine/index.js';
 
 /**
  * Creates and configures an Express application with middleware for logging, security, session management,
@@ -151,13 +150,31 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
 
     // Note: auth login will eventually be removed and replaced with SSO
     app.use('/auth', authRouter);
-    app.use('/api', isAuthenticated, apiApp);
+    app.use('/api', apiApp);
+    app.use((req, res, next) => {
+        if (req.method === 'GET') {
+            if (req?.session?.caseSelected === true) {
+                // we know it is a valid CRN from the `getCaseReferenceNumberFromQueryString` middleware.
+                if (!req.query?.crn) {
+                    const newQuery = {
+                        ...req.query,
+                        crn: req.session.caseReferenceNumber
+                    };
+                    delete newQuery.caseReferenceNumber;
+
+                    const queryString = new URLSearchParams(newQuery).toString();
+                    return res.redirect(`${req.baseUrl}?${queryString}`);
+                }
+            }
+        }
+        next();
+    });
     app.use(
         '/search',
         isAuthenticated,
         getCaseReferenceNumberFromQueryString,
         caseSelected,
-        searchRouter
+        searchRouter({ createTemplateEngineService, createSearchService })
     );
 
     app.use(notFoundHandler);

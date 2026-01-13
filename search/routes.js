@@ -1,128 +1,117 @@
 import express from 'express';
-import createTemplateEngineService from '../templateEngine/index.js';
-import createSearchService from './search-service.js';
 
-const router = express.Router();
+/**
+ * Creates an Express router for handling search functionality.
+ *
+ * @param {Object} services - The services required to create the router.
+ * @param {Function} services.createTemplateEngineService - Factory function to create the template engine service.
+ * @param {Function} services.createSearchService - Factory function to create the search service.
+ * @returns {express.Router} The configured Express router for search routes.
+ *
+ * @route POST /search
+ * @route GET /search
+ */
+function createSearchRouter({ createTemplateEngineService, createSearchService }) {
+    const router = express.Router();
 
-router.get('/', (req, res, next) => {
-    try {
-        const templateEngineService = createTemplateEngineService();
-        const { render } = templateEngineService;
-        const html = render('search/page/index.njk', {
-            caseSelected: req.session.caseSelected,
-            caseReferenceNumber: req.session.caseReferenceNumber,
-            pageType: 'search',
-            csrfToken: res.locals.csrfToken,
-            cspNonce: res.locals.cspNonce
-        });
-        res.send(html);
-    } catch (err) {
-        next(err);
-    }
-});
+    router.post('/', (req, res, next) => {
+        try {
+            const { query } = req.body;
+            return res.redirect(`/search?query=${encodeURIComponent(query.trim())}`);
+        } catch (err) {
+            next(err);
+        }
+    });
 
-router.post('/', (req, res, next) => {
-    try {
-        const { query } = req.body;
-        return res.redirect(`/search/${query}`);
-    } catch (err) {
-        next(err);
-    }
-});
+    router.get('/', async (req, res, next) => {
+        try {
+            const templateEngineService = createTemplateEngineService();
+            const { render } = templateEngineService;
 
-router.get('/:query', (req, res, next) => {
-    try {
-        return res.redirect(
-            `/search/${req.params.query}/1/${process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE}`
-        );
-    } catch (err) {
-        next(err);
-    }
-});
+            const { query, pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.query;
 
-router.get('/:query/:pageNumber', (req, res, next) => {
-    try {
-        return res.redirect(
-            `/search/${req.params.query}/${req.params.pageNumber}/${process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE}`
-        );
-    } catch (err) {
-        next(err);
-    }
-});
+            if (!query) {
+                const html = render('search/page/index.njk', {
+                    caseSelected: req.session.caseSelected,
+                    caseReferenceNumber: req.session.caseReferenceNumber,
+                    pageType: 'search',
+                    csrfToken: res.locals.csrfToken,
+                    cspNonce: res.locals.cspNonce
+                });
+                return res.send(html);
+            }
 
-router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
-    try {
-        const templateEngineService = createTemplateEngineService();
-        const { render } = templateEngineService;
+            const pageNumber = Math.max(Number(rawPageNumber) || 1, 1);
+            const itemsPerPage = Math.max(
+                Number(rawItemsPerPage) || Number(process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE),
+                1
+            );
 
-        const { query, pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.params;
-        const pageNumber = Math.max(Number(rawPageNumber) || 1, 1);
-        const itemsPerPage = Math.max(
-            Number(rawItemsPerPage) || Number(process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE),
-            1
-        );
+            const templateParams = {
+                caseSelected: req.session.caseSelected,
+                caseReferenceNumber: req.session.caseReferenceNumber,
+                pageType: 'search',
+                csrfToken: res.locals.csrfToken,
+                cspNonce: res.locals.cspNonce,
+                query
+            };
 
-        const templateParams = {
-            caseSelected: req.session.caseSelected,
-            caseReferenceNumber: req.session.caseReferenceNumber,
-            pageType: 'search',
-            csrfToken: res.locals.csrfToken,
-            cspNonce: res.locals.cspNonce,
-            query
-        };
+            req.log.info({ query, pageNumber, itemsPerPage }, 'Creating search service');
+            const searchService = createSearchService({
+                caseReferenceNumber: req.session?.caseReferenceNumber,
+                logger: req.log
+            });
 
-        req.log.info({ query, pageNumber, itemsPerPage }, 'Creating search service');
-        const searchService = createSearchService({
-            caseReferenceNumber: req.session?.caseReferenceNumber,
-            logger: req.log
-        });
+            const token = req.cookies?.jwtToken;
+            const response = await searchService.getSearchResults(
+                encodeURIComponent(query),
+                pageNumber,
+                itemsPerPage,
+                token
+            );
+            const { body } = response || {};
 
-        const token = req.cookies?.jwtToken;
-        const response = await searchService.getSearchResults(
-            query,
-            pageNumber,
-            itemsPerPage,
-            token
-        );
-        const { body } = response || {};
+            if (body?.errors) {
+                templateParams.errors = body.errors.map((error) => ({
+                    text: error.detail,
+                    href: `#${error.source?.pointer?.split('/')?.pop() || 'error'}`
+                }));
 
-        if (body?.errors) {
-            templateParams.errors = body.errors.map((error) => ({
-                text: error.detail,
-                href: `#${error.source?.pointer?.split('/')?.pop() || 'error'}`
-            }));
+                const html = render('search/page/results.njk', templateParams);
+                return res.status(400).send(html);
+            }
+
+            const searchResults = body?.data?.attributes?.results;
+            const hits = searchResults?.hits || [];
+            const totalItemCount = Number(searchResults?.total?.value || 0);
+
+            templateParams.searchResults = hits;
+
+            // TODO: move this logic into the view.
+            templateParams.showPaginationItems = totalItemCount > itemsPerPage;
+
+            const totalPageCount = Math.ceil(totalItemCount / itemsPerPage);
+            const currentPageIndex = Math.min(pageNumber, totalPageCount);
+            templateParams.pagination = {
+                totalItemCount,
+                totalPageCount,
+                currentPageIndex,
+                itemsPerPage,
+                from: (currentPageIndex - 1) * itemsPerPage + 1,
+                to: Math.min(currentPageIndex * itemsPerPage, totalItemCount),
+                isFirstPage: currentPageIndex <= 1,
+                isLastPage: currentPageIndex >= totalPageCount
+            };
 
             const html = render('search/page/results.njk', templateParams);
-            return res.status(400).send(html);
+            return res.status(200).send(html);
+        } catch (error) {
+            req.log.error('Error occurred while processing search request:', error);
+            next(error);
         }
+    });
 
-        const searchResults = body?.data?.attributes?.results;
-        const hits = searchResults?.hits || [];
-        const totalItemCount = Number(searchResults?.total?.value || 0);
+    return router;
+}
 
-        templateParams.searchResults = hits;
-
-        // TODO: move this logic into the view.
-        templateParams.showPaginationItems = totalItemCount > itemsPerPage;
-
-        const totalPageCount = Math.ceil(totalItemCount / itemsPerPage);
-        const currentPageIndex = Math.min(pageNumber, totalPageCount);
-        templateParams.pagination = {
-            totalItemCount,
-            totalPageCount,
-            currentPageIndex,
-            itemsPerPage,
-            from: (currentPageIndex - 1) * itemsPerPage + 1,
-            to: Math.min(currentPageIndex * itemsPerPage, totalItemCount),
-            isFirstPage: currentPageIndex <= 1,
-            isLastPage: currentPageIndex >= totalPageCount
-        };
-
-        const html = render('search/page/results.njk', templateParams);
-        return res.status(200).send(html);
-    } catch (error) {
-        next(error);
-    }
-});
-
-export default router;
+export default createSearchRouter;
