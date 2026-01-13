@@ -56,7 +56,16 @@ cp .env.example .env
 
 See [`.env.example`](./.env.example) for all available configuration options and descriptions.
 
-### 3. Run the Application
+### 3. Build OpenAPI Specification
+
+```bash
+# Build the OpenAPI specification
+npm run openapi:build
+```
+
+This generates the API documentation (`api/openapi/openapi-dist.json`). The OpenAPI spec must be manually rebuilt when making changes to the API schema or endpoints.
+
+### 4. Run the Application
 
 ```bash
 # Development mode (with auto-reload and debugger)
@@ -158,6 +167,16 @@ The API is documented using OpenAPI 3.1 specification. See [`api/openapi/openapi
 - Authentication requirements
 - Parameter descriptions
 - Example requests and responses
+
+### Accessing API Documentation
+
+The interactive Swagger UI is available at `/api-docs` when the application is running:
+
+```
+http://localhost:5000/api-docs
+```
+
+**Note:** The OpenAPI specification must be built before accessing the documentation. Run `npm run openapi:build` if you encounter errors.
 
 **Quick API reference:**
 

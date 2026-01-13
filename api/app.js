@@ -6,6 +6,7 @@ import ajvErrors from 'ajv-errors';
 
 import express from 'express';
 import OpenApiValidator from 'express-openapi-validator';
+import pino from 'pino';
 import swaggerUi from 'swagger-ui-express';
 import errorHandler from './middleware/errorHandler/index.js';
 import authenticateJWTToken from './middleware/jwt-authentication/index.js';
@@ -14,7 +15,7 @@ import apiRouter from './routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
+const logger = pino({ level: process.env.APP_LOG_LEVEL || 'info' });
 const app = express();
 
 const ajv = new Ajv({
@@ -25,42 +26,40 @@ ajvErrors(ajv, { singleError: true });
 app.use(express.json({ type: 'application/vnd.api+json' }));
 app.use(express.urlencoded({ extended: true }));
 
-const openApiPath = path.join(__dirname, 'openapi', 'openapi-dist.json');
-let openApiSpec = null;
-
-// Load the spec once at startup
-try {
-    openApiSpec = JSON.parse(await readFile(openApiPath, 'utf-8'));
-} catch (e) {
-    openApiSpec = {};
-}
-
 // Apply rate limiting and authentication to ALL API routes first
 app.use(dynamicRateLimiter);
 app.use(authenticateJWTToken);
 
-// Middleware to relax CSP for Swagger UI documentation
-const relaxCspForSwaggerUI = (req, res, next) => {
-    // Get the existing CSP header set by helmet in the parent app
-    const existingCsp = res.getHeader('Content-Security-Policy');
+// Serve Swagger UI and OpenAPI spec used for validation
+const openApiPath = path.join(__dirname, 'openapi', 'openapi-dist.json');
 
-    if (existingCsp) {
-        // Remove 'strict-dynamic' and add 'unsafe-eval' for Swagger UI
-        // This allows the Swagger UI scripts to load and execute
-        const modifiedCsp = existingCsp
-            .replace(/'strict-dynamic'\s*/g, '')
-            .replace(/script-src ([^;]+)/, `script-src $1 'unsafe-eval'`);
-        res.setHeader('Content-Security-Policy', modifiedCsp);
+// Serve Swagger UI and OpenAPI spec only in non-production environments
+let openApiSpec = null;
+if (process.env.DEPLOY_ENV !== 'production') {
+    try {
+        openApiSpec = JSON.parse(await readFile(openApiPath, 'utf-8'));
+    } catch (err) {
+        logger.error({ err }, 'Failed to load OpenAPI spec');
+        openApiSpec = {};
     }
-    next();
-};
 
-// Now, define the routes that should be protected
-app.use('/docs', relaxCspForSwaggerUI, swaggerUi.serve, swaggerUi.setup(openApiSpec));
+    // Middleware to relax CSP for Swagger UI documentation
+    const relaxCspForSwaggerUI = (req, res, next) => {
+        const existingCsp = res.getHeader('Content-Security-Policy');
+        if (existingCsp) {
+            const modifiedCsp = existingCsp
+                .replace(/'strict-dynamic'\s*/g, '')
+                .replace(/script-src ([^;]+)/, `script-src $1 'unsafe-eval'`);
+            res.setHeader('Content-Security-Policy', modifiedCsp);
+        }
+        next();
+    };
 
-app.get('/openapi.json', (req, res) => {
-    res.json(openApiSpec);
-});
+    app.use('/docs', relaxCspForSwaggerUI, swaggerUi.serve, swaggerUi.setup(openApiSpec));
+    app.get('/openapi.json', (req, res) => {
+        res.json(openApiSpec);
+    });
+}
 
 // This middleware sets the content type and version for all subsequent API routes.
 const apiSetupMiddleware = (req, res, next) => {

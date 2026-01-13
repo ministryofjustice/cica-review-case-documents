@@ -1,79 +1,81 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    name: cica-case-review-documents-deployment
-    labels:
-        app: cica-case-review-documents
+  name: cica-case-review-documents-deployment
+  labels:
+    app: cica-case-review-documents
 spec:
-    replicas: 3
-    selector:
-        matchLabels:
-            app: cica-case-review-documents
-    template:
-        metadata:
-            labels:
-                app: cica-case-review-documents
-        spec:
-            serviceAccountName: ${SERVICE_ACCOUNT_NAME}
-            containers:
-                - name: cica-case-review-documents
-                  image: ${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}
-                  ports:
-                      - containerPort: 5000
-                  securityContext:
-                      allowPrivilegeEscalation: false
-                      capabilities:
-                          drop:
-                              - ALL
-                      runAsNonRoot: true
-                      seccompProfile:
-                          type: RuntimeDefault
-                  env:
-                      - name: APP_COOKIE_NAME
-                        valueFrom:
-                            secretKeyRef:
-                                name: cica-case-review-documents-secrets
-                                key: app_cookie_name
-                      - name: APP_COOKIE_SECRET
-                        valueFrom:
-                            secretKeyRef:
-                                name: cica-case-review-documents-secrets
-                                key: app_cookie_secret
-                      - name: AUTH_SECRET_PASSWORD
-                        valueFrom:
-                            secretKeyRef:
-                                name: cica-case-review-documents-secrets
-                                key: auth_secret_password
-                      - name: AUTH_USERNAMES
-                        valueFrom:
-                            secretKeyRef:
-                                name: cica-case-review-documents-secrets
-                                key: auth_usernames
-                      - name: APP_JWT_SECRET
-                        valueFrom:
-                            secretKeyRef:
-                                name: cica-case-review-documents-secrets
-                                key: app_jwt_secret
-                      - name: APP_SEARCH_PAGINATION_ITEMS_PER_PAGE
-                        value: "10"
-                      - name: APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE
-                        value: "1"
-                      - name: APP_API_URL
-                        value: http://localhost:5000/api
-                      - name: APP_DATABASE_URL
-                        valueFrom:
-                            secretKeyRef:
-                                name: cica-review-case-documents-opensearch-proxy-url
-                                key: proxy_url
-                      - name: OPENSEARCH_INDEX_CHUNKS_NAME
-                        value: page_chunks
-                      - name: NODE_ENV
-                        value: "${NODE_ENV}"
-                      - name: API_RATE_LIMIT_WINDOW_MS
-                        value: "900000"
-                      - name: API_RATE_LIMIT_MAX_PROD
-                        value: "300"
-                      - name: APP_RATE_LIMIT_WINDOW_MS
-                        value: "900000"
-                      - name: APP_RATE_LIMIT_MAX
-                        value: "100"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cica-case-review-documents
+  template:
+    metadata:
+      labels:
+        app: cica-case-review-documents
+    spec:
+      serviceAccountName: ${SERVICE_ACCOUNT_NAME}
+      containers:
+        - name: cica-case-review-documents
+          image: ${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}
+          ports:
+            - containerPort: 5000
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: APP_COOKIE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: cica-case-review-documents-secrets
+                  key: app_cookie_name
+            - name: APP_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cica-case-review-documents-secrets
+                  key: app_cookie_secret
+            - name: AUTH_SECRET_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cica-case-review-documents-secrets
+                  key: auth_secret_password
+            - name: AUTH_USERNAMES
+              valueFrom:
+                secretKeyRef:
+                  name: cica-case-review-documents-secrets
+                  key: auth_usernames
+            - name: APP_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cica-case-review-documents-secrets
+                  key: app_jwt_secret
+            - name: APP_SEARCH_PAGINATION_ITEMS_PER_PAGE
+              value: "10"
+            - name: APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE
+              value: "1"
+            - name: APP_API_URL
+              value: http://localhost:5000/api
+            - name: APP_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: cica-review-case-documents-opensearch-proxy-url
+                  key: proxy_url
+            - name: OPENSEARCH_INDEX_CHUNKS_NAME
+              value: page_chunks
+            - name: NODE_ENV
+              value: "${NODE_ENV}"
+            - name: API_RATE_LIMIT_WINDOW_MS
+              value: "900000"
+            - name: API_RATE_LIMIT_MAX_PROD
+              value: "300"
+            - name: APP_RATE_LIMIT_WINDOW_MS
+              value: "900000"
+            - name: APP_RATE_LIMIT_MAX
+              value: "100"
+            - name: DEPLOY_ENV
+              value: "${DEPLOY_ENV}"
