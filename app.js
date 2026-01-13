@@ -150,7 +150,7 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
 
     // Note: auth login will eventually be removed and replaced with SSO
     app.use('/auth', authRouter);
-    app.use('/api', isAuthenticated, apiApp);
+    app.use('/api', apiApp);
     app.use((req, res, next) => {
         if (req.method === 'GET') {
             if (req?.session?.caseSelected === true) {
