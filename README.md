@@ -15,8 +15,28 @@ A web application for searching and reviewing case documents for the Criminal In
 ## Prerequisites
 
 - [OpenSearch setup](https://github.com/ministryofjustice/cica-review-case-documents-airflow) - Follow the airflow documentation
-- Node.js `>=22.8.0`
-- npm `>=10.8.2`
+- 
+  Or alternatively use Port forwarding to the dev or uat environments Opensearch instance.
+  Connect to the environment using kubectl see [Connecting to the Cloud Platform’s Kubernetes cluster](https://user-guide.cloud-platform.service.justice.gov.uk/documentation/getting-started/kubectl-config.html#generating-a-kubeconfig-file)
+
+  run, environments: [dev, uat]
+  ```
+  kubectl  -n cica-review-case-documents-{environment} get pods
+  ```
+  select the opensearch proxy service url and run 
+
+  ```
+   kubectl port-forward service/opensearch-proxy-service-{url} 9200:8080 --namespace cica-review-case-documents-{environment}
+  ```
+
+  You should see something similar to
+  ```
+  Forwarding from 127.0.0.1:9200 -> 8080
+  ```
+  You can then run the app with 
+
+- Node.js [See required node version in package.json](https://github.com/ministryofjustice/cica-review-case-documents/blob/main/package.json#L6)
+- npm [See required npm version in package.json](https://github.com/ministryofjustice/cica-review-case-documents/blob/main/package.json#L5)
 
 ## Quick Start
 
@@ -36,7 +56,16 @@ cp .env.example .env
 
 See [`.env.example`](./.env.example) for all available configuration options and descriptions.
 
-### 3. Run the Application
+### 3. Build OpenAPI Specification
+
+```bash
+# Build the OpenAPI specification
+npm run openapi:build
+```
+
+This generates the API documentation (`api/openapi/openapi-dist.json`). The OpenAPI spec must be manually rebuilt when making changes to the API schema or endpoints.
+
+### 4. Run the Application
 
 ```bash
 # Development mode (with auto-reload and debugger)
@@ -83,6 +112,12 @@ This web app is intended to be accessed via Tempus. Tempus has specific links th
 
 ## Usage
 
+### Login and authentication
+
+A temporary login feature has been implemented (rather quickly) until the Microsoft Entra ID SSO is implemented.
+Add authention settings to your .env file from the [`.env.example`](./.env.example) template.
+
+
 ### Case Reference Number Selection
 
 In order to search, users must first select which case they are searching. This is done with a query parameter in the URL:
@@ -100,18 +135,22 @@ http://localhost:5000/search?caseReferenceNumber=25-111111
 Selects case with CRN `25-111111`. The UI will display `CRN: 25-111111` and enable searching within documents for that case.
 
 ```
-http://localhost:5000/search/gabapentin%20600mg/1/5?caseReferenceNumber=25-111111
+http://localhost:5000/search?query=Gabapentin&crn=25-111111
 ```
 Same as above, but also performs a search.
 
 ```
+http://localhost:5000/search/?query=Acute&pageNumber=2&crn=25-111111
+```
+Pagination example
+
 http://localhost:5000/search/the?caseReferenceNumber=12-121212
 ```
 This CRN does not exist, so no results will be returned.
 
 ### Search URL Format
 
-**GET** `/search/{query}/{pageNumber}/{itemsPerPage}`
+**GET** `/search?query={query}&pageNumber={pageNumber}&crn={customerReferenceNumber}`
 
 | Parameter | Description |
 | - | - |
@@ -129,9 +168,19 @@ The API is documented using OpenAPI 3.1 specification. See [`api/openapi/openapi
 - Parameter descriptions
 - Example requests and responses
 
+### Accessing API Documentation
+
+The interactive Swagger UI is available at `/api-docs` when the application is running:
+
+```
+http://localhost:5000/api-docs
+```
+
+**Note:** The OpenAPI specification must be built before accessing the documentation. Run `npm run openapi:build` if you encounter errors.
+
 **Quick API reference:**
 
-**GET** `/api/search/{query}/{pageNumber}/{itemsPerPage}`
+**GET** `/api/search?query={query}&pageNumber={pageNumber}&crn={customerReferenceNumber}&itemsPerPage={itemsPerPage}`
 
 Searches for text in documents within a specific case.
 

@@ -11,6 +11,7 @@ import authRouter from './auth/routes.js';
 import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
+import enforceCrnInQuery from './middleware/enforceCrnInQuery/index.js';
 import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
 import errorHandler from './middleware/errors/globalErrorHandler.js';
 import notFoundHandler from './middleware/errors/notFoundHandler.js';
@@ -154,12 +155,12 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
     // API routes: only rate limit if not authenticated
     app.use('/api', isAuthenticated, generalRateLimiter, apiApp);
 
-    // Search routes: only rate limit if not authenticated
     app.use(
         '/search',
         isAuthenticated,
         generalRateLimiter,
         getCaseReferenceNumberFromQueryString,
+        enforceCrnInQuery,
         caseSelected,
         searchRouter({ createTemplateEngineService, createSearchService })
     );
