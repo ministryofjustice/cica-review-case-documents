@@ -5,7 +5,7 @@ import express from 'express';
 import session from 'express-session';
 import helmet from 'helmet';
 import { nanoid } from 'nanoid';
-import apiApp from './api/app.js';
+import createApi from './api/app.js';
 import rateLimitErrorHandler from './auth/rateLimiters/authRateLimitErrorHandler.js';
 import authRouter from './auth/routes.js';
 import indexRouter from './index/routes.js';
@@ -32,7 +32,7 @@ import createTemplateEngineService from './templateEngine/index.js';
  * @param {Function} [options.createLogger=defaultCreateLogger] - Factory function to create a request logger middleware.
  * @returns {import('express').Express} The configured Express application instance.
  */
-function createApp({ createLogger = defaultCreateLogger } = {}) {
+async function createApp({ createLogger = defaultCreateLogger } = {}) {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
 
@@ -152,15 +152,13 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
     // Auth routes (login, etc.)
     app.use('/auth', authRouter);
 
-    // API routes: only rate limit if not authenticated
-    app.use('/api', isAuthenticated, generalRateLimiter, apiApp);
-
+    app.use('/api', await createApi());
+    app.use(enforceCrnInQuery);
     app.use(
         '/search',
         isAuthenticated,
         generalRateLimiter,
         getCaseReferenceNumberFromQueryString,
-        enforceCrnInQuery,
         caseSelected,
         searchRouter({ createTemplateEngineService, createSearchService })
     );

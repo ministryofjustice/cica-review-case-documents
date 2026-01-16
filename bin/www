@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import http from 'node:http';
 import { config as dotenvConfig } from 'dotenv';
-import {nanoid} from 'nanoid';
+import { nanoid } from 'nanoid';
 
 process.env.APP_BUILDTIME_ID = nanoid();
 console.log(`Build-time ID generated: ${process.env.APP_BUILDTIME_ID}`);
@@ -10,13 +10,10 @@ import createApp from '../app.js';
 import { checkOpenSearchHealth } from '../db/healthcheck.js';
 
 if (process.env.NODE_ENV === undefined) {
-  dotenvConfig();
+    dotenvConfig();
 }
 
-const app = createApp();
 const OPENSEARCH_URL = process.env.APP_DATABASE_URL || 'http://localhost:9200';
-
-
 
 // normalize a port into a number, string, or false.
 function normalizePort(port) {
@@ -30,6 +27,33 @@ function normalizePort(port) {
         return parsedPort;
     }
     return false;
+}
+
+async function startServer() {
+    const app = await createApp();
+    const port = normalizePort(process.env.PORT || '5000');
+    app.set('port', port);
+
+    checkOpenSearchHealth(OPENSEARCH_URL)
+        .then((isHealthy) => {
+            if (!isHealthy) {
+                console.error('OpenSearch is unhealthy. Exiting.');
+                process.exit(1);
+            }
+
+            const server = http.createServer(app);
+            server.listen(port, '0.0.0.0');
+            server.on('error', (error) => {
+                onError(error, port);
+            });
+            server.on('listening', () => {
+                onListening(server);
+            });
+        })
+        .catch((err) => {
+            console.error({ err }, 'An error occurred during health check.');
+            process.exit(1);
+        });
 }
 
 function onError(error, port) {
@@ -61,27 +85,7 @@ function onListening(server) {
     console.info(`Listening on ${bind}`);
 }
 
-const port = normalizePort(process.env.PORT || '5000');
-app.set('port', port);
-
-
-checkOpenSearchHealth(OPENSEARCH_URL)
-    .then(isHealthy => {
-        if (!isHealthy) {
-            console.error('OpenSearch is unhealthy. Exiting.');
-            process.exit(1);
-        }
-
-        const server = http.createServer(app);
-        server.listen(port, '0.0.0.0');
-        server.on('error', error => {
-            onError(error, port);
-        });
-        server.on('listening', () => {
-            onListening(server);
-        });
-    })
-    .catch(err => {
-        console.error({ err }, 'An error occurred during health check.');
-        process.exit(1);
-    });
+startServer().catch((err) => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+});

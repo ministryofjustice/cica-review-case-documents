@@ -36,7 +36,15 @@ function authenticateJWTToken(req, res, next) {
 
     if (!token) {
         req.log?.warn({ url: req.originalUrl }, 'Missing authentication token');
-        return res.status(401).send('Missing authentication token');
+        return res.status(401).json({
+            errors: [
+                {
+                    status: '401',
+                    title: 'Unauthorized',
+                    detail: 'Missing authentication token'
+                }
+            ]
+        });
     }
 
     try {
@@ -45,7 +53,15 @@ function authenticateJWTToken(req, res, next) {
         next();
     } catch (err) {
         req.log?.warn({ url: req.originalUrl, error: err.message }, 'Invalid authentication token');
-        return res.status(403).send('Invalid authentication token');
+        return res.status(403).json({
+            errors: [
+                {
+                    status: '403',
+                    title: 'Forbidden',
+                    detail: 'Invalid authentication token'
+                }
+            ]
+        });
     }
 }
 

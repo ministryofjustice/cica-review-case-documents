@@ -42,12 +42,14 @@ function createMemoryLogger() {
 
 describe('errorHandler', () => {
     it('Should handle array of validation errors correctly', () => {
-        const { logger, logs } = createMemoryLogger();
-        const req = { log: logger };
+        const req = {};
         const res = {
             statusCode: null,
             status(code) {
                 this.statusCode = code;
+                return this;
+            },
+            type() {
                 return this;
             },
             json: mock.fn()
@@ -70,23 +72,22 @@ describe('errorHandler', () => {
 
         errorHandler(err, req, res);
 
-        assert.strictEqual(res.statusCode, 500); // default for unknown array errors
+        assert.strictEqual(res.statusCode, 400); // 400 for validation errors (array)
         const payload = res.json.mock.calls[0].arguments[0];
         assert.strictEqual(payload.errors.length, 2);
         assert.strictEqual(payload.errors[0].source.pointer, '/body/name');
         assert.strictEqual(payload.errors[1].source.pointer, '/body/age');
-        assert.strictEqual(logger.error.mock.callCount(), 1);
-        assert.strictEqual(logs[0].level, 'error');
-        assert.match(logs[0].msg, /UNHANDLED ERROR/);
     });
 
-    it('Should log and respond correctly for a 400 malformed JSON error', () => {
-        const { logger, logs } = createMemoryLogger();
-        const req = { log: logger };
+    it('Should respond with 400 and error payload for malformed JSON', () => {
+        const req = {};
         const res = {
             statusCode: null,
             status(code) {
                 this.statusCode = code;
+                return this;
+            },
+            type() {
                 return this;
             },
             json: mock.fn()
@@ -99,21 +100,20 @@ describe('errorHandler', () => {
 
         assert.strictEqual(res.statusCode, 400);
         assert.strictEqual(res.json.mock.callCount(), 1);
-        assert.ok(Array.isArray(res.json.mock.calls[0].arguments[0].errors));
-
-        assert.strictEqual(logger.warn.mock.callCount(), 1);
-        assert.strictEqual(logs[0].level, 'warn');
-        assert.match(logs[0].msg, /UNHANDLED ERROR/);
+        const payload = res.json.mock.calls[0].arguments[0];
+        assert.ok(Array.isArray(payload.errors));
+        assert.ok(payload.errors.length > 0);
     });
 
-    it('Should log and respond correctly for unhandled server error', () => {
-        const { logger, logs } = createMemoryLogger();
-
-        const req = { log: logger };
+    it('Should respond with 500 and error payload for unhandled server error', () => {
+        const req = {};
         const res = {
             statusCode: null,
             status(code) {
                 this.statusCode = code;
+                return this;
+            },
+            type() {
                 return this;
             },
             json: mock.fn()
@@ -125,23 +125,19 @@ describe('errorHandler', () => {
 
         assert.strictEqual(res.statusCode, 500);
         assert.strictEqual(res.json.mock.callCount(), 1);
-
         const payload = res.json.mock.calls[0].arguments[0];
         assert.ok(payload.errors[0].detail.includes('Something exploded'));
-
-        assert.strictEqual(logger.error.mock.callCount(), 1);
-        assert.strictEqual(logs[0].level, 'error');
-        assert.strictEqual(logs[0].obj.status, 500);
-        assert.match(logs[0].msg, /UNHANDLED ERROR/);
     });
 
-    it('Should log warn-level logging for known 4xx error', () => {
-        const { logger, logs } = createMemoryLogger();
-
-        const req = { log: logger };
+    it('Should respond with 401 and error payload for known 4xx error', () => {
+        const req = {};
         const res = {
+            statusCode: null,
             status(code) {
                 this.statusCode = code;
+                return this;
+            },
+            type() {
                 return this;
             },
             json: mock.fn()
@@ -152,9 +148,9 @@ describe('errorHandler', () => {
         errorHandler(err, req, res);
 
         assert.strictEqual(res.statusCode, 401);
-        assert.strictEqual(logger.error.mock.callCount(), 1);
-        assert.match(logs[0].msg, /UNHANDLED ERROR/);
-        assert.strictEqual(logs[0].obj.status, 401);
+        assert.strictEqual(res.json.mock.callCount(), 1);
+        const payload = res.json.mock.calls[0].arguments[0];
+        assert.ok(payload.errors[0].detail.includes('Invalid token'));
     });
     it('Should use OpenAPI custom error message if available', () => {
         const { logger } = createMemoryLogger();
@@ -163,6 +159,9 @@ describe('errorHandler', () => {
             statusCode: null,
             status(code) {
                 this.statusCode = code;
+                return this;
+            },
+            type() {
                 return this;
             },
             json: mock.fn()
@@ -193,6 +192,9 @@ describe('errorHandler', () => {
                 this.statusCode = code;
                 return this;
             },
+            type() {
+                return this;
+            },
             json: mock.fn()
         };
 
@@ -215,6 +217,9 @@ describe('errorHandler', () => {
             statusCode: null,
             status(code) {
                 this.statusCode = code;
+                return this;
+            },
+            type() {
                 return this;
             },
             json: mock.fn()

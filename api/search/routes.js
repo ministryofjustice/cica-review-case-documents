@@ -1,8 +1,5 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import createSearchService from './search-service.js';
-
-const router = express.Router();
 
 /**
  * @module routes/searchRouter
@@ -53,37 +50,38 @@ const router = express.Router();
  *   }
  * }
  */
-router.get('/', async (req, res, next) => {
-    try {
-        const { query, pageNumber, itemsPerPage } = req.query;
-        const logger = req.log;
-        logger.info({ query, pageNumber, itemsPerPage }, 'Querying items per page');
-        const searchService = createSearchService({
-            caseReferenceNumber: req.get('On-Behalf-Of'),
-            logger: req.log
-        });
+export default function searchRouter({ searchService }) {
+    const router = express.Router();
 
-        const searchResults = await searchService.getSearchResultsByKeyword(
-            query,
-            pageNumber,
-            itemsPerPage
-        );
-
-        const searchResultsResource = {
-            data: {
-                type: 'search-results',
-                id: uuidv4(),
-                attributes: {
-                    query: query,
-                    results: searchResults
+    router.get('/', async (req, res, next) => {
+        try {
+            const { query, pageNumber, itemsPerPage } = req.query;
+            const searchResults = await searchService.getSearchResultsByKeyword(
+                query,
+                pageNumber,
+                itemsPerPage,
+                {
+                    caseReferenceNumber: req.get('On-Behalf-Of'),
+                    logger: req.log
                 }
-            }
-        };
+            );
 
-        res.status(200).json(searchResultsResource);
-    } catch (err) {
-        next(err);
-    }
-});
+            const searchResultsResource = {
+                data: {
+                    type: 'search-results',
+                    id: uuidv4(),
+                    attributes: {
+                        query: query,
+                        results: searchResults
+                    }
+                }
+            };
 
-export default router;
+            res.status(200).json(searchResultsResource);
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    return router;
+}

@@ -18,8 +18,8 @@ async function getCsrfToken(agent) {
     return res.text.match(/name="_csrf" value="([^"]+)"/)[1];
 }
 
-beforeEach(() => {
-    app = createApp({
+beforeEach(async () => {
+    app = await createApp({
         createLogger: () => (req, res, next) => {
             req.log = {
                 error: () => {},

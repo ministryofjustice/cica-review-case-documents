@@ -8,20 +8,13 @@ import createDocumentDAL from '../../document/document-dal.js';
  */
 
 /**
- * Creates a Search Service instance bound to a specific case reference number.
+ * Creates a Search Service instance.
  *
  * @param {Object} params - The parameters for creating the search service.
- * @param {string} params.caseReferenceNumber - The unique identifier for the case.
- * @param {Object} params.logger - The logger instance to use for logging.
+ * @param {Function} [params.createDocumentDAL] - A factory for the Document DAL.
  * @returns {Object} The search service instance.
- * @returns {Function} return.getSearchResultsByKeyword - Retrieves paginated search results by keyword.
  */
-function createSearchService({ caseReferenceNumber, logger }) {
-    const db = createDocumentDAL({
-        caseReferenceNumber,
-        logger
-    });
-
+function createSearchService({ createDocumentDAL: dalFactory = createDocumentDAL }) {
     /**
      * Retrieves a paginated list of document search results matching a given keyword.
      *
@@ -30,9 +23,21 @@ function createSearchService({ caseReferenceNumber, logger }) {
      * @param {string} keyword - The keyword to search for within the documents.
      * @param {number} pageNumber - The current page number (1-based index).
      * @param {number} itemsPerPage - The number of items to include per page.
+     * @param {Object} context - The context for the search operation.
+     * @param {string} context.caseReferenceNumber - The case reference number.
+     * @param {Object} context.logger - The logger instance.
      * @returns {Promise<Object[]>} A promise that resolves to an array of document results.
      */
-    async function getSearchResultsByKeyword(keyword, pageNumber, itemsPerPage) {
+    async function getSearchResultsByKeyword(
+        keyword,
+        pageNumber,
+        itemsPerPage,
+        { caseReferenceNumber, logger }
+    ) {
+        const db = dalFactory({
+            caseReferenceNumber,
+            logger
+        });
         return db.getDocumentsChunksByKeyword(keyword, pageNumber, itemsPerPage);
     }
 

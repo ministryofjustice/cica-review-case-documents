@@ -12,9 +12,27 @@
  */
 const enforceCrnInQuery = (req, res, next) => {
     if (req.method === 'GET' && req.session?.caseSelected === true && !req.query?.crn) {
+        // Harden: Only allow safe relative paths (no //, no backslash, no protocol)
+        if (
+            typeof req.path !== 'string' ||
+            req.path.includes('//') ||
+            req.path.includes('\\') ||
+            req.path.includes('..') ||
+            req.path.startsWith('http://') ||
+            req.path.startsWith('https://')
+        ) {
+            return res.status(400).send('Invalid redirect path');
+        }
+
+        // Harden: Only allow alphanumeric crn (adjust regex as needed for your use case)
+        const crn = req.session.caseReferenceNumber;
+        if (!/^[a-zA-Z0-9-]+$/.test(crn)) {
+            return res.status(400).send('Invalid case reference number');
+        }
+
         const newQuery = {
             ...req.query,
-            crn: req.session.caseReferenceNumber
+            crn
         };
         // The original middleware may have picked up caseReferenceNumber from the query
         // we should remove it to avoid it being in the query string twice.

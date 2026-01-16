@@ -125,15 +125,35 @@ function getCustomOpenApiErrorDetail(fullError) {
 }
 
 /**
+ * Converts a given path to a JSON Pointer format.
+ *
+ * If the path is already in JSON Pointer format (starts with '/'), it is returned as is.
+ * If the path is in dot notation (e.g., 'a.b.c'), it is converted to JSON Pointer (e.g., '/a/b/c').
+ * If the path is falsy, returns undefined.
+ *
+ * @param {string} path - The path to convert, in dot notation or JSON Pointer format.
+ * @returns {string|undefined} The path in JSON Pointer format, or undefined if input is falsy.
+ */
+function toJsonPointer(path) {
+    if (!path) return undefined;
+    if (path.startsWith('/')) return path; // already JSON Pointer
+    // Convert dot notation to JSON Pointer
+    return `/${path.replace(/\./g, '/')}`;
+}
+
+/**
  * Formats an error object into a standardized error response.
  *
- * @param {Object} params - Error parameters.
- * @param {number} params.status - HTTP status code.
- * @param {string} [params.detail] - Detailed error message.
- * @param {Object} [params.source] - Source of the error (e.g., pointer).
- * @param {string} [params.code] - Optional error code.
- * @param {Object} [params.meta] - Optional metadata.
- * @returns {Object} Formatted error object.
+ * @param {Object} params - The error parameters.
+ * @param {number} params.status - The HTTP status code of the error.
+ * @param {string} [params.detail] - A detailed error message.
+ * @param {Object} [params.source] - The source of the error, may include a pointer.
+ * @param {string} [params.source.pointer] - A pointer to the associated entity in the request document.
+ * @param {string} [params.code] - An application-specific error code.
+ * @param {Object} [params.meta] - Additional meta information about the error.
+ * @param {Object} [params.fullError] - The full error object, may include a custom error code.
+ * @param {string} [params.fullError.errorCode] - A custom error code for OpenAPI errors.
+ * @returns {Object} The formatted error object.
  */
 function formatError({ status, detail, source, code, meta, fullError }) {
     const errorData = {
@@ -147,7 +167,11 @@ function formatError({ status, detail, source, code, meta, fullError }) {
         errorData.detail = detail;
     }
     if (source) {
-        errorData.source = source;
+        // Convert source.pointer to JSON Pointer if needed
+        errorData.source = { ...source };
+        if (errorData.source.pointer) {
+            errorData.source.pointer = toJsonPointer(errorData.source.pointer);
+        }
     }
     if (code) {
         errorData.code = code;
@@ -174,66 +198,74 @@ function formatError({ status, detail, source, code, meta, fullError }) {
  * @returns {void}
  */
 export default (err, req, res, next) => {
-    const errorResponse = { errors: [] };
-    const log = req.log || console;
+    // TEMP LOG POINT: Log all errors entering the error handler
+    // You can use req.log if available, or just console.log for debugging
+    console.error('Error in error handler:', {
+        name: err?.name,
+        message: err?.message,
+        status: err?.status,
+        statusCode: err?.statusCode,
+        errors: err?.errors,
+        stack: err?.stack
+    });
 
-    // handle a malformed JSON request e.g. can't be parsed by the bodyparser (express.json)
-    // https://github.com/expressjs/body-parser/issues/122#issuecomment-328190379
+    // Always set JSON:API content type
+    res.type('application/vnd.api+json');
+
+    // Default status
+    let status =
+        err.statusCode ||
+        err.status ||
+        NAME_STATUS_MAP[err.name] ||
+        (Array.isArray(err.errors) ? 400 : 500);
+
+    // Malformed JSON: force 400
     if (err.type === 'entity.parse.failed') {
-        const formattedError = formatError({
-            status: 400,
-            detail: 'Request JSON is malformed'
-        });
-        errorResponse.errors.push(formattedError);
-        log.warn(
-            {
-                err,
-                error: formattedError
-            },
-            'UNHANDLED ERROR'
-        );
-        return res.status(400).json(errorResponse);
+        status = 400;
     }
 
-    const status =
-        err.status || err.statusCode || NAME_STATUS_MAP[err.name] || NAME_STATUS_MAP.default;
+    // OpenAPI/validation errors: force 400
+    if (
+        Array.isArray(err.errors) ||
+        err.name === 'RequestValidationError' ||
+        err.name === 'ResponseValidationError' ||
+        err.errorCode === 'invalid_request' ||
+        err.errorCode === 'invalid_response'
+    ) {
+        status = 400;
+    }
+
+    // Fallback for unknown errors
+    if (!status || typeof status !== 'number') {
+        status = 500;
+    }
+
+    // Format errors as JSON:API error array
+    let errors = [];
 
     if (Array.isArray(err.errors)) {
-        err.errors.forEach((e) => {
-            const formattedError = formatError({
+        // OpenAPI validation errors
+        errors = err.errors.map((e) =>
+            formatError({
                 status,
                 detail: e.message,
-                source: e.path ? { pointer: `/${e.path.replace(/\./g, '/')}` } : undefined,
+                source: e.path ? { pointer: e.path } : undefined,
+                code: e.errorCode,
                 fullError: e
-            });
-            errorResponse.errors.push(formattedError);
-        });
-
-        log.error(
-            {
-                err,
-                errors: errorResponse.errors,
-                status
-            },
-            'UNHANDLED ERRORS'
+            })
         );
-        return res.status(status).json(errorResponse);
+    } else {
+        // Single error
+        errors = [
+            formatError({
+                status,
+                detail: err.message || 'An unexpected error occurred',
+                code: err.code,
+                meta: err.meta,
+                fullError: err
+            })
+        ];
     }
 
-    const formattedError = formatError({
-        status,
-        detail: err.message
-    });
-    errorResponse.errors.push(formattedError);
-
-    log.error(
-        {
-            err,
-            errors: errorResponse.errors,
-            status
-        },
-        'UNHANDLED ERROR'
-    );
-
-    return res.status(status).json(errorResponse);
+    res.status(status).json({ errors });
 };
