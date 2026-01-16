@@ -2,7 +2,7 @@ import express from 'express';
 import OpenApiValidator from 'express-openapi-validator';
 import errorHandler from './middleware/errorHandler/index.js';
 import authenticateJWTToken from './middleware/jwt-authentication/index.js';
-import rateLimiter from './middleware/rateLimiter/index.js';
+import dynamicRateLimiter from './middleware/rateLimiter/index.js';
 import apiRouter from './routes.js';
 
 const app = express();
@@ -15,8 +15,8 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(rateLimiter);
 app.use(authenticateJWTToken);
+app.use(dynamicRateLimiter);
 
 app.use(
     '/',

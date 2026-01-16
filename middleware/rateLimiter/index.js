@@ -1,12 +1,10 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-const windowMs = process.env.APP_RATE_LIMIT_WINDOW_MS
-    ? parseInt(process.env.APP_RATE_LIMIT_WINDOW_MS, 10)
-    : 15 * 60 * 1000; // Default: 15 minutes
-
-const limit = process.env.APP_RATE_LIMIT_MAX ? parseInt(process.env.APP_RATE_LIMIT_MAX, 10) : 100; // Default: 100 requests
+const AUTHENTICATED_LIMIT = Number(process.env.APP_RATE_LIMIT_MAX_AUTH) || 1000;
+const UNAUTHENTICATED_LIMIT = Number(process.env.APP_RATE_LIMIT_MAX_UNAUTH) || 50;
+const WINDOW_MS = Number(process.env.APP_RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000; // Default to 15 minutes
 
 /**
  * Express middleware for general rate limiting.
@@ -25,19 +23,19 @@ const limit = process.env.APP_RATE_LIMIT_MAX ? parseInt(process.env.APP_RATE_LIM
  * @returns {import('express').RequestHandler} Express middleware for rate limiting.
  */
 const generalRateLimiter = rateLimit({
-    windowMs,
-    limit: limit,
-    skip: (req, res) => {
-        if (!isProduction) {
-            return true;
-        }
-        // Skip rate limiting for login POST requests (handled by specific limiter)
-        if (req.method === 'POST' && req.path === '/auth/login') {
-            return true;
-        }
-        return false;
-    },
-    keyGenerator: (req) => req.session?.id || 'no-session'
+    windowMs: WINDOW_MS,
+    limit: (req) =>
+        req.session?.loggedIn || req.user ? AUTHENTICATED_LIMIT : UNAUTHENTICATED_LIMIT,
+    keyGenerator: (req) =>
+        req.session?.loggedIn && req.session?.id
+            ? req.session.id
+            : req.user?.id
+              ? req.user.id
+              : ipKeyGenerator(req),
+    skip: (req) => !isProduction,
+    handler: (req, res) => {
+        res.status(429).json({ error: 'Too many requests, please try again later' });
+    }
 });
 
 export default generalRateLimiter;
