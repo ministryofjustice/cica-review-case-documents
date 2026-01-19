@@ -65,6 +65,8 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
 
     app.use(ensureEnvVarsAreValid);
 
+    app.set('trust proxy', 1); // trust first proxy (ingress)
+
     app.use(
         session({
             name: process.env.APP_COOKIE_NAME,
