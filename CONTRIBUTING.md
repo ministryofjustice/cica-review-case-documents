@@ -389,6 +389,17 @@ npm run format
 - Add JSDoc comments for complex functions
 - Keep functions small and focused (single responsibility)
 
+### Redirect Allowlist for Internal Redirects
+
+For security and compliance with CodeQL rules, the application uses an explicit allowlist of redirect-eligible routes in the `enforceCrnInQuery` middleware (see `middleware/enforceCrnInQuery/index.js`). Only routes in this allowlist (e.g., `/search`) are permitted as redirect targets.
+
+**If you add a new route that should support internal redirects:**
+- Update the `ALLOWED_PATHS` array in `middleware/enforceCrnInQuery/index.js`.
+- Update the corresponding test in `middleware/enforceCrnInQuery/allowList.test.js` to include the new route.
+- This ensures that all redirects remain secure and that automated tests will fail if the allowlist and test are not kept in sync.
+
+See the comments in both files for more details.
+
 ## Troubleshooting
 
 ### OpenSearch Connection Failed
@@ -577,3 +588,4 @@ see [local docker desktop kube deployments](/deployments/local/README.md)
 ---
 
 Thank you for contributing to FIND!
+

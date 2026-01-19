@@ -153,6 +153,8 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     app.use('/auth', authRouter);
 
     app.use('/api', await createApi());
+    // Security: enforceCrnInQuery uses an explicit allowlist of redirect-eligible paths (see middleware).
+    // If you add a new route that should support internal redirects, update the allowlist and its test.
     app.use(enforceCrnInQuery);
     app.use(
         '/search',

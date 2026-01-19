@@ -3,12 +3,12 @@ import { test } from 'node:test';
 import enforceCrnInQuery from './index.js';
 
 /**
- * Creates a mock Express.js request object for testing purposes.
+ * Creates a mock Express request object for testing purposes.
  *
  * @param {Object} [options] - Options to customize the mock request.
  * @param {string} [options.method='GET'] - The HTTP method of the request.
  * @param {Object} [options.query={}] - The query parameters of the request.
- * @param {Object} [options.session={}] - The session object attached to the request.
+ * @param {Object} [options.session={}] - The session object of the request.
  * @returns {Object} Mock request object with method, query, session, and path properties.
  */
 function createMockReq({ method = 'GET', query = {}, session = {} } = {}) {
@@ -22,11 +22,11 @@ function createMockReq({ method = 'GET', query = {}, session = {} } = {}) {
 
 /**
  * Creates a mock response object for testing purposes.
- * The mock object provides a `redirect` method to simulate HTTP redirects,
- * and a `redirectedUrl` getter to retrieve the last redirected URL.
+ * The mock object captures any URL passed to its `redirect` method,
+ * allowing tests to assert redirection behavior.
  *
  * @returns {{redirect: function(string): void, redirectedUrl: string|null}}
- *   An object with a `redirect` method and a `redirectedUrl` property.
+ *   An object with a `redirect` method to simulate redirection and a `redirectedUrl` property to retrieve the redirected URL.
  */
 function createMockRes() {
     let redirectedUrl = null;
@@ -119,27 +119,17 @@ test('blocks redirect if req.path is absolute URL', () => {
         session: { caseSelected: true, caseReferenceNumber: '12-345678' }
     });
     req.path = 'http://malicious.com/evil';
-    let statusCode, sentMsg;
-    const res = {
-        status(code) {
-            statusCode = code;
-            return this;
-        },
-        send(msg) {
-            sentMsg = msg;
-            return this;
-        }
-    };
-    let nextCalled = false;
-    const next = () => {
-        nextCalled = true;
+    let nextArg;
+    const res = {};
+    const next = (err) => {
+        nextArg = err;
     };
 
     enforceCrnInQuery(req, res, next);
 
-    assert.strictEqual(statusCode, 400);
-    assert.strictEqual(sentMsg, 'Invalid redirect path');
-    assert.strictEqual(nextCalled, false);
+    assert(nextArg instanceof Error);
+    assert.strictEqual(nextArg.message, 'Invalid redirect path');
+    assert.strictEqual(nextArg.status, 400);
 });
 
 test('blocks redirect if req.path contains suspicious patterns', () => {
@@ -149,27 +139,17 @@ test('blocks redirect if req.path contains suspicious patterns', () => {
         session: { caseSelected: true, caseReferenceNumber: '12-345678' }
     });
     req.path = '/search//evil';
-    let statusCode, sentMsg;
-    const res = {
-        status(code) {
-            statusCode = code;
-            return this;
-        },
-        send(msg) {
-            sentMsg = msg;
-            return this;
-        }
-    };
-    let nextCalled = false;
-    const next = () => {
-        nextCalled = true;
+    let nextArg;
+    const res = {};
+    const next = (err) => {
+        nextArg = err;
     };
 
     enforceCrnInQuery(req, res, next);
 
-    assert.strictEqual(statusCode, 400);
-    assert.strictEqual(sentMsg, 'Invalid redirect path');
-    assert.strictEqual(nextCalled, false);
+    assert(nextArg instanceof Error);
+    assert.strictEqual(nextArg.message, 'Invalid redirect path');
+    assert.strictEqual(nextArg.status, 400);
 });
 
 test('blocks redirect if crn is invalid', () => {

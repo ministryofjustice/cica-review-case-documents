@@ -148,13 +148,13 @@ function checkEnvVars({
 }
 
 /**
- * Express middleware that validates required and optional environment variables.
- * Calls `checkEnvVars` with lists of mandatory and optional environment variables,
- * and logs the results using the request logger.
+ * Express middleware to validate required and optional environment variables.
+ * Calls `checkEnvVars` with the lists of mandatory and optional environment variables,
+ * and logs using the request logger. Proceeds to the next middleware after validation.
  *
  * @param {import('express').Request} req - Express request object, expected to have a `log` property for logging.
  * @param {import('express').Response} res - Express response object.
- * @param {Function} next - Express next middleware function.
+ * @param {import('express').NextFunction} next - Express next middleware function.
  */
 function ensureEnvVarsAreValid(req, res, next) {
     checkEnvVars({
