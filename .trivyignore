@@ -3,3 +3,7 @@
 # It does not affect the application runtime as glob CLI is not used by the application
 # Will be resolved when Node.js updates their bundled npm version
 CVE-2025-64756
+
+# node-tar is a Tar for Node.js. The node-tar library (<= 7.5.2) fails to sanitize the linkpath of Link #(hardlink) and SymbolicLink entries when preservePaths is false (the default secure behavior). This allows malicious archives to bypass the extraction root restriction, leading to Arbitrary File Overwrite via hardlinks and Symlink Poisoning via absolute symlink targets. This vulnerability is fixed in 7.5.3.
+#Published 2026-01-16 22:00:09 Updated 2026-01-16 22:16:27 
+CVE-2026-23745
