@@ -27,6 +27,7 @@ This local Kubernetes deployment should be used when you need to test changes th
 3.  **Kubeadm Provider:** It is highly recommended to use the `Kubeadm` default cluster provider for a smoother experience, as it shares the image store with the Docker engine. If you use the `kind` provider, you will need to load your local image into the cluster's image store manually.
 4.  **kubectl:** Ensure `kubectl` is installed and configured to point to the `docker-desktop` context.
 5.  **Local Opensearch database running** see [airflow local dev environment](https://github.com/ministryofjustice/cica-review-case-documents-airflow/blob/main/local-dev-environment/README.md)
+6.  Env vars set see [Local Kubernetes/Docker Testing Only](../../.env.example) 
 
 ### Managing Kubernetes Context
 
