@@ -1,3 +1,45 @@
+# Internal Redirect Allowlist
+
+This project uses a strict allowlist and pattern-based approach to control which internal URLs are eligible for redirects (for example, when enforcing the presence of a `crn` query parameter). This is critical for security and is enforced by the `enforceCrnInQuery` middleware.
+
+## How it works
+
+- **Static allowlist:** Only explicitly listed static paths (e.g., `/search`) are eligible for redirects.
+- **Pattern allowlist:** Dynamic routes (such as document viewing pages) are matched using strict regular expressions (e.g., `/document/<UUID>/view/image/page/<pageNumber>`), ensuring only valid, expected paths are allowed.
+- **Hardening:** Additional checks block suspicious or malformed paths (e.g., those containing `//`, `..`, protocol strings, or backslashes).
+
+## Adding or updating allowed redirect paths
+
+1. **Update the allowlist or pattern list:**
+  - Edit `middleware/enforceCrnInQuery/index.js` to add your new static path to `ALLOWED_PATHS` or a new regex to `ALLOWED_PATH_PATTERNS`.
+2. **Update tests:**
+  - Add or update tests in `middleware/enforceCrnInQuery/allowList.test.js` to cover your new route or pattern.
+3. **Review security:**
+  - Ensure your pattern is as strict as possible to avoid over-matching.
+  - Never allow user input to directly control redirect destinations without validation.
+
+## Example
+
+To allow a new static path `/foo`, add it to `ALLOWED_PATHS`:
+
+```js
+const ALLOWED_PATHS = ['/search', '/foo'];
+```
+
+To allow a new dynamic route, add a strict regex to `ALLOWED_PATH_PATTERNS`:
+
+```js
+const ALLOWED_PATH_PATTERNS = [
+  /^\/document\/[0-9a-fA-F-]{36}\/view\/image\/page\/\d+$/,
+  /^\/foo\/[a-z]+\/bar$/
+];
+```
+
+## Why is this important?
+
+Allowlisting and hardening prevent open redirect vulnerabilities and ensure only safe, intended routes are eligible for internal redirection. This is a key security requirement and is checked by automated tools (e.g., CodeQL).
+
+If you have questions, ask a maintainer or see the code in `middleware/enforceCrnInQuery/index.js` and `allowList.test.js`.
 # Contributing to FIND
 
 Thank you for contributing to the CICA Review Case Documents (FIND) application! This guide provides detailed information about the development workflow, project structure, and best practices.

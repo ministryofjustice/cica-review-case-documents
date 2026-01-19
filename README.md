@@ -112,6 +112,19 @@ This web app is intended to be accessed via Tempus. Tempus has specific links th
 
 ## Usage
 
+### Internal Redirect Allowlist and Patterns
+
+This application uses a strict allowlist and pattern-based approach to control which internal URLs can be used for redirects (e.g., when enforcing the presence of a `crn` query parameter). This is a key security measure to prevent open redirect vulnerabilities and ensure only safe, intended routes are eligible for internal redirection.
+
+- **Static allowlist:** Only explicitly listed static paths (e.g., `/search`) are eligible for redirects.
+- **Pattern allowlist:** Dynamic routes (such as document viewing pages) are matched using strict regular expressions (e.g., `/document/<UUID>/view/image/page/<pageNumber>`), ensuring only valid, expected paths are allowed.
+- **Hardening:** Additional checks block suspicious or malformed paths (e.g., those containing `//`, `..`, protocol strings, or backslashes).
+
+**If you add a new route that should support internal redirects:**
+- Update the allowlist or pattern list in `middleware/enforceCrnInQuery/index.js`.
+- Add or update tests in `middleware/enforceCrnInQuery/allowList.test.js` to cover the new route or pattern.
+- See [CONTRIBUTING.md](./CONTRIBUTING.md#internal-redirect-allowlist) for more details.
+
 ### Login and authentication
 
 A temporary login feature has been implemented (rather quickly) until the Microsoft Entra ID SSO is implemented.
