@@ -16,7 +16,8 @@ const defaults = {
             'APP_COOKIE_SECRET',
             'APP_API_URL',
             'APP_DATABASE_URL',
-            'OPENSEARCH_INDEX_CHUNKS_NAME'
+            'OPENSEARCH_INDEX_CHUNKS_NAME',
+            'APP_S3_BUCKET_LOCATION'
         ],
         optional: [
             'PORT',
