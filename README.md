@@ -157,6 +157,7 @@ http://localhost:5000/search/?query=Acute&pageNumber=2&crn=25-111111
 ```
 Pagination example
 
+```
 http://localhost:5000/search/the?caseReferenceNumber=12-121212
 ```
 This CRN does not exist, so no results will be returned.
@@ -171,6 +172,12 @@ This CRN does not exist, so no results will be returned.
 | pageNumber | Page number of the paginated results |
 | itemsPerPage | The number of items to show per page of results |
 
+## S3 Client Configuration
+* Local development uses LocalStack (endpoint: http://localhost:4566, dummy credentials).
+* DEV/Production uses AWS S3 with IRSA roles (no endpoint or static credentials required).
+* See ARCHITECTURE.md for full details on environment-specific setup.
+
+
 ## API Documentation
 
 The API is documented using OpenAPI 3.1 specification. See [`api/openapi/openapi.json`](./api/openapi/openapi.json) for the complete API documentation including:
@@ -183,10 +190,10 @@ The API is documented using OpenAPI 3.1 specification. See [`api/openapi/openapi
 
 ### Accessing API Documentation
 
-The interactive Swagger UI is available at `/api-docs` when the application is running:
+The interactive Swagger UI is available at `/api/docs` when the application is running:
 
 ```
-http://localhost:5000/api-docs
+http://localhost:5000/api/docs
 ```
 
 **Note:** The OpenAPI specification must be built before accessing the documentation. Run `npm run openapi:build` if you encounter errors.

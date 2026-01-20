@@ -12,10 +12,27 @@ const ALLOWED_PATHS = ['/search'];
  * @type {RegExp[]}
  * @constant
  * @example
- * // Checks if '/document/UUID/view/image/page/1' is an allowed pattern
+ * // Checks if '/document/UUID/view/page/1' is an allowed pattern
  * if (ALLOWED_PATH_PATTERNS.some(pattern => pattern.test(request.path))) { ... }
  */
-const ALLOWED_PATH_PATTERNS = [/^\/document\/[0-9a-fA-F-]{36}\/view\/image\/page\/\d+$/];
+const ALLOWED_PATH_PATTERNS = [
+    /^\/document\/[0-9a-fA-F-]{36}\/view\/page\/\d+$/,
+    /^\/document\/[0-9a-fA-F-]{36}\/page\/\d+$/  // Image streaming endpoint
+];
+
+/**
+ * Paths that should be excluded from CRN enforcement (static assets, etc.)
+ * @type {RegExp[]}
+ * @constant
+ */
+const EXCLUDED_PATHS = [
+    /^\/favicon\.ico$/,
+    /^\/public\//,
+    /^\/js\//,
+    /^\/stylesheets\//,
+    /^\/assets\//,
+    /^\/\.well-known\//
+];
 
 /**
  * Middleware to ensure that a `crn` query parameter is present on GET requests
@@ -30,6 +47,11 @@ const ALLOWED_PATH_PATTERNS = [/^\/document\/[0-9a-fA-F-]{36}\/view\/image\/page
  * @param {Function} next - Express next middleware function.
  */
 const enforceCrnInQuery = (req, res, next) => {
+    // Skip enforcement for excluded paths (static assets, favicon, etc.)
+    if (EXCLUDED_PATHS.some(pattern => pattern.test(req.path))) {
+        return next();
+    }
+
     if (req.method === 'GET' && req.session?.caseSelected === true && !req.query?.crn) {
         // Harden: Only allow safe relative paths (no //, no backslash, no protocol)
         if (
@@ -87,5 +109,5 @@ const enforceCrnInQuery = (req, res, next) => {
     next();
 };
 
-export { ALLOWED_PATHS, ALLOWED_PATH_PATTERNS };
+export { ALLOWED_PATHS, ALLOWED_PATH_PATTERNS, EXCLUDED_PATHS };
 export default enforceCrnInQuery;

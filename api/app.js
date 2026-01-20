@@ -11,7 +11,7 @@ import errorHandler from './middleware/errorHandler/index.js';
 import authenticateJWTToken from './middleware/jwt-authentication/index.js';
 import dynamicRateLimiter from './middleware/rateLimiter/index.js';
 import createOpenApiValidatorMiddleware from './middleware/validator/index.js';
-import createApiRouter from './routes.js';
+import createApiRouter from './document/routes.js';
 import createSearchService from './search/search-service.js';
 
 const __filename = fileURLToPath(import.meta.url);

@@ -15,8 +15,14 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
     const router = express.Router();
 
     router.post('/', (req, res, next) => {
-        try {
+        try {            
             const { query } = req.body;
+            const { pageNumber = 1 } = req.query;
+            
+            // Store search details to allow a back button to come back to the same results page
+            req.session.searchTerm = query
+            req.session.searchResultsPageNumber = pageNumber;
+
             return res.redirect(`/search?query=${encodeURIComponent(query.trim())}`);
         } catch (err) {
             next(err);
@@ -85,7 +91,15 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             const hits = searchResults?.hits || [];
             const totalItemCount = Number(searchResults?.total?.value || 0);
 
-            templateParams.searchResults = hits;
+
+            // Enrich each result with docUuid and searchPageNumber
+            const searchResultsWithDocUuid = hits.map((hit) => ({
+                ...hit,
+                docUuid: hit._source?.source_doc_id || 0,
+                searchPageNumber: pageNumber
+            }));
+
+            templateParams.searchResults = searchResultsWithDocUuid;
 
             // TODO: move this logic into the view.
             templateParams.showPaginationItems = totalItemCount > itemsPerPage;

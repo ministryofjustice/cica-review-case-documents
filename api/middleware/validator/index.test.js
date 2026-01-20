@@ -7,8 +7,8 @@ import ajvErrors from 'ajv-errors';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
-import createApiRouter from '../../routes.js'; // adjust path as needed
-import createOpenApiValidatorMiddleware from './index.js'; // adjust path as needed
+import createApiRouter from '../../document/routes.js';
+import createOpenApiValidatorMiddleware from './index.js';
 
 /**
  * Creates and configures an Express application instance for testing.
@@ -44,12 +44,12 @@ async function makeApp() {
         getSearchResultsByKeyword: async () => ({ total: { value: 0 }, hits: [] })
     };
     app.use((req, res, next) => {
-        console.log('Before validator');
+        console.info('Before validator');
         next();
     });
     app.use(validator);
     app.use((req, res, next) => {
-        console.log('After validator');
+        console.info('After validator');
         next();
     });
     app.use('/api', createApiRouter({ searchService: mockSearchService }));
@@ -80,7 +80,6 @@ describe('OpenAPI Validator Middleware', () => {
             .set('Authorization', `Bearer ${validToken}`)
             .set('On-Behalf-Of', '25-111111');
 
-        console.log(res.body);
         assert.strictEqual(res.statusCode, 400);
         assert.ok(res.body.errors, 'Response should have errors');
         assert.match(res.body.errors[0].message, /must have required property 'query'/);
@@ -92,7 +91,6 @@ describe('OpenAPI Validator Middleware', () => {
             .set('Authorization', `Bearer ${validToken}`)
             .set('On-Behalf-Of', '25-111111');
 
-        console.log(res.body);
         assert.strictEqual(res.statusCode, 400);
         assert.ok(res.body.errors, 'Response should have errors');
         assert.match(res.body.errors[0].message, /must NOT have fewer than 2 characters/);
@@ -103,7 +101,6 @@ describe('OpenAPI Validator Middleware', () => {
             .get('/api/search?query=test')
             .set('Authorization', `Bearer ${validToken}`); // Missing header
 
-        console.log(res.body);
         assert.strictEqual(res.statusCode, 400);
         assert.ok(res.body.errors, 'Response should have errors');
         assert.match(res.body.errors[0].message, /must have required property 'on-behalf-of'/);

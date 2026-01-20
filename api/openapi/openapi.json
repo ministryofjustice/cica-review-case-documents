@@ -25,6 +25,9 @@
     "tags": [
         {
             "name": "Search"
+        },
+        {
+            "name": "Documents"
         }
     ],
     "paths": {
@@ -102,6 +105,110 @@
                                                 ]
                                             }
                                         }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                }
+            }
+        },
+        "/document/{documentId}/page/{pageNumber}/metadata": {
+            "get": {
+                "tags": ["Documents"],
+                "summary": "Get page metadata from OpenSearch",
+                "description": "Returns page metadata including correspondence_type, dimensions, and S3 URI for a specific document page",
+                "operationId": "getPageMetadata",
+                "parameters": [
+                    {
+                        "name": "documentId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The UUID of the document",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "example": "55b2ea3c-3eae-54f7-b81d-292db7c84be7"
+                    },
+                    {
+                        "name": "pageNumber",
+                        "in": "path",
+                        "required": true,
+                        "description": "The page number to retrieve metadata for",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 6
+                    },
+                    {
+                        "name": "crn",
+                        "in": "query",
+                        "required": true,
+                        "description": "Case reference number",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9]{2}-[0-9]{6}$"
+                        },
+                        "example": "26-111111"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "correspondence_type": {
+                                                    "type": "string",
+                                                    "nullable": true,
+                                                    "description": "Type of correspondence document"
+                                                },
+                                                "imageUrl": {
+                                                    "type": "string",
+                                                    "description": "S3 URI for the page image"
+                                                },
+                                                "page_width": {
+                                                    "type": "number",
+                                                    "description": "Page width in pixels"
+                                                },
+                                                "page_height": {
+                                                    "type": "number",
+                                                    "description": "Page height in pixels"
+                                                },
+                                                "page_count": {
+                                                    "type": "number",
+                                                    "description": "Total number of pages in document"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "data": {
+                                        "correspondence_type": "TC19 - ADDITIONAL INFO REQUEST",
+                                        "imageUrl": "s3://document-page-bucket/26-111111/55b2ea3c-3eae-54f7-b81d-292db7c84be7/pages/6.png",
+                                        "page_width": 1654,
+                                        "page_height": 2339,
+                                        "page_count": 50
                                     }
                                 }
                             }

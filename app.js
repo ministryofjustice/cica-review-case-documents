@@ -8,6 +8,7 @@ import { nanoid } from 'nanoid';
 import createApi from './api/app.js';
 import rateLimitErrorHandler from './auth/rateLimiters/authRateLimitErrorHandler.js';
 import authRouter from './auth/routes.js';
+import createDocumentRouter from './document/routes.js';
 import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
@@ -158,6 +159,14 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     // Security: enforceCrnInQuery uses an explicit allowlist of redirect-eligible paths (see middleware).
     // If you add a new route that should support internal redirects, update the allowlist and its test.
     app.use(enforceCrnInQuery);
+    app.use(
+        '/document',
+        isAuthenticated,
+        generalRateLimiter,
+        getCaseReferenceNumberFromQueryString,
+        caseSelected,
+        createDocumentRouter()
+    );
     app.use(
         '/search',
         isAuthenticated,

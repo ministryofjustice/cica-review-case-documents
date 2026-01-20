@@ -1,17 +1,14 @@
 #!/usr/bin/env node
+import {} from '../config.js' // load env vars
+
 import http from 'node:http';
-import { config as dotenvConfig } from 'dotenv';
 import { nanoid } from 'nanoid';
 
 process.env.APP_BUILDTIME_ID = nanoid();
-console.log(`Build-time ID generated: ${process.env.APP_BUILDTIME_ID}`);
+console.info(`Build-time ID generated: ${process.env.APP_BUILDTIME_ID}`);
 
 import createApp from '../app.js';
 import { checkOpenSearchHealth } from '../db/healthcheck.js';
-
-if (process.env.NODE_ENV === undefined) {
-    dotenvConfig();
-}
 
 const OPENSEARCH_URL = process.env.APP_DATABASE_URL || 'http://localhost:9200';
 
