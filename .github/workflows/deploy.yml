@@ -149,6 +149,7 @@ jobs:
 
       - name: Template Kubernetes manifests
         env:
+          NODE_ENV: production
           IMAGE_TAG: ${{ needs.build-and-scan.outputs.image-tag }}
           REGISTRY: ${{ needs.build-and-scan.outputs.registry }}
           REPOSITORY: ${{ needs.build-and-scan.outputs.repository }}

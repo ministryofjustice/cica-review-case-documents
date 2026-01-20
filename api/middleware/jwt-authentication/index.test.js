@@ -35,7 +35,7 @@ function createMockReq({ token, cookie = false }) {
  * }} Mock response object.
  */
 function createMockRes() {
-    let statusCode, sentMessage;
+    let statusCode, sentMessage, jsonBody;
     return {
         status(code) {
             statusCode = code;
@@ -45,11 +45,18 @@ function createMockRes() {
             sentMessage = msg;
             return this;
         },
+        json(body) {
+            jsonBody = body;
+            return this;
+        },
         get statusCode() {
             return statusCode;
         },
         get sentMessage() {
             return sentMessage;
+        },
+        get jsonBody() {
+            return jsonBody;
         }
     };
 }
@@ -96,7 +103,8 @@ test('authenticateToken returns 401 if no token', async () => {
     await authenticateToken(req, res, () => {});
 
     assert.equal(res.statusCode, 401);
-    assert.equal(res.sentMessage, 'Missing authentication token');
+    assert.ok(res.jsonBody);
+    assert.equal(res.jsonBody.errors[0].detail, 'Missing authentication token');
 });
 
 test('authenticateToken returns 403 if token is invalid', async () => {
@@ -107,5 +115,6 @@ test('authenticateToken returns 403 if token is invalid', async () => {
     await authenticateToken(req, res, () => {});
 
     assert.equal(res.statusCode, 403);
-    assert.equal(res.sentMessage, 'Invalid authentication token');
+    assert.ok(res.jsonBody);
+    assert.equal(res.jsonBody.errors[0].detail, 'Invalid authentication token');
 });

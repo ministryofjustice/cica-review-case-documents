@@ -1,3 +1,45 @@
+# Internal Redirect Allowlist
+
+This project uses a strict allowlist and pattern-based approach to control which internal URLs are eligible for redirects (for example, when enforcing the presence of a `crn` query parameter). This is critical for security and is enforced by the `enforceCrnInQuery` middleware.
+
+## How it works
+
+- **Static allowlist:** Only explicitly listed static paths (e.g., `/search`) are eligible for redirects.
+- **Pattern allowlist:** Dynamic routes (such as document viewing pages) are matched using strict regular expressions (e.g., `/document/<UUID>/view/image/page/<pageNumber>`), ensuring only valid, expected paths are allowed.
+- **Hardening:** Additional checks block suspicious or malformed paths (e.g., those containing `//`, `..`, protocol strings, or backslashes).
+
+## Adding or updating allowed redirect paths
+
+1. **Update the allowlist or pattern list:**
+  - Edit `middleware/enforceCrnInQuery/index.js` to add your new static path to `ALLOWED_PATHS` or a new regex to `ALLOWED_PATH_PATTERNS`.
+2. **Update tests:**
+  - Add or update tests in `middleware/enforceCrnInQuery/allowList.test.js` to cover your new route or pattern.
+3. **Review security:**
+  - Ensure your pattern is as strict as possible to avoid over-matching.
+  - Never allow user input to directly control redirect destinations without validation.
+
+## Example
+
+To allow a new static path `/foo`, add it to `ALLOWED_PATHS`:
+
+```js
+const ALLOWED_PATHS = ['/search', '/foo'];
+```
+
+To allow a new dynamic route, add a strict regex to `ALLOWED_PATH_PATTERNS`:
+
+```js
+const ALLOWED_PATH_PATTERNS = [
+  /^\/document\/[0-9a-fA-F-]{36}\/view\/image\/page\/\d+$/,
+  /^\/foo\/[a-z]+\/bar$/
+];
+```
+
+## Why is this important?
+
+Allowlisting and hardening prevent open redirect vulnerabilities and ensure only safe, intended routes are eligible for internal redirection. This is a key security requirement and is checked by automated tools (e.g., CodeQL).
+
+If you have questions, ask a maintainer or see the code in `middleware/enforceCrnInQuery/index.js` and `allowList.test.js`.
 # Contributing to FIND
 
 Thank you for contributing to the CICA Review Case Documents (FIND) application! This guide provides detailed information about the development workflow, project structure, and best practices.
@@ -232,9 +274,37 @@ npm run webpack:dev # Bundle for development
 npm run webpack     # Bundle for production
 ```
 
+### OpenAPI Specification
+
+The API documentation is generated from the OpenAPI schema files.
+
+**Entry point:** `./api/openapi/openapi.json`  
+**Output:** `./api/openapi/openapi-dist.json`
+
+```bash
+# Build the OpenAPI specification
+npm run openapi:build
+
+# Watch for changes and rebuild automatically (optional)
+npm run openapi:watch
+```
+
+**When to rebuild:**
+- After modifying `api/openapi/openapi.json`
+- After changing JSON schemas in `api/openapi/json-schemas/`
+- After updating API endpoints or route definitions
+- Before accessing Swagger UI at `/api-docs`
+
+**Note:** The OpenAPI build is NOT automatically included in `npm run start:dev`. You must manually run `npm run openapi:build` or use `npm run openapi:watch` in a separate terminal when working on API schema changes.
+
+**Swagger UI and CSP:**  
+Swagger UI requires inline scripts, which conflicts with our Content Security Policy (CSP). The application implements a CSP workaround specifically for the `/api-docs` route by relaxing the `script-src` directive to allow Swagger UI to function. This is an acceptable trade-off for developer documentation endpoints. The workaround is implemented in the `helmet` configuration when serving Swagger UI.
+
 ### Development Mode
 
 When running `npm run start:dev`, nodemon watches for changes to `.css`, `.scss`, `.js`, `.json`, and `.njk` files and automatically restarts the server. You'll still need to rebuild CSS/JS manually or set up additional watch processes.
+
+**Note:** The OpenAPI specification is NOT automatically rebuilt during development. Run `npm run openapi:watch` in a separate terminal if you're actively working on the API schema.
 
 ## Security
 
@@ -360,6 +430,17 @@ npm run format
 - Write descriptive variable and function names
 - Add JSDoc comments for complex functions
 - Keep functions small and focused (single responsibility)
+
+### Redirect Allowlist for Internal Redirects
+
+For security and compliance with CodeQL rules, the application uses an explicit allowlist of redirect-eligible routes in the `enforceCrnInQuery` middleware (see `middleware/enforceCrnInQuery/index.js`). Only routes in this allowlist (e.g., `/search`) are permitted as redirect targets.
+
+**If you add a new route that should support internal redirects:**
+- Update the `ALLOWED_PATHS` array in `middleware/enforceCrnInQuery/index.js`.
+- Update the corresponding test in `middleware/enforceCrnInQuery/allowList.test.js` to include the new route.
+- This ensures that all redirects remain secure and that automated tests will fail if the allowlist and test are not kept in sync.
+
+See the comments in both files for more details.
 
 ## Troubleshooting
 
@@ -549,3 +630,4 @@ see [local docker desktop kube deployments](/deployments/local/README.md)
 ---
 
 Thank you for contributing to FIND!
+

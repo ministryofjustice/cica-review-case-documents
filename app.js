@@ -5,23 +5,23 @@ import express from 'express';
 import session from 'express-session';
 import helmet from 'helmet';
 import { nanoid } from 'nanoid';
-import apiApp from './api/app.js';
+import createApi from './api/app.js';
 import rateLimitErrorHandler from './auth/rateLimiters/authRateLimitErrorHandler.js';
 import authRouter from './auth/routes.js';
 import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
+import enforceCrnInQuery from './middleware/enforceCrnInQuery/index.js';
 import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
+import errorHandler from './middleware/errors/globalErrorHandler.js';
+import notFoundHandler from './middleware/errors/notFoundHandler.js';
 import getCaseReferenceNumberFromQueryString from './middleware/getCaseReferenceNumberFromQueryString/index.js';
 import isAuthenticated from './middleware/isAuthenticated/index.js';
 import defaultCreateLogger from './middleware/logger/index.js';
-import searchRouter from './search/routes.js';
-import createTemplateEngineService from './templateEngine/index.js';
-import './middleware/errors/globalErrorHandler.js';
-import './middleware/errors/notFoundHandler.js';
-import errorHandler from './middleware/errors/globalErrorHandler.js';
-import notFoundHandler from './middleware/errors/notFoundHandler.js';
 import generalRateLimiter from './middleware/rateLimiter/index.js';
+import searchRouter from './search/routes.js';
+import createSearchService from './search/search-service.js';
+import createTemplateEngineService from './templateEngine/index.js';
 
 /**
  * Creates and configures an Express application with middleware for logging, security, session management,
@@ -32,7 +32,7 @@ import generalRateLimiter from './middleware/rateLimiter/index.js';
  * @param {Function} [options.createLogger=defaultCreateLogger] - Factory function to create a request logger middleware.
  * @returns {import('express').Express} The configured Express application instance.
  */
-function createApp({ createLogger = defaultCreateLogger } = {}) {
+async function createApp({ createLogger = defaultCreateLogger } = {}) {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
 
@@ -64,6 +64,8 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
     });
 
     app.use(ensureEnvVarsAreValid);
+
+    app.set('trust proxy', 1); // trust first proxy (ingress)
 
     app.use(
         session({
@@ -152,17 +154,17 @@ function createApp({ createLogger = defaultCreateLogger } = {}) {
     // Auth routes (login, etc.)
     app.use('/auth', authRouter);
 
-    // API routes: only rate limit if not authenticated
-    app.use('/api', isAuthenticated, generalRateLimiter, apiApp);
-
-    // Search routes: only rate limit if not authenticated
+    app.use('/api', await createApi());
+    // Security: enforceCrnInQuery uses an explicit allowlist of redirect-eligible paths (see middleware).
+    // If you add a new route that should support internal redirects, update the allowlist and its test.
+    app.use(enforceCrnInQuery);
     app.use(
         '/search',
         isAuthenticated,
         generalRateLimiter,
         getCaseReferenceNumberFromQueryString,
         caseSelected,
-        searchRouter
+        searchRouter({ createTemplateEngineService, createSearchService })
     );
 
     app.use(notFoundHandler);

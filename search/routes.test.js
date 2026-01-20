@@ -1,128 +1,146 @@
-import assert from 'node:assert';
-import { afterEach, beforeEach, describe, it, mock } from 'node:test';
+import assert from 'node:assert/strict';
+import { beforeEach, describe, it } from 'node:test';
 import express from 'express';
-import session from 'express-session';
 import request from 'supertest';
-import createDBQuery from '../db/index.js';
-import { caseSelected } from '../middleware/caseSelected/index.js'; // Add this import
-import searchRouter from './routes.js';
+import createSearchRouter from './routes.js';
 
-/**
- * Creates an isolated Express application instance for testing the search routes.
- * Sets up JSON and URL-encoded body parsing, session management, and test-specific middleware.
- * Injects mock session data, CSRF token, CSP nonce, and logger into each request.
- * Mounts the search router at the '/search' path.
- *
- * @param {Object} [sessionData={}] - Optional session data to inject into each request's session.
- * @returns {import('express').Express} An Express application instance configured for isolated testing.
- */
-function createIsolatedSearchApp(sessionData = {}) {
-    const app = express();
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: true }));
+describe('Search Routes', () => {
+    let app;
+    let mockCreateTemplateEngineService;
+    let mockCreateSearchService;
+    let mockRender;
+    let mockGetSearchResults;
 
-    app.use(
-        session({
-            secret: 'test',
-            resave: false,
-            saveUninitialized: true
-        })
-    );
-
-    app.use((req, res, next) => {
-        Object.assign(req.session, sessionData);
-        res.locals.csrfToken = 'test-csrf';
-        res.locals.cspNonce = 'test-nonce';
-        req.log = { info: () => {}, child: () => ({}) };
-        next();
-    });
-
-    app.use('/search', caseSelected, searchRouter);
-    return app;
-}
-
-describe('search router', () => {
-    let _app;
-    let db;
-
-    beforeEach(async () => {
-        const fakeResults = { hits: { hits: [{ _id: 1 }] } };
-        const searchSpy = mock.fn(async () => fakeResults);
-        class FakeClient {
-            search = searchSpy;
-        }
-        db = createDBQuery({
-            Client: FakeClient
-        });
-
-        const { default: importedApp } = await import('../app.js');
-        _app = importedApp({
-            db,
-            createLogger: () => (req, res, next) => {
-                const fakeLogger = {
-                    info: () => {},
-                    child: () => fakeLogger
-                };
-                req.log = fakeLogger;
-                next();
-            },
-            authMiddleware: (req, res, next) => {
-                req.session = {
-                    user: { id: 1 },
-                    passport: { user: { id: 1 } }
-                };
-                req.isAuthenticated = () => true;
-                next();
+    beforeEach(() => {
+        // Mock implementations
+        mockRender = (template, params) => `<html>${template}</html>`;
+        mockGetSearchResults = async () => ({
+            body: {
+                data: {
+                    attributes: {
+                        results: {
+                            hits: [{ id: 'doc1', name: 'Document 1' }],
+                            total: { value: 1 }
+                        }
+                    }
+                }
             }
         });
+
+        // Mock factory functions
+        mockCreateTemplateEngineService = () => ({
+            render: mockRender
+        });
+        mockCreateSearchService = () => ({
+            getSearchResults: mockGetSearchResults
+        });
+
+        const searchRouter = createSearchRouter({
+            createTemplateEngineService: mockCreateTemplateEngineService,
+            createSearchService: mockCreateSearchService
+        });
+
+        app = express();
+        app.use(express.json());
+        app.use(express.urlencoded({ extended: true }));
+
+        // Mock middleware dependencies
+        app.use((req, res, next) => {
+            req.session = {
+                caseSelected: true,
+                caseReferenceNumber: '12345'
+            };
+            req.cookies = { jwtToken: 'test-token' };
+            req.log = { info: () => {}, error: () => {} };
+            res.locals.csrfToken = 'test-csrf-token';
+            res.locals.cspNonce = 'test-csp-nonce';
+            next();
+        });
+
+        app.use('/search', searchRouter);
+
+        // Add a generic error handler for tests
+        app.use((err, req, res, next) => {
+            res.status(500).send('Internal Server Error');
+        });
     });
 
-    afterEach(() => {
-        mock.reset();
-        mock.restoreAll();
+    describe('GET /', () => {
+        it('should render the search index page if no query is provided', async () => {
+            const res = await request(app).get('/search');
+            assert.strictEqual(res.statusCode, 200);
+            assert.match(res.text, /search\/page\/index.njk/);
+        });
+
+        it('should call search service and render results when a query is provided', async () => {
+            const res = await request(app).get('/search?query=test');
+            assert.strictEqual(res.statusCode, 200);
+            assert.match(res.text, /search\/page\/results.njk/);
+        });
+
+        it('should handle errors from the search service', async () => {
+            // This test needs a fresh app instance to re-initialize the router with new mocks
+            const testApp = express();
+            const failingSearch = async () => {
+                throw new Error('Search failed');
+            };
+            const failingSearchService = () => ({
+                getSearchResults: failingSearch
+            });
+            const routerWithFailingService = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: failingSearchService
+            });
+            testApp.use((req, res, next) => {
+                req.session = { caseSelected: true, caseReferenceNumber: '12345' };
+                req.cookies = { jwtToken: 'test-token' };
+                req.log = { info: () => {}, error: () => {} };
+                next();
+            });
+            testApp.use('/search', routerWithFailingService);
+            testApp.use((err, req, res, next) => {
+                res.status(500).send('Internal Server Error');
+            });
+
+            const res = await request(testApp).get('/search?query=error');
+            assert.strictEqual(res.statusCode, 500);
+            assert.strictEqual(res.text, 'Internal Server Error');
+        });
+
+        it('should handle API errors returned in the search service response body', async () => {
+            const testApp = express();
+            const errorResponseSearch = async () => ({
+                body: {
+                    errors: [{ detail: 'Invalid query' }]
+                }
+            });
+            const errorSearchService = () => ({
+                getSearchResults: errorResponseSearch
+            });
+            const routerWithErrorService = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: errorSearchService
+            });
+            testApp.use((req, res, next) => {
+                req.session = { caseSelected: true, caseReferenceNumber: '12345' };
+                req.cookies = { jwtToken: 'test-token' };
+                req.log = { info: () => {}, error: () => {} };
+                res.locals.csrfToken = 'test-csrf-token';
+                res.locals.cspNonce = 'test-csp-nonce';
+                next();
+            });
+            testApp.use('/search', routerWithErrorService);
+
+            const res = await request(testApp).get('/search?query=bad');
+            assert.strictEqual(res.statusCode, 400);
+        });
     });
 
-    describe('/search', () => {
-        describe('GET', () => {
-            describe('No CRN in query parameters', () => {
-                it('Should redirect to `/case`', async () => {
-                    const isolatedApp = createIsolatedSearchApp({
-                        caseSelected: false
-                    });
-                    const response = await request(isolatedApp).get('/search');
-                    assert.equal(response.status, 302);
-                    assert.match(response.text, /Found. Redirecting to \/case/);
-                });
-            });
-            describe('CRN in query parameters', () => {
-                it('Should render the search landing page', async () => {
-                    const app = createIsolatedSearchApp({
-                        caseSelected: true,
-                        caseReferenceNumber: '25-123456'
-                    });
-                    const response = await request(app).get('/search?crn=25-123456');
-                    assert.equal(response.status, 200);
-                    assert.match(response.text, /<title>Search - CICA FIND - GOV.UK<\/title>/);
-                });
-                it('Should redirect to the search results page when no path parameter present', async () => {
-                    const app = createIsolatedSearchApp({
-                        caseSelected: true,
-                        caseReferenceNumber: '25-123456'
-                    });
-                    const response = await request(app).get('/search/example?crn=25-123456');
-                    assert.equal(response.status, 302);
-                    assert.match(response.headers.location, /\/search\/example\/1\/5$/);
-                });
-                it('Should redirect to the search results page when pageNumber path parameter present', async () => {
-                    const app = createIsolatedSearchApp({
-                        caseSelected: true,
-                        caseReferenceNumber: '25-123456'
-                    });
-                    const response = await request(app).get('/search/example/2?crn=25-123456');
-                    assert.equal(response.status, 302);
-                    assert.match(response.headers.location, /\/search\/example\/2\/5$/);
-                });
-            });
+    describe('POST /', () => {
+        it('should redirect to the GET route with the query parameter', async () => {
+            const res = await request(app).post('/search').send({ query: ' search term ' });
+            assert.strictEqual(res.statusCode, 302);
+            assert.strictEqual(res.headers.location, '/search?query=search%20term');
         });
     });
 });

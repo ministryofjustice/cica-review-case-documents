@@ -1,8 +1,5 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import createSearchService from './search-service.js';
-
-const router = express.Router();
 
 /**
  * @module routes/searchRouter
@@ -28,9 +25,9 @@ const router = express.Router();
  * to uniquely identify this search result resource instance.
  *
  * @param {express.Request} req - The Express request object.
- * @param {string} req.params.query - The keyword to search for.
- * @param {string|number} req.params.pageNumber - The current page number (1-based).
- * @param {string|number} req.params.itemsPerPage - The number of results per page.
+ * @param {string} req.query.query - The keyword to search for.
+ * @param {string|number} req.query.pageNumber - The current page number (1-based).
+ * @param {string|number} req.query.itemsPerPage - The number of results per page.
  * @param {express.Response} res - The Express response object.
  * @param {express.NextFunction} next - The Express next middleware function.
  *
@@ -38,7 +35,7 @@ const router = express.Router();
  *
  * @example
  * // Example request
- * GET /search/fracture/1/5
+ * GET /search/fracture?pageNumber=2&crn=25-111111
  * Header: On-Behalf-Of: 25-111111
  *
  * // Example response
@@ -53,37 +50,38 @@ const router = express.Router();
  *   }
  * }
  */
-router.get('/:query/:pageNumber/:itemsPerPage', async (req, res, next) => {
-    try {
-        const { query, pageNumber, itemsPerPage } = req.params;
-        const logger = req.log;
-        logger.info({ query, pageNumber, itemsPerPage }, 'Querying items per page');
-        const searchService = createSearchService({
-            caseReferenceNumber: req.get('On-Behalf-Of'),
-            logger: req.log
-        });
+export default function searchRouter({ searchService }) {
+    const router = express.Router();
 
-        const searchResults = await searchService.getSearchResultsByKeyword(
-            query,
-            pageNumber,
-            itemsPerPage
-        );
-
-        const searchResultsResource = {
-            data: {
-                type: 'search-results',
-                id: uuidv4(),
-                attributes: {
-                    query: query,
-                    results: searchResults
+    router.get('/', async (req, res, next) => {
+        try {
+            const { query, pageNumber, itemsPerPage } = req.query;
+            const searchResults = await searchService.getSearchResultsByKeyword(
+                query,
+                pageNumber,
+                itemsPerPage,
+                {
+                    caseReferenceNumber: req.get('On-Behalf-Of'),
+                    logger: req.log
                 }
-            }
-        };
+            );
 
-        res.status(200).json(searchResultsResource);
-    } catch (err) {
-        next(err);
-    }
-});
+            const searchResultsResource = {
+                data: {
+                    type: 'search-results',
+                    id: uuidv4(),
+                    attributes: {
+                        query: query,
+                        results: searchResults
+                    }
+                }
+            };
 
-export default router;
+            res.status(200).json(searchResultsResource);
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    return router;
+}

@@ -1,5 +1,4 @@
 import assert from 'node:assert';
-
 import { beforeEach, test } from 'node:test';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
@@ -19,8 +18,8 @@ async function getCsrfToken(agent) {
     return res.text.match(/name="_csrf" value="([^"]+)"/)[1];
 }
 
-beforeEach(() => {
-    app = createApp({
+beforeEach(async () => {
+    app = await createApp({
         createLogger: () => (req, res, next) => {
             req.log = {
                 error: () => {},

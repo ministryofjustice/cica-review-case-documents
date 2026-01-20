@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { describe, it } from 'node:test';
+import { before, describe, it } from 'node:test';
 
 import request from 'supertest';
 import createApp from '../app.js';
@@ -28,7 +28,10 @@ const routes = [
 ];
 
 describe('Index routes', () => {
-    const app = createApp();
+    let app;
+    before(async () => {
+        app = await createApp();
+    });
 
     for (const route of routes) {
         it(`GET ${route.path} should return rendered HTML`, async () => {
