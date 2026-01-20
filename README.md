@@ -143,20 +143,21 @@ In order to search, users must first select which case they are searching. This 
 **Examples:**
 
 ```
-http://localhost:5000/search?caseReferenceNumber=25-111111
+http://localhost:5000/search?caseReferenceNumber=25-711111
 ```
-Selects case with CRN `25-111111`. The UI will display `CRN: 25-111111` and enable searching within documents for that case.
+Selects case with CRN `25-711111`. The UI will display `CRN: 25-711111` and enable searching within documents for that case.
 
 ```
-http://localhost:5000/search?query=Gabapentin&crn=25-111111
+http://localhost:5000/search?query=Gabapentin&crn=25-711111
 ```
 Same as above, but also performs a search.
 
 ```
-http://localhost:5000/search/?query=Acute&pageNumber=2&crn=25-111111
+http://localhost:5000/search/?query=Acute&pageNumber=2&crn=25-711111
 ```
 Pagination example
 
+```
 http://localhost:5000/search/the?caseReferenceNumber=12-121212
 ```
 This CRN does not exist, so no results will be returned.
@@ -171,6 +172,12 @@ This CRN does not exist, so no results will be returned.
 | pageNumber | Page number of the paginated results |
 | itemsPerPage | The number of items to show per page of results |
 
+## S3 Client Configuration
+* Local development uses LocalStack (endpoint: http://localhost:4566, dummy credentials).
+* DEV/Production uses AWS S3 with IRSA roles (no endpoint or static credentials required).
+* See ARCHITECTURE.md for full details on environment-specific setup.
+
+
 ## API Documentation
 
 The API is documented using OpenAPI 3.1 specification. See [`api/openapi/openapi.json`](./api/openapi/openapi.json) for the complete API documentation including:
@@ -183,10 +190,10 @@ The API is documented using OpenAPI 3.1 specification. See [`api/openapi/openapi
 
 ### Accessing API Documentation
 
-The interactive Swagger UI is available at `/api-docs` when the application is running:
+The interactive Swagger UI is available at `/api/docs` when the application is running:
 
 ```
-http://localhost:5000/api-docs
+http://localhost:5000/api/docs
 ```
 
 **Note:** The OpenAPI specification must be built before accessing the documentation. Run `npm run openapi:build` if you encounter errors.
@@ -198,11 +205,11 @@ http://localhost:5000/api-docs
 Searches for text in documents within a specific case.
 
 **Headers:**
-- `On-Behalf-Of` (required): Case reference number (e.g., `25-111111`)
+- `On-Behalf-Of` (required): Case reference number (e.g., `25-711111`)
 
 **Example:**
 ```bash
-curl -H "On-Behalf-Of: 25-111111" \
+curl -H "On-Behalf-Of: 25-711111" \
   http://localhost:5000/api/search/gabapentin/1/10
 ```
 

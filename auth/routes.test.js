@@ -156,15 +156,15 @@ test('GET /auth/sign-out displays sign out message and case reference link', asy
         .send({ username: 'test.user@example.com', password: 'DemoPass123', _csrf: csrfToken });
 
     // Set the caseReferenceNumber in session by visiting a route that sets it
-    await agent.get('/search?caseReferenceNumber=25-111111');
+    await agent.get('/search?caseReferenceNumber=25-711111');
 
     // Sign out
     const response = await agent.get('/auth/sign-out');
     assert.strictEqual(response.status, 200);
     assert.match(response.text, /You have signed out/);
     assert.match(response.text, /Sign in/);
-    assert.match(response.text, /25-111111/);
-    assert.match(response.text, /href="\/search\?caseReferenceNumber=25-111111"/);
+    assert.match(response.text, /25-711111/);
+    assert.match(response.text, /href="\/search\?caseReferenceNumber=25-711111"/);
 });
 
 test('POST /auth/login handles JWT signing errors gracefully (500)', async () => {

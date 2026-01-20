@@ -198,17 +198,6 @@ function formatError({ status, detail, source, code, meta, fullError }) {
  * @returns {void}
  */
 export default (err, req, res, next) => {
-    // TEMP LOG POINT: Log all errors entering the error handler
-    // You can use req.log if available, or just console.log for debugging
-    console.error('Error in error handler:', {
-        name: err?.name,
-        message: err?.message,
-        status: err?.status,
-        statusCode: err?.statusCode,
-        errors: err?.errors,
-        stack: err?.stack
-    });
-
     // Always set JSON:API content type
     res.type('application/vnd.api+json');
 

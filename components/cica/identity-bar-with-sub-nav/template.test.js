@@ -9,9 +9,9 @@ import TITLE_HTML_WITH_SUBNAV from './fixtures/title-html-with-subnav.js';
 import TITLE_HTML_WITH__SUBNAV_WITH_MENU from './fixtures/title-html-with-subnav-with-menu.js';
 
 const TITLE_TEXT_FRAGMENT =
-    '<span class="moj-identity-bar__title">&lt;strong&gt;CRN: 25-111111&lt;/strong&gt;</span>';
+    '<span class="moj-identity-bar__title">&lt;strong&gt;CRN: 25-711111&lt;/strong&gt;</span>';
 const TITLE_HTML_FRAGMENT =
-    '<span class="moj-identity-bar__title"><strong>CRN: 25-111111</strong></span>';
+    '<span class="moj-identity-bar__title"><strong>CRN: 25-711111</strong></span>';
 
 let app;
 let templateEngineService;
@@ -40,7 +40,7 @@ describe('cicaIdentityBarWithSubNav', () => {
                 {% from "components/cica/identity-bar-with-sub-nav/macro.njk" import cicaIdentityBarWithSubNav %}
                 {{ cicaIdentityBarWithSubNav({
                     title: {
-                        html: '<strong>CRN: 25-111111</strong>'
+                        html: '<strong>CRN: 25-711111</strong>'
                     },
                     subNav: {
                         label: "Sub navigation",
@@ -67,7 +67,7 @@ describe('cicaIdentityBarWithSubNav', () => {
                 {% from "components/cica/identity-bar-with-sub-nav/macro.njk" import cicaIdentityBarWithSubNav %}
                 {{ cicaIdentityBarWithSubNav({
                     title: {
-                        html: '<strong>CRN: 25-111111</strong>'
+                        html: '<strong>CRN: 25-711111</strong>'
                     }
                 }) }}
             `);
@@ -82,7 +82,7 @@ describe('cicaIdentityBarWithSubNav', () => {
                 {% from "components/cica/identity-bar-with-sub-nav/macro.njk" import cicaIdentityBarWithSubNav %}
                 {{ cicaIdentityBarWithSubNav({
                     title: {
-                        html: '<strong>CRN: 25-111111</strong>'
+                        html: '<strong>CRN: 25-711111</strong>'
                     },
                     subNav: {
                         label: "Sub navigation",
@@ -109,7 +109,7 @@ describe('cicaIdentityBarWithSubNav', () => {
                 {% from "components/cica/identity-bar-with-sub-nav/macro.njk" import cicaIdentityBarWithSubNav %}
                 {{ cicaIdentityBarWithSubNav({
                     title: {
-                        text: '<strong>CRN: 25-111111</strong>'
+                        text: '<strong>CRN: 25-711111</strong>'
                     }
                 }) }}
             `);
@@ -126,7 +126,7 @@ describe('cicaIdentityBarWithSubNav', () => {
                 {% from "components/cica/identity-bar-with-sub-nav/macro.njk" import cicaIdentityBarWithSubNav %}
                 {{ cicaIdentityBarWithSubNav({
                     title: {
-                        html: '<strong>CRN: 25-111111</strong>'
+                        html: '<strong>CRN: 25-711111</strong>'
                     },
                     subNav: {
                         label: "Sub navigation",

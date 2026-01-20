@@ -1,4 +1,4 @@
-import createDocumentDAL from '../../document/document-dal.js';
+import createDocumentDAL from '../document/document-dal.js';
 
 /**
  * Factory function that creates a Search Service for retrieving documents

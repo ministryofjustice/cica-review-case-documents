@@ -1,0 +1,59 @@
+{% extends "page/page.njk" %}
+
+{% block title %}Document - Page {{ pageNumber }} - CICA FIND - GOV.UK{% endblock %}
+
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{%- from "moj/components/sub-navigation/macro.njk" import mojSubNavigation -%}
+
+<style>
+.govuk-tabs__list {
+  border: none !important;
+}
+
+</style>
+{% block innerContent %}
+ 
+{{ govukBackLink({
+    text: "Back",
+    href: backLink
+  }) }}
+
+  <h1 class="govuk-heading-l">{{ pageTitle }}</h1>
+
+
+{{ mojSubNavigation({
+  label: "Sub navigation",
+  items: [{
+    text: "Document image",
+    active: true,
+    href: '#'
+
+  }, {
+    text: "Document text",
+    active: false,
+    href: textPageLink
+  }]
+}) }}
+
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-full">
+        
+        {% if imageUrl %}
+            <div class="govuk-form-group" style="border: 1px solid #b1b4b6; padding: 20px; margin-bottom: 20px;">
+                <img src="{{ imageUrl }}" alt="Page {{pageNumber}} from a {{pageTitle}} document, for case {{caseReferenceNumber}}" style="max-width: 100%; height: auto;">
+            </div>            
+        {% else %}
+            <div class="govuk-warning-text">
+                <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+                <strong class="govuk-warning-text__text">
+                    <span class="govuk-visually-hidden">Warning</span>
+                    Page IMAGE not available
+                </strong>
+            </div>
+        {% endif %}
+        
+      </div>
+  </div>
+
+{% endblock %}

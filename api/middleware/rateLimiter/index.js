@@ -15,18 +15,18 @@
  */
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
-const isProduction = process.env.NODE_ENV === 'production';
-
-const AUTHENTICATED_LIMIT = Number(process.env.API_RATE_LIMIT_MAX_AUTH) || 1000;
-const UNAUTHENTICATED_LIMIT = Number(process.env.API_RATE_LIMIT_MAX_UNAUTH) || 50;
 const WINDOW_MS = Number(process.env.API_RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000;
 
 const dynamicRateLimiter = rateLimit({
     windowMs: WINDOW_MS,
-    // Use a function to set the limit per request
-    limit: (req, res) => (req.user ? AUTHENTICATED_LIMIT : UNAUTHENTICATED_LIMIT),
+    // Evaluate limits at request time to allow test changes
+    limit: (req, res) => {
+        const authenticatedLimit = Number(process.env.API_RATE_LIMIT_MAX_AUTH) || 1000;
+        const unauthenticatedLimit = Number(process.env.API_RATE_LIMIT_MAX_UNAUTH) || 50;
+        return req.user ? authenticatedLimit : unauthenticatedLimit;
+    },
     keyGenerator: (req) => (req.user?.id ? req.user.id : ipKeyGenerator(req)),
-    skip: (req) => !isProduction, // Skip in non-production
+    skip: (req) => process.env.NODE_ENV !== 'production', // Evaluate at request time
     handler: (req, res) => {
         res.status(429).json({ error: 'Too many requests, please try again later' });
     }

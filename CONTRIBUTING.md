@@ -58,6 +58,19 @@ Thank you for contributing to the CICA Review Case Documents (FIND) application!
 
 ## Development Workflow
 
+### Installing Dependencies
+Run `npm install` as expected, then run:
+```
+npx husky init
+```
+Husky will now use the scripts defined in the `/.husky` folder, which are currently: 
+```
+pre-commit
+pre-push
+```
+
+>pre-commit runs `npm run lint`and pre-push runs `npm run test`. If there are linting errors running `npm run lint -- --fix` will clear the most common issues.
+
 ### Branching Strategy
 - Feature branches: Create from `main`, merge back to `main` via PR
 - see [Branching Strategy](https://dsdmoj.atlassian.net/wiki/spaces/CICAIET/pages/5582979882/Branching+Strategy)
@@ -460,7 +473,7 @@ See the comments in both files for more details.
 
 **Solution:** Add `caseReferenceNumber` query parameter to URL:
 ```
-http://localhost:5000/search?caseReferenceNumber=25-111111
+http://localhost:5000/search?caseReferenceNumber=25-711111
 ```
 
 Available parameters: `caseReferenceNumber` or `crn` (alias)
