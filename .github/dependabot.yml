@@ -27,6 +27,12 @@ updates:
       all-docker:
         patterns:
           - "*"
+    ignore:
+      - dependency-name: "node"
+        versions:
+          - "~> 25.0"
+          - "~> 27.0"
+          - "~> 29.0"
   - package-ecosystem: "npm"
     directory: "/" # Location of package manifests
     schedule:
