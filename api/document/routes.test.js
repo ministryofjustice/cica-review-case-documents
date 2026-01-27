@@ -1,5 +1,5 @@
-import { describe, it, beforeEach, mock } from 'node:test';
 import assert from 'node:assert/strict';
+import { beforeEach, describe, it, mock } from 'node:test';
 import express from 'express';
 import request from 'supertest';
 import createApiRouter from './routes.js';
@@ -24,7 +24,7 @@ describe('API Document Routes', () => {
 
         // Setup Express app
         app = express();
-        
+
         // Mock request logger
         app.use((req, res, next) => {
             req.log = {
@@ -48,8 +48,7 @@ describe('API Document Routes', () => {
         });
 
         it('should not have document streaming routes (moved to main app)', async () => {
-            const res = await request(app)
-                .get('/documents/12-345678/doc-123/pages/5');
+            const res = await request(app).get('/documents/12-345678/doc-123/pages/5');
 
             // Route should not exist in API anymore
             assert.strictEqual(res.statusCode, 404);

@@ -9,9 +9,7 @@ import pageMetadataRouter from './page-metadata-routes.js';
  * @param {Object} options.searchService - The service used for search operations.
  * @returns {import('express').Router} The configured Express router with the /search and page metadata routes mounted.
  */
-export default function createApiRouter({
-    searchService
-}) {
+export default function createApiRouter({ searchService }) {
     const router = express.Router();
     router.use('/search', searchRouter({ searchService }));
     router.use('/document', pageMetadataRouter());

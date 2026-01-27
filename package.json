@@ -11,7 +11,7 @@
     "scripts": {
         "openapi:build": "node ./api/openapi/buildOpenApiSpec.js",
         "openapi:watch": "nodemon --watch api/openapi/openapi.json --watch api/openapi/json-schemas --watch api/openapi/buildOpenApiSpec.js --exec \"npm run openapi:build\"",
-        "dev:server": "nodemon -L --inspect=0.0.0.0:9229 -e .css,.scss,.js,.json,.njk --ignore public/ --ignore src/js/scripts.babel.generated.js --ignore api/openapi/ npm start",
+        "dev:server": "cross-env DEPLOY_ENV=local-dev nodemon -L --inspect=0.0.0.0:9229 -e .css,.scss,.js,.json,.njk --ignore public/ --ignore src/js/scripts.babel.generated.js --ignore api/openapi/ npm start",
         "start:dev": "npm run dev:server",
         "start": "node ./bin/www",
         "prestart:dev": "npm run openapi:build",
@@ -23,7 +23,7 @@
         "babel": "babel src/js/scripts.js -o src/js/scripts.babel.generated.js",
         "test": "c8 node --env-file=.env.test --test --test-reporter=spec",
         "coverage:html": "c8 report --reporter=html",
-        "lint": "biome check",
+        "lint": "biome check --write",
         "format": "biome format --write",
         "jsdoc:check": "eslint ."
     },
@@ -64,6 +64,7 @@
         "c8": "^10.1.3",
         "concurrently": "^9.2.1",
         "core-js": "^3.47.0",
+        "cross-env": "^10.1.0",
         "eslint-plugin-jsdoc": "^62.2.0",
         "husky": "^9.1.7",
         "nodemon": "^3.1.11",

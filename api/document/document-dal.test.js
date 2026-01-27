@@ -210,7 +210,6 @@ describe('document-dal', () => {
     });
 
     describe('Logging fallbacks', () => {
-
         it('should handle missing logger in getPageMetadataByDocumentIdAndPageNumber', async () => {
             const mockDB = {
                 query: async () => ({
