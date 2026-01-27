@@ -15,12 +15,12 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
     const router = express.Router();
 
     router.post('/', (req, res, next) => {
-        try {            
+        try {
             const { query } = req.body;
             const { pageNumber = 1 } = req.query;
-            
+
             // Store search details to allow a back button to come back to the same results page
-            req.session.searchTerm = query
+            req.session.searchTerm = query;
             req.session.searchResultsPageNumber = pageNumber;
 
             return res.redirect(`/search?query=${encodeURIComponent(query.trim())}`);
@@ -90,7 +90,6 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             const searchResults = body?.data?.attributes?.results;
             const hits = searchResults?.hits || [];
             const totalItemCount = Number(searchResults?.total?.value || 0);
-
 
             // Enrich each result with docUuid and searchPageNumber
             const searchResultsWithDocUuid = hits.map((hit) => ({

@@ -1,5 +1,5 @@
-import { describe, it, beforeEach, mock } from 'node:test';
 import assert from 'node:assert/strict';
+import { beforeEach, describe, it, mock } from 'node:test';
 import express from 'express';
 import request from 'supertest';
 import createSearchRouter from './routes.js';
@@ -76,21 +76,19 @@ describe('Search Pagination Persistence', () => {
 
     describe('Search results page with pageNumber', () => {
         it('should pass searchPageNumber to result items', async () => {
-            const res = await request(app)
-                .get('/search?query=test&pageNumber=3');
+            const res = await request(app).get('/search?query=test&pageNumber=3');
 
             assert.strictEqual(res.statusCode, 200);
             assert.ok(mockRender.lastParams);
             assert.ok(mockRender.lastParams.searchResults);
-            
+
             // Check that searchPageNumber is added to results
             const firstResult = mockRender.lastParams.searchResults[0];
             assert.strictEqual(firstResult.searchPageNumber, 3);
         });
 
         it('should default to pageNumber 1 if not provided', async () => {
-            const res = await request(app)
-                .get('/search?query=test');
+            const res = await request(app).get('/search?query=test');
 
             assert.strictEqual(res.statusCode, 200);
             const firstResult = mockRender.lastParams.searchResults[0];
@@ -98,9 +96,7 @@ describe('Search Pagination Persistence', () => {
         });
 
         it('should store search details in session', async () => {
-            await request(app)
-                .post('/search')
-                .send({ query: 'my search' });
+            await request(app).post('/search').send({ query: 'my search' });
 
             assert.strictEqual(sessionData.searchTerm, 'my search');
         });
@@ -108,11 +104,10 @@ describe('Search Pagination Persistence', () => {
 
     describe('Document links include searchPageNumber', () => {
         it('should include searchPageNumber in document page links', async () => {
-            const res = await request(app)
-                .get('/search?query=test&pageNumber=5');
+            const res = await request(app).get('/search?query=test&pageNumber=5');
 
             assert.strictEqual(res.statusCode, 200);
-            
+
             const result = mockRender.lastParams.searchResults[0];
             assert.strictEqual(result.searchPageNumber, 5);
             assert.strictEqual(result._source.source_doc_id, 'doc-123');
@@ -122,8 +117,7 @@ describe('Search Pagination Persistence', () => {
 
     describe('Pagination metadata', () => {
         it('should calculate pagination correctly for page 1', async () => {
-            const res = await request(app)
-                .get('/search?query=test&pageNumber=1');
+            const res = await request(app).get('/search?query=test&pageNumber=1');
 
             assert.strictEqual(res.statusCode, 200);
             const pagination = mockRender.lastParams.pagination;

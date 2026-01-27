@@ -1,5 +1,5 @@
-import { describe, it, beforeEach, mock } from 'node:test';
 import assert from 'node:assert/strict';
+import { beforeEach, describe, it, mock } from 'node:test';
 import createPageContentHelper from './page-content-helper.js';
 
 describe('Page Content Helper', () => {
@@ -39,33 +39,33 @@ describe('Page Content Helper', () => {
         it('should call documentDAL with correct parameters', async () => {
             await pageContentHelper.getPageContent('doc-456', 3);
 
-            assert.strictEqual(mockDocumentDAL.getPageMetadataByDocumentIdAndPageNumber.mock.callCount(), 1);
-            const args = mockDocumentDAL.getPageMetadataByDocumentIdAndPageNumber.mock.calls[0].arguments;
+            assert.strictEqual(
+                mockDocumentDAL.getPageMetadataByDocumentIdAndPageNumber.mock.callCount(),
+                1
+            );
+            const args =
+                mockDocumentDAL.getPageMetadataByDocumentIdAndPageNumber.mock.calls[0].arguments;
             assert.strictEqual(args[0], 'doc-456');
             assert.strictEqual(args[1], 3);
         });
 
         it('should throw 404 error when page not found', async () => {
             mockDocumentDAL.getPageMetadataByDocumentIdAndPageNumber = mock.fn(async () => null);
-            
+
             const helper = createPageContentHelper({
                 caseReferenceNumber: '12-345678',
                 logger: mockLogger,
                 createDocumentDAL: () => mockDocumentDAL
             });
 
-            await assert.rejects(
-                async () => helper.getPageContent('doc-123', 999),
-                {
-                    message: 'Page not found in OpenSearch',
-                    status: 404
-                }
-            );
+            await assert.rejects(async () => helper.getPageContent('doc-123', 999), {
+                message: 'Page not found in OpenSearch',
+                status: 404
+            });
 
             assert.strictEqual(mockLogger.error.mock.callCount(), 1);
         });
     });
-
 
     describe('Error handling', () => {
         it('should propagate DAL errors', async () => {
@@ -79,10 +79,9 @@ describe('Page Content Helper', () => {
                 createDocumentDAL: () => mockDocumentDAL
             });
 
-            await assert.rejects(
-                async () => helper.getPageContent('doc-123', 1),
-                { message: 'Database connection failed' }
-            );
+            await assert.rejects(async () => helper.getPageContent('doc-123', 1), {
+                message: 'Database connection failed'
+            });
 
             assert.strictEqual(mockLogger.error.mock.callCount(), 1);
         });
@@ -91,7 +90,8 @@ describe('Page Content Helper', () => {
             const result = await pageContentHelper.getPageContent('doc-123', '5');
 
             assert.ok(result);
-            const args = mockDocumentDAL.getPageMetadataByDocumentIdAndPageNumber.mock.calls[0].arguments;
+            const args =
+                mockDocumentDAL.getPageMetadataByDocumentIdAndPageNumber.mock.calls[0].arguments;
             assert.strictEqual(args[1], '5');
         });
     });

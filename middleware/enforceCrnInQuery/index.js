@@ -17,7 +17,7 @@ const ALLOWED_PATHS = ['/search'];
  */
 const ALLOWED_PATH_PATTERNS = [
     /^\/document\/[0-9a-fA-F-]{36}\/view\/page\/\d+$/,
-    /^\/document\/[0-9a-fA-F-]{36}\/page\/\d+$/  // Image streaming endpoint
+    /^\/document\/[0-9a-fA-F-]{36}\/page\/\d+$/ // Image streaming endpoint
 ];
 
 /**
@@ -48,7 +48,7 @@ const EXCLUDED_PATHS = [
  */
 const enforceCrnInQuery = (req, res, next) => {
     // Skip enforcement for excluded paths (static assets, favicon, etc.)
-    if (EXCLUDED_PATHS.some(pattern => pattern.test(req.path))) {
+    if (EXCLUDED_PATHS.some((pattern) => pattern.test(req.path))) {
         return next();
     }
 

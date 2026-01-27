@@ -1,8 +1,11 @@
 #!/usr/bin/env node
-import {} from '../config.js' // load env vars
+
+// IMPORTANT: This import must remain first to load local development environment variables before anything else!
+import '../loadLocalEnv.js'; // load env vars
 
 import http from 'node:http';
 import { nanoid } from 'nanoid';
+
 
 process.env.APP_BUILDTIME_ID = nanoid();
 console.info(`Build-time ID generated: ${process.env.APP_BUILDTIME_ID}`);
