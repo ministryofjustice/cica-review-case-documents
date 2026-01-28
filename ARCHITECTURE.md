@@ -70,8 +70,12 @@ The CICA Review Case Documents application is a document viewing system designed
 
 **Routes**:
 - `GET /document/:documentId/view/page/:pageNumber` - Renders HTML page with image viewer
+  - Query Parameters: `crn` (required), `searchTerm` (optional), `searchResultsPageNumber` (optional)
+  - Search context parameters persist through navigation to allow users to return to search results
 - `GET /document/:documentId/page/:pageNumber` - Streams image binary from S3
+  - Query Parameters: `crn` (required)
 - `GET /document/:documentId/view/text/page/:pageNumber` - Renders text view page
+  - Query Parameters: `crn` (required), `searchTerm` (optional), `searchResultsPageNumber` (optional)
 
 **Dependencies**:
 - Calls API at `${APP_API_URL}/document/:documentId/page/:pageNumber/metadata` for OpenSearch data
@@ -108,12 +112,30 @@ The CICA Review Case Documents application is a document viewing system designed
 
 ## Request Flow Examples
 
-### Example 1: User Views Document Page
+### Search Context Preservation
+
+When a user searches for documents and clicks on a result, the application preserves the search context through query string parameters:
+
+- **`searchTerm`**: The original search query text
+- **`searchResultsPageNumber`**: The page number in search results where the user clicked
+
+These parameters are:
+1. Passed from search results to document pages
+2. Used to construct back links that return users to their original search results page
+3. Passed through navigation between image and text views
+
+This ensures users can seamlessly navigate from search results → document → back to search results without losing their place.
+
+## Request Flow Examples
+
+### Example 1: User Views Document Page (from Search Results)
 
 1. **Browser → Main App**
    ```
-   GET /document/abc-123/view/page/1?crn=123
+   GET /document/abc-123/view/page/1?crn=123&searchTerm=additional+info&searchResultsPageNumber=2
    ```
+   
+   Note: Search context (`searchTerm`, `searchResultsPageNumber`) is passed to maintain navigation context
 
 2. **Main App → API** (fetch metadata)
    ```
@@ -133,11 +155,13 @@ The CICA Review Case Documents application is a document viewing system designed
    }
    ```
 
-3. **Main App → Browser** (render HTML)
+3. **Main App → Browser** (render HTML with search context preserved)
    ```html
    <html>
      <h1>TC19 - ADDITIONAL INFO REQUEST</h1>
      <img src="/document/abc-123/page/1?crn=123" />
+     <a href="/search?query=additional+info&pageNumber=2&crn=123">Back to results</a>
+     <a href="/document/abc-123/view/text/page/1?crn=123&searchTerm=additional+info&searchResultsPageNumber=2">View text</a>
    </html>
    ```
 

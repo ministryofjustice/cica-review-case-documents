@@ -75,16 +75,16 @@ describe('Search Pagination Persistence', () => {
     });
 
     describe('Search results page with pageNumber', () => {
-        it('should pass searchPageNumber to result items', async () => {
+        it('should pass searchResultsPageNumber to result items', async () => {
             const res = await request(app).get('/search?query=test&pageNumber=3');
 
             assert.strictEqual(res.statusCode, 200);
             assert.ok(mockRender.lastParams);
             assert.ok(mockRender.lastParams.searchResults);
 
-            // Check that searchPageNumber is added to results
+            // Check that searchResultsPageNumber is added to results
             const firstResult = mockRender.lastParams.searchResults[0];
-            assert.strictEqual(firstResult.searchPageNumber, 3);
+            assert.strictEqual(firstResult.searchResultsPageNumber, 3);
         });
 
         it('should default to pageNumber 1 if not provided', async () => {
@@ -92,24 +92,18 @@ describe('Search Pagination Persistence', () => {
 
             assert.strictEqual(res.statusCode, 200);
             const firstResult = mockRender.lastParams.searchResults[0];
-            assert.strictEqual(firstResult.searchPageNumber, 1);
-        });
-
-        it('should store search details in session', async () => {
-            await request(app).post('/search').send({ query: 'my search' });
-
-            assert.strictEqual(sessionData.searchTerm, 'my search');
+            assert.strictEqual(firstResult.searchResultsPageNumber, 1);
         });
     });
 
-    describe('Document links include searchPageNumber', () => {
-        it('should include searchPageNumber in document page links', async () => {
+    describe('Document links include searchResultsPageNumber', () => {
+        it('should include searchResultsPageNumber in document page links', async () => {
             const res = await request(app).get('/search?query=test&pageNumber=5');
 
             assert.strictEqual(res.statusCode, 200);
 
             const result = mockRender.lastParams.searchResults[0];
-            assert.strictEqual(result.searchPageNumber, 5);
+            assert.strictEqual(result.searchResultsPageNumber, 5);
             assert.strictEqual(result._source.source_doc_id, 'doc-123');
             assert.strictEqual(result._source.page_number, 5);
         });

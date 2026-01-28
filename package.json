@@ -25,7 +25,8 @@
         "coverage:html": "c8 report --reporter=html",
         "lint": "biome check --write",
         "format": "biome format --write",
-        "jsdoc:check": "eslint ."
+        "jsdoc:check": "eslint .",
+        "prepare": "husky"
     },
     "dependencies": {
         "@apidevtools/json-schema-ref-parser": "^15.2.1",

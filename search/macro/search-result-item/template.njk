@@ -2,7 +2,7 @@
 <p class="govuk-hint govuk-visually-hidden">Received on {{ params._source.received_date | formatDate}}</p>
 <p class="govuk-body">{{ params._source.chunk_text | safe }}</p>
 
-<p class="govuk-body"><strong>Found on:</strong> <a href="/document/{{ params.docUuid }}/view/page/{{ params._source.page_number or '0' }}?searchPageNumber={{ params.searchPageNumber }}" class="govuk-link">Page {{ params._source.page_number }}</a></p>
+<p class="govuk-body"><strong>Found on:</strong> <a href="/document/{{ params.docUuid }}/view/page/{{ params._source.page_number or '0' }}?crn={{ params.caseReferenceNumber }}&searchTerm={{ params.searchTerm }}&searchResultsPageNumber={{ params.searchResultsPageNumber }}" class="govuk-link">Page {{ params._source.page_number }}</a></p>
 
 {% if caller %}
     {{ caller() }}

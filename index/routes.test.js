@@ -30,15 +30,6 @@ const routes = [
 describe('Index routes', () => {
     let app;
     before(async () => {
-        // Set required environment variables for app initialization
-        process.env.APP_COOKIE_NAME = 'testcookiename';
-        process.env.APP_COOKIE_SECRET = 'testcookiesecret';
-        process.env.APP_API_URL = 'http://find-tool.local';
-        process.env.APP_DATABASE_URL = 'http://localhost:1234';
-        process.env.OPENSEARCH_INDEX_CHUNKS_NAME = 'test_chunks';
-        process.env.APP_S3_BUCKET_LOCATION = 'http://localhost:4566';
-        process.env.NODE_ENV = 'test';
-
         app = await createApp();
     });
 
