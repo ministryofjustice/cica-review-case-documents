@@ -140,3 +140,55 @@ test('RateLimit-Remaining header decreases on failures', async () => {
         .send({ username: 'meter', password: 'bad' });
     assert.equal(locked.status, 429);
 });
+
+test('uses username as key for rate limiting', async () => {
+    const app = createApp();
+
+    // Make 5 failed requests with same username (limit is 5, so 4 allowed failures)
+    for (let i = 1; i <= 4; i++) {
+        const r = await request(app).post('/auth/login').send({
+            username: 'testuser',
+            password: 'wrong'
+        });
+        assert.equal(r.status, 401);
+    }
+
+    // 5th failed request should be locked out
+    const locked = await request(app).post('/auth/login').send({
+        username: 'testuser',
+        password: 'wrong'
+    });
+    assert.equal(locked.status, 429);
+    assert.match(locked.text, /LOCKED_OUT_TEST_MESSAGE/);
+
+    // Different username should still work
+    const differentUser = await request(app).post('/auth/login').send({
+        username: 'otheruser',
+        password: 'wrong'
+    });
+    assert.equal(differentUser.status, 401);
+});
+
+test('getRateLimitKey returns session username when present', async () => {
+    const { getRateLimitKey } = await import('./authRateLimiter.js');
+
+    const req = {
+        session: {
+            username: '  TestUser  '
+        }
+    };
+
+    const key = getRateLimitKey(req);
+    assert.equal(key, 'testuser'); // Should be lowercase and trimmed
+});
+
+test('getRateLimitKey returns IP when session username is not present', async () => {
+    const { getRateLimitKey } = await import('./authRateLimiter.js');
+
+    const req = {
+        ip: '::ffff:192.168.1.1'
+    };
+
+    const key = getRateLimitKey(req);
+    assert.equal(key, '192.168.1.1'); // Should strip ::ffff: prefix
+});

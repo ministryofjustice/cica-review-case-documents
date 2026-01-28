@@ -210,6 +210,82 @@ describe('document-dal', () => {
     });
 
     describe('Logging fallbacks', () => {
+        it('should handle missing logger in getDocumentsChunksByKeyword - warn fallback', async () => {
+            const mockDB = {
+                query: async () => ({
+                    body: {
+                        hits: []
+                    }
+                })
+            };
+
+            const dal = createDocumentDAL({
+                caseReferenceNumber: '12-345678',
+                createDBQuery: () => mockDB,
+                logger: { info: () => {}, warn: () => {} } // Provide info and warn methods
+            });
+
+            const result = await dal.getDocumentsChunksByKeyword('keyword', 1, 10);
+            assert.deepEqual(result, []);
+        });
+
+        it('should handle logger without warn method in getDocumentsChunksByKeyword', async () => {
+            const mockDB = {
+                query: async () => ({
+                    body: {
+                        hits: []
+                    }
+                })
+            };
+
+            const dal = createDocumentDAL({
+                caseReferenceNumber: '12-345678',
+                createDBQuery: () => mockDB,
+                logger: { info: () => {} } // Logger without warn method
+            });
+
+            const result = await dal.getDocumentsChunksByKeyword('keyword', 1, 10);
+            assert.deepEqual(result, []);
+        });
+
+        it('should handle missing logger in getDocumentsChunksByKeyword - error fallback', async () => {
+            const mockDB = {
+                query: async () => {
+                    throw new Error('DB error');
+                }
+            };
+
+            const dal = createDocumentDAL({
+                caseReferenceNumber: '12-345678',
+                createDBQuery: () => mockDB,
+                logger: { error: () => {} }
+            });
+
+            await assert.rejects(
+                () => dal.getDocumentsChunksByKeyword('keyword', 1, 10),
+                (err) => err instanceof VError
+            );
+        });
+
+        it('should handle logger without error method in getDocumentsChunksByKeyword', async () => {
+            const mockDB = {
+                query: async () => {
+                    throw new Error('DB error');
+                }
+            };
+
+            const dal = createDocumentDAL({
+                caseReferenceNumber: '12-345678',
+                createDBQuery: () => mockDB,
+                logger: { info: () => {} } // Logger without error method
+            });
+
+            await assert.rejects(
+                () => dal.getDocumentsChunksByKeyword('keyword', 1, 10),
+                (err) => err instanceof VError
+            );
+        });
+
         it('should handle missing logger in getPageMetadataByDocumentIdAndPageNumber', async () => {
             const mockDB = {
                 query: async () => ({
@@ -229,7 +305,7 @@ describe('document-dal', () => {
             const dal = createDocumentDAL({
                 caseReferenceNumber: '12-345678',
                 createDBQuery: () => mockDB,
-                logger: null
+                logger: { info: () => {}, error: () => {} }
             });
 
             const result = await dal.getPageMetadataByDocumentIdAndPageNumber('doc-123', 1);

@@ -129,4 +129,175 @@ describe('API: Page Metadata Routes', () => {
         assert.equal(res.statusCode, 500);
         assert.ok(Array.isArray(res.body.errors));
     });
+
+    it('404 when helper returns null page metadata', async () => {
+        const helperNullFactory = () => ({
+            async getPageContent() {
+                return null;
+            }
+        });
+
+        const testApp = express();
+        testApp.use(express.json());
+        testApp.use((req, _res, next) => {
+            req.log = { error: () => {}, info: () => {} };
+            next();
+        });
+        testApp.use(
+            '/api/document',
+            createPageMetadataRouter({
+                createPageContentHelper: helperNullFactory,
+                createDocumentDAL: injectedDalFactory
+            })
+        );
+
+        const res = await request(testApp).get(
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-345678'
+        );
+        assert.equal(res.statusCode, 404);
+        assert.ok(Array.isArray(res.body.errors));
+        assert.equal(res.body.errors[0].detail, 'Page metadata not found');
+    });
+
+    it('404 when helper throws 404 error', async () => {
+        const throwingHelperFactory = () => ({
+            async getPageContent() {
+                const err = new Error('Document not found');
+                err.status = 404;
+                throw err;
+            }
+        });
+
+        const testApp = express();
+        testApp.use(express.json());
+        testApp.use((req, _res, next) => {
+            req.log = { error: () => {}, info: () => {} };
+            next();
+        });
+        testApp.use(
+            '/api/document',
+            createPageMetadataRouter({
+                createPageContentHelper: throwingHelperFactory,
+                createDocumentDAL: injectedDalFactory
+            })
+        );
+
+        const res = await request(testApp).get(
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-345678'
+        );
+        assert.equal(res.statusCode, 404);
+        assert.ok(Array.isArray(res.body.errors));
+        assert.equal(res.body.errors[0].title, 'Not Found');
+    });
+
+    it('500 when DAL throws error', async () => {
+        const throwingDalFactory = () => ({
+            async getPageMetadataByDocumentIdAndPageNumber() {
+                throw new Error('Database connection failed');
+            }
+        });
+
+        const testApp = express();
+        testApp.use(express.json());
+        testApp.use((req, _res, next) => {
+            req.log = { error: () => {}, info: () => {} };
+            next();
+        });
+        testApp.use(
+            '/api/document',
+            createPageMetadataRouter({
+                createPageContentHelper: injectedHelperFactory,
+                createDocumentDAL: throwingDalFactory
+            })
+        );
+
+        const res = await request(testApp).get(
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-345678'
+        );
+        assert.equal(res.statusCode, 500);
+        assert.ok(Array.isArray(res.body.errors));
+        assert.equal(res.body.errors[0].detail, 'Database connection failed');
+    });
+
+    it('500 when outer try-catch catches unexpected error', async () => {
+        const helperFactoryThatThrowsUnexpected = () => {
+            throw new Error('Unexpected initialization error');
+        };
+
+        const testApp = express();
+        testApp.use(express.json());
+        testApp.use((req, _res, next) => {
+            req.log = { error: () => {}, info: () => {} };
+            next();
+        });
+        testApp.use(
+            '/api/document',
+            createPageMetadataRouter({
+                createPageContentHelper: helperFactoryThatThrowsUnexpected,
+                createDocumentDAL: injectedDalFactory
+            })
+        );
+
+        const res = await request(testApp).get(
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-345678'
+        );
+        assert.equal(res.statusCode, 500);
+        assert.ok(Array.isArray(res.body.errors));
+    });
+
+    it('returns 500 when helper throws error without status code (line 88 fallback)', async () => {
+        const throwingHelperFactory = () => ({
+            async getPageContent() {
+                throw new Error('OpenSearch error without status');
+            }
+        });
+
+        const testApp = express();
+        testApp.use(express.json());
+        testApp.use((req, _res, next) => {
+            req.log = { error: () => {}, info: () => {} };
+            next();
+        });
+        testApp.use(
+            '/api/document',
+            createPageMetadataRouter({
+                createPageContentHelper: throwingHelperFactory,
+                createDocumentDAL: injectedDalFactory
+            })
+        );
+
+        const res = await request(testApp).get(
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-345678'
+        );
+        assert.equal(res.statusCode, 500);
+        assert.equal(res.body.errors[0].title, 'Internal Server Error');
+    });
+
+    it('returns null correspondence_type when DAL returns metadata without it (line 146)', async () => {
+        const dalFactoryNoCorrespondence = () => ({
+            async getPageMetadataByDocumentIdAndPageNumber() {
+                return {}; // No correspondence_type property
+            }
+        });
+
+        const testApp = express();
+        testApp.use(express.json());
+        testApp.use((req, _res, next) => {
+            req.log = { info: () => {}, error: () => {} };
+            next();
+        });
+        testApp.use(
+            '/api/document',
+            createPageMetadataRouter({
+                createPageContentHelper: injectedHelperFactory,
+                createDocumentDAL: dalFactoryNoCorrespondence
+            })
+        );
+
+        const res = await request(testApp).get(
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-345678'
+        );
+        assert.equal(res.statusCode, 200);
+        assert.strictEqual(res.body.data.correspondence_type, null);
+    });
 });
