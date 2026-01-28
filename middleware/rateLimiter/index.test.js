@@ -31,7 +31,6 @@ function createTestApp(limiter) {
     app.get('/test', (req, res) => {
         if (req.query.login) {
             req.session.loggedIn = true;
-            req.session.id = 'mysessionid';
         }
         res.status(200).send('OK');
     });

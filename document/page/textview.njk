@@ -1,0 +1,52 @@
+{% extends "page/page.njk" %}
+
+{% block title %}Document - Page {{ pageNumber }} - CICA FIND - GOV.UK{% endblock %}
+
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{%- from "moj/components/sub-navigation/macro.njk" import mojSubNavigation -%}
+{% from "govuk/components/panel/macro.njk" import govukPanel %}
+
+
+
+<style>
+.govuk-tabs__list {
+  border: none !important;
+}
+
+</style>
+{% block innerContent %}
+ 
+{{ govukBackLink({
+    text: "Back",
+    href: backLink
+  }) }}
+
+  <h1 class="govuk-heading-l">TC19 - Additional information request</h1>
+
+
+{{ mojSubNavigation({
+  label: "Sub navigation",
+  items: [{
+    text: "Document image",
+    active: false,
+    href: imagePageLink
+  }, {
+    text: "Document text",    
+    active: true,
+    href: '#'
+  }]
+}) }}
+
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-full">
+                       
+        {{ govukPanel({
+          titleText: "Placeholder for TEXT page",
+          html: ""
+        }) }}
+        
+      </div>
+  </div>
+
+{% endblock %}

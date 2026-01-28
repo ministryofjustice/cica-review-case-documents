@@ -1,5 +1,5 @@
 import VError from 'verror';
-import createDBQueryDefault from '../db/index.js';
+import createDBQueryDefault from '../../db/index.js';
 
 /**
  * @typedef {object} Logger
@@ -150,10 +150,63 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
         }
     }
 
+    /**
+     * Retrieves page metadata from the page_metadata index by document ID and page number.
+     *
+     * @async
+     * @param {string} documentId - The UUID of the document (source_doc_id in OpenSearch).
+     * @param {number|string} pageNumber - The page number (page_num in OpenSearch).
+     * @returns {Promise<Object|null>} The page metadata object with all fields, or null if not found.
+     * @throws {VError} If the database query fails.
+     */
+    async function getPageMetadataByDocumentIdAndPageNumber(documentId, pageNumber) {
+        try {
+            if (logger && typeof logger.info === 'function') {
+                logger.info({ documentId, pageNumber }, 'Querying OpenSearch for page metadata');
+            }
+
+            const response = await db.query({
+                index: 'page_metadata',
+                body: {
+                    query: {
+                        bool: {
+                            must: [
+                                { match: { source_doc_id: documentId } },
+                                { match: { page_num: parseInt(pageNumber, 10) } }
+                            ]
+                        }
+                    }
+                }
+            });
+
+            if (response.body?.hits?.hits && response.body.hits.hits.length > 0) {
+                const hit = response.body.hits.hits[0];
+                if (logger && typeof logger.info === 'function') {
+                    logger.info({ documentId, pageNumber, pageId: hit._id }, 'Page metadata found');
+                }
+                return hit._source;
+            }
+
+            if (logger && typeof logger.info === 'function') {
+                logger.info({ documentId, pageNumber }, 'Page metadata not found');
+            }
+            return null;
+        } catch (err) {
+            if (logger && typeof logger.error === 'function') {
+                logger.error({ err, documentId, pageNumber }, 'Failed to query page metadata');
+            }
+            throw new VError(
+                err,
+                `Failed to query page metadata for document "${documentId}" page "${pageNumber}"`
+            );
+        }
+    }
+
     return Object.freeze({
         getDocuments,
         getDocument,
-        getDocumentsChunksByKeyword
+        getDocumentsChunksByKeyword,
+        getPageMetadataByDocumentIdAndPageNumber
     });
 }
 
