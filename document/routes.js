@@ -1,6 +1,7 @@
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import express from 'express';
 import createTemplateEngineService from '../templateEngine/index.js';
+import createDocumentMetadataService from './document-metadata-service.js';
 
 // S3 bucket location
 const S3_BUCKET_LOCATION = process.env.APP_S3_BUCKET_LOCATION;
@@ -40,13 +41,15 @@ const toSentenceCaseAfterDash = (str) => {
  * Creates an Express router for handling document viewing functionality.
  *
  * @param {Object} [options] - Optional configuration object.
- * @param {Function} [options.createDocumentService] - Factory function to create the document service.
+ * @param {Function} [options.createDocumentMetadataService] - Factory function to create the document metadata service (for testing).
  * @returns {express.Router} The configured Express router for document routes.
  *
  * @route GET /document/:documentId/view/page/:pageNumber
  * @route GET /document/:documentId/page/:pageNumber
  */
-function createDocumentRouter() {
+function createDocumentRouter(options = {}) {
+    const { createDocumentMetadataService: createMetadataService = createDocumentMetadataService } =
+        options;
     const router = express.Router();
 
     /**
@@ -54,8 +57,8 @@ function createDocumentRouter() {
      * GET /document/:documentId/page/:pageNumber
      * Streams the document page image directly from S3 bucket
      *
-     * Uses the S3 URI stored in session by the view/page route (from OpenSearch).
-     * Falls back to constructing path from pattern if session data unavailable.
+     * Fetches page metadata from the API to retrieve the S3 URI,
+     * then streams the image directly from S3.
      *
      * @param {express.Request} req - The Express request object.
      * @param {string} req.params.documentId - The UUID of the document.
@@ -68,26 +71,71 @@ function createDocumentRouter() {
             const { documentId, pageNumber } = req.params;
             const { crn } = req.query;
 
-            // Try to get S3 URI from session (set by view/page route)
-            const pageKey = `${documentId}-${pageNumber}`;
-            const s3Uri = req.session?.pageS3Uris?.[pageKey];
+            // Validate inputs to prevent SSRF attacks
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(documentId)) {
+                req.log?.warn({ documentId }, 'Invalid document ID format in image streaming');
+                return res.status(400).json({
+                    errors: [
+                        { status: 400, title: 'Bad Request', detail: 'Invalid document ID format' }
+                    ]
+                });
+            }
 
-            let bucketName;
-            let objectKey;
+            const pageNum = parseInt(pageNumber, 10);
+            if (!Number.isInteger(pageNum) || pageNum < 1) {
+                req.log?.warn({ pageNumber }, 'Invalid page number in image streaming');
+                return res.status(400).json({
+                    errors: [{ status: 400, title: 'Bad Request', detail: 'Invalid page number' }]
+                });
+            }
 
-            if (s3Uri) {
-                // Use S3 URI from OpenSearch (via API)
-                const s3PathParts = s3Uri.replace('s3://', '').split('/');
-                bucketName = s3PathParts.shift();
-                objectKey = s3PathParts.join('/');
-            } else {
-                // We don't have the S3 URI in session so we need to fail with 204 No Content
+            // Validate CRN format
+            const crnRegex = /^[a-zA-Z0-9\-\s]+$/;
+            if (!crn || !crnRegex.test(crn)) {
+                req.log?.warn({ crn }, 'Invalid case reference number format in image streaming');
+                return res.status(400).json({
+                    errors: [
+                        {
+                            status: 400,
+                            title: 'Bad Request',
+                            detail: 'Invalid case reference number'
+                        }
+                    ]
+                });
+            }
+
+            // Fetch metadata from API to get the S3 URI
+            let pageMetadata;
+            try {
+                const metadataService = createMetadataService({
+                    documentId,
+                    pageNumber: pageNum,
+                    crn,
+                    jwtToken: req.cookies?.jwtToken,
+                    logger: req.log
+                });
+                pageMetadata = await metadataService.getPageMetadata();
+            } catch (error) {
                 req.log?.warn(
-                    { documentId, pageNumber, crn },
-                    'S3 URI not found in session for image streaming'
+                    { error: error.message, documentId, pageNumber, crn },
+                    'Failed to retrieve page metadata for image streaming'
                 );
                 return res.status(204).end();
             }
+
+            if (!pageMetadata.imageUrl) {
+                req.log?.warn(
+                    { documentId, pageNumber, crn },
+                    'S3 URI not found in metadata for image streaming'
+                );
+                return res.status(204).end();
+            }
+
+            // Parse S3 URI to get bucket and object key
+            const s3PathParts = pageMetadata.imageUrl.replace('s3://', '').split('/');
+            const bucketName = s3PathParts.shift();
+            const objectKey = s3PathParts.join('/');
 
             try {
                 const command = new GetObjectCommand({
@@ -164,11 +212,8 @@ function createDocumentRouter() {
 
             const { documentId, pageNumber } = req.params;
 
-            const { crn, searchPageNumber } = req.query;
+            const { crn, searchResultsPageNumber = '', searchTerm = '' } = req.query;
             const pageNum = parseInt(pageNumber, 10);
-
-            const { searchTerm = '', searchResultsPageNumber = searchPageNumber || 1 } =
-                req.session;
 
             // Validate inputs to prevent SSRF attacks
             const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -184,49 +229,25 @@ function createDocumentRouter() {
                 return next(error);
             }
 
+            // Validate CRN format
+            const crnRegex = /^[a-zA-Z0-9\-\s]+$/;
+            if (!crn || !crnRegex.test(crn)) {
+                const error = new Error('Invalid case reference number format');
+                error.status = 400;
+                return next(error);
+            }
+
             // Fetch document page metadata from API (which queries OpenSearch)
             let pageMetadata;
             try {
-                const apiUrl = `${API_BASE_URL}/document/${documentId}/page/${pageNum}/metadata?crn=${encodeURIComponent(crn)}`;
-
-                // Validate that the constructed URL belongs to the expected API base URL origin
-                const apiUrlObj = new URL(apiUrl);
-                const baseUrlObj = new URL(API_BASE_URL);
-
-                // Ensure the request goes to the same origin as the configured API base URL
-                if (apiUrlObj.origin !== baseUrlObj.origin) {
-                    throw new Error('Invalid API URL - origin mismatch');
-                }
-
-                // Forward the JWT token to the API for authentication
-                const headers = {};
-                if (req.cookies?.jwtToken) {
-                    headers.Authorization = `Bearer ${req.cookies.jwtToken}`;
-                }
-
-                // Get metadata
-                const response = await fetch(apiUrl, { headers });
-
-                if (!response.ok) {
-                    const errorData = await response
-                        .json()
-                        .catch(() => ({ errors: [{ detail: 'Unknown error' }] }));
-                    const error = new Error(
-                        errorData.errors?.[0]?.detail || 'Failed to fetch page metadata'
-                    );
-                    error.status = response.status;
-                    throw error;
-                }
-
-                const result = await response.json();
-                pageMetadata = result.data;
-
-                // Store S3 URI in session for image streaming route to use
-                if (!req.session.pageS3Uris) {
-                    req.session.pageS3Uris = {};
-                }
-                const pageKey = `${documentId}-${pageNum}`;
-                req.session.pageS3Uris[pageKey] = pageMetadata.imageUrl;
+                const metadataService = createMetadataService({
+                    documentId,
+                    pageNumber: pageNum,
+                    crn,
+                    jwtToken: req.cookies?.jwtToken,
+                    logger: req.log
+                });
+                pageMetadata = await metadataService.getPageMetadata();
             } catch (error) {
                 req.log?.error(
                     { error: error.message, documentId, pageNum },
@@ -237,11 +258,11 @@ function createDocumentRouter() {
 
             const imageUrl = `/document/${documentId}/page/${pageNumber}?crn=${crn}`;
 
-            const textPageLink = `/document/${documentId}/view/text/page/${pageNum}?crn=${encodeURIComponent(crn)}&searchPageNumber=${searchPageNumber || searchResultsPageNumber}`;
+            const textPageLink = `/document/${documentId}/view/text/page/${pageNum}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}&searchResultsPageNumber=${searchResultsPageNumber}`;
             const backLink =
                 searchTerm === ''
                     ? '/search'
-                    : `/search?query=${searchTerm}&pageNumber=${searchPageNumber || searchResultsPageNumber}&crn=${encodeURIComponent(crn)}`;
+                    : `/search?query=${encodeURIComponent(searchTerm)}&pageNumber=${searchResultsPageNumber}&crn=${encodeURIComponent(crn)}`;
 
             // Use correspondence_type from metadata as page title, with fallback
             const pageTitle = pageMetadata.correspondence_type
@@ -288,17 +309,36 @@ function createDocumentRouter() {
             const { render } = templateEngineService;
 
             const { documentId, pageNumber } = req.params;
-            const { crn, searchPageNumber } = req.query;
+            const { crn, searchResultsPageNumber = '1', searchTerm = '' } = req.query;
             const pageNum = parseInt(pageNumber, 10);
 
-            const { searchTerm = '', searchResultsPageNumber = searchPageNumber || 1 } =
-                req.session;
+            // Validate inputs to prevent SSRF attacks
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(documentId)) {
+                const error = new Error('Invalid document ID format');
+                error.status = 400;
+                return next(error);
+            }
 
-            const imagePageLink = `/document/${documentId}/view/page/${pageNum}?crn=${encodeURIComponent(crn)}&searchPageNumber=${searchPageNumber || searchResultsPageNumber}`;
+            if (!Number.isInteger(pageNum) || pageNum < 1) {
+                const error = new Error('Invalid page number');
+                error.status = 400;
+                return next(error);
+            }
+
+            // Validate CRN format
+            const crnRegex = /^[a-zA-Z0-9\-\s]+$/;
+            if (!crn || !crnRegex.test(crn)) {
+                const error = new Error('Invalid case reference number format');
+                error.status = 400;
+                return next(error);
+            }
+
+            const imagePageLink = `/document/${documentId}/view/page/${pageNum}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}&searchResultsPageNumber=${searchResultsPageNumber}`;
             const backLink =
                 searchTerm === ''
                     ? '/search'
-                    : `/search?query=${searchTerm}&pageNumber=${searchPageNumber || searchResultsPageNumber}&crn=${encodeURIComponent(crn)}`;
+                    : `/search?query=${encodeURIComponent(searchTerm)}&pageNumber=${searchResultsPageNumber}&crn=${encodeURIComponent(crn)}`;
 
             const html = render('document/page/textview.njk', {
                 documentId,

@@ -97,8 +97,6 @@ function createPageMetadataRouter(options = {}) {
                 });
             }
 
-            // Query OpenSearch via DAL to get metadata
-            //const { documentDAL } = pageContentHelper;
             let fullMetadata;
             try {
                 // Use injected DAL factory when provided (tests), else dynamically import default

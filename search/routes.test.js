@@ -140,7 +140,7 @@ describe('Search Routes', () => {
         it('should redirect to the GET route with the query parameter', async () => {
             const res = await request(app).post('/search').send({ query: ' search term ' });
             assert.strictEqual(res.statusCode, 302);
-            assert.strictEqual(res.headers.location, '/search?query=search%20term');
+            assert.strictEqual(res.headers.location, '/search?query=search%20term&pageNumber=1');
         });
     });
 });

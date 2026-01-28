@@ -19,11 +19,9 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             const { query } = req.body;
             const { pageNumber = 1 } = req.query;
 
-            // Store search details to allow a back button to come back to the same results page
-            req.session.searchTerm = query;
-            req.session.searchResultsPageNumber = pageNumber;
-
-            return res.redirect(`/search?query=${encodeURIComponent(query.trim())}`);
+            return res.redirect(
+                `/search?query=${encodeURIComponent(query.trim())}&pageNumber=${pageNumber}`
+            );
         } catch (err) {
             next(err);
         }
@@ -91,14 +89,18 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             const hits = searchResults?.hits || [];
             const totalItemCount = Number(searchResults?.total?.value || 0);
 
-            // Enrich each result with docUuid and searchPageNumber
+            // Enrich each result with docUuid, searchResultsPageNumber, searchTerm, and caseReferenceNumber (crn)
             const searchResultsWithDocUuid = hits.map((hit) => ({
                 ...hit,
                 docUuid: hit._source?.source_doc_id || 0,
-                searchPageNumber: pageNumber
+                searchResultsPageNumber: pageNumber,
+                searchTerm: query,
+                caseReferenceNumber: req.session?.caseReferenceNumber
             }));
 
             templateParams.searchResults = searchResultsWithDocUuid;
+            templateParams.searchTerm = query;
+            templateParams.searchResultsPageNumber = pageNumber;
 
             // TODO: move this logic into the view.
             templateParams.showPaginationItems = totalItemCount > itemsPerPage;

@@ -67,12 +67,12 @@
     {% set paginationItems = [] %}
     {% set paginationPrevious = {
             text: "Previous",
-            href: ["/search/?query=", query, "&pageNumber=", pagination.currentPageIndex - 1] | join
+            href: ["/search/?query=", query, "&pageNumber=", pagination.currentPageIndex - 1, "&crn=", caseReferenceNumber] | join
         }
     %}
     {% set paginationNext = {
             text: "Next",
-            href: ["/search/?query=", query, "&pageNumber=", pagination.currentPageIndex + 1] | join
+            href: ["/search/?query=", query, "&pageNumber=", pagination.currentPageIndex + 1, "&crn=", caseReferenceNumber] | join
         }
     %}
     {# only show pagination item links if there is more than one page #}
@@ -81,7 +81,7 @@
             {%
                 set paginationItems = (paginationItems.push({
                     text: i,
-                    href: ["/search/?query=", query, "&pageNumber=", i] | join,
+                    href: ["/search/?query=", query, "&pageNumber=", i, "&crn=", caseReferenceNumber] | join,
                     selected: i == pagination.currentPageIndex
                 }), paginationItems)
             %}
