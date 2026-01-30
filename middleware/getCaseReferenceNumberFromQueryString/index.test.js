@@ -71,7 +71,7 @@ function getMockRequest(...propsToMerge) {
 
     return mergedProps;
 }
-const VALID_CRN = '25-123456';
+const VALID_CRN = '25-723456';
 const INVALID_CRN = 'some invalid crn';
 const REQUESTS = {
     QUERY: {

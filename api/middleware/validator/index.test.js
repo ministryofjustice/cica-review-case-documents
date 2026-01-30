@@ -7,8 +7,8 @@ import ajvErrors from 'ajv-errors';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
-import createApiRouter from '../../routes.js'; // adjust path as needed
-import createOpenApiValidatorMiddleware from './index.js'; // adjust path as needed
+import createApiRouter from '../../document/routes.js';
+import createOpenApiValidatorMiddleware from './index.js';
 
 /**
  * Creates and configures an Express application instance for testing.
@@ -44,12 +44,12 @@ async function makeApp() {
         getSearchResultsByKeyword: async () => ({ total: { value: 0 }, hits: [] })
     };
     app.use((req, res, next) => {
-        console.log('Before validator');
+        console.info('Before validator');
         next();
     });
     app.use(validator);
     app.use((req, res, next) => {
-        console.log('After validator');
+        console.info('After validator');
         next();
     });
     app.use('/api', createApiRouter({ searchService: mockSearchService }));
@@ -74,13 +74,52 @@ describe('OpenAPI Validator Middleware', () => {
         );
     });
 
+    it('throws error when OpenAPI spec file does not exist', async () => {
+        const nonExistentPath = '/path/that/does/not/exist/openapi.json';
+
+        assert.rejects(
+            async () => {
+                await createOpenApiValidatorMiddleware({
+                    ajv: new Ajv(),
+                    apiSpecPath: nonExistentPath
+                });
+            },
+            (err) => {
+                assert.match(err.message, /OpenAPI spec file not found/);
+                return true;
+            }
+        );
+    });
+
+    it('creates validator middleware with valid spec file', async () => {
+        const ajv = new Ajv({
+            allErrors: true,
+            coerceTypes: true,
+            useDefaults: true,
+            strict: false
+        });
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+        const validSpecPath = path.resolve(__dirname, '../../openapi/openapi-dist.json');
+
+        const validator = await createOpenApiValidatorMiddleware({
+            ajv,
+            apiSpecPath: validSpecPath
+        });
+
+        assert.ok(validator, 'Validator middleware should be created');
+        assert.ok(
+            typeof validator === 'function' || typeof validator === 'object',
+            'Validator should be middleware'
+        );
+    });
+
     it('responds with 400 for missing required "query" parameter', async () => {
         const res = await request(app)
             .get('/api/search')
             .set('Authorization', `Bearer ${validToken}`)
-            .set('On-Behalf-Of', '25-111111');
+            .set('On-Behalf-Of', '25-711111');
 
-        console.log(res.body);
         assert.strictEqual(res.statusCode, 400);
         assert.ok(res.body.errors, 'Response should have errors');
         assert.match(res.body.errors[0].message, /must have required property 'query'/);
@@ -90,9 +129,8 @@ describe('OpenAPI Validator Middleware', () => {
         const res = await request(app)
             .get('/api/search?query=a')
             .set('Authorization', `Bearer ${validToken}`)
-            .set('On-Behalf-Of', '25-111111');
+            .set('On-Behalf-Of', '25-711111');
 
-        console.log(res.body);
         assert.strictEqual(res.statusCode, 400);
         assert.ok(res.body.errors, 'Response should have errors');
         assert.match(res.body.errors[0].message, /must NOT have fewer than 2 characters/);
@@ -103,7 +141,6 @@ describe('OpenAPI Validator Middleware', () => {
             .get('/api/search?query=test')
             .set('Authorization', `Bearer ${validToken}`); // Missing header
 
-        console.log(res.body);
         assert.strictEqual(res.statusCode, 400);
         assert.ok(res.body.errors, 'Response should have errors');
         assert.match(res.body.errors[0].message, /must have required property 'on-behalf-of'/);

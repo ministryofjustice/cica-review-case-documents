@@ -73,4 +73,79 @@ describe('DB Service', () => {
 
         assert.equal(caughtError, fakeError);
     });
+
+    it('Should throw ConfigurationError when APP_DATABASE_URL is undefined', () => {
+        const originalUrl = process.env.APP_DATABASE_URL;
+        delete process.env.APP_DATABASE_URL;
+
+        try {
+            assert.throws(
+                () => {
+                    createDBQuery({ logger: {} });
+                },
+                {
+                    name: 'ConfigurationError',
+                    message: 'Environment variable "APP_DATABASE_URL" must be set'
+                }
+            );
+        } finally {
+            if (originalUrl) {
+                process.env.APP_DATABASE_URL = originalUrl;
+            }
+        }
+    });
+
+    it('Should log query execution with timing information when logger.info exists', async () => {
+        const fakeResults = { hits: { hits: [{ _id: 1 }, { _id: 2 }] } };
+        const searchSpy = mock.fn(async () => fakeResults);
+
+        class FakeClient {
+            search = searchSpy;
+        }
+
+        const logInfoSpy = mock.fn();
+        const fakeLogger = {
+            info: logInfoSpy
+        };
+
+        const db = createDBQuery({
+            Client: FakeClient,
+            logger: fakeLogger
+        });
+
+        const queryObj = { index: 'test', query: { match_all: {} } };
+        await db.query(queryObj);
+
+        assert.equal(logInfoSpy.mock.callCount(), 1);
+        const [logData, logMessage] = logInfoSpy.mock.calls[0].arguments;
+        assert.equal(logMessage, 'DB QUERY');
+        assert.deepEqual(logData.data.query, queryObj);
+        assert.equal(logData.data.rows, 2);
+        assert.ok(logData.executionTime);
+        assert.ok(logData.executionTimeNs);
+    });
+
+    it('Should handle queries with no hits gracefully in logging', async () => {
+        const fakeResults = { hits: {} };
+        const searchSpy = mock.fn(async () => fakeResults);
+
+        class FakeClient {
+            search = searchSpy;
+        }
+
+        const logInfoSpy = mock.fn();
+        const fakeLogger = {
+            info: logInfoSpy
+        };
+
+        const db = createDBQuery({
+            Client: FakeClient,
+            logger: fakeLogger
+        });
+
+        await db.query({ index: 'test', query: {} });
+
+        const [logData] = logInfoSpy.mock.calls[0].arguments;
+        assert.equal(logData.data.rows, 0);
+    });
 });

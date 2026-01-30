@@ -11,14 +11,18 @@ assert.deepStrictEqual(
 
 // --- Pattern-based allowlist test ---
 const validPaths = [
-    '/document/123e4567-e89b-12d3-a456-426614174000/view/image/page/1',
-    '/document/abcdefab-1234-5678-abcd-abcdefabcdef/view/image/page/42'
+    '/document/123e4567-e89b-12d3-a456-426614174000/view/page/1',
+    '/document/abcdefab-1234-5678-abcd-abcdefabcdef/view/page/42',
+    '/document/123e4567-e89b-12d3-a456-426614174000/page/1',
+    '/document/55b2ea3c-3eae-54f7-b81d-292db7c84be7/page/6'
 ];
 const invalidPaths = [
-    '/document/not-a-uuid/view/image/page/1',
-    '/document/123e4567-e89b-12d3-a456-426614174000/view/image/page/notanumber',
-    '/document/123e4567-e89b-12d3-a456-426614174000/view/image/page/',
-    '/document/123e4567-e89b-12d3-a456-426614174000/view/image/page/1/extra'
+    '/document/not-a-uuid/view/page/1',
+    '/document/123e4567-e89b-12d3-a456-426614174000/view/page/notanumber',
+    '/document/123e4567-e89b-12d3-a456-426614174000/view/page/',
+    '/document/123e4567-e89b-12d3-a456-426614174000/view/page/1/extra',
+    '/document/not-a-uuid/page/1',
+    '/document/123e4567-e89b-12d3-a456-426614174000/page/notanumber'
 ];
 
 for (const path of validPaths) {

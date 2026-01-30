@@ -35,8 +35,8 @@ import { v4 as uuidv4 } from 'uuid';
  *
  * @example
  * // Example request
- * GET /search/fracture?pageNumber=2&crn=25-111111
- * Header: On-Behalf-Of: 25-111111
+ * GET /search/fracture?pageNumber=2&crn=25-711111
+ * Header: On-Behalf-Of: 25-711111
  *
  * // Example response
  * {
