@@ -1,5 +1,8 @@
 import express from 'express';
 import createPageContentHelper from '../helpers/page-content-helper.js';
+import createPageMetadataService from './page-metadata-service.js';
+
+const CRN_REGEX = /^\d{2}-[78]\d{5}$/;
 
 /**
  * Creates an Express router for handling page metadata operations via the API.
@@ -15,10 +18,15 @@ function createPageMetadataRouter(options = {}) {
     const {
         createPageContentHelper: createPageContentHelperFactory = createPageContentHelper,
         // Optional dependency injection for tests: provide a factory for the Document DAL
-        createDocumentDAL: createDocumentDALFactory
+        createDocumentDAL: createDocumentDALFactory,
+        createPageMetadataService: createPageMetadataServiceFactory = createPageMetadataService
     } = options;
 
     const router = express.Router();
+    const pageMetadataService = createPageMetadataServiceFactory({
+        createPageContentHelper: createPageContentHelperFactory,
+        createDocumentDAL: createDocumentDALFactory
+    });
 
     /**
      * GET /api/document/:documentId/page/:pageNumber/metadata
@@ -41,127 +49,33 @@ function createPageMetadataRouter(options = {}) {
      * @returns {Object} Error response:
      *   - errors: Array of error objects with status, title, and detail fields
      */
-    router.get('/:documentId/page/:pageNumber/metadata', async (req, res) => {
+    router.get('/:documentId/page/:pageNumber/metadata', async (req, res, next) => {
         try {
             const { documentId, pageNumber } = req.params;
             const { crn } = req.query;
 
             if (!crn) {
-                return res.status(400).json({
-                    errors: [
-                        {
-                            status: 400,
-                            title: 'Bad Request',
-                            detail: 'Case reference number (crn) is required'
-                        }
-                    ]
-                });
+                const err = new Error('Case reference number (crn) is required');
+                err.status = 400;
+                throw err;
             }
 
-            // Create page content helper with database access
-            const pageContentHelper = createPageContentHelperFactory({
-                caseReferenceNumber: crn,
-                logger: req.log
-            });
-
-            // Retrieve page metadata from OpenSearch
-            let pageMetadata;
-            try {
-                pageMetadata = await pageContentHelper.getPageContent(documentId, pageNumber);
-
-                if (!pageMetadata) {
-                    return res.status(404).json({
-                        errors: [
-                            {
-                                status: 404,
-                                title: 'Not Found',
-                                detail: 'Page metadata not found'
-                            }
-                        ]
-                    });
-                }
-            } catch (dbError) {
-                req.log?.error(
-                    { error: dbError.message, documentId, pageNumber },
-                    'Failed to retrieve page metadata from OpenSearch'
-                );
-                const status = dbError.status || 500;
-                return res.status(status).json({
-                    errors: [
-                        {
-                            status,
-                            title: status === 404 ? 'Not Found' : 'Internal Server Error',
-                            detail: dbError.message
-                        }
-                    ]
-                });
+            if (!CRN_REGEX.test(crn)) {
+                const err = new Error('Invalid case reference number');
+                err.status = 400;
+                throw err;
             }
 
-            let fullMetadata;
-            try {
-                // Use injected DAL factory when provided (tests), else dynamically import default
-                const createDocumentDAL = createDocumentDALFactory
-                    ? createDocumentDALFactory
-                    : (await import('./document-dal.js')).default;
-                const dal = createDocumentDAL({
-                    caseReferenceNumber: crn,
-                    logger: req.log
-                });
+            const combinedMetadata = await pageMetadataService.getCombinedMetadata(
+                documentId,
+                pageNumber,
+                crn,
+                { logger: req.log }
+            );
 
-                fullMetadata = await dal.getPageMetadataByDocumentIdAndPageNumber(
-                    documentId,
-                    pageNumber
-                );
-
-                if (!fullMetadata) {
-                    return res.status(404).json({
-                        errors: [
-                            {
-                                status: 404,
-                                title: 'Not Found',
-                                detail: 'Page metadata not found'
-                            }
-                        ]
-                    });
-                }
-            } catch (error) {
-                req.log?.error(
-                    { error: error.message, documentId, pageNumber },
-                    'Failed to retrieve full page metadata'
-                );
-                return res.status(500).json({
-                    errors: [
-                        {
-                            status: 500,
-                            title: 'Internal Server Error',
-                            detail: error.message
-                        }
-                    ]
-                });
-            }
-
-            // Return combined metadata
-            return res.json({
-                data: {
-                    correspondence_type: fullMetadata.correspondence_type || null,
-                    page_width: pageMetadata.page_width,
-                    page_height: pageMetadata.page_height,
-                    page_count: pageMetadata.page_count,
-                    imageUrl: pageMetadata.imageUrl,
-                    text: pageMetadata.text
-                }
-            });
+            return res.json({ data: combinedMetadata });
         } catch (err) {
-            req.log?.error({ error: err.message }, 'Error in page metadata endpoint');
-            return res.status(500).json({
-                errors: [
-                    {
-                        status: 500,
-                        title: 'Internal Server Error',
-                        detail: err.message
-                    }
-                ]
-            });
+            return next(err);
         }
     });
 

@@ -9,7 +9,7 @@ import {
 
 describe('Link Builders', () => {
     const docId = '123e4567-e89b-12d3-a456-426614174000';
-    const crn = '12-345678';
+    const crn = '12-745678';
 
     describe('buildImageUrl', () => {
         it('builds image URL correctly', () => {

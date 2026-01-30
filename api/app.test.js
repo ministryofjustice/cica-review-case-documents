@@ -197,7 +197,7 @@ describe('API Application', () => {
             const res = await request(app)
                 .get('/search?query=validsearch&pageNumber=1&itemsPerPage=5')
                 .set('Authorization', `Bearer ${validToken}`)
-                .set('On-Behalf-Of', '25-111111');
+                .set('On-Behalf-Of', '25-711111');
 
             assert.strictEqual(res.statusCode, 200);
             assert.ok(res.body.data, 'Response should have a data property');
@@ -210,7 +210,7 @@ describe('API Application', () => {
             const res = await request(app)
                 .get('/search?query=test')
                 .set('Authorization', `Bearer ${validToken}`)
-                .set('On-Behalf-Of', '25-111111');
+                .set('On-Behalf-Of', '25-711111');
 
             assert.match(res.headers['content-type'], /application\/vnd\.api\+json/);
             assert.strictEqual(res.headers['application-version'], '1.0.0-test');
@@ -228,7 +228,7 @@ describe('API Application', () => {
         //     const res = await request(app)
         //         .get('/search')
         //         .set('Authorization', `Bearer ${validToken}`)
-        //         .set('On-Behalf-Of', '25-111111');
+        //         .set('On-Behalf-Of', '25-711111');
 
         //     assert.strictEqual(res.statusCode, 400);
         //     assert.ok(res.body.errors, 'Response should have errors');
@@ -239,7 +239,7 @@ describe('API Application', () => {
         //     const res = await request(app)
         //         .get('/search?query=a')
         //         .set('Authorization', `Bearer ${validToken}`)
-        //         .set('On-Behalf-Of', '25-111111');
+        //         .set('On-Behalf-Of', '25-711111');
 
         //     assert.strictEqual(res.statusCode, 400);
         //     assert.ok(res.body.errors, 'Response should have errors');
@@ -270,7 +270,7 @@ describe('API Application', () => {
             const res = await request(app)
                 .get('/search?query=error') // Mock is set up to throw on 'error'
                 .set('Authorization', `Bearer ${validToken}`)
-                .set('On-Behalf-Of', '25-111111');
+                .set('On-Behalf-Of', '25-711111');
 
             assert.strictEqual(res.statusCode, 500);
             assert.ok(res.body.errors);

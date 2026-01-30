@@ -40,7 +40,7 @@ describe('Search Service', () => {
 
         mockDAL.getDocumentsChunksByKeyword = mock.fn(async () => []);
 
-        const caseReferenceNumber = '12-345678';
+        const caseReferenceNumber = '12-745678';
         const logger = { info: () => {} };
 
         await searchService.getSearchResultsByKeyword('test', 1, 10, {
@@ -68,7 +68,7 @@ describe('Search Service', () => {
         const itemsPerPage = 20;
 
         await searchService.getSearchResultsByKeyword(keyword, pageNumber, itemsPerPage, {
-            caseReferenceNumber: '12-345678',
+            caseReferenceNumber: '12-745678',
             logger: { info: () => {} }
         });
 
@@ -90,7 +90,7 @@ describe('Search Service', () => {
         mockDAL.getDocumentsChunksByKeyword = mock.fn(async () => expectedResults);
 
         const results = await searchService.getSearchResultsByKeyword('search', 1, 10, {
-            caseReferenceNumber: '12-345678',
+            caseReferenceNumber: '12-745678',
             logger: { info: () => {} }
         });
 
@@ -105,7 +105,7 @@ describe('Search Service', () => {
         mockDAL.getDocumentsChunksByKeyword = mock.fn(async () => []);
 
         const results = await searchService.getSearchResultsByKeyword('nonexistent', 1, 10, {
-            caseReferenceNumber: '12-345678',
+            caseReferenceNumber: '12-745678',
             logger: { info: () => {} }
         });
 
@@ -125,7 +125,7 @@ describe('Search Service', () => {
         let caughtError;
         try {
             await searchService.getSearchResultsByKeyword('search', 1, 10, {
-                caseReferenceNumber: '12-345678',
+                caseReferenceNumber: '12-745678',
                 logger: { info: () => {} }
             });
         } catch (err) {
@@ -156,7 +156,7 @@ describe('Search Service', () => {
 
         // Test page 3, 50 items per page
         await searchService.getSearchResultsByKeyword('test', 3, 50, {
-            caseReferenceNumber: '12-345678',
+            caseReferenceNumber: '12-745678',
             logger: { info: () => {} }
         });
 

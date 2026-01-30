@@ -26,7 +26,7 @@ describe('search-service', () => {
     it('Should call get with correct URL and headers', async () => {
         const fakeLogger = { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} };
         const service = createSearchService({
-            caseReferenceNumber: '12-345678',
+            caseReferenceNumber: '12-745678',
             createRequestService: mockCreateRequestService,
             logger: fakeLogger // <-- use 'logger' here
         });
@@ -44,6 +44,6 @@ describe('search-service', () => {
             mockGetCallArguments.url,
             `${process.env.APP_API_URL}/search/?query=${query}&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}`
         );
-        assert.equal(mockGetCallArguments.headers['On-Behalf-Of'], '12-345678');
+        assert.equal(mockGetCallArguments.headers['On-Behalf-Of'], '12-745678');
     });
 });

@@ -65,16 +65,10 @@ describe('Document Parameter Validation', () => {
 
     describe('validateCrn', () => {
         it('accepts valid CRN formats', () => {
-            let result = validateCrn('12-345678');
+            let result = validateCrn('12-745678');
             assert.deepEqual(result, { valid: true });
 
-            result = validateCrn('AB-123456');
-            assert.deepEqual(result, { valid: true });
-
-            result = validateCrn('CASE-2024-001');
-            assert.deepEqual(result, { valid: true });
-
-            result = validateCrn('Case 123');
+            result = validateCrn('99-812345');
             assert.deepEqual(result, { valid: true });
         });
 
@@ -94,6 +88,11 @@ describe('Document Parameter Validation', () => {
 
         it('rejects special characters', () => {
             const result = validateCrn('12@345');
+            assert.strictEqual(result.valid, false);
+        });
+
+        it('rejects invalid CRN pattern', () => {
+            const result = validateCrn('12-345678');
             assert.strictEqual(result.valid, false);
         });
     });

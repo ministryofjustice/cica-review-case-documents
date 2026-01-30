@@ -143,17 +143,17 @@ In order to search, users must first select which case they are searching. This 
 **Examples:**
 
 ```
-http://localhost:5000/search?caseReferenceNumber=25-111111
+http://localhost:5000/search?caseReferenceNumber=25-711111
 ```
-Selects case with CRN `25-111111`. The UI will display `CRN: 25-111111` and enable searching within documents for that case.
+Selects case with CRN `25-711111`. The UI will display `CRN: 25-711111` and enable searching within documents for that case.
 
 ```
-http://localhost:5000/search?query=Gabapentin&crn=25-111111
+http://localhost:5000/search?query=Gabapentin&crn=25-711111
 ```
 Same as above, but also performs a search.
 
 ```
-http://localhost:5000/search/?query=Acute&pageNumber=2&crn=25-111111
+http://localhost:5000/search/?query=Acute&pageNumber=2&crn=25-711111
 ```
 Pagination example
 
@@ -205,11 +205,11 @@ http://localhost:5000/api/docs
 Searches for text in documents within a specific case.
 
 **Headers:**
-- `On-Behalf-Of` (required): Case reference number (e.g., `25-111111`)
+- `On-Behalf-Of` (required): Case reference number (e.g., `25-711111`)
 
 **Example:**
 ```bash
-curl -H "On-Behalf-Of: 25-111111" \
+curl -H "On-Behalf-Of: 25-711111" \
   http://localhost:5000/api/search/gabapentin/1/10
 ```
 

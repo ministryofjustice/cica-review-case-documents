@@ -1,3 +1,5 @@
+const CRN_REGEX = /^\d{2}-[78]\d{5}$/;
+
 /**
  * An array of allowed URL paths for which certain middleware logic applies.
  * @type {string[]}
@@ -89,9 +91,10 @@ const enforceCrnInQuery = (req, res, next) => {
             return next(err);
         }
 
-        // Harden: Only allow alphanumeric crn (adjust regex as needed for your use case)
+        // Validate CRN format: YY-7NNNNN or YY-8NNNNN
+        // where YY = year, 7 = Personal Injury, 8 = Bereavement, NNNNN = 5-digit case ID
         const crn = req.session.caseReferenceNumber;
-        if (!/^[a-zA-Z0-9-]+$/.test(crn)) {
+        if (!CRN_REGEX.test(crn)) {
             return res.status(400).send('Invalid case reference number');
         }
 

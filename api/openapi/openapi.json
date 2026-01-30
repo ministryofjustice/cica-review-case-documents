@@ -95,7 +95,7 @@
                                                                 "bottom": 0.8442902285605669
                                                             },
                                                             "embedding": null,
-                                                            "case_ref": "25-111111",
+                                                            "case_ref": "25-711111",
                                                             "received_date": "2025-10-06",
                                                             "correspondence_type": "TC19",
                                                             "character_count": 491,
@@ -286,7 +286,7 @@
                 "schema": {
                     "$ref": "./json-schemas/models/definitions/case-reference-number.json"
                 },
-                "example": "25-111111"
+                "example": "25-711111"
             }
         },
         "responses": {

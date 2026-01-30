@@ -4,7 +4,9 @@
  */
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const CRN_REGEX = /^[a-zA-Z0-9\-\s]+$/;
+// CRN format: YY-7NNNNN or YY-8NNNNN (e.g. 26-711111, 36-873423)
+// where YY = year, 7 = Personal Injury, 8 = Bereavement, NNNNN = 5-digit case ID
+const CRN_REGEX = /^\d{2}-[78]\d{5}$/;
 
 /**
  * Validates that documentId is a valid UUID format.

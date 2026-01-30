@@ -29,7 +29,7 @@ describe('Page Content Helper', () => {
 
         // Create helper instance
         pageContentHelper = createPageContentHelper({
-            caseReferenceNumber: '12-345678',
+            caseReferenceNumber: '12-745678',
             logger: mockLogger,
             createDocumentDAL: () => mockDocumentDAL
         });
@@ -53,7 +53,7 @@ describe('Page Content Helper', () => {
             mockDocumentDAL.getPageMetadataByDocumentIdAndPageNumber = mock.fn(async () => null);
 
             const helper = createPageContentHelper({
-                caseReferenceNumber: '12-345678',
+                caseReferenceNumber: '12-745678',
                 logger: mockLogger,
                 createDocumentDAL: () => mockDocumentDAL
             });
@@ -74,7 +74,7 @@ describe('Page Content Helper', () => {
             });
 
             const helper = createPageContentHelper({
-                caseReferenceNumber: '12-345678',
+                caseReferenceNumber: '12-745678',
                 logger: mockLogger,
                 createDocumentDAL: () => mockDocumentDAL
             });

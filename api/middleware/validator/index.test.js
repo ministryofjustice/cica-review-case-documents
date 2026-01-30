@@ -118,7 +118,7 @@ describe('OpenAPI Validator Middleware', () => {
         const res = await request(app)
             .get('/api/search')
             .set('Authorization', `Bearer ${validToken}`)
-            .set('On-Behalf-Of', '25-111111');
+            .set('On-Behalf-Of', '25-711111');
 
         assert.strictEqual(res.statusCode, 400);
         assert.ok(res.body.errors, 'Response should have errors');
@@ -129,7 +129,7 @@ describe('OpenAPI Validator Middleware', () => {
         const res = await request(app)
             .get('/api/search?query=a')
             .set('Authorization', `Bearer ${validToken}`)
-            .set('On-Behalf-Of', '25-111111');
+            .set('On-Behalf-Of', '25-711111');
 
         assert.strictEqual(res.statusCode, 400);
         assert.ok(res.body.errors, 'Response should have errors');

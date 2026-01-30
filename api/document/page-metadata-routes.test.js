@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 import express from 'express';
 import request from 'supertest';
+import errorHandler from '../middleware/errorHandler/index.js';
 import createPageMetadataRouter from './page-metadata-routes.js';
 
 describe('API: Page Metadata Routes', () => {
@@ -9,17 +10,36 @@ describe('API: Page Metadata Routes', () => {
     let injectedHelperFactory;
     let injectedDalFactory;
 
-    beforeEach(() => {
-        // Minimal express app
-        app = express();
-        app.use(express.json());
+    /**
+     * Builds a test Express app with page metadata router and error handler.
+     *
+     * @param {Object} options - Configuration for test app.
+     * @param {Function} options.createPageContentHelper - Factory for page content helper.
+     * @param {Function} options.createDocumentDAL - Factory for document DAL.
+     * @returns {express.Application} Configured test Express app.
+     */
+    function buildTestApp({ createPageContentHelper, createDocumentDAL }) {
+        const testApp = express();
+        testApp.use(express.json());
 
-        // Test logger
-        app.use((req, _res, next) => {
+        testApp.use((req, _res, next) => {
             req.log = { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} };
             next();
         });
 
+        testApp.use(
+            '/api/document',
+            createPageMetadataRouter({
+                createPageContentHelper,
+                createDocumentDAL
+            })
+        );
+
+        testApp.use(errorHandler);
+        return testApp;
+    }
+
+    beforeEach(() => {
         // Default injected helper returns deterministic metadata
         injectedHelperFactory = () => ({
             documentDAL: {},
@@ -42,18 +62,15 @@ describe('API: Page Metadata Routes', () => {
             }
         });
 
-        app.use(
-            '/api/document',
-            createPageMetadataRouter({
-                createPageContentHelper: injectedHelperFactory,
-                createDocumentDAL: injectedDalFactory
-            })
-        );
+        app = buildTestApp({
+            createPageContentHelper: injectedHelperFactory,
+            createDocumentDAL: injectedDalFactory
+        });
     });
 
     it('GET /:documentId/page/:pageNumber/metadata returns combined metadata', async () => {
         const res = await request(app).get(
-            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-345678'
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-745678'
         );
         assert.equal(res.statusCode, 200);
         assert.ok(res.body.data);
@@ -80,22 +97,13 @@ describe('API: Page Metadata Routes', () => {
             }
         });
 
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, _res, next) => {
-            req.log = { error: () => {}, info: () => {} };
-            next();
+        const testApp = buildTestApp({
+            createPageContentHelper: injectedHelperFactory,
+            createDocumentDAL: dalNullFactory
         });
-        testApp.use(
-            '/api/document',
-            createPageMetadataRouter({
-                createPageContentHelper: injectedHelperFactory,
-                createDocumentDAL: dalNullFactory
-            })
-        );
 
         const res = await request(testApp).get(
-            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-345678'
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-745678'
         );
         assert.equal(res.statusCode, 404);
     });
@@ -109,22 +117,13 @@ describe('API: Page Metadata Routes', () => {
             }
         });
 
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, _res, next) => {
-            req.log = { error: () => {}, info: () => {} };
-            next();
+        const testApp = buildTestApp({
+            createPageContentHelper: throwingHelperFactory,
+            createDocumentDAL: injectedDalFactory
         });
-        testApp.use(
-            '/api/document',
-            createPageMetadataRouter({
-                createPageContentHelper: throwingHelperFactory,
-                createDocumentDAL: injectedDalFactory
-            })
-        );
 
         const res = await request(testApp).get(
-            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-345678'
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-745678'
         );
         assert.equal(res.statusCode, 500);
         assert.ok(Array.isArray(res.body.errors));
@@ -137,22 +136,13 @@ describe('API: Page Metadata Routes', () => {
             }
         });
 
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, _res, next) => {
-            req.log = { error: () => {}, info: () => {} };
-            next();
+        const testApp = buildTestApp({
+            createPageContentHelper: helperNullFactory,
+            createDocumentDAL: injectedDalFactory
         });
-        testApp.use(
-            '/api/document',
-            createPageMetadataRouter({
-                createPageContentHelper: helperNullFactory,
-                createDocumentDAL: injectedDalFactory
-            })
-        );
 
         const res = await request(testApp).get(
-            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-345678'
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-745678'
         );
         assert.equal(res.statusCode, 404);
         assert.ok(Array.isArray(res.body.errors));
@@ -168,22 +158,13 @@ describe('API: Page Metadata Routes', () => {
             }
         });
 
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, _res, next) => {
-            req.log = { error: () => {}, info: () => {} };
-            next();
+        const testApp = buildTestApp({
+            createPageContentHelper: throwingHelperFactory,
+            createDocumentDAL: injectedDalFactory
         });
-        testApp.use(
-            '/api/document',
-            createPageMetadataRouter({
-                createPageContentHelper: throwingHelperFactory,
-                createDocumentDAL: injectedDalFactory
-            })
-        );
 
         const res = await request(testApp).get(
-            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-345678'
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-745678'
         );
         assert.equal(res.statusCode, 404);
         assert.ok(Array.isArray(res.body.errors));
@@ -197,22 +178,13 @@ describe('API: Page Metadata Routes', () => {
             }
         });
 
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, _res, next) => {
-            req.log = { error: () => {}, info: () => {} };
-            next();
+        const testApp = buildTestApp({
+            createPageContentHelper: injectedHelperFactory,
+            createDocumentDAL: throwingDalFactory
         });
-        testApp.use(
-            '/api/document',
-            createPageMetadataRouter({
-                createPageContentHelper: injectedHelperFactory,
-                createDocumentDAL: throwingDalFactory
-            })
-        );
 
         const res = await request(testApp).get(
-            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-345678'
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-745678'
         );
         assert.equal(res.statusCode, 500);
         assert.ok(Array.isArray(res.body.errors));
@@ -224,22 +196,13 @@ describe('API: Page Metadata Routes', () => {
             throw new Error('Unexpected initialization error');
         };
 
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, _res, next) => {
-            req.log = { error: () => {}, info: () => {} };
-            next();
+        const testApp = buildTestApp({
+            createPageContentHelper: helperFactoryThatThrowsUnexpected,
+            createDocumentDAL: injectedDalFactory
         });
-        testApp.use(
-            '/api/document',
-            createPageMetadataRouter({
-                createPageContentHelper: helperFactoryThatThrowsUnexpected,
-                createDocumentDAL: injectedDalFactory
-            })
-        );
 
         const res = await request(testApp).get(
-            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-345678'
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-745678'
         );
         assert.equal(res.statusCode, 500);
         assert.ok(Array.isArray(res.body.errors));
@@ -252,22 +215,13 @@ describe('API: Page Metadata Routes', () => {
             }
         });
 
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, _res, next) => {
-            req.log = { error: () => {}, info: () => {} };
-            next();
+        const testApp = buildTestApp({
+            createPageContentHelper: throwingHelperFactory,
+            createDocumentDAL: injectedDalFactory
         });
-        testApp.use(
-            '/api/document',
-            createPageMetadataRouter({
-                createPageContentHelper: throwingHelperFactory,
-                createDocumentDAL: injectedDalFactory
-            })
-        );
 
         const res = await request(testApp).get(
-            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-345678'
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-745678'
         );
         assert.equal(res.statusCode, 500);
         assert.equal(res.body.errors[0].title, 'Internal Server Error');
@@ -280,22 +234,13 @@ describe('API: Page Metadata Routes', () => {
             }
         });
 
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, _res, next) => {
-            req.log = { info: () => {}, error: () => {} };
-            next();
+        const testApp = buildTestApp({
+            createPageContentHelper: injectedHelperFactory,
+            createDocumentDAL: dalFactoryNoCorrespondence
         });
-        testApp.use(
-            '/api/document',
-            createPageMetadataRouter({
-                createPageContentHelper: injectedHelperFactory,
-                createDocumentDAL: dalFactoryNoCorrespondence
-            })
-        );
 
         const res = await request(testApp).get(
-            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-345678'
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-745678'
         );
         assert.equal(res.statusCode, 200);
         assert.strictEqual(res.body.data.correspondence_type, null);

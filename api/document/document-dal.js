@@ -22,14 +22,15 @@ import createDBQueryDefault from '../../db/index.js';
  * @param {Object} params - Configuration parameters for the DAL.
  * @param {string} params.caseReferenceNumber
  *   Case reference number to scope searches.
- *   Must match the pattern `/^[0-9]{2}-[0-9]{6}$/`.
- *   - The first two characters are digits (`0–9`) - The 2-digit year the case was created.
- *   - Followed by a dash (`-`)
- *   - Followed by six digits (`0–9`) - The 6-digit ID for that case, for that year.
+ *   Must match the pattern `/^\d{2}-[78]\d{5}$/`.
+ *   Format: YY-7NNNNN or YY-8NNNNN (e.g. 26-711111, 36-873423)
+ *   - YY: 2-digit year the case was created (e.g. 26 for 2026)
+ *   - 7: Personal Injury cases | 8: Bereavement cases
+ *   - NNNNN: 5-digit case ID for that year
  *
  *   **Examples**
- *   - `"12-345678"`
- *   - `"00-000000"`
+ *   - `"12-745678"`
+ *   - `"00-800000"`
  *
  * @param {Function} [params.createDBQuery=createDBQueryDefault]
  *   Factory function used to create the database query interface.

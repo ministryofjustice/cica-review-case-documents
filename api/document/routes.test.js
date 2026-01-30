@@ -40,15 +40,15 @@ describe('API Document Routes', () => {
     describe('API Router Configuration', () => {
         it('should mount the search router at /search', async () => {
             const res = await request(app)
-                .get('/search?query=test&pageNumber=1&crn=12-345678')
-                .set('On-Behalf-Of', '12-345678');
+                .get('/search?query=test&pageNumber=1&crn=12-745678')
+                .set('On-Behalf-Of', '12-745678');
 
             // Will get 200 or similar, but not 404 (route exists)
             assert.notStrictEqual(res.statusCode, 404);
         });
 
         it('should not have document streaming routes (moved to main app)', async () => {
-            const res = await request(app).get('/documents/12-345678/doc-123/pages/5');
+            const res = await request(app).get('/documents/12-745678/doc-123/pages/5');
 
             // Route should not exist in API anymore
             assert.strictEqual(res.statusCode, 404);

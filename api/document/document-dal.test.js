@@ -20,7 +20,7 @@ describe('document-dal', () => {
                 return {
                     body: {
                         hits: [
-                            { _id: 'doc1', _source: { chunk_text: 'foo', case_ref: '12-345678' } }
+                            { _id: 'doc1', _source: { chunk_text: 'foo', case_ref: '12-745678' } }
                         ]
                     }
                 };
@@ -50,7 +50,7 @@ describe('document-dal', () => {
         assert.throws(
             () =>
                 createDocumentDAL({
-                    caseReferenceNumber: '12-345678',
+                    caseReferenceNumber: '12-745678',
                     createDBQuery: () => CREATE_DB_QUERY_INSTANCE.SUCCESS
                 }),
             (err) =>
@@ -61,7 +61,7 @@ describe('document-dal', () => {
 
     it('Should return body.hits from DB response', async () => {
         const dal = createDocumentDAL({
-            caseReferenceNumber: '12-345678',
+            caseReferenceNumber: '12-745678',
             createDBQuery: () => CREATE_DB_QUERY_INSTANCE.SUCCESS,
             logger: mockLogger
         });
@@ -75,7 +75,7 @@ describe('document-dal', () => {
 
     it('Should rethrow if an error if db.query throws', async () => {
         const dal = createDocumentDAL({
-            caseReferenceNumber: '12-345678',
+            caseReferenceNumber: '12-745678',
             createDBQuery: () => CREATE_DB_QUERY_INSTANCE.FAILURE,
             logger: mockLogger
         });
@@ -88,7 +88,7 @@ describe('document-dal', () => {
 
     it('Should return an empty array if response has no hits', async () => {
         const dal = createDocumentDAL({
-            caseReferenceNumber: '12-345678',
+            caseReferenceNumber: '12-745678',
             createDBQuery: () => CREATE_DB_QUERY_INSTANCE.EMPTY,
             logger: mockLogger
         });
@@ -122,7 +122,7 @@ describe('document-dal', () => {
             };
 
             const dal = createDocumentDAL({
-                caseReferenceNumber: '12-345678',
+                caseReferenceNumber: '12-745678',
                 createDBQuery: () => mockDB,
                 logger: mockLogger
             });
@@ -147,7 +147,7 @@ describe('document-dal', () => {
             };
 
             const dal = createDocumentDAL({
-                caseReferenceNumber: '12-345678',
+                caseReferenceNumber: '12-745678',
                 createDBQuery: () => mockDB,
                 logger: mockLogger
             });
@@ -165,7 +165,7 @@ describe('document-dal', () => {
             };
 
             const dal = createDocumentDAL({
-                caseReferenceNumber: '12-345678',
+                caseReferenceNumber: '12-745678',
                 createDBQuery: () => mockDB,
                 logger: mockLogger
             });
@@ -197,7 +197,7 @@ describe('document-dal', () => {
             };
 
             const dal = createDocumentDAL({
-                caseReferenceNumber: '12-345678',
+                caseReferenceNumber: '12-745678',
                 createDBQuery: () => mockDB,
                 logger: mockLogger
             });
@@ -220,7 +220,7 @@ describe('document-dal', () => {
             };
 
             const dal = createDocumentDAL({
-                caseReferenceNumber: '12-345678',
+                caseReferenceNumber: '12-745678',
                 createDBQuery: () => mockDB,
                 logger: { info: () => {}, warn: () => {} } // Provide info and warn methods
             });
@@ -239,7 +239,7 @@ describe('document-dal', () => {
             };
 
             const dal = createDocumentDAL({
-                caseReferenceNumber: '12-345678',
+                caseReferenceNumber: '12-745678',
                 createDBQuery: () => mockDB,
                 logger: { info: () => {} } // Logger without warn method
             });
@@ -256,7 +256,7 @@ describe('document-dal', () => {
             };
 
             const dal = createDocumentDAL({
-                caseReferenceNumber: '12-345678',
+                caseReferenceNumber: '12-745678',
                 createDBQuery: () => mockDB,
                 logger: { error: () => {} }
             });
@@ -275,7 +275,7 @@ describe('document-dal', () => {
             };
 
             const dal = createDocumentDAL({
-                caseReferenceNumber: '12-345678',
+                caseReferenceNumber: '12-745678',
                 createDBQuery: () => mockDB,
                 logger: { info: () => {} } // Logger without error method
             });
@@ -303,7 +303,7 @@ describe('document-dal', () => {
             };
 
             const dal = createDocumentDAL({
-                caseReferenceNumber: '12-345678',
+                caseReferenceNumber: '12-745678',
                 createDBQuery: () => mockDB,
                 logger: { info: () => {}, error: () => {} }
             });
@@ -320,7 +320,7 @@ describe('document-dal', () => {
             };
 
             const dal = createDocumentDAL({
-                caseReferenceNumber: '12-345678',
+                caseReferenceNumber: '12-745678',
                 createDBQuery: () => mockDB,
                 logger: { info: () => {} } // Logger without error method
             });

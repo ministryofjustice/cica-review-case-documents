@@ -1,12 +1,14 @@
 import createRequestServiceDefault from '../service/request/index.js';
 
+const CRN_REGEX = /^\d{2}-[78]\d{5}$/;
+
 /**
  * Creates a document metadata service for fetching page metadata from the API.
  *
  * @param {Object} options - The options for creating the metadata service.
  * @param {string} options.documentId - The UUID of the document
  * @param {number} options.pageNumber - The page number
- * @param {string} options.crn - The case reference number
+ * @param {string} options.crn - The case reference number (format: YY-7NNNNN or YY-8NNNNN, e.g. 26-711111)
  * @param {string} [options.jwtToken] - Optional JWT token for authentication
  * @param {Object} [options.logger] - Optional logger instance
  * @param {Function} [options.createRequestService] - Factory function to create request service (for testing)
@@ -41,10 +43,10 @@ function createDocumentMetadataService({
             throw new Error('Invalid page number');
         }
 
-        // Validate CRN format (case reference number: alphanumeric, hyphens, spaces)
-        // Expected format: "XX-XXXXXXX" or similar
-        const crnRegex = /^[a-zA-Z0-9\-\s]+$/;
-        if (!crn || !crnRegex.test(crn)) {
+        // Validate CRN format (case reference number)
+        // Format: YY-7NNNNN or YY-8NNNNN (e.g. 26-711111, 36-873423)
+        // where YY = year, 7 = Personal Injury, 8 = Bereavement, NNNNN = 5-digit case ID
+        if (!crn || !CRN_REGEX.test(crn)) {
             throw new Error('Invalid case reference number format');
         }
 

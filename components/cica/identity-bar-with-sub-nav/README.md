@@ -25,7 +25,7 @@ This component integrates the MOJ Identity Bar with sub-navigation, allowing you
 ```nunjucks
 {{ cicaIdentityBarWithSubNav({
     title: {
-        html: '<strong>CRN: 25-111111</strong>'
+        html: '<strong>CRN: 25-711111</strong>'
     },
     subNav: {
         label: "Sub navigation",
@@ -49,7 +49,7 @@ This component integrates the MOJ Identity Bar with sub-navigation, allowing you
 ```nunjucks
 {{ cicaIdentityBarWithSubNav({
     title: {
-        text: "CRN: 25-111111"
+        text: "CRN: 25-711111"
     },
     subNav: {
         label: "Sub navigation",
@@ -68,7 +68,7 @@ This component integrates the MOJ Identity Bar with sub-navigation, allowing you
 ```nunjucks
 {{ cicaIdentityBarWithSubNav({
     title: {
-        html: '<strong>CRN: 25-111111</strong>'
+        html: '<strong>CRN: 25-711111</strong>'
     },
     subNav: {
         label: "Sub navigation",
@@ -182,7 +182,7 @@ When using the `title.html` parameter, ensure that any dynamic content is proper
 {# SAFE - Using hardcoded HTML #}
 {{ cicaIdentityBarWithSubNav({
     title: {
-        html: '<strong>CRN: 25-111111</strong>'
+        html: '<strong>CRN: 25-711111</strong>'
     }
 }) }}
 

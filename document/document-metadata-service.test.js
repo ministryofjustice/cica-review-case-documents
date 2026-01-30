@@ -38,7 +38,7 @@ describe('document-metadata-service', () => {
         const service = createDocumentMetadataService({
             documentId: '123e4567-e89b-12d3-a456-426614174000',
             pageNumber: 1,
-            crn: '12-345678',
+            crn: '12-745678',
             jwtToken: 'fake-jwt-token',
             logger: fakeLogger,
             createRequestService: mockCreateRequestService
@@ -58,7 +58,7 @@ describe('document-metadata-service', () => {
         const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
         assert.equal(
             mockGetCallArguments.url,
-            'http://find-tool.local/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-345678'
+            'http://find-tool.local/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=12-745678'
         );
         assert.equal(mockGetCallArguments.headers.Authorization, 'Bearer fake-jwt-token');
     });
@@ -67,7 +67,7 @@ describe('document-metadata-service', () => {
         const service = createDocumentMetadataService({
             documentId: '123e4567-e89b-12d3-a456-426614174000',
             pageNumber: 2,
-            crn: '12-345678',
+            crn: '12-745678',
             jwtToken: 'my-token',
             createRequestService: mockCreateRequestService
         });
@@ -82,7 +82,7 @@ describe('document-metadata-service', () => {
         const service = createDocumentMetadataService({
             documentId: '123e4567-e89b-12d3-a456-426614174000',
             pageNumber: 1,
-            crn: '12-345678',
+            crn: '12-745678',
             createRequestService: mockCreateRequestService
         });
 
@@ -96,7 +96,7 @@ describe('document-metadata-service', () => {
         const service = createDocumentMetadataService({
             documentId: 'not-a-uuid',
             pageNumber: 1,
-            crn: '12-345678',
+            crn: '12-745678',
             createRequestService: mockCreateRequestService
         });
 
@@ -109,7 +109,7 @@ describe('document-metadata-service', () => {
         const service = createDocumentMetadataService({
             documentId: '123e4567-e89b-12d3-a456-426614174000',
             pageNumber: 0,
-            crn: '12-345678',
+            crn: '12-745678',
             createRequestService: mockCreateRequestService
         });
 
@@ -122,7 +122,7 @@ describe('document-metadata-service', () => {
         const service = createDocumentMetadataService({
             documentId: '123e4567-e89b-12d3-a456-426614174000',
             pageNumber: -5,
-            crn: '12-345678',
+            crn: '12-745678',
             createRequestService: mockCreateRequestService
         });
 
@@ -164,7 +164,7 @@ describe('document-metadata-service', () => {
         const service = createDocumentMetadataService({
             documentId: '123e4567-e89b-12d3-a456-426614174000',
             pageNumber: 1,
-            crn: '12-345678',
+            crn: '12-745678',
             createRequestService: mockCreateRequestService
         });
 
@@ -191,7 +191,7 @@ describe('document-metadata-service', () => {
         const service = createDocumentMetadataService({
             documentId: '123e4567-e89b-12d3-a456-426614174000',
             pageNumber: 1,
-            crn: '12-345678',
+            crn: '12-745678',
             createRequestService: mockCreateRequestService
         });
 

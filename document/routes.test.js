@@ -81,28 +81,28 @@ describe('Document Routes', () => {
 
     describe('Input Validation', () => {
         it('should reject invalid document ID format', async () => {
-            const res = await request(app).get(`/document/not-a-uuid/view/page/1?crn=12-345678`);
+            const res = await request(app).get(`/document/not-a-uuid/view/page/1?crn=12-745678`);
 
             assert.strictEqual(res.statusCode, 400);
         });
 
         it('should reject invalid page number (zero)', async () => {
             const docId = '123e4567-e89b-12d3-a456-426614174000';
-            const res = await request(app).get(`/document/${docId}/view/page/0?crn=12-345678`);
+            const res = await request(app).get(`/document/${docId}/view/page/0?crn=12-745678`);
 
             assert.strictEqual(res.statusCode, 400);
         });
 
         it('should reject invalid page number (negative)', async () => {
             const docId = '123e4567-e89b-12d3-a456-426614174000';
-            const res = await request(app).get(`/document/${docId}/view/page/-5?crn=12-345678`);
+            const res = await request(app).get(`/document/${docId}/view/page/-5?crn=12-745678`);
 
             assert.strictEqual(res.statusCode, 400);
         });
 
         it('should reject invalid page number (non-integer)', async () => {
             const docId = '123e4567-e89b-12d3-a456-426614174000';
-            const res = await request(app).get(`/document/${docId}/view/page/abc?crn=12-345678`);
+            const res = await request(app).get(`/document/${docId}/view/page/abc?crn=12-745678`);
 
             assert.strictEqual(res.statusCode, 400);
         });
@@ -119,7 +119,7 @@ describe('Document Routes', () => {
         it('renders image view with metadata and query parameters', async () => {
             const docId = '123e4567-e89b-12d3-a456-426614174000';
             const res = await request(app).get(
-                `/document/${docId}/view/page/1?crn=12-345678&searchTerm=test%20query&searchResultsPageNumber=2`
+                `/document/${docId}/view/page/1?crn=12-745678&searchTerm=test%20query&searchResultsPageNumber=2`
             );
 
             assert.equal(res.statusCode, 200);
@@ -138,7 +138,7 @@ describe('Document Routes', () => {
 
             const docId = '123e4567-e89b-12d3-a456-426614174000';
             const res = await request(appWithFailingService).get(
-                `/document/${docId}/view/page/1?crn=12-345678`
+                `/document/${docId}/view/page/1?crn=12-745678`
             );
 
             assert.equal(res.statusCode, 500);
@@ -149,7 +149,7 @@ describe('Document Routes', () => {
         it('renders text view with valid parameters', async () => {
             const docId = '123e4567-e89b-12d3-a456-426614174000';
             const res = await request(app).get(
-                `/document/${docId}/view/text/page/1?crn=12-345678&searchTerm=test&searchResultsPageNumber=2`
+                `/document/${docId}/view/text/page/1?crn=12-745678&searchTerm=test&searchResultsPageNumber=2`
             );
 
             assert.equal(res.statusCode, 200);
@@ -158,7 +158,7 @@ describe('Document Routes', () => {
 
         it('returns 400 for invalid documentId in text view', async () => {
             const res = await request(app).get(
-                `/document/invalid-id/view/text/page/1?crn=12-345678`
+                `/document/invalid-id/view/text/page/1?crn=12-745678`
             );
 
             assert.equal(res.statusCode, 400);
@@ -166,7 +166,7 @@ describe('Document Routes', () => {
 
         it('returns 400 for invalid page number in text view', async () => {
             const docId = '123e4567-e89b-12d3-a456-426614174000';
-            const res = await request(app).get(`/document/${docId}/view/text/page/0?crn=12-345678`);
+            const res = await request(app).get(`/document/${docId}/view/text/page/0?crn=12-745678`);
 
             assert.equal(res.statusCode, 400);
         });
@@ -181,14 +181,14 @@ describe('Document Routes', () => {
 
     describe('Image Streaming Endpoint', () => {
         it('returns 400 for invalid documentId in image streaming', async () => {
-            const res = await request(app).get(`/document/not-a-uuid/page/1?crn=12-345678`);
+            const res = await request(app).get(`/document/not-a-uuid/page/1?crn=12-745678`);
 
             assert.equal(res.statusCode, 400);
         });
 
         it('returns 400 for invalid page number in image streaming', async () => {
             const docId = '123e4567-e89b-12d3-a456-426614174000';
-            const res = await request(app).get(`/document/${docId}/page/0?crn=12-345678`);
+            const res = await request(app).get(`/document/${docId}/page/0?crn=12-745678`);
 
             assert.equal(res.statusCode, 400);
         });
@@ -211,7 +211,7 @@ describe('Document Routes', () => {
 
             const docId = '123e4567-e89b-12d3-a456-426614174000';
             const res = await request(appWithFailingService).get(
-                `/document/${docId}/page/1?crn=12-345678`
+                `/document/${docId}/page/1?crn=12-745678`
             );
 
             assert.equal(res.statusCode, 204);
@@ -228,7 +228,7 @@ describe('Document Routes', () => {
 
             const docId = '123e4567-e89b-12d3-a456-426614174000';
             const res = await request(appWithMissingUrl).get(
-                `/document/${docId}/page/1?crn=12-345678`
+                `/document/${docId}/page/1?crn=12-745678`
             );
 
             assert.equal(res.statusCode, 204);

@@ -473,7 +473,7 @@ See the comments in both files for more details.
 
 **Solution:** Add `caseReferenceNumber` query parameter to URL:
 ```
-http://localhost:5000/search?caseReferenceNumber=25-111111
+http://localhost:5000/search?caseReferenceNumber=25-711111
 ```
 
 Available parameters: `caseReferenceNumber` or `crn` (alias)
