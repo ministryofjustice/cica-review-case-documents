@@ -1,50 +1,36 @@
 import { S3Client } from '@aws-sdk/client-s3';
 
 /**
- * Creates and configures an S3 client based on environment variables.
+ * Creates and returns an S3Client instance configured for either local development (using LocalStack)
+ * or production (using AWS S3).
  *
- * @returns {S3Client} Configured S3 client instance
- * @throws {Error} If required environment variables are missing
+ * - In local development (`DEPLOY_ENV === 'local-dev'`), connects to LocalStack at `http://localhost:4566`
+ *   with test credentials.
+ * - In production, uses default AWS S3 configuration (region only; credentials are managed by environment).
+ *
+ * @returns {S3Client} Configured AWS S3 client instance.
  */
 export function createS3Client() {
-    const S3_BUCKET_LOCATION = process.env.APP_S3_BUCKET_LOCATION;
     const AWS_REGION = process.env.AWS_REGION || 'eu-west-2';
+    const DEPLOY_ENV = process.env.DEPLOY_ENV || 'production';
 
-    if (!S3_BUCKET_LOCATION) {
-        throw new Error('Missing required environment variable APP_S3_BUCKET_LOCATION');
-    }
-
-    const isLocal = S3_BUCKET_LOCATION.includes('localhost');
-
-    return new S3Client({
-        region: AWS_REGION,
-        ...(isLocal
-            ? {
-                  endpoint: S3_BUCKET_LOCATION,
-                  forcePathStyle: true,
-                  credentials: {
-                      accessKeyId: process.env.CICA_AWS_ACCESS_KEY_ID || 'test',
-                      secretAccessKey: process.env.CICA_AWS_SECRET_ACCESS_KEY || 'test'
-                  }
-              }
-            : {
-                  // In AWS, use IRSA: do not set endpoint or credentials
-              })
-    });
-}
-
-/**
- * Validates that required S3 environment variables are set.
- *
- * @throws {Error} If required environment variables are missing. Catches configuration issues early.
- */
-export function validateS3Config() {
-    const API_BASE_URL = process.env.APP_API_URL;
-    const S3_BUCKET_LOCATION = process.env.APP_S3_BUCKET_LOCATION;
-
-    if (!API_BASE_URL || !S3_BUCKET_LOCATION) {
-        throw new Error(
-            'Missing required environment variables APP_API_URL and/or APP_S3_BUCKET_LOCATION'
-        );
+    if (DEPLOY_ENV === 'local-dev') {
+        const localStackEndpoint = 'http://localhost:4566';
+        // Use LocalStack endpoint for local development
+        return new S3Client({
+            region: AWS_REGION,
+            endpoint: localStackEndpoint,
+            forcePathStyle: true,
+            credentials: {
+                accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'test',
+                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'test'
+            }
+        });
+    } else {
+        // Use default AWS S3 configuration (IRSA or IAM roles)
+        return new S3Client({
+            region: AWS_REGION
+            // No endpoint or credentials needed for AWS
+        });
     }
 }

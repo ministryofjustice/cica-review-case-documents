@@ -227,7 +227,6 @@ This ensures users can seamlessly navigate from search results → document → 
 
 ### Main Application
 - `APP_API_URL` - URL to API server (e.g., `http://localhost:5000/api`)
-- `APP_S3_BUCKET_LOCATION` - S3 endpoint (e.g., `http://localhost:4566` for LocalStack)
 - `AWS_REGION` - AWS region (e.g., `eu-west-2`)
 - `AWS_ACCESS_KEY_ID` - AWS credentials (use `000000000000` for LocalStack)
 - `AWS_SECRET_ACCESS_KEY` - AWS secret (use `test` for LocalStack)
