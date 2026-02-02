@@ -53,6 +53,7 @@ export default async function createApi(options = {}) {
     const docsRouter = express.Router();
     docsRouter.use(authenticateJWTToken);
     if (process.env.DEPLOY_ENV !== 'production') {
+        // Serve Swagger UI only in non-production environments
         docsRouter.use(
             '/',
             helmet({
