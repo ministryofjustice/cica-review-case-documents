@@ -4,13 +4,6 @@
 
 {% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 {%- from "moj/components/sub-navigation/macro.njk" import mojSubNavigation -%}
-
-<style>
-.govuk-tabs__list {
-  border: none !important;
-}
-
-</style>
 {% block innerContent %}
  
 {{ govukBackLink({
@@ -38,21 +31,39 @@
 
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-full">
-        
+
         {% if imageUrl %}
-            <div class="govuk-form-group" style="border: 1px solid #b1b4b6; padding: 20px; margin-bottom: 20px;">
-                <img src="{{ imageUrl }}" alt="Page {{pageNumber}} from a {{pageTitle}} document, for case {{caseReferenceNumber}}" style="max-width: 100%; height: auto;">
-            </div>            
+            <div class="document-image-container" id="documentImageContainer">
+                <img 
+                  src="{{ imageUrl }}" 
+                  alt="Page {{pageNumber}} from a {{pageTitle}} document, for case {{caseReferenceNumber}}" 
+                  class="document-image"
+                  id="documentImage">
+                
+                {% for chunk in pageChunks %}
+                  {% if chunk.bounding_box %}
+                    {# TODO: 
+                      this inline style works because we're not explicitly blocking inline styles. If "style-src" 
+                      is restricted in future, we need to ensure this dynamic style can still be applied.
+                    #}
+                    <div
+                      class="chunk-overlay" 
+                      data-chunk-id="{{ chunk.chunk_id }}"
+                      data-chunk-type="{{ chunk.chunk_type }}"
+                      style="left: {{ (chunk.bounding_box.left * 100) | round(2) }}%; top: {{ (chunk.bounding_box.top * 100) | round(2) }}%; width: {{ (chunk.bounding_box.width * 100) | round(2) }}%; height: {{ (chunk.bounding_box.height * 100) | round(2) }}%;">
+                    </div>
+                  {% endif %}
+                {% endfor %}
+            </div>
         {% else %}
             <div class="govuk-warning-text">
-                <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
-                <strong class="govuk-warning-text__text">
-                    <span class="govuk-visually-hidden">Warning</span>
-                    Page IMAGE not available
-                </strong>
+              <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
+              <strong class="govuk-warning-text__text">
+                <span class="govuk-visually-hidden">Warning</span>
+                  Page IMAGE not available
+              </strong>
             </div>
         {% endif %}
-        
       </div>
   </div>
 

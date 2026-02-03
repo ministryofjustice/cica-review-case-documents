@@ -9,7 +9,7 @@ import createDocumentRouter from './routes.js';
 /**
  * Helper function to set up a test express app with required middleware
  */
-function createTestApp(mockCreateDocumentMetadataService) {
+function createTestApp(mockCreateDocumentMetadataService, mockCreatePageChunksService) {
     const testApp = express();
     testApp.use(express.json());
     testApp.use(express.urlencoded({ extended: true }));
@@ -38,7 +38,8 @@ function createTestApp(mockCreateDocumentMetadataService) {
     testApp.use(
         '/document',
         createDocumentRouter({
-            createDocumentMetadataService: mockCreateDocumentMetadataService
+            createDocumentMetadataService: mockCreateDocumentMetadataService,
+            createPageChunksService: mockCreatePageChunksService
         })
     );
 
@@ -117,10 +118,24 @@ describe('Document Routes', () => {
     describe('Page View Rendering', () => {
         it('renders image view with metadata and query parameters', async () => {
             const docId = '123e4567-e89b-12d3-a456-426614174000';
-            const res = await request(app).get(
-                `/document/${docId}/view/page/1?crn=12-745678&searchTerm=test%20query&searchResultsPageNumber=2`
+
+            const passingMetadataService = () => ({
+                getPageMetadata: () => Promise.resolve({ correspondence_type: 'test' })
+            });
+
+            const passingPageChunksService = () => ({
+                getPageChunks: () => Promise.resolve([])
+            });
+
+            const appWithPassingServices = createTestApp(
+                passingMetadataService,
+                passingPageChunksService
             );
 
+            const res = await request(appWithPassingServices).get(
+                `/document/${docId}/view/page/1?crn=12-745678&searchTerm=test%20query&searchResultsPageNumber=2`
+            );
+            console.log(res.text);
             assert.equal(res.statusCode, 200);
             // Ensure mock correspondence_type influences title rendering indirectly
             assert.ok(typeof res.text === 'string');
@@ -128,12 +143,39 @@ describe('Document Routes', () => {
 
         it('handles metadata fetch failure gracefully', async () => {
             // Create a mock that throws an error
-            const failingMetadataService = {
+            const failingMetadataService = () => ({
                 getPageMetadata: () => Promise.reject(new Error('API connection failed'))
-            };
-            const mockCreateMetadataService = () => failingMetadataService;
+            });
 
-            const appWithFailingService = createTestApp(mockCreateMetadataService);
+            const passingPageChunksService = () => ({
+                getPageChunks: () => Promise.resolve([])
+            });
+            const appWithFailingService = createTestApp(
+                failingMetadataService,
+                passingPageChunksService
+            );
+
+            const docId = '123e4567-e89b-12d3-a456-426614174000';
+            const res = await request(appWithFailingService).get(
+                `/document/${docId}/view/page/1?crn=12-745678`
+            );
+
+            assert.equal(res.statusCode, 500);
+        });
+
+        it('handles chunk data fetch failure gracefully', async () => {
+            const passingMetadataService = () => ({
+                getPageMetadata: () => Promise.resolve({ correspondence_type: 'test' })
+            });
+
+            const failingPageChunksService = () => ({
+                getPageChunks: () => Promise.reject(new Error('API connection failed'))
+            });
+
+            const appWithFailingService = createTestApp(
+                passingMetadataService,
+                failingPageChunksService
+            );
 
             const docId = '123e4567-e89b-12d3-a456-426614174000';
             const res = await request(appWithFailingService).get(

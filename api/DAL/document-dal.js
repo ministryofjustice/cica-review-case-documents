@@ -125,25 +125,14 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
             logger.info({ hitsCount: hits?.hits?.length ?? 0 }, 'OpenSearch Search response');
 
             if (hits?.hits?.length === 0) {
-                if (logger && typeof logger.warn === 'function') {
-                    logger.warn(
-                        { keyword, caseReferenceNumber },
-                        '[OpenSearch] No results found for query'
-                    );
-                } else {
-                    console.warn('[OpenSearch] No results found for query:', {
-                        keyword,
-                        caseReferenceNumber
-                    });
-                }
+                logger?.warn?.(
+                    { keyword, caseReferenceNumber },
+                    '[OpenSearch] No results found for query'
+                );
             }
             return hits;
         } catch (err) {
-            if (logger && typeof logger.error === 'function') {
-                logger.error({ err }, '[OpenSearch] Search error');
-            } else {
-                console.error('[OpenSearch] Search error:', err);
-            }
+            logger?.error?.({ err }, '[OpenSearch] Search error');
             throw new VError(
                 err,
                 `Failed to execute search query on index "${process.env.OPENSEARCH_INDEX_CHUNKS_NAME}"`
@@ -162,9 +151,7 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
      */
     async function getPageMetadataByDocumentIdAndPageNumber(documentId, pageNumber) {
         try {
-            if (logger && typeof logger.info === 'function') {
-                logger.info({ documentId, pageNumber }, 'Querying OpenSearch for page metadata');
-            }
+            logger?.info?.({ documentId, pageNumber }, 'Querying OpenSearch for page metadata');
 
             const response = await db.query({
                 index: 'page_metadata',
@@ -176,29 +163,99 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
                                 { match: { page_num: parseInt(pageNumber, 10) } }
                             ]
                         }
-                    }
+                    },
+                    _source: [
+                        'source_doc_id',
+                        'page_num',
+                        'page_count',
+                        'page_id',
+                        's3_page_image_s3_uri',
+                        'text',
+                        'correspondence_type'
+                    ]
                 }
             });
 
             if (response.body?.hits?.hits && response.body.hits.hits.length > 0) {
                 const hit = response.body.hits.hits[0];
-                if (logger && typeof logger.info === 'function') {
-                    logger.info({ documentId, pageNumber, pageId: hit._id }, 'Page metadata found');
-                }
+                logger?.info?.({ documentId, pageNumber, pageId: hit._id }, 'Page metadata found');
                 return hit._source;
             }
 
-            if (logger && typeof logger.info === 'function') {
-                logger.info({ documentId, pageNumber }, 'Page metadata not found');
-            }
+            logger?.info?.({ documentId, pageNumber }, 'Page metadata not found');
             return null;
         } catch (err) {
-            if (logger && typeof logger.error === 'function') {
-                logger.error({ err, documentId, pageNumber }, 'Failed to query page metadata');
-            }
+            logger?.error?.({ err, documentId, pageNumber }, 'Failed to query page metadata');
             throw new VError(
                 err,
                 `Failed to query page metadata for document "${documentId}" page "${pageNumber}"`
+            );
+        }
+    }
+
+    /**
+     * Retrieves all chunks for a specific document page, filtered by document ID, page number and search term.
+     * Returns only the bounding box and chunk text data for each chunk to support overlay rendering.
+     *
+     * @async
+     * @param {string} documentId - The UUID of the document (source_doc_id in OpenSearch).
+     * @param {number|string} pageNumber - The page number.
+     * @param {string} [searchTerm] - Search term to filter chunks by content.
+     * @returns {Promise<Array<Object>>} Array of chunk objects containing only bounding_box data.
+     * @throws {VError} If the database query fails.
+     */
+    async function getPageChunksByDocumentIdAndPageNumber(documentId, pageNumber, searchTerm) {
+        try {
+            logger?.info?.(
+                { documentId, pageNumber, searchTerm },
+                'Querying OpenSearch for page chunks with bounding boxes'
+            );
+
+            const mustQuery = [
+                { match: { source_doc_id: documentId } },
+                { match: { page_number: parseInt(pageNumber, 10) } },
+                { match: { case_ref: caseReferenceNumber } }
+            ];
+
+            if (searchTerm) {
+                mustQuery.push({ match: { chunk_text: searchTerm } });
+            }
+
+            const queryBody = {
+                query: {
+                    bool: {
+                        must: mustQuery
+                    }
+                },
+                _source: ['chunk_id', 'bounding_box', 'chunk_type', 'chunk_index', 'chunk_text'],
+                sort: [{ chunk_index: { order: 'asc' } }]
+            };
+
+            const response = await db.query({
+                index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
+                body: queryBody
+            });
+
+            const hits = response?.body?.hits?.hits || [];
+
+            logger?.info?.(
+                { documentId, pageNumber, chunksCount: hits.length, searchTerm },
+                'Retrieved page chunks'
+            );
+
+            if (hits.length === 0) {
+                logger?.warn?.(
+                    { documentId, pageNumber, caseReferenceNumber, searchTerm },
+                    'No chunks found for document page'
+                );
+            }
+
+            return hits.map((hit) => hit._source);
+        } catch (err) {
+            logger?.error?.({ err, documentId, pageNumber }, 'Failed to query page chunks');
+            throw new VError(
+                err,
+                `Failed to query page chunks for document "${documentId}" page "${pageNumber}"`
             );
         }
     }
@@ -207,7 +264,8 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
         getDocuments,
         getDocument,
         getDocumentsChunksByKeyword,
-        getPageMetadataByDocumentIdAndPageNumber
+        getPageMetadataByDocumentIdAndPageNumber,
+        getPageChunksByDocumentIdAndPageNumber
     });
 }
 

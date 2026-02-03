@@ -3,13 +3,20 @@ import { describe, it } from 'node:test';
 import { createPageViewerHandler } from './page-viewer.js';
 
 describe('Page Viewer Handler', () => {
+    const mockCreatePageChunksService = () => ({
+        getPageChunks: async () => []
+    });
+
     describe('Handler structure', () => {
         it('creates a handler function', () => {
             const mockCreateMetadataService = () => ({
                 getPageMetadata: async () => ({ correspondence_type: 'TEST' })
             });
 
-            const handler = createPageViewerHandler(mockCreateMetadataService);
+            const handler = createPageViewerHandler(
+                mockCreateMetadataService,
+                mockCreatePageChunksService
+            );
             assert.equal(typeof handler, 'function');
         });
 
@@ -18,7 +25,10 @@ describe('Page Viewer Handler', () => {
                 getPageMetadata: async () => ({ correspondence_type: 'TEST' })
             });
 
-            const handler = createPageViewerHandler(mockCreateMetadataService);
+            const handler = createPageViewerHandler(
+                mockCreateMetadataService,
+                mockCreatePageChunksService
+            );
             assert.equal(handler.constructor.name, 'AsyncFunction');
         });
     });
@@ -33,7 +43,10 @@ describe('Page Viewer Handler', () => {
                 })
             });
 
-            const handler = createPageViewerHandler(mockCreateMetadataService);
+            const handler = createPageViewerHandler(
+                mockCreateMetadataService,
+                mockCreatePageChunksService
+            );
 
             const req = {
                 validatedParams: {
@@ -47,7 +60,7 @@ describe('Page Viewer Handler', () => {
                 },
                 cookies: { jwtToken: 'token' },
                 session: { caseSelected: 'CASE-2024-001' },
-                log: { info: () => {}, error: () => {} }
+                log: { info: () => {}, error: () => {}, warn: () => {} }
             };
 
             const res = {
@@ -74,7 +87,10 @@ describe('Page Viewer Handler', () => {
                 })
             });
 
-            const handler = createPageViewerHandler(mockCreateMetadataService);
+            const handler = createPageViewerHandler(
+                mockCreateMetadataService,
+                mockCreatePageChunksService
+            );
 
             const req = {
                 validatedParams: {
@@ -113,7 +129,10 @@ describe('Page Viewer Handler', () => {
                 }
             });
 
-            const handler = createPageViewerHandler(mockCreateMetadataService);
+            const handler = createPageViewerHandler(
+                mockCreateMetadataService,
+                mockCreatePageChunksService
+            );
 
             const req = {
                 validatedParams: {
@@ -154,7 +173,10 @@ describe('Page Viewer Handler', () => {
                 })
             });
 
-            const handler = createPageViewerHandler(mockCreateMetadataService);
+            const handler = createPageViewerHandler(
+                mockCreateMetadataService,
+                mockCreatePageChunksService
+            );
 
             const req = {
                 validatedParams: {
@@ -194,7 +216,10 @@ describe('Page Viewer Handler', () => {
                 }
             });
 
-            const handler = createPageViewerHandler(mockCreateMetadataService);
+            const handler = createPageViewerHandler(
+                mockCreateMetadataService,
+                mockCreatePageChunksService
+            );
 
             const req = {
                 validatedParams: {
@@ -232,7 +257,10 @@ describe('Page Viewer Handler', () => {
                 getPageMetadata: async () => null
             });
 
-            const handler = createPageViewerHandler(mockCreateMetadataService);
+            const handler = createPageViewerHandler(
+                mockCreateMetadataService,
+                mockCreatePageChunksService
+            );
 
             const req = {
                 validatedParams: {

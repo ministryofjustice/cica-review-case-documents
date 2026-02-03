@@ -3,5 +3,5 @@
     "title": "Case Reference Number",
     "type": "string",
     "maxLength": 9,
-    "pattern": "^[0-9]{2}-[0-9]{6}$"
+    "pattern": "^\\d{2}-[78]\\d{5}$"
 }

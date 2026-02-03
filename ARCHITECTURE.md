@@ -46,7 +46,7 @@ The CICA Review Case Documents application is a document viewing system designed
    - The main app never queries OpenSearch directly
 
 3. **API is Data-Focused**
-   - API only handles data operations (search, metadata retrieval)
+   - API only handles data operations (search, metadata, chunk retrieval)
    - API queries OpenSearch for all document and page metadata
    - API does not stream binary content (images)
 
@@ -87,16 +87,18 @@ The CICA Review Case Documents application is a document viewing system designed
 **Responsibilities**:
 - Query OpenSearch for document metadata
 - Query OpenSearch for page metadata (correspondence_type, dimensions, S3 URIs)
+- Query OpenSearch for page chunks relating to a specific document
 - Execute search queries
 - Return JSON responses only (no HTML rendering, no binary streaming)
 
 **Routes**:
 - `GET /api/search?query=...` - Search document chunks
 - `GET /api/document/:documentId/page/:pageNumber/metadata?crn=...` - Get page metadata from OpenSearch
+- `GET /api/document/:documentId/page/:pageNumber/chunks?crn=...` - Get document page chunks
 
 **Dependencies**:
 - Direct connection to OpenSearch via `db/index.js`
-- Uses DAL (Data Access Layer) at `api/document/document-dal.js`
+- Uses DAL (Data Access Layer) at `api/DAL/document-dal.js`
 
 ### Data Stores
 

@@ -16,7 +16,8 @@ import ensureEnvVarsAreValid, { getMandatoryEnvVars, getOptionalEnvVars } from '
 
 const fakeLogger = {
     info: () => {},
-    child: () => fakeLogger
+    child: () => fakeLogger,
+    debug: () => {}
 };
 
 const originalEnv = { ...process.env };
@@ -52,8 +53,7 @@ describe('ensureEnvVarsAreValid', () => {
                 'APP_COOKIE_SECRET',
                 'APP_API_URL',
                 'APP_DATABASE_URL',
-                'OPENSEARCH_INDEX_CHUNKS_NAME',
-                'APP_S3_BUCKET_LOCATION'
+                'OPENSEARCH_INDEX_CHUNKS_NAME'
             ]);
         });
 
@@ -115,6 +115,55 @@ describe('ensureEnvVarsAreValid', () => {
                 (err) => {
                     assert.equal(err.name, 'ConfigurationError');
                     assert.match(err.message, /must be a non-empty array/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should log debug message when optional env var is not set', async () => {
+            const { checkEnvVars } = await import('./index.js');
+            let debugCalled = false;
+            let debugPayload = null;
+            const mockLogger = {
+                info: () => {},
+                child: () => mockLogger,
+                debug: (payload, message) => {
+                    debugCalled = true;
+                    debugPayload = payload;
+                }
+            };
+
+            delete process.env.PORT;
+            checkEnvVars({ optionalEnvVars: ['PORT'], logger: mockLogger });
+
+            assert.equal(debugCalled, true);
+            assert.equal(debugPayload.data.environmentVariableName, 'PORT');
+        });
+
+        it('Should not log when optional env var is set', async () => {
+            const { checkEnvVars } = await import('./index.js');
+            let debugCalled = false;
+            const mockLogger = {
+                info: () => {},
+                child: () => mockLogger,
+                debug: () => {
+                    debugCalled = true;
+                }
+            };
+
+            process.env.PORT = '3000';
+            checkEnvVars({ optionalEnvVars: ['PORT'], logger: mockLogger });
+
+            assert.equal(debugCalled, false);
+        });
+
+        it('Should throw ConfigurationError if logger is invalid', async () => {
+            const { checkEnvVars } = await import('./index.js');
+            assert.throws(
+                () => checkEnvVars({ logger: { notALogger: true } }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /Invalid logger instance/);
                     return true;
                 }
             );

@@ -1,4 +1,4 @@
-import createRequestServiceDefault from '../service/request/index.js';
+import createRequestServiceDefault from '../../service/request/index.js';
 
 const CRN_REGEX = /^\d{2}-[78]\d{5}$/;
 
@@ -64,11 +64,15 @@ function createDocumentMetadataService({
         const url = `${apiBaseUrl}/document/${documentId}/page/${pageNum}/metadata?crn=${encodeURIComponent(crn)}`;
 
         const opts = {
-            url,
-            headers: {
-                Authorization: jwtToken ? `Bearer ${jwtToken}` : undefined
-            }
+            url
         };
+
+        if (jwtToken) {
+            // Only include Authorization header if jwtToken is provided, do not send undefined or empty token
+            opts.headers = {
+                Authorization: `Bearer ${jwtToken}`
+            };
+        }
 
         const response = await get(opts);
 

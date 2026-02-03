@@ -89,6 +89,15 @@ describe('API: Page Metadata Routes', () => {
         assert.ok(Array.isArray(res.body.errors));
     });
 
+    it('400 when crn has invalid format', async () => {
+        const res = await request(app).get(
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/1/metadata?crn=invalid-crn'
+        );
+        assert.equal(res.statusCode, 400);
+        assert.ok(Array.isArray(res.body.errors));
+        assert.equal(res.body.errors[0].detail, 'Invalid case reference number');
+    });
+
     it('404 when DAL returns no full metadata', async () => {
         // Re-mount with DAL returning null
         const dalNullFactory = () => ({
