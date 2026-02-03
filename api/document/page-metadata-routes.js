@@ -1,6 +1,6 @@
 import express from 'express';
-import createPageContentHelper from '../helpers/page-content-helper.js';
-import createPageMetadataService from './page-metadata-service.js';
+import createPageContentHelper from './services/page-content-service.js';
+import createPageMetadataService from './services/page-metadata-service.js';
 
 const CRN_REGEX = /^\d{2}-[78]\d{5}$/;
 

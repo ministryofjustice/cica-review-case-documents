@@ -1,8 +1,8 @@
-import createDocumentDALDefault from '../document/document-dal.js';
+import createDocumentDALDefault from '../../DAL/document-dal.js';
 
 /**
  * Creates a page content helper that retrieves page metadata and prepares content URLs/data.
- * This is API-specific logic for handling different content types from page metadata.
+ * This is document-specific logic for handling different content types from page metadata.
  *
  * @param {Object} options - Configuration options.
  * @param {string} options.caseReferenceNumber - The case reference number.

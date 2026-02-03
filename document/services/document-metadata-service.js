@@ -1,4 +1,4 @@
-import createRequestServiceDefault from '../service/request/index.js';
+import createRequestServiceDefault from '../../service/request/index.js';
 
 const CRN_REGEX = /^\d{2}-[78]\d{5}$/;
 

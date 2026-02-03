@@ -176,7 +176,16 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
                                 { match: { page_num: parseInt(pageNumber, 10) } }
                             ]
                         }
-                    }
+                    },
+                    _source: [
+                        'source_doc_id',
+                        'page_num',
+                        'page_count',
+                        'page_id',
+                        's3_page_image_s3_uri',
+                        'text',
+                        'correspondence_type'
+                    ]
                 }
             });
 
@@ -203,11 +212,87 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
         }
     }
 
+    /**
+     * Retrieves all chunks for a specific document page, filtered by document ID, page number and search term.
+     * Returns only the bounding box and chunk text data for each chunk to support overlay rendering.
+     *
+     * @async
+     * @param {string} documentId - The UUID of the document (source_doc_id in OpenSearch).
+     * @param {number|string} pageNumber - The page number.
+     * @param {string} [searchTerm] - Search term to filter chunks by content.
+     * @returns {Promise<Array<Object>>} Array of chunk objects containing only bounding_box data.
+     * @throws {VError} If the database query fails.
+     */
+    async function getPageChunksByDocumentIdAndPageNumber(documentId, pageNumber, searchTerm) {
+        try {
+            if (logger && typeof logger.info === 'function') {
+                logger.info(
+                    { documentId, pageNumber, searchTerm },
+                    'Querying OpenSearch for page chunks with bounding boxes'
+                );
+            }
+
+            const mustQuery = [
+                { match: { source_doc_id: documentId } },
+                { match: { page_number: parseInt(pageNumber, 10) } },
+                { match: { case_ref: caseReferenceNumber } }
+            ];
+
+            if (searchTerm) {
+                mustQuery.push({ match: { chunk_text: searchTerm } });
+            }
+
+            const queryBody = {
+                query: {
+                    bool: {
+                        must: mustQuery
+                    }
+                },
+                _source: ['chunk_id', 'bounding_box', 'chunk_type', 'chunk_index', 'chunk_text'],
+                sort: [{ chunk_index: { order: 'asc' } }]
+            };
+
+            const response = await db.query({
+                index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
+                body: queryBody
+            });
+
+            const hits = response?.body?.hits?.hits || [];
+
+            if (logger && typeof logger.info === 'function') {
+                logger.info(
+                    { documentId, pageNumber, chunksCount: hits.length, searchTerm },
+                    'Retrieved page chunks'
+                );
+            }
+
+            if (hits.length === 0) {
+                if (logger && typeof logger.warn === 'function') {
+                    logger.warn(
+                        { documentId, pageNumber, caseReferenceNumber, searchTerm },
+                        'No chunks found for document page'
+                    );
+                }
+            }
+
+            return hits.map((hit) => hit._source);
+        } catch (err) {
+            if (logger && typeof logger.error === 'function') {
+                logger.error({ err, documentId, pageNumber }, 'Failed to query page chunks');
+            }
+            throw new VError(
+                err,
+                `Failed to query page chunks for document "${documentId}" page "${pageNumber}"`
+            );
+        }
+    }
+
     return Object.freeze({
         getDocuments,
         getDocument,
         getDocumentsChunksByKeyword,
-        getPageMetadataByDocumentIdAndPageNumber
+        getPageMetadataByDocumentIdAndPageNumber,
+        getPageChunksByDocumentIdAndPageNumber
     });
 }
 
