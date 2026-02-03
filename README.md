@@ -1,11 +1,14 @@
 # FIND
 
+[![Ministry of Justice Repository Compliance Badge](https://github-community.service.justice.gov.uk/repository-standards/api/cica-review-case-documents-airflow/badge)](https://github-community.service.justice.gov.uk/repository-standards/cica-review-case-documents-airflow)
+
+
 [![GitHub repo size](https://img.shields.io/github/repo-size/ministryofjustice/cica-review-case-documents)](https://github.com/ministryofjustice/cica-review-case-documents)
 [![GitHub repo npm version](https://img.shields.io/badge/npm_version->=10.8.2-blue)](https://github.com/ministryofjustice/cica-review-case-documents/blob/master/package.json#L5)
 [![GitHub repo node version](https://img.shields.io/badge/node_version->=22.8.0-blue)](https://github.com/ministryofjustice/cica-review-case-documents/blob/master/package.json#L6)
 [![GitHub repo contributors](https://img.shields.io/github/contributors/ministryofjustice/cica-review-case-documents)](https://github.com/ministryofjustice/cica-review-case-documents/graphs/contributors)
 [![GitHub repo license](https://img.shields.io/github/package-json/license/ministryofjustice/cica-review-case-documents)](https://github.com/ministryofjustice/cica-review-case-documents/blob/master/LICENSE)
-<!-- [![GitHub repo version](https://img.shields.io/github/package-json/v/ministryofjustice/cica-review-case-documents)](https://github.com/ministryofjustice/cica-review-case-documents/releases/latest) -->
+
 
 A web application for searching and reviewing case documents for the Criminal Injuries Compensation Authority (CICA).
 
