@@ -1,17 +1,21 @@
 #!/usr/bin/env node
+
+// IMPORTANT: This conditional import must remain first to load local development environment variables.
+if (process.env.DEPLOY_ENV === 'local-dev') {
+    // Dynamically import for local development only.
+    // In deployed environments, this code will not run, avoiding the need for the file to exist.
+    await import('../loadLocalEnv.js');
+}
+
 import http from 'node:http';
-import { config as dotenvConfig } from 'dotenv';
 import { nanoid } from 'nanoid';
 
+
 process.env.APP_BUILDTIME_ID = nanoid();
-console.log(`Build-time ID generated: ${process.env.APP_BUILDTIME_ID}`);
+console.info(`Build-time ID generated: ${process.env.APP_BUILDTIME_ID}`);
 
 import createApp from '../app.js';
 import { checkOpenSearchHealth } from '../db/healthcheck.js';
-
-if (process.env.NODE_ENV === undefined) {
-    dotenvConfig();
-}
 
 const OPENSEARCH_URL = process.env.APP_DATABASE_URL || 'http://localhost:9200';
 

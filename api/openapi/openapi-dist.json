@@ -25,6 +25,9 @@
     "tags": [
         {
             "name": "Search"
+        },
+        {
+            "name": "Documents"
         }
     ],
     "paths": {
@@ -88,7 +91,7 @@
                             "maxLength": 9,
                             "pattern": "^[0-9]{2}-[0-9]{6}$"
                         },
-                        "example": "25-111111"
+                        "example": "25-711111"
                     }
                 ],
                 "responses": {
@@ -244,7 +247,7 @@
                                                                 "bottom": 0.8442902285605669
                                                             },
                                                             "embedding": null,
-                                                            "case_ref": "25-111111",
+                                                            "case_ref": "25-711111",
                                                             "received_date": "2025-10-06",
                                                             "correspondence_type": "TC19",
                                                             "character_count": 491,
@@ -254,6 +257,287 @@
                                                 ]
                                             }
                                         }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "There is an issue with the request",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$schema": "http://json-schema.org/draft-07/schema#",
+                                    "type": "object",
+                                    "required": [
+                                        "errors"
+                                    ],
+                                    "properties": {
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "required": [
+                                                    "status",
+                                                    "title",
+                                                    "detail"
+                                                ],
+                                                "properties": {
+                                                    "status": {
+                                                        "const": 400
+                                                    },
+                                                    "title": {
+                                                        "const": "400 Bad Request"
+                                                    },
+                                                    "detail": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "errors": [
+                                        {
+                                            "status": 400,
+                                            "title": "400 Bad Request",
+                                            "detail": "Request JSON is malformed"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Access token is missing or invalid",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$schema": "http://json-schema.org/draft-07/schema#",
+                                    "type": "object",
+                                    "required": [
+                                        "errors"
+                                    ],
+                                    "properties": {
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "required": [
+                                                    "status",
+                                                    "title",
+                                                    "detail"
+                                                ],
+                                                "properties": {
+                                                    "status": {
+                                                        "const": 401
+                                                    },
+                                                    "title": {
+                                                        "const": "401 Unauthorized"
+                                                    },
+                                                    "detail": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "errors": [
+                                        {
+                                            "status": 401,
+                                            "detail": "No authorization token was found"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The JWT doesn't permit access to this endpoint",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$schema": "http://json-schema.org/draft-07/schema#",
+                                    "type": "object",
+                                    "required": [
+                                        "errors"
+                                    ],
+                                    "properties": {
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "required": [
+                                                    "status",
+                                                    "title",
+                                                    "detail"
+                                                ],
+                                                "properties": {
+                                                    "status": {
+                                                        "const": 403
+                                                    },
+                                                    "title": {
+                                                        "const": "403 Forbidden"
+                                                    },
+                                                    "detail": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "errors": [
+                                        {
+                                            "status": 403,
+                                            "title": "403 Forbidden",
+                                            "detail": "Insufficient scope"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The specified resource was not found",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "$schema": "http://json-schema.org/draft-07/schema#",
+                                    "type": "object",
+                                    "required": [
+                                        "errors"
+                                    ],
+                                    "properties": {
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "required": [
+                                                    "status",
+                                                    "title",
+                                                    "detail"
+                                                ],
+                                                "properties": {
+                                                    "status": {
+                                                        "const": 404
+                                                    },
+                                                    "title": {
+                                                        "const": "404 Not Found"
+                                                    },
+                                                    "detail": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "errors": [
+                                        {
+                                            "status": 404,
+                                            "title": "404 Not Found",
+                                            "detail": "Resource /api/v1/questionnaires/2d7caf89-2c72-469f-b19d-17f2a22270b6/sections/answers does not exist"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/document/{documentId}/page/{pageNumber}/metadata": {
+            "get": {
+                "tags": [
+                    "Documents"
+                ],
+                "summary": "Get page metadata from OpenSearch",
+                "description": "Returns page metadata including correspondence_type, dimensions, and S3 URI for a specific document page",
+                "operationId": "getPageMetadata",
+                "parameters": [
+                    {
+                        "name": "documentId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The UUID of the document",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "example": "55b2ea3c-3eae-54f7-b81d-292db7c84be7"
+                    },
+                    {
+                        "name": "pageNumber",
+                        "in": "path",
+                        "required": true,
+                        "description": "The page number to retrieve metadata for",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 6
+                    },
+                    {
+                        "name": "crn",
+                        "in": "query",
+                        "required": true,
+                        "description": "Case reference number",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9]{2}-[0-9]{6}$"
+                        },
+                        "example": "26-111111"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "correspondence_type": {
+                                                    "type": "string",
+                                                    "nullable": true,
+                                                    "description": "Type of correspondence document"
+                                                },
+                                                "imageUrl": {
+                                                    "type": "string",
+                                                    "description": "S3 URI for the page image"
+                                                },
+                                                "page_width": {
+                                                    "type": "number",
+                                                    "description": "Page width in pixels"
+                                                },
+                                                "page_height": {
+                                                    "type": "number",
+                                                    "description": "Page height in pixels"
+                                                },
+                                                "page_count": {
+                                                    "type": "number",
+                                                    "description": "Total number of pages in document"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "data": {
+                                        "correspondence_type": "TC19 - ADDITIONAL INFO REQUEST",
+                                        "imageUrl": "s3://document-page-bucket/26-111111/55b2ea3c-3eae-54f7-b81d-292db7c84be7/pages/6.png",
+                                        "page_width": 1654,
+                                        "page_height": 2339,
+                                        "page_count": 50
                                     }
                                 }
                             }
@@ -510,7 +794,7 @@
                     "maxLength": 9,
                     "pattern": "^[0-9]{2}-[0-9]{6}$"
                 },
-                "example": "25-111111"
+                "example": "25-711111"
             }
         },
         "responses": {

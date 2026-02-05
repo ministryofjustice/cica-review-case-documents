@@ -1,5 +1,5 @@
 import VError from 'verror';
-import createDBQueryDefault from '../db/index.js';
+import createDBQueryDefault from '../../db/index.js';
 
 /**
  * @typedef {object} Logger
@@ -22,14 +22,15 @@ import createDBQueryDefault from '../db/index.js';
  * @param {Object} params - Configuration parameters for the DAL.
  * @param {string} params.caseReferenceNumber
  *   Case reference number to scope searches.
- *   Must match the pattern `/^[0-9]{2}-[0-9]{6}$/`.
- *   - The first two characters are digits (`0–9`) - The 2-digit year the case was created.
- *   - Followed by a dash (`-`)
- *   - Followed by six digits (`0–9`) - The 6-digit ID for that case, for that year.
+ *   Must match the pattern `/^\d{2}-[78]\d{5}$/`.
+ *   Format: YY-7NNNNN or YY-8NNNNN (e.g. 26-711111, 36-873423)
+ *   - YY: 2-digit year the case was created (e.g. 26 for 2026)
+ *   - 7: Personal Injury cases | 8: Bereavement cases
+ *   - NNNNN: 5-digit case ID for that year
  *
  *   **Examples**
- *   - `"12-345678"`
- *   - `"00-000000"`
+ *   - `"12-745678"`
+ *   - `"00-800000"`
  *
  * @param {Function} [params.createDBQuery=createDBQueryDefault]
  *   Factory function used to create the database query interface.
@@ -150,10 +151,63 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
         }
     }
 
+    /**
+     * Retrieves page metadata from the page_metadata index by document ID and page number.
+     *
+     * @async
+     * @param {string} documentId - The UUID of the document (source_doc_id in OpenSearch).
+     * @param {number|string} pageNumber - The page number (page_num in OpenSearch).
+     * @returns {Promise<Object|null>} The page metadata object with all fields, or null if not found.
+     * @throws {VError} If the database query fails.
+     */
+    async function getPageMetadataByDocumentIdAndPageNumber(documentId, pageNumber) {
+        try {
+            if (logger && typeof logger.info === 'function') {
+                logger.info({ documentId, pageNumber }, 'Querying OpenSearch for page metadata');
+            }
+
+            const response = await db.query({
+                index: 'page_metadata',
+                body: {
+                    query: {
+                        bool: {
+                            must: [
+                                { match: { source_doc_id: documentId } },
+                                { match: { page_num: parseInt(pageNumber, 10) } }
+                            ]
+                        }
+                    }
+                }
+            });
+
+            if (response.body?.hits?.hits && response.body.hits.hits.length > 0) {
+                const hit = response.body.hits.hits[0];
+                if (logger && typeof logger.info === 'function') {
+                    logger.info({ documentId, pageNumber, pageId: hit._id }, 'Page metadata found');
+                }
+                return hit._source;
+            }
+
+            if (logger && typeof logger.info === 'function') {
+                logger.info({ documentId, pageNumber }, 'Page metadata not found');
+            }
+            return null;
+        } catch (err) {
+            if (logger && typeof logger.error === 'function') {
+                logger.error({ err, documentId, pageNumber }, 'Failed to query page metadata');
+            }
+            throw new VError(
+                err,
+                `Failed to query page metadata for document "${documentId}" page "${pageNumber}"`
+            );
+        }
+    }
+
     return Object.freeze({
         getDocuments,
         getDocument,
-        getDocumentsChunksByKeyword
+        getDocumentsChunksByKeyword,
+        getPageMetadataByDocumentIdAndPageNumber
     });
 }
 

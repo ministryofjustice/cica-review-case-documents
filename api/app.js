@@ -7,11 +7,11 @@ import express from 'express';
 import helmet from 'helmet';
 import pinoHttp from 'pino-http';
 import swaggerUi from 'swagger-ui-express';
+import createApiRouter from './document/routes.js';
 import errorHandler from './middleware/errorHandler/index.js';
 import authenticateJWTToken from './middleware/jwt-authentication/index.js';
 import dynamicRateLimiter from './middleware/rateLimiter/index.js';
 import createOpenApiValidatorMiddleware from './middleware/validator/index.js';
-import createApiRouter from './routes.js';
 import createSearchService from './search/search-service.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -53,6 +53,7 @@ export default async function createApi(options = {}) {
     const docsRouter = express.Router();
     docsRouter.use(authenticateJWTToken);
     if (process.env.DEPLOY_ENV !== 'production') {
+        // Serve Swagger UI only in non-production environments
         docsRouter.use(
             '/',
             helmet({
