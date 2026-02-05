@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 
-// IMPORTANT: This import must remain first to load local development environment variables before anything else!
-import '../loadLocalEnv.js'; // load env vars
+// IMPORTANT: This conditional import must remain first to load local development environment variables.
+if (process.env.DEPLOY_ENV === 'local-dev') {
+    // Dynamically import for local development only.
+    // In deployed environments, this code will not run, avoiding the need for the file to exist.
+    await import('../loadLocalEnv.js');
+}
 
 import http from 'node:http';
 import { nanoid } from 'nanoid';

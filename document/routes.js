@@ -4,7 +4,7 @@ import createDocumentMetadataService from './document-metadata-service.js';
 import { createImageStreamingHandler } from './handlers/image-streaming.js';
 import { createPageViewerHandler } from './handlers/page-viewer.js';
 import { createTextViewerHandler } from './handlers/text-viewer.js';
-import { createS3Client, validateS3Config } from './services/s3-service.js';
+import { createS3Client } from './services/s3-service.js';
 
 /**
  * Creates an Express router for handling document viewing functionality.
@@ -18,9 +18,6 @@ import { createS3Client, validateS3Config } from './services/s3-service.js';
  * @route GET /document/:documentId/view/text/page/:pageNumber - Text viewer endpoint
  */
 function createDocumentRouter(options = {}) {
-    // Validate S3 configuration when router is created
-    validateS3Config();
-
     const { createDocumentMetadataService: createMetadataService = createDocumentMetadataService } =
         options;
     const router = express.Router();

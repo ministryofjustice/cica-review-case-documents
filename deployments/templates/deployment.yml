@@ -14,7 +14,7 @@ spec:
       labels:
         app: cica-case-review-documents
     spec:
-      serviceAccountName: ${SERVICE_ACCOUNT_NAME}
+      serviceAccountName: irsa-cica-s3
       containers:
         - name: cica-case-review-documents
           image: ${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}

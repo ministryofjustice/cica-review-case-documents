@@ -59,7 +59,6 @@ describe('Document Routes', () => {
 
     beforeEach(async () => {
         process.env.APP_API_URL = 'http://find-tool.local';
-        process.env.APP_S3_BUCKET_LOCATION = 'http://localhost:4566';
         process.env.NODE_ENV = 'test';
 
         // Mock the getPageMetadata method
