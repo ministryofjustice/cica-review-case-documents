@@ -37,8 +37,8 @@ Before running any `kubectl` commands for this local setup, ensure you are targe
 Before switching contexts, capture your current context so you can easily switch back when finished.
 ```shell
 # Save current context to a variable (for use later)
-$PREVIOUS_CONTEXT = kubectl config current-context
-echo "Current context: $PREVIOUS_CONTEXT"
+ $ PREVIOUS_CONTEXT=$(kubectl config current-context)
+ echo "Current context: $PREVIOUS_CONTEXT"
 ```
 
 **2. List available contexts:**

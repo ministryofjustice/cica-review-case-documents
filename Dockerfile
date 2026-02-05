@@ -9,9 +9,13 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+
 WORKDIR /usr/src/app
 
-COPY package*.json ./
+COPY package.json package-lock.json ./
+
+# Upgrade npm to the latest version to avoid internal npm errors
+RUN npm install -g npm@latest
 
 RUN npm ci --omit=dev --ignore-scripts
 
