@@ -6,10 +6,14 @@ import { buildBackLink, buildImageUrl, buildTextPageLink } from '../utils/link-b
  * Handles the page viewer endpoint.
  * Renders a page view with an image from the associated document.
  *
- * @param {Function} createMetadataService - Factory function to create metadata service
+ * @param {Function} createMetadataServiceFactory - Factory function to create metadata service
+ * @param {Function} createPageChunksServiceFactory - Factory function to create document page chunks service
  * @returns {Function} Express route handler
  */
-export function createPageViewerHandler(createMetadataService) {
+export function createPageViewerHandler(
+    createMetadataServiceFactory,
+    createPageChunksServiceFactory
+) {
     return async (req, res, next) => {
         try {
             const templateEngineService = createTemplateEngineService();
@@ -22,7 +26,7 @@ export function createPageViewerHandler(createMetadataService) {
             // Fetch document page metadata from API (which queries OpenSearch)
             let pageMetadata;
             try {
-                const metadataService = createMetadataService({
+                const metadataService = createMetadataServiceFactory({
                     documentId,
                     pageNumber,
                     crn,
@@ -50,6 +54,26 @@ export function createPageViewerHandler(createMetadataService) {
 
             const pageTitle = formatPageTitle(pageMetadata.correspondence_type);
 
+            // Fetch document page chunks with bounding boxes for overlay rendering
+            let pageChunks = [];
+            try {
+                const pageChunksServiceInstance = createPageChunksServiceFactory({
+                    documentId,
+                    pageNumber,
+                    crn,
+                    searchTerm,
+                    jwtToken: req.cookies?.jwtToken,
+                    logger: req.log
+                });
+                pageChunks = await pageChunksServiceInstance.getPageChunks();
+            } catch (error) {
+                // Log the error but don't fail the request - overlays are optional
+                req.log?.warn(
+                    { error: error.message, documentId, pageNumber, searchTerm },
+                    'Failed to retrieve document page chunks - continuing without overlays'
+                );
+            }
+
             const html = render('document/page/imageview.njk', {
                 documentId,
                 pageNumber,
@@ -61,7 +85,8 @@ export function createPageViewerHandler(createMetadataService) {
                 cspNonce: res.locals.cspNonce,
                 textPageLink,
                 backLink,
-                pageTitle
+                pageTitle,
+                pageChunks: pageChunks || []
             });
 
             return res.send(html);

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it, mock } from 'node:test';
-import createPageContentHelper from './page-content-helper.js';
+import createPageContentHelper from './page-content-service.js';
 
 describe('Page Content Helper', () => {
     let mockDocumentDAL;
