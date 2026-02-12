@@ -60,6 +60,7 @@ describe('page-metadata-service', () => {
         });
 
         assert.deepStrictEqual(result, {
+            documentId,
             correspondence_type: 'TC19',
             page_count: 10,
             page_num: 2,
