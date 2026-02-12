@@ -166,12 +166,11 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
                     },
                     _source: [
                         'source_doc_id',
-                        'page_num',
+                        'correspondence_type',
                         'page_count',
-                        'page_id',
+                        'page_num',
                         's3_page_image_s3_uri',
-                        'text',
-                        'correspondence_type'
+                        'text'
                     ]
                 }
             });
@@ -242,13 +241,6 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
                 { documentId, pageNumber, chunksCount: hits.length, searchTerm },
                 'Retrieved page chunks'
             );
-
-            if (hits.length === 0) {
-                logger?.warn?.(
-                    { documentId, pageNumber, caseReferenceNumber, searchTerm },
-                    'No chunks found for document page'
-                );
-            }
 
             return hits.map((hit) => hit._source);
         } catch (err) {

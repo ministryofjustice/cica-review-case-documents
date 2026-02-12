@@ -9,18 +9,22 @@ import { getLoginAttemptContext, renderLoginResponse } from './utils/loginHelper
 
 const router = express.Router();
 
-router.get('/login', generalRateLimiter, (req, res, next) => {
-    try {
-        const templateEngineService = createTemplateEngineService();
-        const { render } = templateEngineService;
-        const html = render('index/login.njk', {
-            csrfToken: res.locals.csrfToken
-        });
-        res.send(html);
-    } catch (err) {
-        next(err);
-    }
-});
+export const createLoginHandler =
+    (templateEngineServiceFactory = createTemplateEngineService) =>
+    (req, res, next) => {
+        try {
+            const templateEngineService = templateEngineServiceFactory();
+            const { render } = templateEngineService;
+            const html = render('index/login.njk', {
+                csrfToken: res.locals.csrfToken
+            });
+            res.send(html);
+        } catch (err) {
+            next(err);
+        }
+    };
+
+router.get('/login', generalRateLimiter, createLoginHandler());
 
 router.post('/login', failureRateLimiter, (req, res, next) => {
     const { username = '', password = '' } = req.body;

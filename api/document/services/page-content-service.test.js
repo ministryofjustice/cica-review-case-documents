@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it, mock } from 'node:test';
+import { buildPageMetadataFixture } from '../../../test/fixtures/page-metadata.js';
 import createPageContentHelper from './page-content-service.js';
 
 describe('Page Content Helper', () => {
@@ -16,15 +17,16 @@ describe('Page Content Helper', () => {
 
         // Mock document DAL
         mockDocumentDAL = {
-            getPageMetadataByDocumentIdAndPageNumber: mock.fn(async () => ({
-                source_doc_id: 'doc-123',
-                page_num: 5,
-                s3_page_image_s3_uri: 's3://my-bucket/path/to/image.png',
-                page_width: 800,
-                page_height: 1200,
-                page_count: 10,
-                text: 'Sample page text content'
-            }))
+            getPageMetadataByDocumentIdAndPageNumber: mock.fn(async () =>
+                buildPageMetadataFixture({
+                    overrides: {
+                        page_count: 10,
+                        page_num: 5,
+                        s3_page_image_s3_uri: 's3://my-bucket/path/to/image.png'
+                    },
+                    omit: ['imageUrl']
+                })
+            )
         };
 
         // Create helper instance

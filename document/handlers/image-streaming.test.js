@@ -281,9 +281,10 @@ describe('Image Streaming Handler', () => {
             const mockMetadataService = {
                 getPageMetadata: mock.fn(async () => ({
                     correspondence_type: 'TC19 - REQUEST',
-                    page_width: 1600,
-                    page_height: 2000
-                    // No imageUrl
+                    page_count: 50,
+                    page_num: 6,
+                    // no imageUrl provided
+                    text: 'Sample page text content'
                 }))
             };
             mockCreateMetadataService = mock.fn(() => mockMetadataService);

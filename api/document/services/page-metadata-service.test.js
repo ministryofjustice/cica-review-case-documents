@@ -21,9 +21,10 @@ describe('page-metadata-service', () => {
 
         mockGetPageContent = async () => {
             return {
-                page_width: 800,
-                page_height: 1000,
+                source_doc_id: documentId,
+                correspondence_type: 'TC19',
                 page_count: 10,
+                page_num: pageNumber,
                 imageUrl: 's3://bucket/doc-123/2.png',
                 text: 'Sample text'
             };
@@ -59,10 +60,10 @@ describe('page-metadata-service', () => {
         });
 
         assert.deepStrictEqual(result, {
+            documentId,
             correspondence_type: 'TC19',
-            page_width: 800,
-            page_height: 1000,
             page_count: 10,
+            page_num: 2,
             imageUrl: 's3://bucket/doc-123/2.png',
             text: 'Sample text'
         });
@@ -76,9 +77,9 @@ describe('page-metadata-service', () => {
             capturedDocumentId = docId;
             capturedPageNumber = pageNum;
             return {
-                page_width: 800,
-                page_height: 1000,
+                correspondence_type: 'TC19',
                 page_count: 10,
+                page_num: pageNum,
                 imageUrl: 's3://bucket/doc-123/2.png',
                 text: 'Sample text'
             };

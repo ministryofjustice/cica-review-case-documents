@@ -3,6 +3,7 @@ import { beforeEach, test } from 'node:test';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import createApp from '../app.js';
+import { createLoginHandler } from './routes.js';
 
 let app;
 let agent;
@@ -38,6 +39,32 @@ test('GET /auth/login should render login page', async () => {
     const response = await agent.get('/auth/login');
     assert.strictEqual(response.status, 200);
     assert.match(response.text, /Sign in/i);
+});
+
+test('GET /auth/login should call next with error when render throws', () => {
+    const renderError = new Error('Render failed');
+    const handler = createLoginHandler(() => ({
+        render: () => {
+            throw renderError;
+        }
+    }));
+
+    const req = {};
+    const res = {
+        locals: { csrfToken: 'csrf-token' },
+        send: () => {
+            throw new Error('send should not be called when render throws');
+        }
+    };
+
+    let nextError;
+    const next = (err) => {
+        nextError = err;
+    };
+
+    handler(req, res, next);
+
+    assert.strictEqual(nextError, renderError);
 });
 
 test('POST /auth/login with no username and no password shows correct errors', async () => {

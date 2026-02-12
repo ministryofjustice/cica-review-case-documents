@@ -1,9 +1,10 @@
 {% extends "page/page.njk" %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{%- from "moj/components/sub-navigation/macro.njk" import mojSubNavigation -%}
+{% from "moj/components/pagination/macro.njk" import mojPagination %}
 
 {% block title %}Document - Page {{ pageNumber }} - CICA FIND - GOV.UK{% endblock %}
 
-{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
-{%- from "moj/components/sub-navigation/macro.njk" import mojSubNavigation -%}
 {% block innerContent %}
  
 {{ govukBackLink({
@@ -28,6 +29,9 @@
   }]
 }) }}
 
+{% if showPagination %}
+{{ mojPagination(paginationData) }}
+{% endif %}
 
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-full">
@@ -66,5 +70,9 @@
         {% endif %}
       </div>
   </div>
+
+{% if showPagination %}
+{{ mojPagination(paginationData) }}
+{% endif %}
 
 {% endblock %}

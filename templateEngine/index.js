@@ -82,7 +82,7 @@ function createTemplateEngineService(app) {
      */
     function render(string, params) {
         if (!environment) {
-            return init();
+            init();
         }
         if (isFilePath(string)) {
             return environment.render(string, params);
