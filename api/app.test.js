@@ -49,6 +49,28 @@ describe('API Application', () => {
     });
 
     describe('OpenAPI Spec Loading', () => {
+        test('logs error when OpenAPI spec content is invalid JSON', async () => {
+            const originalConsoleError = console.error;
+            const consoleErrors = [];
+            console.error = (...args) => {
+                consoleErrors.push(args);
+            };
+
+            try {
+                const appWithInvalidSpec = await createApi({
+                    createSearchService: mockCreateSearchService,
+                    readOpenApiFile: async () => '{'
+                });
+
+                assert.ok(appWithInvalidSpec);
+                assert.strictEqual(consoleErrors.length > 0, true);
+                assert.strictEqual(consoleErrors[0][1], 'Failed to load OpenAPI spec');
+                assert.ok(consoleErrors[0][0].err instanceof Error);
+            } finally {
+                console.error = originalConsoleError;
+            }
+        });
+
         test('handles missing OpenAPI spec file gracefully', async () => {
             const badEnv = { ...process.env };
             process.env.APP_LOG_LEVEL = 'silent';

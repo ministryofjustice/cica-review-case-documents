@@ -1,13 +1,16 @@
 {%- from "moj/components/button-menu/macro.njk" import mojButtonMenu %}
 {% from "moj/components/sub-navigation/macro.njk" import mojSubNavigation %}
 {% from "govuk/macros/attributes.njk" import govukAttributes %}
+
 <div class="moj-identity-bar moj-identity-bar--nested-moj-sub-navigation {{- " " + params.classes if params.classes}}" {{- govukAttributes(params.attributes) -}}>
     <div class="moj-identity-bar__container">
+        <section role="region" aria-label="Identity bar title">
         <div class="moj-identity-bar__details">
             {% if params.title %}
                 <span class="moj-identity-bar__title">{{ params.title.html | safe if params.title.html else params.title.text }}</span>
             {% endif %}
         </div>
+        </section>
         {% if params.subNav %}
             {{ mojSubNavigation(params.subNav) }}
         {% endif %}

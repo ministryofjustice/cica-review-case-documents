@@ -1,5 +1,5 @@
 import createTemplateEngineService from '../../templateEngine/index.js';
-import { buildBackLink, buildImagePageLink } from '../utils/link-builders.js';
+import { buildBackLink, buildImagePageLink } from '../utils/link-builders/index.js';
 
 /**
  * Handles the text viewer endpoint.

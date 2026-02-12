@@ -1,11 +1,12 @@
 {% extends "page/page.njk" %}
+{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
+{%- from "moj/components/sub-navigation/macro.njk" import mojSubNavigation -%}
+{% from "moj/components/pagination/macro.njk" import mojPagination %}
 
 {% block title %}Document - Page {{ pageNumber }} - CICA FIND - GOV.UK{% endblock %}
 
-{% from "govuk/components/back-link/macro.njk" import govukBackLink %}
-{%- from "moj/components/sub-navigation/macro.njk" import mojSubNavigation -%}
 {% block innerContent %}
- 
+
 {{ govukBackLink({
     text: "Back",
     href: backLink
@@ -15,7 +16,7 @@
 
 
 {{ mojSubNavigation({
-  label: "Sub navigation",
+  label: "Content Sub navigation",
   items: [{
     text: "Document image",
     active: true,
@@ -28,26 +29,35 @@
   }]
 }) }}
 
+{% if showPagination %}
+ {{ mojPagination({
+  items: paginationData.items,
+  results: paginationData.results,
+  previous: paginationData.previous,
+  next: paginationData.next,
+  landmarkLabel: "pagination-top"
+ }) }}
+{% endif %}
 
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-full">
 
         {% if imageUrl %}
             <div class="document-image-container" id="documentImageContainer">
-                <img 
-                  src="{{ imageUrl }}" 
-                  alt="Page {{pageNumber}} from a {{pageTitle}} document, for case {{caseReferenceNumber}}" 
+                <img
+                  src="{{ imageUrl }}"
+                  alt="Page {{pageNumber}} from a {{pageTitle}} document, for case {{caseReferenceNumber}}"
                   class="document-image"
                   id="documentImage">
-                
+
                 {% for chunk in pageChunks %}
                   {% if chunk.bounding_box %}
-                    {# TODO: 
-                      this inline style works because we're not explicitly blocking inline styles. If "style-src" 
+                    {# TODO:
+                      this inline style works because we're not explicitly blocking inline styles. If "style-src"
                       is restricted in future, we need to ensure this dynamic style can still be applied.
                     #}
                     <div
-                      class="chunk-overlay" 
+                      class="chunk-overlay"
                       data-chunk-id="{{ chunk.chunk_id }}"
                       data-chunk-type="{{ chunk.chunk_type }}"
                       style="left: {{ (chunk.bounding_box.left * 100) | round(2) }}%; top: {{ (chunk.bounding_box.top * 100) | round(2) }}%; width: {{ (chunk.bounding_box.width * 100) | round(2) }}%; height: {{ (chunk.bounding_box.height * 100) | round(2) }}%;">
@@ -66,5 +76,15 @@
         {% endif %}
       </div>
   </div>
+
+{% if showPagination %}
+ {{ mojPagination({
+  items: paginationData.items,
+  results: paginationData.results,
+  previous: paginationData.previous,
+  next: paginationData.next,
+  landmarkLabel: "pagination-bottom"
+ }) }}
+{% endif %}
 
 {% endblock %}

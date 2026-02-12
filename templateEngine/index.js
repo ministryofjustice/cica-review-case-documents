@@ -81,8 +81,13 @@ function createTemplateEngineService(app) {
      * @returns {string} Rendered HTML string.
      */
     function render(string, params) {
+        // Edge case: environment is already initialized (shared across instances),
+        // but this service instance's 'initialised' flag may be false.
+        // Set 'initialised' to true so getEnvironment() works for this instance.
         if (!environment) {
-            return init();
+            init();
+        } else if (!initialised) {
+            initialised = true;
         }
         if (isFilePath(string)) {
             return environment.render(string, params);

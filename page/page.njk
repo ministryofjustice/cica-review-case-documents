@@ -71,6 +71,7 @@
 
 {% block main %}
     {{ super() }}
+    <section role="region" aria-label="beta banner">
     <div class="govuk-width-container govuk-!-margin-bottom-7">
         <hr class="govuk-section-break govuk-section-break--m govuk-!-margin-bottom-0 govuk-section-break--visible">
         {{ govukPhaseBanner({
@@ -80,6 +81,7 @@
             html: 'This is a new service. Help us improve it and <a class="govuk-link" href="#">give your feedback (opens in new tab)</a>.'
         }) }}
     </div>
+    </section>
 {% endblock %}
 
 {% block bodyEnd %}
