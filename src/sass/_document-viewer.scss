@@ -4,15 +4,13 @@
   position: relative;
   display: inline-block;
   width: 100%;
-  max-width: 100%;
   border: 1px solid #b1b4b6;
   margin-bottom: 20px;
   box-sizing: border-box;
 }
 
 .document-image {
-  max-width: 100%;
-  height: auto;
+  height: 100%; /* Required for percentage-based highlight positioning */
   display: block;
   width: 100%;
 }
@@ -31,4 +29,3 @@
   border: 2px solid #e8b400;
   background-color: rgba(255, 227, 0, 0.2); /* Semi-transparent yellow */
 }
-

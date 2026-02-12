@@ -507,25 +507,27 @@
                                             "type": "object",
                                             "properties": {
                                                 "correspondence_type": {
-                                                    "type": "string",
-                                                    "nullable": true,
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
                                                     "description": "Type of correspondence document"
+                                                },
+                                                "page_count": {
+                                                    "type": "number",
+                                                    "description": "Total number of pages in document"
+                                                },
+                                                "page_num": {
+                                                    "type": "number",
+                                                    "description": "Current page number in document"
                                                 },
                                                 "imageUrl": {
                                                     "type": "string",
                                                     "description": "S3 URI for the page image"
                                                 },
-                                                "page_width": {
-                                                    "type": "number",
-                                                    "description": "Page width in pixels"
-                                                },
-                                                "page_height": {
-                                                    "type": "number",
-                                                    "description": "Page height in pixels"
-                                                },
-                                                "page_count": {
-                                                    "type": "number",
-                                                    "description": "Total number of pages in document"
+                                                "text": {
+                                                    "type": "string",
+                                                    "description": "Full text extracted from the page"
                                                 }
                                             }
                                         }
@@ -534,10 +536,10 @@
                                 "example": {
                                     "data": {
                                         "correspondence_type": "TC19 - ADDITIONAL INFO REQUEST",
+                                        "page_count": 50,
+                                        "page_num": 6,
                                         "imageUrl": "s3://document-page-bucket/26-711111/55b2ea3c-3eae-54f7-b81d-292db7c84be7/pages/6.png",
-                                        "page_width": 1654,
-                                        "page_height": 2339,
-                                        "page_count": 50
+                                        "text": "28-Nov-2022 Gabapentin 600mg tablets"
                                     }
                                 }
                             }

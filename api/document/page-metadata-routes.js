@@ -2,7 +2,8 @@ import express from 'express';
 import createPageContentHelper from './services/page-content-service.js';
 import createPageMetadataService from './services/page-metadata-service.js';
 
-const CRN_REGEX = /^\d{2}-[78]\d{5}$/;
+export const CRN_REGEX = /^\d{2}-[78]\d{5}$/;
+export const PAGE_NUMBER_REGEX = /^\d+$/;
 
 /**
  * Creates an Express router for handling page metadata operations via the API.
@@ -42,9 +43,10 @@ function createPageMetadataRouter(options = {}) {
      *
      * @returns {Object} JSON response with page metadata:
      *   - correspondence_type: string - Type of correspondence (used as page title)
-     *   - page_width: number - Page width in pixels
-     *   - page_height: number - Page height in pixels
      *   - page_count: number - Total pages in document
+     *   - page_num: number - Current page number
+     *   - imageUrl: string - S3 URI for the page image
+     *   - text: string - Extracted text content for the page (if available)
      *
      * @returns {Object} Error response:
      *   - errors: Array of error objects with status, title, and detail fields
@@ -66,9 +68,17 @@ function createPageMetadataRouter(options = {}) {
                 throw err;
             }
 
+            if (!PAGE_NUMBER_REGEX.test(pageNumber) || Number.parseInt(pageNumber, 10) < 1) {
+                const err = new Error('Invalid page number');
+                err.status = 400;
+                throw err;
+            }
+
+            const parsedPageNumber = Number.parseInt(pageNumber, 10);
+
             const combinedMetadata = await pageMetadataService.getCombinedMetadata(
                 documentId,
-                pageNumber,
+                parsedPageNumber,
                 crn,
                 { logger: req.log }
             );

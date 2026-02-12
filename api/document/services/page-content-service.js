@@ -43,9 +43,9 @@ function createPageContentHelper({
 
             // Prepare response based on content type
             return {
+                correspondence_type: pageMetadata.correspondence_type,
                 page_count: pageMetadata.page_count,
-                page_width: pageMetadata.page_width,
-                page_height: pageMetadata.page_height,
+                page_num: pageMetadata.page_num,
                 imageUrl: pageMetadata.s3_page_image_s3_uri,
                 text: pageMetadata.text
             };
