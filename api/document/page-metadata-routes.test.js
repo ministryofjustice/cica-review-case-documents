@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 import express from 'express';
 import request from 'supertest';
+import { buildPageMetadataFixture } from '../../test/fixtures/page-metadata.js';
 import errorHandler from '../middleware/errorHandler/index.js';
 import createPageMetadataRouter from './page-metadata-routes.js';
 
@@ -44,21 +45,23 @@ describe('API: Page Metadata Routes', () => {
         injectedHelperFactory = () => ({
             documentDAL: {},
             async getPageContent(documentId, pageNumber) {
-                return {
-                    correspondence_type: 'TC19 - ADDITIONAL INFO REQUEST',
-                    imageUrl: `s3://bucket/case/pages/${documentId}-${pageNumber}.png`,
-                    page_width: 1654,
-                    page_height: 2339,
-                    page_count: 42,
-                    text: 'example text'
-                };
+                return buildPageMetadataFixture({
+                    overrides: {
+                        page_count: 42,
+                        page_num: 7,
+                        imageUrl: `s3://bucket/case/pages/${documentId}-${pageNumber}.png`,
+                        text: 'example text'
+                    }
+                });
             }
         });
 
         // Default injected DAL yields correspondence type
         injectedDalFactory = () => ({
             async getPageMetadataByDocumentIdAndPageNumber(_documentId, _pageNumber) {
-                return { correspondence_type: 'TC19 - ADDITIONAL INFO REQUEST' };
+                return buildPageMetadataFixture({
+                    omit: ['page_count', 'page_num', 'imageUrl', 'text']
+                });
             }
         });
 
@@ -74,10 +77,9 @@ describe('API: Page Metadata Routes', () => {
         );
         assert.equal(res.statusCode, 200);
         assert.ok(res.body.data);
-        assert.equal(res.body.data.page_width, 1654);
-        assert.equal(res.body.data.page_height, 2339);
-        assert.equal(res.body.data.page_count, 42);
         assert.equal(res.body.data.correspondence_type, 'TC19 - ADDITIONAL INFO REQUEST');
+        assert.equal(res.body.data.page_count, 42);
+        assert.equal(res.body.data.page_num, 1);
         assert.match(res.body.data.imageUrl, /s3:\/\/bucket/);
     });
 

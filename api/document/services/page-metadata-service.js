@@ -77,10 +77,10 @@ function createPageMetadataService({
         }
 
         return {
+            documentId,
             correspondence_type: fullMetadata.correspondence_type || null,
-            page_width: pageMetadata.page_width,
-            page_height: pageMetadata.page_height,
             page_count: pageMetadata.page_count,
+            page_num: Number(pageNumber),
             imageUrl: pageMetadata.imageUrl,
             text: pageMetadata.text
         };

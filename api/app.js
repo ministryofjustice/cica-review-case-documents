@@ -22,6 +22,7 @@ const __dirname = path.dirname(__filename);
  * @param {object} [options] - Optional configuration for the app.
  * @param {object} [options.logger] - An optional logger instance.
  * @param {Function} [options.createSearchService] - A factory function to create the search service.
+ * @param {Function} [options.readOpenApiFile] - Optional file reader for loading OpenAPI spec (used by tests).
  * @returns {Promise<import('express').Application>} A promise that resolves to the configured Express app.
  */
 export default async function createApi(options = {}) {
@@ -41,9 +42,10 @@ export default async function createApi(options = {}) {
     app.use(express.urlencoded({ extended: true }));
 
     const openApiPath = path.join(__dirname, 'openapi', 'openapi-dist.json');
+    const readOpenApiFile = options.readOpenApiFile || readFile; // DI to allow the try/catch to be tested
     let openApiSpec = {};
     try {
-        openApiSpec = JSON.parse(await readFile(openApiPath, 'utf-8'));
+        openApiSpec = JSON.parse(await readOpenApiFile(openApiPath, 'utf-8'));
     } catch (err) {
         // Use the app's logger instance if available
         (app.get('logger') || console).error({ err }, 'Failed to load OpenAPI spec');

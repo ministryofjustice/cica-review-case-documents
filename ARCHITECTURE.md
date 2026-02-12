@@ -148,11 +148,11 @@ This ensures users can seamlessly navigate from search results → document → 
    ```json
    {
      "data": {
-       "correspondence_type": "TC19 - ADDITIONAL INFO REQUEST",
+       "correspondence_type": "TC19 - ADDITIONAL INFO REQUEST",       
+       "page_count": 50,
+       "page_num": 1, 
        "imageUrl": "s3://document-page-bucket/123/abc-123/pages/1.png",
-       "page_width": 1654,
-       "page_height": 2339,
-       "page_count": 5
+       "text": "some text from the document"
      }
    }
    ```
