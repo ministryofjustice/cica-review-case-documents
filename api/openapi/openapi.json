@@ -161,9 +161,9 @@
                         "description": "Case reference number",
                         "schema": {
                             "type": "string",
-                            "pattern": "^[0-9]{2}-[0-9]{6}$"
+                            "pattern": "^\\d{2}-[78]\\d{5}$"
                         },
-                        "example": "26-111111"
+                        "example": "26-711111"
                     }
                 ],
                 "responses": {
@@ -205,10 +205,186 @@
                                 "example": {
                                     "data": {
                                         "correspondence_type": "TC19 - ADDITIONAL INFO REQUEST",
-                                        "imageUrl": "s3://document-page-bucket/26-111111/55b2ea3c-3eae-54f7-b81d-292db7c84be7/pages/6.png",
+                                        "imageUrl": "s3://document-page-bucket/26-711111/55b2ea3c-3eae-54f7-b81d-292db7c84be7/pages/6.png",
                                         "page_width": 1654,
                                         "page_height": 2339,
                                         "page_count": 50
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/UnauthorizedError"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                }
+            }
+        },
+        "/document/{documentId}/page/{pageNumber}/chunks": {
+            "get": {
+                "tags": ["Documents"],
+                "summary": "Get page chunks with bounding boxes",
+                "description": "Returns page chunks with bounding boxes for rendering overlays on a specific document page",
+                "operationId": "getPageChunks",
+                "parameters": [
+                    {
+                        "name": "documentId",
+                        "in": "path",
+                        "required": true,
+                        "description": "The UUID of the document",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "example": "55b2ea3c-3eae-54f7-b81d-292db7c84be7"
+                    },
+                    {
+                        "name": "pageNumber",
+                        "in": "path",
+                        "required": true,
+                        "description": "The page number to retrieve chunks for",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 6
+                    },
+                    {
+                        "name": "crn",
+                        "in": "query",
+                        "required": true,
+                        "description": "Case reference number",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^\\d{2}-[78]\\d{5}$"
+                        },
+                        "example": "26-711111"
+                    },
+                    {
+                        "name": "searchTerm",
+                        "in": "query",
+                        "required": false,
+                        "description": "Optional search term to filter chunks by content",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "acute"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/vnd.api+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "page-chunks"
+                                                },
+                                                "id": {
+                                                    "type": "string",
+                                                    "description": "Unique identifier for this page chunks resource"
+                                                },
+                                                "attributes": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "chunks": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "chunk_id": {
+                                                                        "type": "string",
+                                                                        "description": "Unique identifier for the chunk"
+                                                                    },
+                                                                    "chunk_type": {
+                                                                        "type": "string",
+                                                                        "description": "Type of chunk (e.g., LAYOUT_HEADER, LAYOUT_TEXT)",
+                                                                        "example": "LAYOUT_TEXT"
+                                                                    },
+                                                                    "chunk_index": {
+                                                                        "type": "integer",
+                                                                        "description": "Index of the chunk on the page"
+                                                                    },
+                                                                    "chunk_text": {
+                                                                        "type": "string",
+                                                                        "description": "Text content of the chunk for accessibility"
+                                                                    },
+                                                                    "bounding_box": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "left": {
+                                                                                "type": "number",
+                                                                                "description": "Left offset (0-1 normalized)"
+                                                                            },
+                                                                            "top": {
+                                                                                "type": "number",
+                                                                                "description": "Top offset (0-1 normalized)"
+                                                                            },
+                                                                            "width": {
+                                                                                "type": "number",
+                                                                                "description": "Width (0-1 normalized)"
+                                                                            },
+                                                                            "height": {
+                                                                                "type": "number",
+                                                                                "description": "Height (0-1 normalized)"
+                                                                            },
+                                                                            "right": {
+                                                                                "type": "number",
+                                                                                "description": "Right offset (0-1 normalized)"
+                                                                            },
+                                                                            "bottom": {
+                                                                                "type": "number",
+                                                                                "description": "Bottom offset (0-1 normalized)"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                            "description": "Array of chunks for the page"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "example": {
+                                    "data": {
+                                        "type": "page-chunks",
+                                        "id": "55b2ea3c-3eae-54f7-b81d-292db7c84be7-6",
+                                        "attributes": {
+                                            "chunks": [
+                                                {
+                                                    "chunk_id": "chunk-1",
+                                                    "chunk_type": "LAYOUT_HEADER",
+                                                    "chunk_index": 0,
+                                                    "chunk_text": "Page header text",
+                                                    "bounding_box": {
+                                                        "left": 0.09,
+                                                        "top": 0.04,
+                                                        "width": 0.82,
+                                                        "height": 0.12,
+                                                        "right": 0.91,
+                                                        "bottom": 0.16
+                                                    }
+                                                }
+                                            ]
+                                        }
                                     }
                                 }
                             }

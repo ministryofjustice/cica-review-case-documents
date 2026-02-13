@@ -89,7 +89,7 @@ describe('document-metadata-service', () => {
         await service.getPageMetadata();
 
         const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
-        assert.equal(mockGetCallArguments.headers.Authorization, undefined);
+        assert.equal(mockGetCallArguments.headers, undefined);
     });
 
     it('Should throw error for invalid document ID format', async () => {

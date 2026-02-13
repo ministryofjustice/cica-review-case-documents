@@ -16,76 +16,67 @@ describe('S3 Service', () => {
     });
 
     describe('createS3Client', () => {
-        test('creates S3 client with default AWS region when AWS_REGION is not set', () => {
+        test('creates S3 client with default AWS region (eu-west-2) when AWS_REGION is not set', () => {
             delete process.env.AWS_REGION;
+            delete process.env.DEPLOY_ENV;
 
             const client = createS3Client();
             assert.ok(client, 'S3Client should be created');
+            // Client config is not exposed, so we verify it was created without error
+            assert.strictEqual(client.constructor.name, 'S3Client');
         });
 
         test('creates S3 client with custom AWS region when AWS_REGION is set', () => {
             process.env.AWS_REGION = 'us-east-1';
+            delete process.env.DEPLOY_ENV;
 
             const client = createS3Client();
             assert.ok(client, 'S3Client should be created with custom region');
+            assert.strictEqual(client.constructor.name, 'S3Client');
         });
 
-        test('creates local S3 client with localhost endpoint', () => {
+        test('creates LocalStack S3 client when DEPLOY_ENV is local-dev', () => {
             process.env.AWS_REGION = 'eu-west-2';
+            process.env.DEPLOY_ENV = 'local-dev';
 
             const client = createS3Client();
-            assert.ok(client, 'S3Client should be created for localhost');
+            assert.ok(client, 'S3Client should be created for LocalStack');
+            assert.strictEqual(client.constructor.name, 'S3Client');
         });
 
-        test('creates local S3 client with custom credentials from environment', () => {
-            process.env.CICA_AWS_ACCESS_KEY_ID = 'custom-access-key';
-            process.env.CICA_AWS_SECRET_ACCESS_KEY = 'custom-secret-key';
+        test('uses test credentials for LocalStack when AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are not set', () => {
+            delete process.env.AWS_ACCESS_KEY_ID;
+            delete process.env.AWS_SECRET_ACCESS_KEY;
+            process.env.DEPLOY_ENV = 'local-dev';
+
+            const client = createS3Client();
+            assert.ok(client, 'S3Client should be created with default test credentials');
+        });
+
+        test('uses custom credentials for LocalStack when AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are set', () => {
+            process.env.AWS_ACCESS_KEY_ID = 'custom-access-key';
+            process.env.AWS_SECRET_ACCESS_KEY = 'custom-secret-key';
+            process.env.DEPLOY_ENV = 'local-dev';
 
             const client = createS3Client();
             assert.ok(client, 'S3Client should be created with custom credentials');
         });
 
-        test('creates AWS production S3 client with bucket name (no endpoint)', () => {
+        test('creates production S3 client when DEPLOY_ENV is production', () => {
+            process.env.AWS_REGION = 'eu-west-2';
+            process.env.DEPLOY_ENV = 'production';
+
+            const client = createS3Client();
+            assert.ok(client, 'S3Client should be created for production');
+            assert.strictEqual(client.constructor.name, 'S3Client');
+        });
+
+        test('defaults to production when DEPLOY_ENV is not set', () => {
+            delete process.env.DEPLOY_ENV;
             process.env.AWS_REGION = 'eu-west-2';
 
             const client = createS3Client();
-            assert.ok(client, 'S3Client should be created for AWS production');
-        });
-
-        test('creates AWS production S3 client with S3 ARN (no endpoint)', () => {
-            process.env.AWS_REGION = 'eu-west-2';
-
-            const client = createS3Client();
-            assert.ok(client, 'S3Client should be created with ARN');
-        });
-
-        test('detects localhost in S3 bucket location string', () => {
-            process.env.AWS_REGION = 'eu-west-2';
-
-            const client = createS3Client();
-            assert.ok(client, 'S3Client should detect and handle localhost');
-        });
-
-        test('uses default credentials for local S3 when not provided', () => {
-            delete process.env.CICA_AWS_ACCESS_KEY_ID;
-            delete process.env.CICA_AWS_SECRET_ACCESS_KEY;
-
-            const client = createS3Client();
-            assert.ok(client, 'S3Client should use default credentials for localhost');
-        });
-
-        test('handles localhost with different port numbers', () => {
-            process.env.AWS_REGION = 'eu-west-2';
-
-            const client = createS3Client();
-            assert.ok(client, 'S3Client should handle different localhost ports');
-        });
-
-        test('handles 127.0.0.1 loopback address', () => {
-            process.env.AWS_REGION = 'eu-west-2';
-
-            const client = createS3Client();
-            assert.ok(client, 'S3Client should handle 127.0.0.1 loopback');
+            assert.ok(client, 'S3Client should default to production configuration');
         });
     });
 });

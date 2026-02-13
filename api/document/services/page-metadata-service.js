@@ -1,5 +1,5 @@
-import createPageContentHelperDefault from '../helpers/page-content-helper.js';
-import createDocumentDALDefault from './document-dal.js';
+import createDocumentDALDefault from '../../DAL/document-dal.js';
+import createPageContentHelperDefault from './page-content-service.js';
 
 /**
  * Creates a Page Metadata Service for combining OpenSearch metadata and document metadata.

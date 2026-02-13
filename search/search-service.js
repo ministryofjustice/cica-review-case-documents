@@ -31,10 +31,13 @@ function createSearchService({
         const opts = {
             url: `${process.env.APP_API_URL}/search/?query=${query}&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}`,
             headers: {
-                'On-Behalf-Of': caseReferenceNumber,
-                Authorization: `Bearer ${token}`
+                'On-Behalf-Of': caseReferenceNumber
             }
         };
+        if (token) {
+            // Include Authorization header if token is provided
+            opts.headers.Authorization = `Bearer ${token}`;
+        }
         return get(opts);
     }
 
