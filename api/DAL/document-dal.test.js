@@ -125,6 +125,39 @@ describe('document-dal', () => {
         assert.deepEqual(result, []);
     });
 
+    it('Should call warn when OpenSearch returns zero hits in hits.hits', async () => {
+        const mockDB = {
+            query: async () => ({
+                body: {
+                    hits: {
+                        hits: []
+                    }
+                }
+            })
+        };
+
+        const warnCalls = [];
+        const logger = {
+            info: () => {},
+            error: () => {},
+            warn: (context, message) => warnCalls.push({ context, message })
+        };
+
+        const dal = createDocumentDAL({
+            caseReferenceNumber: '12-745678',
+            createDBQuery: () => mockDB,
+            logger
+        });
+
+        const result = await dal.getDocumentsChunksByKeyword('keyword', 1, 10);
+
+        assert.deepStrictEqual(result, { hits: [] });
+        assert.strictEqual(warnCalls.length, 1);
+        assert.strictEqual(warnCalls[0].message, '[OpenSearch] No results found for query');
+        assert.strictEqual(warnCalls[0].context.keyword, 'keyword');
+        assert.strictEqual(warnCalls[0].context.caseReferenceNumber, '12-745678');
+    });
+
     describe('getPageMetadataByDocumentIdAndPageNumber', () => {
         it('should return page metadata when found', async () => {
             const mockDB = {
@@ -135,12 +168,11 @@ describe('document-dal', () => {
                                 {
                                     _id: 'page1',
                                     _source: {
-                                        source_doc_id: 'doc-123',
+                                        correspondence_type: 'TC19 - ADDITIONAL INFO REQUEST',
+                                        page_count: 10,
                                         page_num: 5,
                                         s3_page_image_s3_uri: 's3://bucket/image.png',
-                                        page_width: 800,
-                                        page_height: 1200,
-                                        page_count: 10
+                                        text: '28-Nov-2022 Gabapentin 600mg tablets'
                                     }
                                 }
                             ]
@@ -158,7 +190,7 @@ describe('document-dal', () => {
             const result = await dal.getPageMetadataByDocumentIdAndPageNumber('doc-123', 5);
 
             assert.ok(result);
-            assert.strictEqual(result.source_doc_id, 'doc-123');
+            assert.strictEqual(result.correspondence_type, 'TC19 - ADDITIONAL INFO REQUEST');
             assert.strictEqual(result.page_num, 5);
             assert.strictEqual(result.s3_page_image_s3_uri, 's3://bucket/image.png');
         });

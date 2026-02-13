@@ -42,9 +42,10 @@ function createPageMetadataRouter(options = {}) {
      *
      * @returns {Object} JSON response with page metadata:
      *   - correspondence_type: string - Type of correspondence (used as page title)
-     *   - page_width: number - Page width in pixels
-     *   - page_height: number - Page height in pixels
      *   - page_count: number - Total pages in document
+     *   - page_num: number - Current page number
+     *   - imageUrl: string - S3 URI for the page image
+     *   - text: string - Extracted text content for the page (if available)
      *
      * @returns {Object} Error response:
      *   - errors: Array of error objects with status, title, and detail fields
