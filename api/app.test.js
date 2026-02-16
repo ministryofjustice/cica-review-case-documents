@@ -230,6 +230,37 @@ describe('API Application', () => {
             assert.strictEqual(res.type, 'application/json');
         });
 
+        test('responds with 200 for docs OpenAPI spec route', async () => {
+            const testEnv = { ...process.env };
+            process.env.DEPLOY_ENV = 'production';
+            process.env.APP_LOG_LEVEL = 'silent';
+            process.env.APP_JWT_SECRET = 'test-secret';
+
+            try {
+                const prodApp = await createApi({
+                    createSearchService: mockCreateSearchService
+                });
+
+                const prodToken = jwt.sign(
+                    { userId: 'test-user-123' },
+                    process.env.APP_JWT_SECRET,
+                    {
+                        expiresIn: '1h'
+                    }
+                );
+
+                const res = await request(prodApp)
+                    .get('/docs/openapi.json')
+                    .set('Authorization', `Bearer ${prodToken}`);
+
+                assert.strictEqual(res.statusCode, 200);
+                assert.strictEqual(res.type, 'application/json');
+                assert.ok(res.body && typeof res.body === 'object');
+            } finally {
+                process.env = testEnv;
+            }
+        });
+
         test('returns 200 and search results for a valid query', async () => {
             const res = await request(app)
                 .get('/search?query=validsearch&pageNumber=1&itemsPerPage=5')
