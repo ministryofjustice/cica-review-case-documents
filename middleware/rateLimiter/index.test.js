@@ -1,9 +1,46 @@
 import assert from 'node:assert';
 import { test } from 'node:test';
 import express from 'express';
+import { ipKeyGenerator } from 'express-rate-limit';
 import session from 'express-session';
 import request from 'supertest';
-import generalRateLimiter from './index.js';
+import generalRateLimiter, { generateRateLimitKey } from './index.js';
+
+test('generateRateLimitKey returns session id when logged in session exists', () => {
+    const req = {
+        session: {
+            loggedIn: true,
+            id: 'session-123'
+        }
+    };
+
+    assert.strictEqual(generateRateLimitKey(req), 'session-123');
+});
+
+test('generateRateLimitKey returns user id when session is not logged in', () => {
+    const req = {
+        session: {
+            loggedIn: false,
+            id: 'session-123'
+        },
+        user: {
+            id: 'user-123'
+        }
+    };
+
+    assert.strictEqual(generateRateLimitKey(req), 'user-123');
+});
+
+test('generateRateLimitKey falls back to ipKeyGenerator when no session or user id', () => {
+    const req = {
+        ip: '127.0.0.1',
+        ips: [],
+        socket: { remoteAddress: '127.0.0.1' },
+        headers: {}
+    };
+
+    assert.strictEqual(generateRateLimitKey(req), ipKeyGenerator(req));
+});
 
 test('skip function returns true in non-production mode', async () => {
     const originalEnv = process.env.NODE_ENV;

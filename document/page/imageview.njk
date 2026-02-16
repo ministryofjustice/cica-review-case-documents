@@ -16,12 +16,11 @@
 
 
 {{ mojSubNavigation({
-  label: "Content Sub navigation",
+  label: "Document navigation",
   items: [{
     text: "Document image",
     active: true,
     href: '#'
-
   }, {
     text: "Document text",
     active: false,
@@ -78,7 +77,7 @@
   </div>
 
 {% if showPagination %}
- {{ mojPagination({
+{{ mojPagination({
   items: paginationData.items,
   results: paginationData.results,
   previous: paginationData.previous,

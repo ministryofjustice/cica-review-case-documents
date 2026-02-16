@@ -98,7 +98,6 @@ function createPageMetadataService({
         const metadataPageNumber = parsePageNumber(pageMetadata.page_num);
 
         return {
-            documentId,
             correspondence_type: fullMetadata.correspondence_type || null,
             page_count: pageMetadata.page_count,
             page_num: metadataPageNumber,
