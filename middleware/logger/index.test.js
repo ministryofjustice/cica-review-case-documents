@@ -11,16 +11,81 @@
  */
 import assert from 'node:assert/strict';
 import { Writable } from 'node:stream';
-import { beforeEach, describe, it } from 'node:test';
+import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import express from 'express';
 import request from 'supertest';
-import createLogger from './index.js';
+import createLogger, { buildRedactConfig } from './index.js';
+
+const REDACT_ENV_VARS = ['APP_LOG_REDACT_DISABLE', 'APP_LOG_REDACT_EXTRA'];
+const LOGGER_ENV_VARS = ['APP_LOG_LEVEL', ...REDACT_ENV_VARS];
+
+/**
+ * Captures current values for the provided environment variable names.
+ *
+ * @param {string[]} envVars - Environment variable names to snapshot.
+ * @returns {Record<string, string|undefined>} Snapshot of env var values.
+ */
+function snapshotEnv(envVars) {
+    const envSnapshot = {};
+    for (const envVar of envVars) {
+        envSnapshot[envVar] = process.env[envVar];
+    }
+    return envSnapshot;
+}
+
+/**
+ * Restores environment variable values from a snapshot.
+ *
+ * @param {string[]} envVars - Environment variable names to restore.
+ * @param {Record<string, string|undefined>} envSnapshot - Snapshot of original values.
+ */
+function restoreEnv(envVars, envSnapshot) {
+    for (const envVar of envVars) {
+        if (envSnapshot[envVar] === undefined) {
+            delete process.env[envVar];
+        } else {
+            process.env[envVar] = envSnapshot[envVar];
+        }
+    }
+}
+
+describe('buildRedactConfig', () => {
+    let envSnapshot;
+
+    beforeEach(() => {
+        envSnapshot = snapshotEnv(REDACT_ENV_VARS);
+    });
+
+    afterEach(() => {
+        restoreEnv(REDACT_ENV_VARS, envSnapshot);
+    });
+
+    it('returns undefined when APP_LOG_REDACT_DISABLE is true', () => {
+        process.env.APP_LOG_REDACT_DISABLE = 'true';
+        process.env.APP_LOG_REDACT_EXTRA = 'req.headers.x-extra';
+
+        const result = buildRedactConfig();
+        assert.strictEqual(result, undefined);
+    });
+
+    it('returns base and extra paths when redaction is enabled', () => {
+        delete process.env.APP_LOG_REDACT_DISABLE;
+        process.env.APP_LOG_REDACT_EXTRA = 'req.headers.x-extra';
+
+        const result = buildRedactConfig();
+        assert.ok(result);
+        assert.ok(result.paths.includes('req.headers.authorization'));
+        assert.ok(result.paths.includes('req.headers.x-extra'));
+        assert.strictEqual(result.censor, '[REDACTED]');
+    });
+});
 
 describe('Logger integration', () => {
     let app;
     let logStream;
     let lines = [];
+    let envSnapshot;
 
     /**
      * Creates a writable stream that captures and parses JSON log entries.
@@ -44,7 +109,8 @@ describe('Logger integration', () => {
     }
 
     beforeEach(() => {
-        process.env.NODE_ENV = 'production';
+        envSnapshot = snapshotEnv(LOGGER_ENV_VARS);
+
         process.env.APP_LOG_LEVEL = 'info';
         delete process.env.APP_LOG_REDACT_DISABLE;
         delete process.env.APP_LOG_REDACT_EXTRA;
@@ -62,6 +128,10 @@ describe('Logger integration', () => {
         app.get('/warn', (req, res) => res.status(404).send({ error: 'not found' }));
         app.get('/error', (req, res) => res.status(500).send({ error: 'boom' }));
         app.post('/redact', (req, res) => res.json(req.body));
+    });
+
+    afterEach(() => {
+        restoreEnv(LOGGER_ENV_VARS, envSnapshot);
     });
 
     it('should log level INFO for 200 responses', async () => {
@@ -117,5 +187,24 @@ describe('Logger integration', () => {
         await request(app).get('/extra').set('x-custom-secret', 'foobar');
         const entry = lines.find((l) => l.req);
         assert.strictEqual(entry.req.headers['x-custom-secret'], '[REDACTED]');
+    });
+
+    it('should disable redaction when APP_LOG_REDACT_DISABLE is true', async () => {
+        process.env.APP_LOG_REDACT_DISABLE = 'true';
+
+        logStream = new LogCaptureStream();
+        const logger = createLogger({ stream: logStream });
+        app = express();
+        app.use(logger);
+        app.get('/no-redact', (req, res) => res.send('ok'));
+
+        await request(app)
+            .get('/no-redact')
+            .set('authorization', 'Bearer test-token')
+            .set('x-custom-secret', 'foobar');
+
+        const entry = lines.find((l) => l.req);
+        assert.strictEqual(entry.req.headers.authorization, 'Bearer test-token');
+        assert.strictEqual(entry.req.headers['x-custom-secret'], 'foobar');
     });
 });
