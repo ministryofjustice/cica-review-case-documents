@@ -21,9 +21,10 @@ describe('page-metadata-service', () => {
 
         mockGetPageContent = async () => {
             return {
-                page_width: 800,
-                page_height: 1000,
+                source_doc_id: documentId,
+                correspondence_type: 'TC19',
                 page_count: 10,
+                page_num: pageNumber,
                 imageUrl: 's3://bucket/doc-123/2.png',
                 text: 'Sample text'
             };
@@ -60,12 +61,36 @@ describe('page-metadata-service', () => {
 
         assert.deepStrictEqual(result, {
             correspondence_type: 'TC19',
-            page_width: 800,
-            page_height: 1000,
             page_count: 10,
+            page_num: 2,
             imageUrl: 's3://bucket/doc-123/2.png',
             text: 'Sample text'
         });
+    });
+
+    it('should use pageMetadata.page_num in response payload', async () => {
+        mockGetPageContent = async () => ({
+            correspondence_type: 'TC19',
+            page_count: 10,
+            page_num: 6,
+            imageUrl: 's3://bucket/doc-123/6.png',
+            text: 'Sample text for page 6'
+        });
+
+        createPageContentHelper = () => ({
+            getPageContent: mockGetPageContent
+        });
+
+        const service = createPageMetadataService({
+            createPageContentHelper,
+            createDocumentDAL
+        });
+
+        const result = await service.getCombinedMetadata(documentId, 2, crn, {
+            logger: mockLogger
+        });
+
+        assert.strictEqual(result.page_num, 6);
     });
 
     it('should pass documentId and pageNumber to page content helper', async () => {
@@ -76,9 +101,9 @@ describe('page-metadata-service', () => {
             capturedDocumentId = docId;
             capturedPageNumber = pageNum;
             return {
-                page_width: 800,
-                page_height: 1000,
+                correspondence_type: 'TC19',
                 page_count: 10,
+                page_num: pageNum,
                 imageUrl: 's3://bucket/doc-123/2.png',
                 text: 'Sample text'
             };
@@ -121,6 +146,30 @@ describe('page-metadata-service', () => {
         await assert.rejects(
             () => service.getCombinedMetadata(documentId, pageNumber, crn, { logger: mockLogger }),
             (err) => err.message === 'OpenSearch error' && err.status === 503
+        );
+    });
+
+    it('should throw 400 for non-integer numeric page number', async () => {
+        const service = createPageMetadataService({
+            createPageContentHelper,
+            createDocumentDAL
+        });
+
+        await assert.rejects(
+            () => service.getCombinedMetadata(documentId, 2.5, crn, { logger: mockLogger }),
+            (err) => err.message === 'Invalid page number' && err.status === 400
+        );
+    });
+
+    it('should throw 400 for page number less than 1', async () => {
+        const service = createPageMetadataService({
+            createPageContentHelper,
+            createDocumentDAL
+        });
+
+        await assert.rejects(
+            () => service.getCombinedMetadata(documentId, 0, crn, { logger: mockLogger }),
+            (err) => err.message === 'Invalid page number' && err.status === 400
         );
     });
 

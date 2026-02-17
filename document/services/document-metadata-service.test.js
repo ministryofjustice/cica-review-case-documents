@@ -1,6 +1,9 @@
 import assert from 'node:assert';
 import { beforeEach, describe, it, mock } from 'node:test';
-
+import {
+    buildPageMetadataApiBody,
+    buildPageMetadataFixture
+} from '../../test/fixtures/page-metadata.js';
 import createDocumentMetadataService from './document-metadata-service.js';
 
 describe('document-metadata-service', () => {
@@ -13,15 +16,7 @@ describe('document-metadata-service', () => {
         mockGet = mock.fn(() => {
             return {
                 statusCode: 200,
-                body: {
-                    data: {
-                        correspondence_type: 'TC19 - ADDITIONAL INFO REQUEST',
-                        imageUrl: 's3://bucket-name/case-ref-num/test-doc/pages/1.png',
-                        page_width: 1654,
-                        page_height: 2339,
-                        page_count: 5
-                    }
-                }
+                body: buildPageMetadataApiBody()
             };
         });
 
@@ -46,13 +41,7 @@ describe('document-metadata-service', () => {
 
         const result = await service.getPageMetadata();
 
-        assert.deepEqual(result, {
-            correspondence_type: 'TC19 - ADDITIONAL INFO REQUEST',
-            imageUrl: 's3://bucket-name/case-ref-num/test-doc/pages/1.png',
-            page_width: 1654,
-            page_height: 2339,
-            page_count: 5
-        });
+        assert.deepEqual(result, buildPageMetadataFixture());
         assert.equal(mockCreateRequestService.mock.callCount(), 1);
 
         const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
@@ -141,6 +130,21 @@ describe('document-metadata-service', () => {
 
         await assert.rejects(async () => await service.getPageMetadata(), {
             message: 'Invalid case reference number format'
+        });
+    });
+
+    it('Should throw error when APP_API_URL environment variable is not set', async () => {
+        delete process.env.APP_API_URL;
+
+        const service = createDocumentMetadataService({
+            documentId: '123e4567-e89b-12d3-a456-426614174000',
+            pageNumber: 1,
+            crn: '12-745678',
+            createRequestService: mockCreateRequestService
+        });
+
+        await assert.rejects(async () => await service.getPageMetadata(), {
+            message: 'APP_API_URL environment variable is not set'
         });
     });
 

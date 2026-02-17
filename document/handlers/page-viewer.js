@@ -1,6 +1,7 @@
 import createTemplateEngineService from '../../templateEngine/index.js';
-import { formatPageTitle } from '../utils/formatters.js';
-import { buildBackLink, buildImageUrl, buildTextPageLink } from '../utils/link-builders.js';
+import { formatPageTitle } from '../utils/formatters/index.js';
+import { buildBackLink, buildImageUrl, buildTextPageLink } from '../utils/link-builders/index.js';
+import { paginationDataFromMetadata } from '../utils/pagination/index.js';
 
 /**
  * Handles the page viewer endpoint.
@@ -41,6 +42,13 @@ export function createPageViewerHandler(
                 );
                 return next(error);
             }
+
+            // work out the pagination data from the metadata and values needed to construct the URLs for the pagination links
+            const paginationData = paginationDataFromMetadata(
+                pageMetadata,
+                req.query,
+                req.validatedParams
+            );
 
             const imageUrl = buildImageUrl(documentId, pageNumber, crn);
             const textPageLink = buildTextPageLink(
@@ -87,7 +95,9 @@ export function createPageViewerHandler(
                 textPageLink,
                 backLink,
                 pageTitle,
-                pageChunks: pageChunks || []
+                pageChunks: pageChunks,
+                showPagination: paginationData?.results?.count > 1,
+                paginationData
             });
 
             return res.send(html);

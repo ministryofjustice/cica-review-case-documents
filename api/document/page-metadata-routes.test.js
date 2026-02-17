@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 import express from 'express';
 import request from 'supertest';
+import { buildPageMetadataFixture } from '../../test/fixtures/page-metadata.js';
 import errorHandler from '../middleware/errorHandler/index.js';
 import createPageMetadataRouter from './page-metadata-routes.js';
 
@@ -44,21 +45,23 @@ describe('API: Page Metadata Routes', () => {
         injectedHelperFactory = () => ({
             documentDAL: {},
             async getPageContent(documentId, pageNumber) {
-                return {
-                    correspondence_type: 'TC19 - ADDITIONAL INFO REQUEST',
-                    imageUrl: `s3://bucket/case/pages/${documentId}-${pageNumber}.png`,
-                    page_width: 1654,
-                    page_height: 2339,
-                    page_count: 42,
-                    text: 'example text'
-                };
+                return buildPageMetadataFixture({
+                    overrides: {
+                        page_count: 42,
+                        page_num: 7,
+                        imageUrl: `s3://bucket/case/pages/${documentId}-${pageNumber}.png`,
+                        text: 'example text'
+                    }
+                });
             }
         });
 
         // Default injected DAL yields correspondence type
         injectedDalFactory = () => ({
             async getPageMetadataByDocumentIdAndPageNumber(_documentId, _pageNumber) {
-                return { correspondence_type: 'TC19 - ADDITIONAL INFO REQUEST' };
+                return buildPageMetadataFixture({
+                    omit: ['page_count', 'page_num', 'imageUrl', 'text']
+                });
             }
         });
 
@@ -74,10 +77,9 @@ describe('API: Page Metadata Routes', () => {
         );
         assert.equal(res.statusCode, 200);
         assert.ok(res.body.data);
-        assert.equal(res.body.data.page_width, 1654);
-        assert.equal(res.body.data.page_height, 2339);
-        assert.equal(res.body.data.page_count, 42);
         assert.equal(res.body.data.correspondence_type, 'TC19 - ADDITIONAL INFO REQUEST');
+        assert.equal(res.body.data.page_count, 42);
+        assert.equal(res.body.data.page_num, 7);
         assert.match(res.body.data.imageUrl, /s3:\/\/bucket/);
     });
 
@@ -96,6 +98,26 @@ describe('API: Page Metadata Routes', () => {
         assert.equal(res.statusCode, 400);
         assert.ok(Array.isArray(res.body.errors));
         assert.equal(res.body.errors[0].detail, 'Invalid case reference number');
+    });
+
+    it('400 when pageNumber is not numeric', async () => {
+        const res = await request(app).get(
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/abc/metadata?crn=12-745678'
+        );
+
+        assert.equal(res.statusCode, 400);
+        assert.ok(Array.isArray(res.body.errors));
+        assert.equal(res.body.errors[0].detail, 'Invalid page number');
+    });
+
+    it('400 when pageNumber is less than 1', async () => {
+        const res = await request(app).get(
+            '/api/document/123e4567-e89b-12d3-a456-426614174000/page/0/metadata?crn=12-745678'
+        );
+
+        assert.equal(res.statusCode, 400);
+        assert.ok(Array.isArray(res.body.errors));
+        assert.equal(res.body.errors[0].detail, 'Invalid page number');
     });
 
     it('404 when DAL returns no full metadata', async () => {

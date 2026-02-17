@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { formatPageTitle, toSentenceCaseAfterDash } from './formatters.js';
+import { formatPageTitle, toSentenceCaseAfterDash } from './index.js';
 
 describe('Text Formatters', () => {
     describe('toSentenceCaseAfterDash', () => {

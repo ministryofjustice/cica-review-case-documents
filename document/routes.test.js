@@ -4,6 +4,7 @@ import express from 'express';
 import session from 'express-session';
 import request from 'supertest';
 import createTemplateEngineService from '../templateEngine/index.js';
+import { buildPageMetadataFixture } from '../test/fixtures/page-metadata.js';
 import createDocumentRouter from './routes.js';
 
 /**
@@ -63,13 +64,13 @@ describe('Document Routes', () => {
         process.env.NODE_ENV = 'test';
 
         // Mock the getPageMetadata method
-        mockGetPageMetadata = mock.fn(async () => ({
-            correspondence_type: 'TC19 - ADDITIONAL INFO REQUEST',
-            imageUrl: 's3://bucket-name/case-ref-num/test-doc/pages/1.png',
-            page_width: 1654,
-            page_height: 2339,
-            page_count: 5
-        }));
+        mockGetPageMetadata = mock.fn(async () =>
+            buildPageMetadataFixture({
+                overrides: {
+                    page_num: 6
+                }
+            })
+        );
 
         // Mock the createDocumentMetadataService factory
         mockCreateDocumentMetadataService = mock.fn(() => ({
@@ -135,7 +136,6 @@ describe('Document Routes', () => {
             const res = await request(appWithPassingServices).get(
                 `/document/${docId}/view/page/1?crn=12-745678&searchTerm=test%20query&searchResultsPageNumber=2`
             );
-            console.log(res.text);
             assert.equal(res.statusCode, 200);
             // Ensure mock correspondence_type influences title rendering indirectly
             assert.ok(typeof res.text === 'string');
