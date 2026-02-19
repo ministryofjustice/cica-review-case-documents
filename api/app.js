@@ -1,5 +1,4 @@
 import Ajv from 'ajv';
-import ajvErrors from 'ajv-errors';
 import express from 'express';
 import OpenApiValidator from 'express-openapi-validator';
 import errorHandler from './middleware/errorHandler/index.js';
@@ -12,7 +11,6 @@ const app = express();
 const ajv = new Ajv({
     allErrors: true
 });
-ajvErrors(ajv, { singleError: true });
 
 app.use(express.json({ type: 'application/vnd.api+json' }));
 app.use(express.urlencoded({ extended: true }));
@@ -31,6 +29,7 @@ app.use(
         apiSpec: './api/openapi/openapi.json',
         validateRequests: true,
         validateResponses: true,
+        validateSecurity: false,
         ajv: {
             instance: ajv
         }
