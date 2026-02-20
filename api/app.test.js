@@ -1,8 +1,10 @@
 import assert from 'node:assert';
-import { after, before, beforeEach, describe, test } from 'node:test';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import createApi from './app.js';
+
+const API_ENV_VARS = ['APP_LOG_LEVEL', 'DEPLOY_ENV', 'npm_package_version', 'APP_JWT_SECRET'];
 
 // Mock the search service to isolate the API app logic
 const mockCreateSearchService = () => ({
@@ -23,11 +25,13 @@ const mockCreateSearchService = () => ({
 
 describe('API Application', () => {
     let app;
-    let originalEnv;
+    let envSnapshot;
 
-    before(async () => {
-        // Store original environment variables
-        originalEnv = { ...process.env };
+    beforeEach(async () => {
+        envSnapshot = {};
+        for (const envVar of API_ENV_VARS) {
+            envSnapshot[envVar] = process.env[envVar];
+        }
 
         // Set up environment for tests
         process.env.APP_LOG_LEVEL = 'silent';
@@ -43,9 +47,14 @@ describe('API Application', () => {
         });
     });
 
-    after(() => {
-        // Restore original environment variables
-        process.env = originalEnv;
+    afterEach(() => {
+        for (const envVar of API_ENV_VARS) {
+            if (envSnapshot[envVar] === undefined) {
+                delete process.env[envVar];
+            } else {
+                process.env[envVar] = envSnapshot[envVar];
+            }
+        }
     });
 
     describe('OpenAPI Spec Loading', () => {
@@ -72,39 +81,29 @@ describe('API Application', () => {
         });
 
         test('handles missing OpenAPI spec file gracefully', async () => {
-            const badEnv = { ...process.env };
             process.env.APP_LOG_LEVEL = 'silent';
 
-            try {
-                // By creating an app, if the spec file doesn't exist, it should catch the error
-                const appWithMissingSpec = await createApi({
-                    createSearchService: mockCreateSearchService
-                });
+            // By creating an app, if the spec file doesn't exist, it should catch the error
+            const appWithMissingSpec = await createApi({
+                createSearchService: mockCreateSearchService
+            });
 
-                // If app is created without throwing, the error was handled
-                assert.ok(appWithMissingSpec);
-                assert.ok(appWithMissingSpec instanceof Function || appWithMissingSpec.use);
-            } finally {
-                process.env = badEnv;
-            }
+            // If app is created without throwing, the error was handled
+            assert.ok(appWithMissingSpec);
+            assert.ok(appWithMissingSpec instanceof Function || appWithMissingSpec.use);
         });
 
         test('handles OpenAPI spec file loading error and logs it', async () => {
-            const originalEnv = { ...process.env };
             process.env.APP_LOG_LEVEL = 'silent';
 
-            try {
-                // Create app - spec file exists so this logs if there's an error
-                const app = await createApi({
-                    createSearchService: mockCreateSearchService
-                });
+            // Create app - spec file exists so this logs if there's an error
+            const app = await createApi({
+                createSearchService: mockCreateSearchService
+            });
 
-                // Verify the app was created (error handling worked)
-                assert.ok(app);
-                assert.ok(typeof app.use === 'function');
-            } finally {
-                process.env = originalEnv;
-            }
+            // Verify the app was created (error handling worked)
+            assert.ok(app);
+            assert.ok(typeof app.use === 'function');
         });
 
         test('catches and logs OpenAPI spec read errors', async () => {
@@ -125,55 +124,43 @@ describe('API Application', () => {
 
     describe('Production vs Non-Production Configuration', () => {
         test('includes Swagger UI middleware in non-production environment', async () => {
-            const testEnv = { ...process.env };
             process.env.DEPLOY_ENV = 'development';
             process.env.APP_LOG_LEVEL = 'silent';
             process.env.APP_JWT_SECRET = 'test-secret';
 
-            try {
-                const devApp = await createApi({
-                    createSearchService: mockCreateSearchService
-                });
+            const devApp = await createApi({
+                createSearchService: mockCreateSearchService
+            });
 
-                const token = jwt.sign({ userId: 'test' }, process.env.APP_JWT_SECRET, {
-                    expiresIn: '1h'
-                });
+            const token = jwt.sign({ userId: 'test' }, process.env.APP_JWT_SECRET, {
+                expiresIn: '1h'
+            });
 
-                const res = await request(devApp)
-                    .get('/docs/')
-                    .set('Authorization', `Bearer ${token}`);
+            const res = await request(devApp).get('/docs/').set('Authorization', `Bearer ${token}`);
 
-                // In non-production, should get Swagger UI (200 or 404 if spec missing, but not middleware error)
-                assert.ok([200, 404].includes(res.statusCode));
-            } finally {
-                process.env = testEnv;
-            }
+            // In non-production, should get Swagger UI (200 or 404 if spec missing, but not middleware error)
+            assert.ok([200, 404].includes(res.statusCode));
         });
 
         test('does NOT include Swagger UI middleware in production environment', async () => {
-            const testEnv = { ...process.env };
             process.env.DEPLOY_ENV = 'production';
             process.env.APP_LOG_LEVEL = 'silent';
             process.env.APP_JWT_SECRET = 'test-secret';
 
-            try {
-                const prodApp = await createApi({
-                    createSearchService: mockCreateSearchService
-                });
+            const prodApp = await createApi({
+                createSearchService: mockCreateSearchService
+            });
 
-                const token = jwt.sign({ userId: 'test' }, process.env.APP_JWT_SECRET, {
-                    expiresIn: '1h'
-                });
+            const token = jwt.sign({ userId: 'test' }, process.env.APP_JWT_SECRET, {
+                expiresIn: '1h'
+            });
 
-                const res = await request(prodApp)
-                    .get('/docs/')
-                    .set('Authorization', `Bearer ${token}`);
+            const res = await request(prodApp)
+                .get('/docs/')
+                .set('Authorization', `Bearer ${token}`);
 
-                // In production, Swagger UI middleware is skipped, should get 404
-                assert.strictEqual(res.statusCode, 404);
-            } finally {
-                process.env = testEnv;
-            }
+            // In production, Swagger UI middleware is skipped, should get 404
+            assert.strictEqual(res.statusCode, 404);
         });
     });
 
@@ -228,6 +215,28 @@ describe('API Application', () => {
                 .set('Authorization', `Bearer ${validToken}`);
             assert.strictEqual(res.statusCode, 200);
             assert.strictEqual(res.type, 'application/json');
+        });
+
+        test('responds with 200 for docs OpenAPI spec route', async () => {
+            process.env.DEPLOY_ENV = 'production';
+            process.env.APP_LOG_LEVEL = 'silent';
+            process.env.APP_JWT_SECRET = 'test-secret';
+
+            const prodApp = await createApi({
+                createSearchService: mockCreateSearchService
+            });
+
+            const prodToken = jwt.sign({ userId: 'test-user-123' }, process.env.APP_JWT_SECRET, {
+                expiresIn: '1h'
+            });
+
+            const res = await request(prodApp)
+                .get('/docs/openapi.json')
+                .set('Authorization', `Bearer ${prodToken}`);
+
+            assert.strictEqual(res.statusCode, 200);
+            assert.strictEqual(res.type, 'application/json');
+            assert.ok(res.body && typeof res.body === 'object');
         });
 
         test('returns 200 and search results for a valid query', async () => {

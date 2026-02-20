@@ -17,9 +17,11 @@ function getLimitPerRequest(req) {
 /**
  * Generates unique key for rate limiting per client.
  * Priority: session ID > user ID > IP address
- * @private
+ *
+ * @param {import('express').Request} req - Express request
+ * @returns {string} Rate limit key
  */
-function generateRateLimitKey(req) {
+export function generateRateLimitKey(req) {
     if (req.session?.loggedIn && req.session?.id) {
         return req.session.id;
     }
