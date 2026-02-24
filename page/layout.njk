@@ -1,0 +1,12 @@
+{% extends "template.njk" %}
+
+{# Override the block to add tabindex="-1" to the main element for accessibility (enables skip link functionality) #}
+{% block main %}
+  <div class="govuk-width-container {%- if containerClasses %} {{ containerClasses }}{% endif %}">
+    {% block beforeContent %}{% endblock %}
+    <main class="govuk-main-wrapper {{ mainClasses }}" id="main-content" role="main" tabindex="-1">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+{% endblock %}
+
