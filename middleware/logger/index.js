@@ -2,6 +2,34 @@ import pino from 'pino';
 import pinoHttp from 'pino-http';
 
 const isProd = process.env.NODE_ENV === 'production';
+
+/**
+ * Builds pino-http redaction configuration from environment variables.
+ *
+ * @returns {{paths: string[], censor: string}|undefined} Redaction config, or undefined when redaction is disabled.
+ */
+export function buildRedactConfig() {
+    const base = [
+        'req.headers.authorization',
+        'req.headers.cookie',
+        'req.headers["x-api-key"]',
+        'req.body.password',
+        'req.body.token',
+        'req.body._csrf',
+        'res.headers["set-cookie"]'
+    ];
+    const extra = (process.env.APP_LOG_REDACT_EXTRA || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    if (process.env.APP_LOG_REDACT_DISABLE === 'true') {
+        return undefined;
+    }
+    return {
+        paths: [...base, ...extra],
+        censor: '[REDACTED]'
+    };
+}
 /**
  * Creates a configured HTTP logger middleware using pino and pino-http.
  *
@@ -43,28 +71,7 @@ function createLogger(options = {}) {
             },
             stream
         ),
-        redact: (() => {
-            const base = [
-                'req.headers.authorization',
-                'req.headers.cookie',
-                'req.headers["x-api-key"]',
-                'req.body.password',
-                'req.body.token',
-                'req.body._csrf',
-                'res.headers["set-cookie"]'
-            ];
-            const extra = (process.env.APP_LOG_REDACT_EXTRA || '')
-                .split(',')
-                .map((s) => s.trim())
-                .filter(Boolean);
-            if (process.env.APP_LOG_REDACT_DISABLE === 'true') {
-                return undefined;
-            }
-            return {
-                paths: [...base, ...extra],
-                censor: '[REDACTED]'
-            };
-        })(),
+        redact: buildRedactConfig(),
         customLogLevel: (req, res, err) => {
             if (err || res.statusCode >= 500) return 'error';
             if (res.statusCode >= 400) return 'warn';

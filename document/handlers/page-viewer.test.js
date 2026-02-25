@@ -1,6 +1,153 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import {
+    alignOverlappingHighlights,
+    determineHighlightAlignmentStrategy,
+    hasHorizontalOverlap
+} from '../utils/overlap-strategy/index.js';
 import { createPageViewerHandler } from './page-viewer.js';
+
+describe('Chunk overlap helpers', () => {
+    it('returns true when boxes overlap horizontally', () => {
+        const result = hasHorizontalOverlap({ left: 1, right: 5 }, { left: 4, right: 8 });
+        assert.strictEqual(result, true);
+    });
+
+    it('returns false when boxes only touch edges horizontally', () => {
+        const result = hasHorizontalOverlap({ left: 1, right: 4 }, { left: 4, right: 8 });
+        assert.strictEqual(result, false);
+    });
+});
+
+describe('alignOverlappingHighlights', () => {
+    it('keeps chunks when all bounding boxes are valid and non-overlapping', () => {
+        const input = [
+            { id: 'box-1', bounding_box: { top: 1, left: 1, width: 2, height: 2 } },
+            { id: 'box-2', bounding_box: { top: 10, left: 10, width: 2, height: 2 } }
+        ];
+
+        const result = alignOverlappingHighlights(input);
+        assert.strictEqual(result.length, 2);
+        assert.strictEqual(result[0].id, 'box-1');
+        assert.strictEqual(result[1].id, 'box-2');
+    });
+
+    it('hides a chunk when it is fully inside a previous chunk', () => {
+        const input = [
+            { id: 'outer', bounding_box: { top: 1, left: 1, width: 8, height: 8 } },
+            { id: 'inner', bounding_box: { top: 2, left: 2, width: 2, height: 2 } }
+        ];
+
+        const result = alignOverlappingHighlights(input);
+        assert.deepStrictEqual(
+            result.map((chunk) => chunk.id),
+            ['outer']
+        );
+    });
+
+    it('skips previous chunks without a bounding box while checking overlaps', () => {
+        const input = [
+            { id: 'no-box' },
+            { id: 'valid', bounding_box: { top: 2, left: 2, width: 3, height: 3 } }
+        ];
+
+        const result = alignOverlappingHighlights(input);
+
+        assert.strictEqual(result.length, 2);
+        assert.strictEqual(result[0].id, 'no-box');
+        assert.strictEqual(result[1].id, 'valid');
+        assert.deepStrictEqual(result[1].bounding_box, { top: 2, left: 2, width: 3, height: 3 });
+    });
+
+    it('merges width into previous chunk when current is vertically contained and wider', () => {
+        const input = [
+            { id: 'previous', bounding_box: { top: 1, left: 2, width: 4, height: 6 } },
+            { id: 'current', bounding_box: { top: 2, left: 0, width: 10, height: 2 } }
+        ];
+
+        const result = alignOverlappingHighlights(input);
+        assert.strictEqual(result.length, 1);
+        assert.strictEqual(result[0].id, 'previous');
+        assert.strictEqual(result[0].bounding_box.left, 0);
+        assert.strictEqual(result[0].bounding_box.width, 10);
+    });
+
+    it('does not merge vertically-contained chunks when they do not overlap horizontally', () => {
+        const input = [
+            { id: 'left-column', bounding_box: { top: 1, left: 0, width: 3, height: 8 } },
+            { id: 'right-column', bounding_box: { top: 2, left: 10, width: 3, height: 2 } }
+        ];
+
+        const result = alignOverlappingHighlights(input);
+
+        assert.strictEqual(result.length, 2);
+        assert.strictEqual(result[0].id, 'left-column');
+        assert.strictEqual(result[1].id, 'right-column');
+        assert.strictEqual(result[0].bounding_box.left, 0);
+        assert.strictEqual(result[0].bounding_box.width, 3);
+    });
+
+    it('leaves chunk unchanged when there is no horizontal overlap', () => {
+        const input = [
+            { id: 'left', bounding_box: { top: 1, left: 0, width: 2, height: 3 } },
+            { id: 'right', bounding_box: { top: 2, left: 10, width: 2, height: 3 } }
+        ];
+
+        const result = alignOverlappingHighlights(input);
+        assert.strictEqual(result.length, 2);
+        assert.strictEqual(result[1].bounding_box.top, 2);
+        assert.strictEqual(result[1].bounding_box.height, 3);
+    });
+
+    it('trims top/height when a chunk vertically overlaps a previous chunk bottom', () => {
+        const input = [
+            { id: 'first', bounding_box: { top: 1, left: 0, width: 5, height: 3 } },
+            { id: 'second', bounding_box: { top: 3, left: 1, width: 4, height: 4 } }
+        ];
+
+        const result = alignOverlappingHighlights(input);
+        const second = result.find((chunk) => chunk.id === 'second');
+
+        assert.ok(second);
+        assert.strictEqual(second.bounding_box.top, 4);
+        assert.strictEqual(second.bounding_box.height, 3);
+    });
+
+    it('drops chunks with zero height', () => {
+        const input = [{ id: 'flat', bounding_box: { top: 1, left: 1, width: 2, height: 0 } }];
+        const result = alignOverlappingHighlights(input);
+        assert.deepStrictEqual(result, []);
+    });
+});
+
+describe('Chunk strategy', () => {
+    it('uses processed chunks when align is on', () => {
+        const input = [
+            {
+                id: 'chunk-1',
+                bounding_box: { top: 1, left: 1, width: 4, height: 6 }
+            },
+            {
+                id: 'chunk-2',
+                bounding_box: { top: 2, left: 0, width: 8, height: 2 }
+            }
+        ];
+
+        const expected = alignOverlappingHighlights(input);
+        const result = determineHighlightAlignmentStrategy('on', input);
+
+        assert.deepStrictEqual(result, expected);
+        assert.notDeepStrictEqual(result, input);
+    });
+
+    it('uses original chunks when align is off', () => {
+        const input = [{ id: 'chunk-raw', bounding_box: { top: 1, left: 1, width: 1, height: 1 } }];
+
+        const result = determineHighlightAlignmentStrategy('off', input);
+
+        assert.strictEqual(result, input);
+    });
+});
 
 describe('Page Viewer Handler', () => {
     const mockCreatePageChunksService = () => ({

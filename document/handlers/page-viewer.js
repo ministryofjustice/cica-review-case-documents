@@ -1,6 +1,7 @@
 import createTemplateEngineService from '../../templateEngine/index.js';
 import { formatPageTitle } from '../utils/formatters/index.js';
 import { buildBackLink, buildImageUrl, buildTextPageLink } from '../utils/link-builders/index.js';
+import { determineHighlightAlignmentStrategy } from '../utils/overlap-strategy/index.js';
 import { paginationDataFromMetadata } from '../utils/pagination/index.js';
 
 /**
@@ -22,7 +23,7 @@ export function createPageViewerHandler(
 
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
-            const { searchResultsPageNumber = '', searchTerm = '' } = req.query;
+            const { searchResultsPageNumber = '', searchTerm = '', align = 'on' } = req.query;
 
             // Fetch document page metadata from API (which queries OpenSearch)
             let pageMetadata;
@@ -83,6 +84,8 @@ export function createPageViewerHandler(
                 return next(error);
             }
 
+            const alignedPageHighlights = determineHighlightAlignmentStrategy(align, pageChunks);
+
             const html = render('document/page/imageview.njk', {
                 documentId,
                 pageNumber,
@@ -95,7 +98,7 @@ export function createPageViewerHandler(
                 textPageLink,
                 backLink,
                 pageTitle,
-                pageChunks: pageChunks,
+                pageChunks: alignedPageHighlights,
                 showPagination: paginationData?.results?.count > 1,
                 paginationData
             });
