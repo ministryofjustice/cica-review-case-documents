@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { buildPageMetadataFixture } from '../../test/fixtures/page-metadata.js';
 import {
     alignOverlappingHighlights,
     determineHighlightAlignmentStrategy,
@@ -185,14 +186,20 @@ describe('Page Viewer Handler', () => {
             let responseSent = false;
 
             const mockCreateMetadataService = () => ({
-                getPageMetadata: async () => ({
-                    correspondence_type: 'TC19 - REQUEST'
-                })
+                getPageMetadata: async () =>
+                    buildPageMetadataFixture({
+                        overrides: {
+                            correspondence_type: 'TC19 - REQUEST',
+                            page_num: 1,
+                            page_count: 3
+                        }
+                    })
             });
 
             const handler = createPageViewerHandler(
                 mockCreateMetadataService,
-                mockCreatePageChunksService
+                mockCreatePageChunksService,
+                () => ({ render: () => 'render-output-valid-metadata' })
             );
 
             const req = {
@@ -220,23 +227,33 @@ describe('Page Viewer Handler', () => {
                 }
             };
 
-            const next = () => {};
+            let nextError;
+            const next = (error) => {
+                nextError = error;
+            };
 
             await handler(req, res, next);
 
-            assert.ok(responseSent || true); // Either sends or delegates to error handler
+            assert.equal(nextError, undefined);
+            assert.equal(responseSent, true);
         });
 
         it('handles missing query parameters with defaults', async () => {
             const mockCreateMetadataService = () => ({
-                getPageMetadata: async () => ({
-                    correspondence_type: 'TC19'
-                })
+                getPageMetadata: async () =>
+                    buildPageMetadataFixture({
+                        overrides: {
+                            correspondence_type: 'TC19',
+                            page_num: 5,
+                            page_count: 12
+                        }
+                    })
             });
 
             const handler = createPageViewerHandler(
                 mockCreateMetadataService,
-                mockCreatePageChunksService
+                mockCreatePageChunksService,
+                () => ({ render: () => 'render-output-default-query' })
             );
 
             const req = {
@@ -250,19 +267,26 @@ describe('Page Viewer Handler', () => {
                 session: {}
             };
 
+            let responseSent = false;
             const res = {
                 locals: {
                     csrfToken: 'token',
                     cspNonce: 'nonce'
                 },
-                send: () => {}
+                send: () => {
+                    responseSent = true;
+                }
             };
 
-            const next = () => {};
+            let nextError;
+            const next = (error) => {
+                nextError = error;
+            };
 
             await handler(req, res, next);
-            // Should complete without throwing
-            assert.ok(true);
+
+            assert.equal(nextError, undefined);
+            assert.equal(responseSent, true);
         });
     });
 
@@ -308,7 +332,8 @@ describe('Page Viewer Handler', () => {
             await handler(req, res, next);
 
             // Metadata service error should be passed to next
-            assert.ok(errorPassed || true); // Error handling test
+            assert.ok(errorPassed instanceof Error);
+            assert.equal(errorPassed.message, 'API connection failed');
         });
 
         it('calls next(err) when outer catch block catches error', async () => {
@@ -353,7 +378,7 @@ describe('Page Viewer Handler', () => {
             await handler(req, res, next);
 
             // Outer catch should have been triggered
-            assert.ok(outerErrorCaught || true);
+            assert.equal(outerErrorCaught, true);
         });
 
         it('propagates errors to Express error middleware', async () => {
@@ -396,7 +421,7 @@ describe('Page Viewer Handler', () => {
             await handler(req, res, next);
 
             // next() should be called to propagate error
-            assert.ok(nextWasCalled || true);
+            assert.equal(nextWasCalled, true);
         });
 
         it('handles missing metadata gracefully', async () => {
@@ -420,24 +445,26 @@ describe('Page Viewer Handler', () => {
                 session: {}
             };
 
+            let sendCalled = false;
             const res = {
                 locals: {
                     csrfToken: 'token',
                     cspNonce: 'nonce'
                 },
-                send: () => {}
+                send: () => {
+                    sendCalled = true;
+                }
             };
 
-            const next = () => {};
+            let nextError;
+            const next = (error) => {
+                nextError = error;
+            };
 
-            // This will throw because correspondence_type is undefined on null
-            try {
-                await handler(req, res, next);
-            } catch {
-                // Error is expected
-            }
+            await handler(req, res, next);
 
-            assert.ok(true);
+            assert.ok(nextError instanceof Error);
+            assert.equal(sendCalled, false);
         });
     });
 });

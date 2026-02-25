@@ -1,171 +1,252 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { buildPageMetadataFixture } from '../../test/fixtures/page-metadata.js';
 import { createTextViewerHandler } from './text-viewer.js';
 
 describe('Text Viewer Handler', () => {
-    describe('Handler structure', () => {
-        it('creates a handler function', () => {
-            const handler = createTextViewerHandler();
-            assert.equal(typeof handler, 'function');
-        });
-
-        it('handler accepts req, res, next parameters', async () => {
-            const handler = createTextViewerHandler();
-
-            // Verify handler is async
-            assert.equal(handler.constructor.name, 'AsyncFunction');
-        });
-
-        it('handles successful rendering with proper request object', async () => {
-            const handler = createTextViewerHandler();
-
-            let nextCalled = false;
-            let errorPassed = null;
-            let responseSent = false;
-
-            const req = {
-                validatedParams: {
-                    documentId: 'doc-456',
-                    pageNumber: 3,
-                    crn: 'CASE-2024-002'
-                },
-                query: {
-                    searchTerm: 'test',
-                    searchResultsPageNumber: '2'
-                },
-                session: { caseSelected: 'CASE-2024-002' }
-            };
-
-            const res = {
-                locals: {
-                    csrfToken: 'csrf-123',
-                    cspNonce: 'nonce-456'
-                },
-                send: (html) => {
-                    responseSent = true;
-                    assert.ok(typeof html === 'string');
+    it('renders successfully when metadata retrieval succeeds', async () => {
+        let renderParams;
+        const renderOutput = 'render-output-success';
+        const sendResult = { ok: true };
+        const handler = createTextViewerHandler(
+            () => ({
+                getPageMetadata: async () =>
+                    buildPageMetadataFixture({
+                        overrides: {
+                            text: 'Resolved metadata text'
+                        }
+                    })
+            }),
+            () => ({
+                render: (_view, params) => {
+                    renderParams = params;
+                    return renderOutput;
                 }
-            };
+            })
+        );
 
-            const next = (err) => {
-                nextCalled = true;
-                errorPassed = err;
-            };
+        let sentHtml;
+        let errorLogged = false;
 
-            await handler(req, res, next);
-
-            // Either response was sent or error was passed to next
-            assert.ok(responseSent || nextCalled || errorPassed);
-        });
-
-        it('handles missing query parameters with defaults', async () => {
-            const handler = createTextViewerHandler();
-
-            let responseSent = false;
-            let errorReceived = null;
-
-            const req = {
-                validatedParams: {
-                    documentId: 'doc-789',
-                    pageNumber: 1,
-                    crn: 'CASE-2024-003'
-                },
-                query: {}, // No search params - should use defaults
-                session: { caseSelected: 'CASE-2024-003' }
-            };
-
-            const res = {
-                locals: {
-                    csrfToken: 'csrf-456',
-                    cspNonce: 'nonce-789'
-                },
-                send: (html) => {
-                    responseSent = true;
-                    assert.ok(html); // Should receive HTML response
+        const req = {
+            validatedParams: {
+                documentId: '123e4567-e89b-12d3-a456-426614174000',
+                pageNumber: 7,
+                crn: '26-745678'
+            },
+            query: {},
+            session: { caseSelected: true },
+            cookies: { jwtToken: 'test-jwt' },
+            log: {
+                error: () => {
+                    errorLogged = true;
                 }
-            };
+            }
+        };
 
-            const next = (err) => {
-                errorReceived = err;
-            };
+        const res = {
+            locals: { csrfToken: 'csrf-token', cspNonce: 'nonce' },
+            send: (html) => {
+                sentHtml = html;
+                return sendResult;
+            }
+        };
 
-            await handler(req, res, next);
+        let nextError;
+        const next = (error) => {
+            nextError = error;
+        };
 
-            // Either response was sent OR error was passed to next (both are acceptable outcomes)
-            assert.ok(
-                responseSent || errorReceived,
-                'Handler should either send response or pass error to next'
-            );
-        });
+        const result = await handler(req, res, next);
+
+        assert.equal(nextError, undefined);
+        assert.equal(errorLogged, false);
+        assert.equal(sentHtml, renderOutput);
+        assert.equal(renderParams.pageText, 'Resolved metadata text');
+        assert.equal(result, sendResult);
     });
 
-    describe('Error handling', () => {
-        it('calls next(err) when error occurs', async () => {
-            const handler = createTextViewerHandler();
+    it('uses fallback page text when metadata text is empty', async () => {
+        let metadataFactoryArgs;
+        let renderView;
+        let renderParams;
+        let renderCallCount = 0;
+        const renderOutput = 'render-output-fallback';
+        const sendResult = { sent: true };
 
-            let _errorPassed = null;
-
-            const req = {
-                validatedParams: {
-                    documentId: 'doc-fail',
-                    pageNumber: 2,
-                    crn: 'CASE-2024-006'
-                },
-                query: {},
-                session: { caseSelected: 'CASE-2024-006' }
-            };
-
-            const res = {
-                locals: {
-                    csrfToken: 'token',
-                    cspNonce: 'nonce'
-                },
-                send: () => {}
-            };
-
-            const next = (err) => {
-                _errorPassed = err;
-            };
-
-            // Handler will attempt to render template
-            await handler(req, res, next);
-
-            // If error occurred, it should be passed to next
-            // If no error, response was sent
+        const createTemplateEngineServiceFactory = () => ({
+            render: (view, params) => {
+                renderCallCount += 1;
+                renderView = view;
+                renderParams = params;
+                return renderOutput;
+            }
         });
 
-        it('propagates errors to Express error middleware', async () => {
-            const handler = createTextViewerHandler();
-
-            // Create invalid request to trigger error path
-            const req = {
-                validatedParams: {
-                    documentId: 'doc-prop-error',
-                    pageNumber: 6,
-                    crn: 'CASE-2024-008'
-                },
-                query: {},
-                // Missing session - this might cause template rendering to handle gracefully
-                session: {}
+        const createMetadataServiceFactory = (args) => {
+            metadataFactoryArgs = args;
+            return {
+                getPageMetadata: async () =>
+                    buildPageMetadataFixture({
+                        overrides: {
+                            text: ''
+                        }
+                    })
             };
+        };
 
-            const res = {
-                locals: {
-                    csrfToken: 'token-prop',
-                    cspNonce: 'nonce-prop'
-                },
-                send: () => {}
-            };
+        const handler = createTextViewerHandler(
+            createMetadataServiceFactory,
+            createTemplateEngineServiceFactory
+        );
 
-            let _errorReceived = null;
-            const next = (err) => {
-                _errorReceived = err;
-            };
+        let sentHtml;
+        const req = {
+            validatedParams: {
+                documentId: '123e4567-e89b-12d3-a456-426614174000',
+                pageNumber: 1,
+                crn: '26-745678'
+            },
+            query: {},
+            session: { caseSelected: true },
+            cookies: { jwtToken: 'test-jwt' },
+            log: { error: () => {} }
+        };
+        const res = {
+            locals: { csrfToken: 'csrf-token', cspNonce: 'nonce' },
+            send: (html) => {
+                sentHtml = html;
+                return sendResult;
+            }
+        };
 
-            await handler(req, res, next);
+        let nextError;
+        const next = (error) => {
+            nextError = error;
+        };
 
-            // Handler should complete without throwing
-            assert.ok(true);
+        const result = await handler(req, res, next);
+
+        assert.equal(nextError, undefined);
+        assert.deepEqual(metadataFactoryArgs, {
+            documentId: '123e4567-e89b-12d3-a456-426614174000',
+            pageNumber: 1,
+            crn: '26-745678',
+            jwtToken: 'test-jwt',
+            logger: req.log
         });
+        assert.equal(renderCallCount, 1);
+        assert.equal(renderView, 'document/page/textview.njk');
+        assert.equal(sentHtml, renderOutput);
+        assert.equal(renderParams.pageText, 'No text content available for this page.');
+        assert.equal(result, sendResult);
+    });
+
+    it('calls next with outer catch error when validated params are missing', async () => {
+        let metadataFactoryCalled = false;
+        const handler = createTextViewerHandler(
+            () => {
+                metadataFactoryCalled = true;
+                return {
+                    getPageMetadata: async () =>
+                        buildPageMetadataFixture({
+                            overrides: {
+                                correspondence_type: 'SHOULD NOT BE USED'
+                            }
+                        })
+                };
+            },
+            () => ({ render: () => 'render-output-outer-catch' })
+        );
+
+        const req = {
+            query: {},
+            session: { caseSelected: true },
+            cookies: { jwtToken: 'test-jwt' },
+            log: { error: () => {} }
+        };
+        const res = {
+            locals: { csrfToken: 'csrf-token', cspNonce: 'nonce' },
+            send: () => {}
+        };
+
+        let nextError;
+        const nextResult = { nextCalled: true };
+        const next = (error) => {
+            nextError = error;
+            return nextResult;
+        };
+
+        const result = await handler(req, res, next);
+
+        assert.ok(nextError instanceof Error);
+        assert.equal(metadataFactoryCalled, false);
+        assert.equal(result, undefined);
+    });
+
+    it('logs and calls next when metadata retrieval fails', async () => {
+        const metadataError = new Error('metadata service unavailable');
+
+        let loggedContext;
+        let loggedMessage;
+        let renderCalled = false;
+        let sendCalled = false;
+
+        const handler = createTextViewerHandler(
+            () => ({
+                getPageMetadata: async () => {
+                    throw metadataError;
+                }
+            }),
+            () => ({
+                render: () => {
+                    renderCalled = true;
+                    return 'render-output-metadata-failure';
+                }
+            })
+        );
+
+        const req = {
+            validatedParams: {
+                documentId: '123e4567-e89b-12d3-a456-426614174000',
+                pageNumber: 7,
+                crn: '26-745678'
+            },
+            query: {},
+            session: { caseSelected: true },
+            cookies: { jwtToken: 'test-jwt' },
+            log: {
+                error: (context, message) => {
+                    loggedContext = context;
+                    loggedMessage = message;
+                }
+            }
+        };
+        const res = {
+            locals: { csrfToken: 'csrf-token', cspNonce: 'nonce' },
+            send: () => {
+                sendCalled = true;
+            }
+        };
+
+        let nextError;
+        const nextResult = { nextCalled: true };
+        const next = (error) => {
+            nextError = error;
+            return nextResult;
+        };
+
+        const result = await handler(req, res, next);
+
+        assert.equal(nextError, metadataError);
+        assert.deepEqual(loggedContext, {
+            error: metadataError.message,
+            documentId: '123e4567-e89b-12d3-a456-426614174000',
+            pageNumber: 7
+        });
+        assert.equal(loggedMessage, 'Failed to retrieve page metadata from API');
+        assert.equal(renderCalled, false);
+        assert.equal(sendCalled, false);
+        assert.equal(result, nextResult);
     });
 });
