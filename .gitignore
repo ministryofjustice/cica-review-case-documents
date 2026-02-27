@@ -6,3 +6,6 @@ stuff/
 scan.js
 .env
 coverage/
+public/stylesheets/all.css
+docker-compose.yml
+docker-compose-dev.yml
