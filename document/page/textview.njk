@@ -6,22 +6,14 @@
 {%- from "moj/components/sub-navigation/macro.njk" import mojSubNavigation -%}
 {% from "govuk/components/panel/macro.njk" import govukPanel %}
 
-
-
-<style>
-.govuk-tabs__list {
-  border: none !important;
-}
-
-</style>
 {% block innerContent %}
- 
+
 {{ govukBackLink({
     text: "Back",
     href: backLink
   }) }}
 
-  <h1 class="govuk-heading-l">TC19 - Additional information request</h1>
+  <h1 class="govuk-heading-l">{{ pageTitle }}</h1>
 
 
 {{ mojSubNavigation({
@@ -31,22 +23,16 @@
     active: false,
     href: imagePageLink
   }, {
-    text: "Document text",    
+    text: "Document text",
     active: true,
     href: '#'
   }]
 }) }}
 
-
-  <div class="govuk-grid-row">
-    <div class="govuk-grid-column-full">
-                       
-        {{ govukPanel({
-          titleText: "Placeholder for TEXT page",
-          html: ""
-        }) }}
-        
-      </div>
-  </div>
+<div class="ocr-text-line-spacing">
+  <p class="govuk-body">
+  {{ pageText }}
+  </p>
+</div>
 
 {% endblock %}

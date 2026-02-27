@@ -10,15 +10,17 @@ import { paginationDataFromMetadata } from '../utils/pagination/index.js';
  *
  * @param {Function} createMetadataServiceFactory - Factory function to create metadata service
  * @param {Function} createPageChunksServiceFactory - Factory function to create document page chunks service
+ * @param {Function} [createTemplateEngineServiceFactory=createTemplateEngineService] - Factory that returns a template engine service with a render method
  * @returns {Function} Express route handler
  */
 export function createPageViewerHandler(
     createMetadataServiceFactory,
-    createPageChunksServiceFactory
+    createPageChunksServiceFactory,
+    createTemplateEngineServiceFactory = createTemplateEngineService
 ) {
     return async (req, res, next) => {
         try {
-            const templateEngineService = createTemplateEngineService();
+            const templateEngineService = createTemplateEngineServiceFactory();
             const { render } = templateEngineService;
 
             // Use pre-validated parameters from middleware
@@ -52,6 +54,8 @@ export function createPageViewerHandler(
             );
 
             const imageUrl = buildImageUrl(documentId, pageNumber, crn);
+
+            // Provide a link for sub-navigation to the text view page for this document page
             const textPageLink = buildTextPageLink(
                 documentId,
                 pageNumber,
@@ -59,6 +63,7 @@ export function createPageViewerHandler(
                 searchTerm,
                 searchResultsPageNumber
             );
+
             const backLink = buildBackLink(searchTerm, searchResultsPageNumber, crn);
 
             const pageTitle = formatPageTitle(pageMetadata.correspondence_type);
