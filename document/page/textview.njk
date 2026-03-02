@@ -4,7 +4,7 @@
 
 {% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 {%- from "moj/components/sub-navigation/macro.njk" import mojSubNavigation -%}
-{% from "govuk/components/panel/macro.njk" import govukPanel %}
+{% from "moj/components/pagination/macro.njk" import mojPagination %}
 
 {% block innerContent %}
 
@@ -29,10 +29,30 @@
   }]
 }) }}
 
+{% if showPagination %}
+ {{ mojPagination({
+  items: paginationData.items,
+  results: paginationData.results,
+  previous: paginationData.previous,
+  next: paginationData.next,
+  landmarkLabel: "pagination-top"
+ }) }}
+{% endif %}
+
 <div class="ocr-text-line-spacing">
   <p class="govuk-body">
-  {{ pageText }}
+  {{ pageText }} {# do not set "autoescape" to false and do not add ` | safe` to pageText as it may contain untrusted OCR content #}
   </p>
 </div>
+
+{% if showPagination %}
+{{ mojPagination({
+  items: paginationData.items,
+  results: paginationData.results,
+  previous: paginationData.previous,
+  next: paginationData.next,
+  landmarkLabel: "pagination-bottom"
+ }) }}
+{% endif %}
 
 {% endblock %}
