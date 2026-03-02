@@ -1,6 +1,8 @@
 import createTemplateEngineService from '../../templateEngine/index.js';
+import { VIEW_MODES } from '../constants/viewModes.js';
 import { formatPageTitle } from '../utils/formatters/index.js';
 import { buildBackLink, buildImageUrl, buildTextPageLink } from '../utils/link-builders/index.js';
+import { fetchPageMetadata } from '../utils/metadata/index.js';
 import { determineHighlightAlignmentStrategy } from '../utils/overlap-strategy/index.js';
 import { paginationDataFromMetadata } from '../utils/pagination/index.js';
 
@@ -30,27 +32,26 @@ export function createPageViewerHandler(
             // Fetch document page metadata from API (which queries OpenSearch)
             let pageMetadata;
             try {
-                const metadataService = createMetadataServiceFactory({
+                pageMetadata = await fetchPageMetadata({
+                    createMetadataServiceFactory,
                     documentId,
                     pageNumber,
                     crn,
                     jwtToken: req.cookies?.jwtToken,
                     logger: req.log
                 });
-                pageMetadata = await metadataService.getPageMetadata();
             } catch (error) {
-                req.log?.error(
-                    { error: error.message, documentId, pageNumber },
-                    'Failed to retrieve page metadata from API'
-                );
                 return next(error);
             }
+
+            const viewMode = VIEW_MODES.IMAGE;
 
             // work out the pagination data from the metadata and values needed to construct the URLs for the pagination links
             const paginationData = paginationDataFromMetadata(
                 pageMetadata,
                 req.query,
-                req.validatedParams
+                req.validatedParams,
+                viewMode
             );
 
             const imageUrl = buildImageUrl(documentId, pageNumber, crn);

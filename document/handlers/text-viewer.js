@@ -1,6 +1,9 @@
 import createTemplateEngineService from '../../templateEngine/index.js';
+import { VIEW_MODES } from '../constants/viewModes.js';
 import { formatPageTitle } from '../utils/formatters/index.js';
 import { buildBackLink, buildImagePageLink } from '../utils/link-builders/index.js';
+import { fetchPageMetadata } from '../utils/metadata/index.js';
+import { paginationDataFromMetadata } from '../utils/pagination/index.js';
 
 /**
  * Handles the text viewer endpoint.
@@ -26,21 +29,27 @@ export function createTextViewerHandler(
             // Fetch document page metadata from OpenSearch via API
             let pageMetadata;
             try {
-                const metadataService = createMetadataServiceFactory({
+                pageMetadata = await fetchPageMetadata({
+                    createMetadataServiceFactory,
                     documentId,
                     pageNumber,
                     crn,
                     jwtToken: req.cookies?.jwtToken,
                     logger: req.log
                 });
-                pageMetadata = await metadataService.getPageMetadata();
             } catch (error) {
-                req.log?.error(
-                    { error: error.message, documentId, pageNumber },
-                    'Failed to retrieve page metadata from API'
-                );
                 return next(error);
             }
+
+            const viewMode = VIEW_MODES.TEXT;
+
+            // work out the pagination data from the metadata and values needed to construct the URLs for the pagination links
+            const paginationData = paginationDataFromMetadata(
+                pageMetadata,
+                req.query,
+                req.validatedParams,
+                viewMode
+            );
 
             const pageTitle = formatPageTitle(pageMetadata.correspondence_type);
 
@@ -70,7 +79,9 @@ export function createTextViewerHandler(
                 imagePageLink,
                 backLink,
                 pageTitle,
-                pageText
+                pageText,
+                showPagination: paginationData?.results?.count > 1,
+                paginationData
             });
 
             return res.send(html);
