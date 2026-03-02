@@ -13,7 +13,9 @@ describe('Text Viewer Handler', () => {
                 getPageMetadata: async () =>
                     buildPageMetadataFixture({
                         overrides: {
-                            text: 'Resolved metadata text'
+                            text: 'Resolved metadata text',
+                            page_num: 2,
+                            page_count: 3
                         }
                     })
             }),
@@ -63,7 +65,65 @@ describe('Text Viewer Handler', () => {
         assert.equal(errorLogged, false);
         assert.equal(sentHtml, renderOutput);
         assert.equal(renderParams.pageText, 'Resolved metadata text');
+        assert.equal(renderParams.showPagination, true);
+        assert.equal(renderParams.paginationData?.results?.count, 3);
+        assert.equal(
+            renderParams.paginationData?.items?.[0]?.href,
+            '/document/123e4567-e89b-12d3-a456-426614174000/view/text/page/1?crn=26-745678'
+        );
+        assert.equal(
+            renderParams.paginationData?.previous?.href,
+            '/document/123e4567-e89b-12d3-a456-426614174000/view/text/page/1?crn=26-745678'
+        );
+        assert.equal(
+            renderParams.paginationData?.next?.href,
+            '/document/123e4567-e89b-12d3-a456-426614174000/view/text/page/3?crn=26-745678'
+        );
         assert.equal(result, sendResult);
+    });
+
+    it('sets showPagination false when metadata contains a single page', async () => {
+        let renderParams;
+
+        const handler = createTextViewerHandler(
+            () => ({
+                getPageMetadata: async () =>
+                    buildPageMetadataFixture({
+                        overrides: {
+                            page_num: 1,
+                            page_count: 1
+                        }
+                    })
+            }),
+            () => ({
+                render: (_view, params) => {
+                    renderParams = params;
+                    return 'render-output-single-page';
+                }
+            })
+        );
+
+        const req = {
+            validatedParams: {
+                documentId: '123e4567-e89b-12d3-a456-426614174000',
+                pageNumber: 1,
+                crn: '26-745678'
+            },
+            query: {},
+            session: { caseSelected: true },
+            cookies: { jwtToken: 'test-jwt' },
+            log: { error: () => {} }
+        };
+
+        const res = {
+            locals: { csrfToken: 'csrf-token', cspNonce: 'nonce' },
+            send: () => 'send-result-single-page'
+        };
+
+        await handler(req, res, () => {});
+
+        assert.equal(renderParams.showPagination, false);
+        assert.equal(renderParams.paginationData?.results?.count, 1);
     });
 
     it('uses fallback page text when metadata text is empty', async () => {

@@ -40,7 +40,7 @@ function createTemplateEngineService(app) {
         }
 
         const configObject = {
-            autoescape: true,
+            autoescape: true, // set "true" for security, do not override this in any page that renders OCR content
             throwOnUndefined: false
         };
 
