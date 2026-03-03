@@ -28,6 +28,5 @@
 !auth
 
 !app.js
-!.env
 !package.json
 !package-lock.json
