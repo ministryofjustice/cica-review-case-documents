@@ -50,7 +50,7 @@ function createDocumentRouter(options = {}) {
     router.get(
         '/:documentId/view/text/page/:pageNumber',
         validateDocumentParams(),
-        createTextViewerHandler()
+        createTextViewerHandler(createMetadataServiceFactory)
     );
 
     return router;

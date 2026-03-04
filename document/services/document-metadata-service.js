@@ -28,8 +28,8 @@ function createDocumentMetadataService({
      * Fetches page metadata from the API.
      *
      * @async
-     * @returns {Promise<Object>} A promise that resolves to the page metadata
-     * @throws {Error} If the API request fails or returns an error
+     * @returns {Promise<Object>} Resolves with valid page metadata object.
+     * @throws {Error} If input validation fails, API is unreachable, or response is malformed.
      */
     async function getPageMetadata() {
         // Validate inputs before constructing URL (defense in depth)

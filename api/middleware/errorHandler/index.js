@@ -68,15 +68,12 @@ const OPENAPI_ERRORS_SCHEMA_PROPERTY_ERRORS_MAP = {
  * @returns {*} The resolved value, or undefined if not found.
  */
 function resolveJsonPath(obj, pointer) {
-    if (!pointer?.startsWith('#/')) {
-        return undefined;
-    }
-    return pointer
-        .slice(2)
-        .split('/')
-        .reduce((current, key) => {
-            return current?.[key];
-        }, obj);
+    return !pointer?.startsWith('#/')
+        ? undefined
+        : pointer
+              .slice(2)
+              .split('/')
+              .reduce((current, key) => current?.[key], obj);
 }
 
 /**
@@ -107,19 +104,13 @@ function getCustomOpenApiErrorDetail(fullError) {
     const { path, errorCode, message } = fullError;
 
     const pointer = QUERY_PARAM_OPENAPI_PATH_PARAMETER_MAP[path];
-    if (!pointer) {
-        return message;
-    }
+    if (!pointer) return message;
 
     const schema = resolveJsonPath(apiSpec, pointer)?.schema;
-    if (!schema) {
-        return message;
-    }
+    if (!schema) return message;
 
     const schemaProperty = OPENAPI_ERRORS_SCHEMA_PROPERTY_ERRORS_MAP[errorCode];
-    if (!schemaProperty) {
-        return message;
-    }
+    if (!schemaProperty) return message;
 
     return schema?.errorMessage?.[schemaProperty] || message;
 }

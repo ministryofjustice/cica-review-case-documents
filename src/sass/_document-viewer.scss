@@ -34,3 +34,8 @@
 .govuk-pagination__item--current .govuk-pagination__link:visited {
   background-color: #1d70b8;
 }
+
+/* break up a page of OCR text into lines based on the original line breaks in the source document */
+.ocr-text-line-spacing {
+  white-space: pre-line;
+}
