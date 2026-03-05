@@ -1,5 +1,6 @@
 import VError from 'verror';
 import createDBQueryDefault from '../../db/index.js';
+import buildQueryJson from './utils/buildQueryJson/index.js';
 
 /**
  * @typedef {object} Logger
@@ -91,18 +92,12 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
      */
     async function getDocumentsChunksByKeyword(keyword, pageNumber, itemsPerPage) {
         try {
-            const queryBody = {
-                from: itemsPerPage * (pageNumber - 1),
-                size: itemsPerPage,
-                query: {
-                    bool: {
-                        must: [
-                            { match: { chunk_text: keyword } },
-                            { match: { case_ref: caseReferenceNumber } }
-                        ]
-                    }
-                }
-            };
+            const queryBody = buildQueryJson({
+                keyword,
+                caseReferenceNumber,
+                pageNumber,
+                itemsPerPage
+            });
 
             logger.info(
                 {
