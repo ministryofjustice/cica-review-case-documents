@@ -1,14 +1,15 @@
 # CVE-2026-27903 Inefficient Algorithmic Complexity
 # Published: Feb 26, 2026 | Modified: Feb 27, 2026
 # https://avd.aquasec.com/nvd/2026/cve-2026-27903/
-CVE-2026-27903 
+CVE-2026-27903
 
 # CVE-2026-27904 Inefficient Regular Expression Complexity
 # Published: Feb 26, 2026 | Modified: Feb 27, 2026
 # https://avd.aquasec.com/nvd/2026/cve-2026-27904/
 CVE-2026-27904
 
-# GHSA-qffp-2rhf-9h96 tar has Hardlink Path Traversal via Drive-Relative Linkpath 
+# GHSA-qffp-2rhf-9h96 tar has Hardlink Path Traversal via Drive-Relative Linkpath
 # Published: March 5, 2026
 # https://github.com/advisories/GHSA-qffp-2rhf-9h96
- GHSA-qffp-2rhf-9h96
+GHSA-qffp-2rhf-9h96
+CVE-2026-29786
