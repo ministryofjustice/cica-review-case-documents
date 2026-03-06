@@ -1,2 +1,1 @@
-npm run test
-npm run jsdoc:check
+npm run prepush

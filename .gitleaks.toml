@@ -1,0 +1,15 @@
+title = "CICA Review Case Documents gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for Node.js projects"
+paths = [
+    '''node_modules''',             # Don't scan dependencies
+    '''package-lock\.json''',       # Lock files have high entropy but are rarely secrets
+    '''public/.*\.(js|css|map)''',  # Ignore build artifacts of types JS/CSS/source maps under public
+    '''coverage''',                 # Ignore test coverage reports
+    '''\.env\.test''',              # Ignore test env files with dummy secrets
+    '''\.env\.example'''            # Ignore example env files with placeholder secrets
+]

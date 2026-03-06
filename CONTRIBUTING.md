@@ -63,13 +63,18 @@ Run `npm install` as expected, then run:
 ```
 npx husky init
 ```
-Husky will now use the scripts defined in the `/.husky` folder, which are currently: 
+Husky will now use the scripts defined in the `/.husky` folder, which are currently:
 ```
 pre-commit
 pre-push
 ```
 
->pre-commit runs `npm run lint`and pre-push runs `npm run test`. If there are linting errors running `npm run lint -- --fix` will clear the most common issues.
+ > pre-commit runs `npm run precommit` (format, lint, sass build, and gitleaks secret scan via `npm run precommit:secrets`) and pre-push runs `npm run prepush`.
+
+Install the `gitleaks` CLI locally so pre-commit secret scanning can run: https://github.com/gitleaks/gitleaks#installing
+The installer for a Ubuntu WSL console is `sudo apt install gitleaks` for example.
+
+The secret scan uses `.gitleaks.toml` as the configuration file.
 
 ### Branching Strategy
 - Feature branches: Create from `main`, merge back to `main` via PR
@@ -83,8 +88,8 @@ pre-push
    git checkout -b feature/your-feature-name
    ```
 2. Make your changes
-3. Run linting: `npm run lint` (enforced by pre-commit hook)
-4. Run tests: `npm test` (enforced by pre-push hook)
+3. Run pre-commit checks: `npm run precommit` (enforced by pre-commit hook)
+4. Run pre-push checks: `npm run prepush` (enforced by pre-push hook)
 5. Commit your changes with descriptive messages
 6. Push to your branch
 7. Create a Pull Request to merge into `main`
@@ -96,8 +101,8 @@ The project uses Husky for Git hooks:
 
 | Hook Name  | Action       | Description                          |
 | ---------- | ------------ | ------------------------------------ |
-| pre-commit | npm run lint | Runs Biome linter before commit      |
-| pre-push   | npm test     | Runs all tests before push           |
+| pre-commit | npm run precommit | Runs format, lint, sass, and gitleaks before commit |
+| pre-push   | npm run prepush | Runs tests and JSDoc linting before push |
 
 
 ### CI/CD Pipeline
@@ -257,7 +262,7 @@ describe('my feature', () => {
 
 This project uses [Sass](https://sass-lang.com/) for styling.
 
-**Entry point:** `./src/sass/all.scss`  
+**Entry point:** `./src/sass/all.scss`
 **Output:** `./public/stylesheets/all.css`
 
 ```bash
@@ -271,7 +276,7 @@ The compiled CSS is automatically referenced in the page templates and should no
 
 This project uses [Babel](https://babeljs.io/) for transpilation and [Webpack](https://webpack.js.org/) for bundling.
 
-**Entry point:** `./src/js/scripts.js`  
+**Entry point:** `./src/js/scripts.js`
 **Output:** `./public/js/bundle.js`
 
 ```bash
@@ -291,7 +296,7 @@ npm run webpack     # Bundle for production
 
 The API documentation is generated from the OpenAPI schema files.
 
-**Entry point:** `./api/openapi/openapi.json`  
+**Entry point:** `./api/openapi/openapi.json`
 **Output:** `./api/openapi/openapi-dist.json`
 
 ```bash
@@ -310,7 +315,7 @@ npm run openapi:watch
 
 **Note:** The OpenAPI build is NOT automatically included in `npm run start:dev`. You must manually run `npm run openapi:build` or use `npm run openapi:watch` in a separate terminal when working on API schema changes.
 
-**Swagger UI and CSP:**  
+**Swagger UI and CSP:**
 Swagger UI requires inline scripts, which conflicts with our Content Security Policy (CSP). The application implements a CSP workaround specifically for the `/api-docs` route by relaxing the `script-src` directive to allow Swagger UI to function. This is an acceptable trade-off for developer documentation endpoints. The workaround is implemented in the `helmet` configuration when serving Swagger UI.
 
 ### Development Mode
