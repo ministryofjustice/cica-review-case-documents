@@ -1,3 +1,5 @@
+import { VIEW_MODES } from '../../constants/viewModes.js';
+
 /*
   Expected pagination patterns:
   [1] 2 ... 50 Next ->
@@ -177,13 +179,20 @@ export const createPaginationData = ({
  * @param {number|string} [pageMetadata.page_count] - Total page count.
  * @param {object} [query] - Optional request query object.
  * @param {object} [params] - Optional route params object.
+ * @param {'image'|'text'} [viewMode='image'] - Viewer mode used to build page URLs.
  * @returns {{items:Array,results:{pages:{current:number,count:number},count:number,text:string},previous:{text:string,href:string}|null,next:{text:string,href:string}|null}} Pagination data object.
  */
-export const paginationDataFromMetadata = (pageMetadata, query, params) => {
+export const paginationDataFromMetadata = (
+    pageMetadata,
+    query,
+    params,
+    viewMode = VIEW_MODES.IMAGE
+) => {
     const queryString = buildQueryString({ query, params });
     const { documentId } = params || {};
+    const viewPath = viewMode === VIEW_MODES.TEXT ? '/view/text/page/' : '/view/page/';
     const buildDocumentPageUrl = (pageNum) =>
-        `/document/${documentId}/view/page/${pageNum}?${queryString}`;
+        `/document/${documentId}${viewPath}${pageNum}?${queryString}`;
 
     return createPaginationData({
         currentPageIndex: pageMetadata?.page_num,

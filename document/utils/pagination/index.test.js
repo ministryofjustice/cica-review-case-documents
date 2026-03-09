@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { VIEW_MODES } from '../../constants/viewModes.js';
 import { createPaginationData, paginationDataFromMetadata } from './index.js';
 
 describe('paginationDataFromMetadata', () => {
@@ -89,6 +90,28 @@ describe('paginationDataFromMetadata', () => {
             `/document/${documentId}/view/page/4?crn=${encodeURIComponent(params.crn)}`
         );
         assert.strictEqual(lastPageResult.next, null);
+    });
+
+    it('builds text-view page URLs when view mode is text', () => {
+        const result = paginationDataFromMetadata(
+            { page_num: 2, page_count: 3 },
+            {},
+            params,
+            VIEW_MODES.TEXT
+        );
+
+        assert.strictEqual(
+            result.items[0].href,
+            `/document/${documentId}/view/text/page/1?crn=${encodeURIComponent(params.crn)}`
+        );
+        assert.strictEqual(
+            result.previous?.href,
+            `/document/${documentId}/view/text/page/1?crn=${encodeURIComponent(params.crn)}`
+        );
+        assert.strictEqual(
+            result.next?.href,
+            `/document/${documentId}/view/text/page/3?crn=${encodeURIComponent(params.crn)}`
+        );
     });
 });
 
