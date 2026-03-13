@@ -45,7 +45,10 @@
 
 <div class="ocr-text-line-spacing">
   <p class="govuk-body">
-  {{ pageText }} {# do not set "autoescape" to false and do not add ` | safe` to pageText as it may contain untrusted OCR content #}
+     {%- for segment in pageTextSegments -%}
+       {%- if segment.isHighlight -%}<mark class="hods-highlight"><strong>{{ segment.text }}</strong></mark>{%- else -%}{{ segment.text }}{%- endif -%}
+     {%- endfor -%}
+    {# do not set "autoescape" to false and do not add "| safe" to OCR text as it may contain untrusted content #}
   </p>
 </div>
 

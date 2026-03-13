@@ -39,3 +39,9 @@
 .ocr-text-line-spacing {
   white-space: pre-line;
 }
+
+/* Home Office highlight component styling used in text viewer output */
+.hods-highlight {
+  background-color: #ffe5cc;
+  border-bottom: 2px solid #ffb266;
+}
