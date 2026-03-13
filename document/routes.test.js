@@ -10,7 +10,13 @@ import createDocumentRouter from './routes.js';
 /**
  * Helper function to set up a test express app with required middleware
  */
-function createTestApp(mockCreateDocumentMetadataService, mockCreatePageChunksService) {
+function createTestApp(mockCreateDocumentMetadataService, stubCreatePageChunksServiceFactory) {
+    const stubPageChunksServiceFactory =
+        stubCreatePageChunksServiceFactory ||
+        (() => ({
+            getPageChunks: async () => []
+        }));
+
     const testApp = express();
     testApp.use(express.json());
     testApp.use(express.urlencoded({ extended: true }));
@@ -39,7 +45,7 @@ function createTestApp(mockCreateDocumentMetadataService, mockCreatePageChunksSe
         '/document',
         createDocumentRouter({
             createDocumentMetadataService: mockCreateDocumentMetadataService,
-            createPageChunksService: mockCreatePageChunksService
+            createPageChunksService: stubPageChunksServiceFactory
         })
     );
 
