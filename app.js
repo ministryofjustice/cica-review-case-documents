@@ -54,17 +54,6 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
         logger: envValidationLogger
     });
 
-    // https://expressjs.com/en/api.html#express.json
-    app.use(express.json());
-    // https://expressjs.com/en/api.html#express.urlencoded
-    app.use(express.urlencoded({ extended: true }));
-    // CSRF protection is enforced after cookies are parsed
-    app.use(
-        cookieParser(null, {
-            httpOnly: true
-        })
-    );
-
     // Use the middleware for request logging
     app.use(loggerMiddleware);
 
@@ -80,7 +69,15 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
 
     app.use(ensureEnvVarsAreValid);
 
+    // https://expressjs.com/en/api.html#express.json
+    app.use(express.json());
+    // https://expressjs.com/en/api.html#express.urlencoded
+    app.use(express.urlencoded({ extended: true }));
+
     app.set('trust proxy', 1); // trust first proxy (ingress)
+
+    // Parse cookies immediately before session + CSRF protection.
+    app.use(cookieParser(process.env.APP_COOKIE_SECRET));
 
     app.use(
         session({
@@ -99,6 +96,14 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
             }
         })
     );
+
+    // Register CSRF protection before serving routes or static handlers.
+    const { doubleCsrfProtection, generateCsrfToken } = createCsrf();
+    app.use(doubleCsrfProtection);
+    app.use((req, res, next) => {
+        res.locals.csrfToken = generateCsrfToken(req, res);
+        next();
+    });
 
     app.use((req, res, next) => {
         res.locals.cspNonce = nanoid();
@@ -152,13 +157,6 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
         '/assets',
         express.static(path.join(__dirname, '/node_modules/govuk-frontend/dist/govuk/assets'))
     );
-
-    const { doubleCsrfProtection, generateCsrfToken } = createCsrf();
-    app.use(doubleCsrfProtection);
-    app.use((req, res, next) => {
-        res.locals.csrfToken = generateCsrfToken(req, res);
-        next();
-    });
 
     // Apply General Rate Limiter GLOBALLY (Fixes CodeQL)
     // Note: auth login exclusion is handled within the limiter configuration
