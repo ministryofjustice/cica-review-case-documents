@@ -40,12 +40,35 @@ function authenticateJWTToken(req, res, next) {
         });
     }
 
+    let jwtVerificationOptions;
     try {
-        const user = jwt.verify(token, process.env.APP_JWT_SECRET, {
+        if (!process.env.APP_JWT_SECRET) {
+            throw new Error('APP_JWT_SECRET environment variable is not set');
+        }
+
+        jwtVerificationOptions = {
             algorithms: ['HS256'],
             issuer: getApiJwtIssuer(),
             audience: getApiJwtAudience()
+        };
+    } catch (err) {
+        req.log?.error(
+            { url: req.originalUrl, error: err.message },
+            'JWT authentication configuration error'
+        );
+        return res.status(500).json({
+            errors: [
+                {
+                    status: '500',
+                    title: 'Internal Server Error',
+                    detail: 'Authentication service is not configured correctly'
+                }
+            ]
         });
+    }
+
+    try {
+        const user = jwt.verify(token, process.env.APP_JWT_SECRET, jwtVerificationOptions);
         req.user = user;
         next();
     } catch (err) {

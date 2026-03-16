@@ -21,7 +21,7 @@ beforeEach(() => {
 function createMockReq({ token }) {
     return {
         headers: { authorization: `Bearer ${token}` },
-        log: { warn: () => {} },
+        log: { warn: () => {}, error: () => {} },
         originalUrl: '/test'
     };
 }
@@ -86,7 +86,7 @@ test('authenticateToken attaches user for valid token in header', async () => {
 });
 
 test('authenticateToken returns 401 if no token', async () => {
-    const req = { headers: {}, log: { warn: () => {} }, originalUrl: '/test' };
+    const req = { headers: {}, log: { warn: () => {}, error: () => {} }, originalUrl: '/test' };
     const res = createMockRes();
 
     await authenticateToken(req, res, () => {});
@@ -137,4 +137,26 @@ test('authenticateToken returns 403 if token audience is invalid', async () => {
     assert.equal(res.statusCode, 403);
     assert.ok(res.jsonBody);
     assert.equal(res.jsonBody.errors[0].detail, 'Invalid authentication token');
+});
+
+test('authenticateToken returns 500 when auth configuration is invalid', async () => {
+    const token = jwt.sign({ id: 1 }, SECRET, {
+        issuer: process.env.APP_API_JWT_ISSUER,
+        audience: process.env.APP_API_JWT_AUDIENCE,
+        algorithm: 'HS256'
+    });
+
+    delete process.env.APP_API_JWT_ISSUER;
+
+    const req = createMockReq({ token });
+    const res = createMockRes();
+
+    await authenticateToken(req, res, () => {});
+
+    assert.equal(res.statusCode, 500);
+    assert.ok(res.jsonBody);
+    assert.equal(
+        res.jsonBody.errors[0].detail,
+        'Authentication service is not configured correctly'
+    );
 });
