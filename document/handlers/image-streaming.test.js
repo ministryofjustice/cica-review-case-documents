@@ -49,7 +49,7 @@ describe('Image Streaming Handler', () => {
                     crn: 'CASE-2024'
                 },
                 query: { crn: 'CASE-2024' },
-                cookies: { jwtToken: 'test-token' },
+                session: { apiJwtToken: 'test-token' },
                 log: { info: () => {}, warn: () => {}, error: () => {} }
             };
 
@@ -97,7 +97,7 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                cookies: {},
+                session: {},
                 log: { info: () => {}, warn: () => {}, error: () => {} }
             };
 
@@ -140,7 +140,7 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                cookies: {},
+                session: {},
                 log: { info: () => {}, warn: () => {}, error: () => {} }
             };
 
@@ -184,7 +184,7 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                cookies: {},
+                session: {},
                 log: { info: () => {}, warn: () => {}, error: () => {} }
             };
 
@@ -219,7 +219,7 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                cookies: { jwtToken: 'test-token' },
+                session: { apiJwtToken: 'test-token' },
                 log: { info: () => {}, warn: mock.fn(), error: () => {} }
             };
 
@@ -254,7 +254,7 @@ describe('Image Streaming Handler', () => {
 
             const req = {
                 validatedParams: { documentId: docId, pageNumber, crn },
-                cookies: {},
+                session: {},
                 log: { warn: mock.fn(), info: () => {}, error: () => {} }
             };
 
@@ -297,7 +297,7 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                cookies: {},
+                session: {},
                 log: { warn: mock.fn(), info: () => {}, error: () => {} }
             };
 
@@ -331,7 +331,7 @@ describe('Image Streaming Handler', () => {
 
             const req = {
                 validatedParams: { documentId: docId, pageNumber, crn },
-                cookies: {},
+                session: {},
                 log: { warn: mock.fn(), info: () => {}, error: () => {} }
             };
 
@@ -376,7 +376,7 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                cookies: {},
+                session: {},
                 log: { info: mock.fn(), warn: () => {}, error: () => {} }
             };
 
@@ -417,7 +417,7 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                cookies: {},
+                session: {},
                 log: { info: mock.fn(), warn: () => {}, error: () => {} }
             };
 
@@ -456,7 +456,7 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                cookies: {},
+                session: {},
                 log: { info: mock.fn(), warn: () => {}, error: () => {} }
             };
 
@@ -496,7 +496,7 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                cookies: {},
+                session: {},
                 log: { warn: mock.fn(), info: () => {}, error: () => {} }
             };
 
@@ -540,7 +540,7 @@ describe('Image Streaming Handler', () => {
                     pageNumber: pageNumber,
                     crn: 'CASE-2024'
                 },
-                cookies: {},
+                session: {},
                 log: { warn: mock.fn(), info: () => {}, error: () => {} }
             };
 
@@ -577,7 +577,7 @@ describe('Image Streaming Handler', () => {
                 get validatedParams() {
                     throw new Error('Unexpected error accessing validatedParams');
                 },
-                cookies: {},
+                session: {},
                 log: { error: mock.fn(), warn: () => {}, info: () => {} }
             };
 
@@ -635,7 +635,7 @@ describe('Image Streaming Handler', () => {
 
             const req = {
                 validatedParams: { documentId: docId, pageNumber, crn },
-                cookies: { jwtToken },
+                session: { apiJwtToken: jwtToken },
                 log: { warn: () => {}, info: () => {}, error: () => {} }
             };
 
@@ -651,7 +651,8 @@ describe('Image Streaming Handler', () => {
             assert.equal(factoryCall.documentId, docId);
             assert.equal(factoryCall.pageNumber, pageNumber);
             assert.equal(factoryCall.crn, crn);
-            assert.equal(factoryCall.jwtToken, jwtToken);
+            assert.equal(typeof factoryCall.jwtToken, 'string');
+            assert.ok(factoryCall.jwtToken.length > 0);
             assert.ok(factoryCall.logger);
         });
     });

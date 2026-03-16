@@ -64,7 +64,7 @@ describe('Search Pagination Persistence', () => {
             req.session = sessionData;
             req.session.caseSelected = true;
             req.session.caseReferenceNumber = '12-745678';
-            req.cookies = { jwtToken: 'test-token' };
+            req.session.apiJwtToken = 'test-token';
             req.log = { info: () => {}, error: () => {} };
             res.locals.csrfToken = 'test-csrf-token';
             res.locals.cspNonce = 'test-csp-nonce';

@@ -4,7 +4,29 @@ import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import createApi from './app.js';
 
-const API_ENV_VARS = ['APP_LOG_LEVEL', 'DEPLOY_ENV', 'npm_package_version', 'APP_JWT_SECRET'];
+const API_ENV_VARS = [
+    'APP_LOG_LEVEL',
+    'DEPLOY_ENV',
+    'npm_package_version',
+    'APP_JWT_SECRET',
+    'APP_API_JWT_ISSUER',
+    'APP_API_JWT_AUDIENCE'
+];
+
+/**
+ * Signs a JWT token with the given payload using the secret and options from environment variables.
+ *
+ * @param {Object} payload - The payload to include in the JWT token.
+ * @returns {string} The signed JWT token.
+ */
+function signApiToken(payload) {
+    return jwt.sign(payload, process.env.APP_JWT_SECRET, {
+        expiresIn: '1h',
+        issuer: process.env.APP_API_JWT_ISSUER,
+        audience: process.env.APP_API_JWT_AUDIENCE,
+        algorithm: 'HS256'
+    });
+}
 
 // Mock the search service to isolate the API app logic
 const mockCreateSearchService = () => ({
@@ -38,6 +60,8 @@ describe('API Application', () => {
         process.env.DEPLOY_ENV = 'test';
         process.env.npm_package_version = '1.0.0-test';
         process.env.APP_JWT_SECRET = 'test-secret-for-api';
+        process.env.APP_API_JWT_ISSUER = 'test-ui';
+        process.env.APP_API_JWT_AUDIENCE = 'test-api';
 
         // Create the Express app instance for testing
         //app = await createApi({ createSearchService: mockCreateSearchService });
@@ -132,9 +156,7 @@ describe('API Application', () => {
                 createSearchService: mockCreateSearchService
             });
 
-            const token = jwt.sign({ userId: 'test' }, process.env.APP_JWT_SECRET, {
-                expiresIn: '1h'
-            });
+            const token = signApiToken({ userId: 'test' });
 
             const res = await request(devApp).get('/docs/').set('Authorization', `Bearer ${token}`);
 
@@ -151,9 +173,7 @@ describe('API Application', () => {
                 createSearchService: mockCreateSearchService
             });
 
-            const token = jwt.sign({ userId: 'test' }, process.env.APP_JWT_SECRET, {
-                expiresIn: '1h'
-            });
+            const token = signApiToken({ userId: 'test' });
 
             const res = await request(prodApp)
                 .get('/docs/')
@@ -195,11 +215,7 @@ describe('API Application', () => {
 
         beforeEach(() => {
             // Create a fresh token for each test
-            validToken = jwt.sign(
-                { userId: 'test-user-123', email: 'test@example.com' },
-                process.env.APP_JWT_SECRET,
-                { expiresIn: '1h' }
-            );
+            validToken = signApiToken({ userId: 'test-user-123', email: 'test@example.com' });
         });
 
         test('responds with 200 for Swagger UI docs', async () => {
@@ -226,9 +242,7 @@ describe('API Application', () => {
                 createSearchService: mockCreateSearchService
             });
 
-            const prodToken = jwt.sign({ userId: 'test-user-123' }, process.env.APP_JWT_SECRET, {
-                expiresIn: '1h'
-            });
+            const prodToken = signApiToken({ userId: 'test-user-123' });
 
             const res = await request(prodApp)
                 .get('/docs/openapi.json')
@@ -267,40 +281,8 @@ describe('API Application', () => {
         let validToken;
 
         beforeEach(() => {
-            validToken = jwt.sign({ id: 'test' }, process.env.APP_JWT_SECRET, { expiresIn: '1h' });
+            validToken = signApiToken({ id: 'test' });
         });
-
-        // test('responds with 400 for missing required "query" parameter', async () => {
-        //     const res = await request(app)
-        //         .get('/search')
-        //         .set('Authorization', `Bearer ${validToken}`)
-        //         .set('On-Behalf-Of', '25-711111');
-
-        //     assert.strictEqual(res.statusCode, 400);
-        //     assert.ok(res.body.errors, 'Response should have errors');
-        //     assert.match(res.body.errors[0].message, /must have required property 'query'/);
-        // });
-
-        // test('responds with 400 for invalid "query" parameter (too short)', async () => {
-        //     const res = await request(app)
-        //         .get('/search?query=a')
-        //         .set('Authorization', `Bearer ${validToken}`)
-        //         .set('On-Behalf-Of', '25-711111');
-
-        //     assert.strictEqual(res.statusCode, 400);
-        //     assert.ok(res.body.errors, 'Response should have errors');
-        //     assert.match(res.body.errors[0].message, /must NOT have fewer than 2 characters/);
-        // });
-
-        // test('responds with 400 for invalid "On-Behalf-Of" header', async () => {
-        //     const res = await request(app)
-        //         .get('/search?query=test')
-        //         .set('Authorization', `Bearer ${validToken}`); // Missing header
-
-        //     assert.strictEqual(res.statusCode, 400);
-        //     assert.ok(res.body.errors, 'Response should have errors');
-        //     assert.match(res.body.errors[0].message, /must have required property 'On-Behalf-Of'/);
-        // });
 
         test('responds with 404 for an unknown route when authenticated', async () => {
             const res = await request(app)

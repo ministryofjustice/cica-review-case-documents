@@ -1,22 +1,26 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { beforeEach, test } from 'node:test';
 import jwt from 'jsonwebtoken';
 import authenticateToken from './index.js';
 
-const SECRET = process.env.APP_JWT_SECRET;
+const SECRET = 'test-secret';
+
+beforeEach(() => {
+    process.env.APP_JWT_SECRET = SECRET;
+    process.env.APP_API_JWT_ISSUER = 'test-ui';
+    process.env.APP_API_JWT_AUDIENCE = 'test-api';
+});
 
 /**
- * Creates a mock Express request object with JWT token in either cookies or headers.
+ * Creates a mock Express request object with JWT token in authorization header.
  *
  * @param {Object} options - Options for creating the mock request.
  * @param {string} options.token - The JWT token to include in the request.
- * @param {boolean} [options.cookie=false] - If true, places the token in cookies; otherwise, in the authorization header.
  * @returns {Object} Mock request object with cookies, headers, log, and originalUrl properties.
  */
-function createMockReq({ token, cookie = false }) {
+function createMockReq({ token }) {
     return {
-        cookies: cookie ? { jwtToken: token } : {},
-        headers: cookie ? {} : { authorization: `Bearer ${token}` },
+        headers: { authorization: `Bearer ${token}` },
         log: { warn: () => {} },
         originalUrl: '/test'
     };
@@ -61,30 +65,16 @@ function createMockRes() {
     };
 }
 
-test('authenticateToken attaches user for valid token in cookie', async () => {
-    const user = { id: 1, name: 'Test' };
-    const token = jwt.sign(user, SECRET);
-    const req = createMockReq({ token, cookie: true });
-    const res = createMockRes();
-    let calledNext = false;
-    process.env.APP_JWT_SECRET = SECRET;
-
-    await authenticateToken(req, res, () => {
-        calledNext = true;
-    });
-
-    assert.equal(req.user.id, user.id);
-    assert.equal(req.user.name, user.name);
-    assert.ok(calledNext);
-});
-
 test('authenticateToken attaches user for valid token in header', async () => {
-    const user = { id: 2, name: 'HeaderTest' };
-    const token = jwt.sign(user, SECRET);
-    const req = createMockReq({ token, cookie: false });
+    const user = { id: 1, name: 'Test' };
+    const token = jwt.sign(user, SECRET, {
+        issuer: process.env.APP_API_JWT_ISSUER,
+        audience: process.env.APP_API_JWT_AUDIENCE,
+        algorithm: 'HS256'
+    });
+    const req = createMockReq({ token });
     const res = createMockRes();
     let calledNext = false;
-    process.env.APP_JWT_SECRET = SECRET;
 
     await authenticateToken(req, res, () => {
         calledNext = true;
@@ -96,9 +86,8 @@ test('authenticateToken attaches user for valid token in header', async () => {
 });
 
 test('authenticateToken returns 401 if no token', async () => {
-    const req = { cookies: {}, headers: {}, log: { warn: () => {} }, originalUrl: '/test' };
+    const req = { headers: {}, log: { warn: () => {} }, originalUrl: '/test' };
     const res = createMockRes();
-    process.env.APP_JWT_SECRET = SECRET;
 
     await authenticateToken(req, res, () => {});
 
@@ -108,9 +97,40 @@ test('authenticateToken returns 401 if no token', async () => {
 });
 
 test('authenticateToken returns 403 if token is invalid', async () => {
-    const req = createMockReq({ token: 'invalidtoken', cookie: true });
+    const req = createMockReq({ token: 'invalidtoken' });
     const res = createMockRes();
-    process.env.APP_JWT_SECRET = SECRET;
+
+    await authenticateToken(req, res, () => {});
+
+    assert.equal(res.statusCode, 403);
+    assert.ok(res.jsonBody);
+    assert.equal(res.jsonBody.errors[0].detail, 'Invalid authentication token');
+});
+
+test('authenticateToken returns 403 if token issuer is invalid', async () => {
+    const token = jwt.sign({ id: 1 }, SECRET, {
+        issuer: 'wrong-issuer',
+        audience: process.env.APP_API_JWT_AUDIENCE,
+        algorithm: 'HS256'
+    });
+    const req = createMockReq({ token });
+    const res = createMockRes();
+
+    await authenticateToken(req, res, () => {});
+
+    assert.equal(res.statusCode, 403);
+    assert.ok(res.jsonBody);
+    assert.equal(res.jsonBody.errors[0].detail, 'Invalid authentication token');
+});
+
+test('authenticateToken returns 403 if token audience is invalid', async () => {
+    const token = jwt.sign({ id: 1 }, SECRET, {
+        issuer: process.env.APP_API_JWT_ISSUER,
+        audience: 'wrong-audience',
+        algorithm: 'HS256'
+    });
+    const req = createMockReq({ token });
+    const res = createMockRes();
 
     await authenticateToken(req, res, () => {});
 

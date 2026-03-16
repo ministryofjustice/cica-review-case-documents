@@ -1,5 +1,4 @@
 import createTemplateEngineService from '../templateEngine/index.js';
-import jwtCookieOptions from './jwtCookieOptions.js';
 import failureRateLimiter, { getRateLimitKey } from './rateLimiters/authRateLimiter.js';
 import { getAuthConfig } from './utils/getAuthConfig/index.js';
 
@@ -45,7 +44,7 @@ export function loginParamsValidator(username, password) {
 }
 
 /**
- * Signs out the current user by destroying their session, clearing the JWT cookie,
+ * Signs out the current user by destroying their session,
  * resetting the rate limiter key if applicable, and rendering the sign-out page.
  *
  * @param {import('express').Request} req - The Express request object.
@@ -61,8 +60,6 @@ export function signOutUser(req, res, next) {
     }
 
     req.session.destroy(() => {
-        res.clearCookie('jwtToken', jwtCookieOptions);
-
         const templateEngineService = createTemplateEngineService();
         const { render } = templateEngineService;
         const html = render('index/sign-out.njk', {

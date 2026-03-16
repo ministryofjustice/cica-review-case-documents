@@ -1,3 +1,4 @@
+import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
 import { formatPageTitle } from '../utils/formatters/index.js';
@@ -28,6 +29,7 @@ export function createPageViewerHandler(
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
             const { searchResultsPageNumber = '', searchTerm = '', align = 'on' } = req.query;
+            const apiJwtToken = createApiJwtToken(req.session?.username);
 
             // Fetch document page metadata from API (which queries OpenSearch)
             let pageMetadata;
@@ -37,7 +39,7 @@ export function createPageViewerHandler(
                     documentId,
                     pageNumber,
                     crn,
-                    jwtToken: req.cookies?.jwtToken,
+                    jwtToken: apiJwtToken,
                     logger: req.log
                 });
             } catch (error) {
@@ -77,7 +79,7 @@ export function createPageViewerHandler(
                     pageNumber,
                     crn,
                     searchTerm,
-                    jwtToken: req.cookies?.jwtToken,
+                    jwtToken: apiJwtToken,
                     logger: req.log
                 });
                 pageChunks = await pageChunksServiceInstance.getPageChunks();
