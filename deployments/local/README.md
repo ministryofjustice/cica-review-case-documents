@@ -79,9 +79,9 @@ These commands read values from the file in the project root to create the secre
       --from-literal=app_cookie_secret=$(grep -E '^APP_COOKIE_SECRET=' .env | cut -d '=' -f2) \
       --from-literal=auth_secret_password=$(grep -E '^AUTH_SECRET_PASSWORD=' .env | cut -d '=' -f2) \
       --from-literal=auth_usernames=$(grep -E '^AUTH_USERNAMES=' .env | cut -d '=' -f2) \
-            --from-literal=app_jwt_secret=$(grep -E '^APP_JWT_SECRET=' .env | cut -d '=' -f2) \
-            --from-literal=app_api_jwt_issuer=$(grep -E '^APP_API_JWT_ISSUER=' .env | cut -d '=' -f2) \
-            --from-literal=app_api_jwt_audience=$(grep -E '^APP_API_JWT_AUDIENCE=' .env | cut -d '=' -f2)
+      --from-literal=app_jwt_secret=$(grep -E '^APP_JWT_SECRET=' .env | cut -d '=' -f2) \
+      --from-literal=app_api_jwt_issuer=$(grep -E '^APP_API_JWT_ISSUER=' .env | cut -d '=' -f2) \
+      --from-literal=app_api_jwt_audience=$(grep -E '^APP_API_JWT_AUDIENCE=' .env | cut -d '=' -f2)
     ```
 
     ```cmder windows

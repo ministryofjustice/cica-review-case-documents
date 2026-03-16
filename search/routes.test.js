@@ -48,8 +48,7 @@ describe('Search Routes', () => {
         app.use((req, res, next) => {
             req.session = {
                 caseSelected: true,
-                caseReferenceNumber: '12345',
-                apiJwtToken: 'test-token'
+                caseReferenceNumber: '12345'
             };
             req.log = { info: () => {}, error: () => {} };
             res.locals.csrfToken = 'test-csrf-token';
@@ -94,8 +93,7 @@ describe('Search Routes', () => {
             testApp.use((req, res, next) => {
                 req.session = {
                     caseSelected: true,
-                    caseReferenceNumber: '12345',
-                    apiJwtToken: 'test-token'
+                    caseReferenceNumber: '12345'
                 };
                 req.log = { info: () => {}, error: () => {} };
                 next();
@@ -127,8 +125,7 @@ describe('Search Routes', () => {
             testApp.use((req, res, next) => {
                 req.session = {
                     caseSelected: true,
-                    caseReferenceNumber: '12345',
-                    apiJwtToken: 'test-token'
+                    caseReferenceNumber: '12345'
                 };
                 req.log = { info: () => {}, error: () => {} };
                 res.locals.csrfToken = 'test-csrf-token';
@@ -158,8 +155,7 @@ describe('Search Routes', () => {
             testApp.use((req, res, next) => {
                 req.session = {
                     caseSelected: true,
-                    caseReferenceNumber: '12345',
-                    apiJwtToken: 'test-token'
+                    caseReferenceNumber: '12345'
                 };
                 req.log = { info: () => {}, error: () => {} };
                 res.locals.csrfToken = 'test-csrf-token';
@@ -189,8 +185,7 @@ describe('Search Routes', () => {
             testApp.use((req, res, next) => {
                 req.session = {
                     caseSelected: true,
-                    caseReferenceNumber: '12345',
-                    apiJwtToken: 'test-token'
+                    caseReferenceNumber: '12345'
                 };
                 req.log = { info: () => {}, error: () => {} };
                 res.locals.csrfToken = 'test-csrf-token';
@@ -225,8 +220,7 @@ describe('Search Routes', () => {
             testApp.use((req, res, next) => {
                 req.session = {
                     caseSelected: true,
-                    caseReferenceNumber: '12345',
-                    apiJwtToken: 'test-token'
+                    caseReferenceNumber: '12345'
                 };
                 req.log = { info: () => {}, error: () => {} };
                 res.locals.csrfToken = 'test-csrf-token';
@@ -272,8 +266,7 @@ describe('Search Routes', () => {
             testApp.use((req, res, next) => {
                 req.session = {
                     caseSelected: true,
-                    caseReferenceNumber: '12345',
-                    apiJwtToken: 'test-token'
+                    caseReferenceNumber: '12345'
                 };
                 req.log = { info: () => {}, error: () => {} };
                 res.locals.csrfToken = 'test-csrf-token';

@@ -49,7 +49,7 @@ describe('Image Streaming Handler', () => {
                     crn: 'CASE-2024'
                 },
                 query: { crn: 'CASE-2024' },
-                session: { apiJwtToken: 'test-token' },
+                session: {},
                 log: { info: () => {}, warn: () => {}, error: () => {} }
             };
 
@@ -219,7 +219,7 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                session: { apiJwtToken: 'test-token' },
+                session: {},
                 log: { info: () => {}, warn: mock.fn(), error: () => {} }
             };
 
@@ -635,11 +635,10 @@ describe('Image Streaming Handler', () => {
             const docId = '123e4567-e89b-12d3-a456-426614174000';
             const pageNumber = 5;
             const crn = 'CASE-2024-001';
-            const jwtToken = 'test-jwt-token';
 
             const req = {
                 validatedParams: { documentId: docId, pageNumber, crn },
-                session: { apiJwtToken: jwtToken },
+                session: {},
                 log: { warn: () => {}, info: () => {}, error: () => {} }
             };
 

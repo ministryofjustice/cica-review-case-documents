@@ -37,7 +37,7 @@ describe('Text Viewer Handler', () => {
                 crn: '26-745678'
             },
             query: {},
-            session: { caseSelected: true, apiJwtToken: 'test-jwt' },
+            session: { caseSelected: true },
             log: {
                 error: () => {
                     errorLogged = true;
@@ -167,7 +167,7 @@ describe('Text Viewer Handler', () => {
                 crn: '26-745678'
             },
             query: {},
-            session: { caseSelected: true, apiJwtToken: 'test-jwt' },
+            session: { caseSelected: true },
             log: { error: () => {} }
         };
         const res = {
@@ -218,7 +218,7 @@ describe('Text Viewer Handler', () => {
 
         const req = {
             query: {},
-            session: { caseSelected: true, apiJwtToken: 'test-jwt' },
+            session: { caseSelected: true },
             log: { error: () => {} }
         };
         const res = {
@@ -269,7 +269,7 @@ describe('Text Viewer Handler', () => {
                 crn: '26-745678'
             },
             query: {},
-            session: { caseSelected: true, apiJwtToken: 'test-jwt' },
+            session: { caseSelected: true },
             log: {
                 error: (context, message) => {
                     loggedContext = context;

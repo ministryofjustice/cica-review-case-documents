@@ -28,7 +28,6 @@ function createTestApp(mockCreateDocumentMetadataService, mockCreatePageChunksSe
     // Setup minimal middleware
     testApp.use((req, res, next) => {
         req.session.caseSelected = true;
-        req.session.apiJwtToken = 'mock-jwt-token';
         req.log = { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} };
         res.locals.csrfToken = 'test-csrf-token';
         res.locals.cspNonce = 'test-csp-nonce';
