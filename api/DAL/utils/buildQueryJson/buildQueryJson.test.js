@@ -18,7 +18,10 @@ describe('buildQueryJson', () => {
                 bool: {
                     must: [{ term: { case_ref: '26-711111' } }],
                     should: [
-                        { match_phrase: { chunk_text: '12/05/2024' } },
+                        { match_phrase: { chunk_text: '12 5 24' } },
+                        { match_phrase: { chunk_text: '12 5 2024' } },
+                        { match_phrase: { chunk_text: '12 05 24' } },
+                        { match_phrase: { chunk_text: '12 05 2024' } },
                         {
                             match: {
                                 chunk_text: { query: 'Meeting on at office', operator: 'or' }
@@ -75,8 +78,14 @@ describe('buildQueryJson', () => {
                 bool: {
                     must: [{ term: { case_ref: '26-711111' } }],
                     should: [
-                        { match_phrase: { chunk_text: '12/01/2024' } },
-                        { match_phrase: { chunk_text: '13-02-24' } },
+                        { match_phrase: { chunk_text: '12 1 24' } },
+                        { match_phrase: { chunk_text: '12 1 2024' } },
+                        { match_phrase: { chunk_text: '12 01 24' } },
+                        { match_phrase: { chunk_text: '12 01 2024' } },
+                        { match_phrase: { chunk_text: '13 2 24' } },
+                        { match_phrase: { chunk_text: '13 2 2024' } },
+                        { match_phrase: { chunk_text: '13 02 24' } },
+                        { match_phrase: { chunk_text: '13 02 2024' } },
                         {
                             match: {
                                 chunk_text: {
@@ -110,7 +119,10 @@ describe('buildQueryJson', () => {
                 bool: {
                     must: [{ term: { case_ref: '26-711111' } }],
                     should: [
-                        { match_phrase: { chunk_text: '12/05/2024' } },
+                        { match_phrase: { chunk_text: '12 5 24' } },
+                        { match_phrase: { chunk_text: '12 5 2024' } },
+                        { match_phrase: { chunk_text: '12 05 24' } },
+                        { match_phrase: { chunk_text: '12 05 2024' } },
                         {
                             match: {
                                 chunk_text: {
@@ -144,9 +156,18 @@ describe('buildQueryJson', () => {
                 bool: {
                     must: [{ term: { case_ref: '26-711111' } }],
                     should: [
-                        { match_phrase: { chunk_text: '12/05/2024' } },
-                        { match_phrase: { chunk_text: '13/05/2024' } },
-                        { match_phrase: { chunk_text: '14/05/2024' } },
+                        { match_phrase: { chunk_text: '12 5 24' } },
+                        { match_phrase: { chunk_text: '12 5 2024' } },
+                        { match_phrase: { chunk_text: '12 05 24' } },
+                        { match_phrase: { chunk_text: '12 05 2024' } },
+                        { match_phrase: { chunk_text: '13 5 24' } },
+                        { match_phrase: { chunk_text: '13 5 2024' } },
+                        { match_phrase: { chunk_text: '13 05 24' } },
+                        { match_phrase: { chunk_text: '13 05 2024' } },
+                        { match_phrase: { chunk_text: '14 5 24' } },
+                        { match_phrase: { chunk_text: '14 5 2024' } },
+                        { match_phrase: { chunk_text: '14 05 24' } },
+                        { match_phrase: { chunk_text: '14 05 2024' } },
                         { match: { chunk_text: { query: 'Dates:,,', operator: 'or' } } }
                     ],
                     minimum_should_match: 1
@@ -173,8 +194,14 @@ describe('buildQueryJson', () => {
                 bool: {
                     must: [{ term: { case_ref: '26-711111' } }],
                     should: [
-                        { match_phrase: { chunk_text: '12/05/2024' } },
-                        { match_phrase: { chunk_text: '13/06/2024' } },
+                        { match_phrase: { chunk_text: '12 5 24' } },
+                        { match_phrase: { chunk_text: '12 5 2024' } },
+                        { match_phrase: { chunk_text: '12 05 24' } },
+                        { match_phrase: { chunk_text: '12 05 2024' } },
+                        { match_phrase: { chunk_text: '13 6 24' } },
+                        { match_phrase: { chunk_text: '13 6 2024' } },
+                        { match_phrase: { chunk_text: '13 06 24' } },
+                        { match_phrase: { chunk_text: '13 06 2024' } },
                         { match: { chunk_text: { query: 'project discussion', operator: 'or' } } }
                     ],
                     minimum_should_match: 1
@@ -223,10 +250,34 @@ describe('buildQueryJson', () => {
                 bool: {
                     must: [{ term: { case_ref: '26-711111' } }],
                     should: [
-                        { match_phrase: { chunk_text: '01/02/2024' } },
-                        { match_phrase: { chunk_text: '03-04-24' } },
-                        { match_phrase: { chunk_text: '07 / 08 / 2024' } },
-                        { match_phrase: { chunk_text: '09 – 10 – 2024' } },
+                        { match_phrase: { chunk_text: '1 2 24' } },
+                        { match_phrase: { chunk_text: '1 2 2024' } },
+                        { match_phrase: { chunk_text: '1 02 24' } },
+                        { match_phrase: { chunk_text: '1 02 2024' } },
+                        { match_phrase: { chunk_text: '01 2 24' } },
+                        { match_phrase: { chunk_text: '01 2 2024' } },
+                        { match_phrase: { chunk_text: '01 02 24' } },
+                        { match_phrase: { chunk_text: '01 02 2024' } },
+                        { match_phrase: { chunk_text: '3 4 24' } },
+                        { match_phrase: { chunk_text: '3 4 2024' } },
+                        { match_phrase: { chunk_text: '3 04 24' } },
+                        { match_phrase: { chunk_text: '3 04 2024' } },
+                        { match_phrase: { chunk_text: '03 4 24' } },
+                        { match_phrase: { chunk_text: '03 4 2024' } },
+                        { match_phrase: { chunk_text: '03 04 24' } },
+                        { match_phrase: { chunk_text: '03 04 2024' } },
+                        { match_phrase: { chunk_text: '7 8 24' } },
+                        { match_phrase: { chunk_text: '7 8 2024' } },
+                        { match_phrase: { chunk_text: '7 08 24' } },
+                        { match_phrase: { chunk_text: '7 08 2024' } },
+                        { match_phrase: { chunk_text: '07 8 24' } },
+                        { match_phrase: { chunk_text: '07 8 2024' } },
+                        { match_phrase: { chunk_text: '07 08 24' } },
+                        { match_phrase: { chunk_text: '07 08 2024' } },
+                        { match_phrase: { chunk_text: '9 10 24' } },
+                        { match_phrase: { chunk_text: '9 10 2024' } },
+                        { match_phrase: { chunk_text: '09 10 24' } },
+                        { match_phrase: { chunk_text: '09 10 2024' } },
                         { match: { chunk_text: { query: 'Dates:', operator: 'or' } } }
                     ],
                     minimum_should_match: 1
@@ -269,5 +320,78 @@ describe('buildQueryJson', () => {
 
         const result = buildQueryJson(params);
         assert.deepStrictEqual(result, expected);
+    });
+
+    it('Should build query for month-name day-month-year date pattern', () => {
+        const params = {
+            keyword: 'Meeting on January 5 2024 at office',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 10
+        };
+        const result = buildQueryJson(params);
+        assert.strictEqual(result.from, 0);
+        assert.strictEqual(result.size, 10);
+        assert.strictEqual(result.query.bool.must[0].term.case_ref, '26-711111');
+        assert.ok(
+            Array.isArray(result.query.bool.should) &&
+                result.query.bool.should.some((condition) =>
+                    Object.hasOwn(condition, 'match_phrase')
+                )
+        );
+    });
+    it('Should build query for month-year date pattern', () => {
+        const params = {
+            keyword: 'Review scheduled in March 2024',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 10
+        };
+        const result = buildQueryJson(params);
+        assert.strictEqual(result.from, 0);
+        assert.strictEqual(result.size, 10);
+        assert.strictEqual(result.query.bool.must[0].term.case_ref, '26-711111');
+        assert.ok(
+            Array.isArray(result.query.bool.should) &&
+                result.query.bool.should.some((condition) =>
+                    Object.hasOwn(condition, 'match_phrase')
+                )
+        );
+    });
+    it('Should build query for year-month-day date pattern', () => {
+        const params = {
+            keyword: 'Event on 2024-05-12 at venue',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 10
+        };
+        const result = buildQueryJson(params);
+        assert.strictEqual(result.from, 0);
+        assert.strictEqual(result.size, 10);
+        assert.strictEqual(result.query.bool.must[0].term.case_ref, '26-711111');
+        assert.ok(
+            Array.isArray(result.query.bool.should) &&
+                result.query.bool.should.some((condition) =>
+                    Object.hasOwn(condition, 'match_phrase')
+                )
+        );
+    });
+    it('Should build query for ordinal day date pattern', () => {
+        const params = {
+            keyword: 'Hearing on 5th May 2024 at court',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 10
+        };
+        const result = buildQueryJson(params);
+        assert.strictEqual(result.from, 0);
+        assert.strictEqual(result.size, 10);
+        assert.strictEqual(result.query.bool.must[0].term.case_ref, '26-711111');
+        assert.ok(
+            Array.isArray(result.query.bool.should) &&
+                result.query.bool.should.some((condition) =>
+                    Object.hasOwn(condition, 'match_phrase')
+                )
+        );
     });
 });

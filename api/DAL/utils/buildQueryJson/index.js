@@ -1,4 +1,5 @@
 import extractDatesFromSearchString from '../extractDatesFromSearchString/index.js';
+import generateDateFormatVariants from '../generateDateFormatVariants/index.js';
 
 /**
  * Builds an OpenSearch  query JSON object based on the provided search parameters.
@@ -30,12 +31,32 @@ function buildQueryJson({ keyword, caseReferenceNumber, pageNumber, itemsPerPage
         }
     };
 
-    const { dates: phrases, remainingText } = extractDatesFromSearchString(keyword);
+    const {
+        dates: phrases,
+        remainingText,
+        matchedPatterns
+    } = extractDatesFromSearchString(keyword);
+
     const shouldClauses = [];
 
+    // build variants for each extracted phrase, falling back to the
+    // original phrase if no variants are produced, and then
+    // deduplicate (via the new Set) across all phrases.
+    const phrasesVariants = Array.from(
+        new Set(
+            phrases.flatMap((phrase, index) => {
+                const variants = generateDateFormatVariants(phrase, matchedPatterns[index]);
+                if (!variants || variants.length === 0) {
+                    return [phrase];
+                }
+                return variants;
+            })
+        )
+    );
+
     // add match_phrase queries for each extracted date phrase.
-    if (phrases.length !== 0) {
-        phrases.forEach((phrase) => {
+    if (phrasesVariants.length !== 0) {
+        phrasesVariants.forEach((phrase) => {
             shouldClauses.push({
                 match_phrase: {
                     chunk_text: phrase
@@ -60,7 +81,6 @@ function buildQueryJson({ keyword, caseReferenceNumber, pageNumber, itemsPerPage
         queryJson.query.bool.should = shouldClauses;
         queryJson.query.bool.minimum_should_match = 1;
     }
-
     return queryJson;
 }
 
