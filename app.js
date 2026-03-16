@@ -77,6 +77,9 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     app.set('trust proxy', 1); // trust first proxy (ingress)
 
     // Parse cookies immediately before session + CSRF protection.
+    // doubleCsrfProtection (csrf-csrf) is registered globally after session, but CodeQL
+    // does not model csrf-csrf as a recognised CSRF middleware for this rule.
+    // codeql[js/missing-token-validation]
     app.use(cookieParser(process.env.APP_COOKIE_SECRET));
 
     app.use(
