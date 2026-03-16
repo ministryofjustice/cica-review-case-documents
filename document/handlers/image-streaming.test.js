@@ -603,6 +603,10 @@ describe('Image Streaming Handler', () => {
             assert.ok(errorPayload.errors);
             assert.equal(errorPayload.errors[0].status, 500);
             assert.equal(errorPayload.errors[0].title, 'Internal Server Error');
+            assert.equal(
+                errorPayload.errors[0].detail,
+                'An unexpected error occurred while processing the image request'
+            );
         });
     });
 

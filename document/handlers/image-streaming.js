@@ -95,7 +95,7 @@ export function createImageStreamingHandler(s3Client, createMetadataService) {
                     {
                         status: 500,
                         title: 'Internal Server Error',
-                        detail: err.message
+                        detail: 'An unexpected error occurred while processing the image request'
                     }
                 ]
             });
