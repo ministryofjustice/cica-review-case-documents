@@ -17,7 +17,8 @@ import ensureEnvVarsAreValid, { getMandatoryEnvVars, getOptionalEnvVars } from '
 const fakeLogger = {
     info: () => {},
     child: () => fakeLogger,
-    debug: () => {}
+    debug: () => {},
+    warn: () => {}
 };
 
 const originalEnv = { ...process.env };
@@ -105,6 +106,7 @@ describe('ensureEnvVarsAreValid', () => {
                 'PORT',
                 'APP_SEARCH_PAGINATION_ITEMS_PER_PAGE',
                 'APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE',
+                'APP_ALLOW_INSECURE_COOKIE',
                 'APP_API_JWT_EXPIRES_IN',
                 'APP_LOG_LEVEL',
                 'APP_LOG_REDACT_EXTRA',
@@ -131,6 +133,7 @@ describe('ensureEnvVarsAreValid', () => {
             const mockLogger = {
                 info: () => {},
                 child: () => mockLogger,
+                warn: () => {},
                 debug: (payload, message) => {
                     debugCalled = true;
                     debugPayload = payload;
@@ -150,6 +153,7 @@ describe('ensureEnvVarsAreValid', () => {
             const mockLogger = {
                 info: () => {},
                 child: () => mockLogger,
+                warn: () => {},
                 debug: () => {
                     debugCalled = true;
                 }
@@ -209,6 +213,41 @@ describe('ensureEnvVarsAreValid', () => {
                     return true;
                 }
             );
+        });
+
+        it('Should throw ConfigurationError when APP_ALLOW_INSECURE_COOKIE is not true/false', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.APP_ALLOW_INSECURE_COOKIE = 'yes';
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /APP_ALLOW_INSECURE_COOKIE/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should warn when APP_ALLOW_INSECURE_COOKIE is true in production mode', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            let warnCalled = false;
+            const mockLogger = {
+                info: () => {},
+                child: () => mockLogger,
+                debug: () => {},
+                warn: () => {
+                    warnCalled = true;
+                }
+            };
+
+            process.env.NODE_ENV = 'production';
+            process.env.APP_ALLOW_INSECURE_COOKIE = 'true';
+
+            checkEnvVars({ logger: mockLogger });
+
+            assert.equal(warnCalled, true);
         });
     });
 });

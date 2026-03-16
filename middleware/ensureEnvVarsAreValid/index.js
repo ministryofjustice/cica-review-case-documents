@@ -25,6 +25,7 @@ const defaults = {
             'PORT',
             'APP_SEARCH_PAGINATION_ITEMS_PER_PAGE',
             'APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE',
+            'APP_ALLOW_INSECURE_COOKIE',
             'APP_API_JWT_EXPIRES_IN',
             'APP_LOG_LEVEL',
             'APP_LOG_REDACT_EXTRA',
@@ -91,6 +92,41 @@ function checkAppApiJwtExpiresIn() {
                 name: 'ConfigurationError'
             },
             `Environment variable "APP_API_JWT_EXPIRES_IN" must be <= ${MAX_APP_API_JWT_EXPIRES_IN_SECONDS}s`
+        );
+    }
+}
+
+/**
+ * Validates APP_ALLOW_INSECURE_COOKIE if present.
+ * Allowed values are the explicit strings "true" or "false".
+ *
+ * @param {Object} logger - Logger instance for operational warnings.
+ * @throws {VError} Throws ConfigurationError when value is invalid.
+ */
+function checkAppAllowInsecureCookie(logger) {
+    const allowInsecureCookie = process.env.APP_ALLOW_INSECURE_COOKIE;
+
+    if (allowInsecureCookie === undefined) {
+        return;
+    }
+
+    if (!['true', 'false'].includes(allowInsecureCookie)) {
+        throw new VError(
+            {
+                name: 'ConfigurationError'
+            },
+            'Environment variable "APP_ALLOW_INSECURE_COOKIE" must be either "true" or "false" when set'
+        );
+    }
+
+    if (process.env.NODE_ENV === 'production' && allowInsecureCookie === 'true') {
+        logger.warn(
+            {
+                data: {
+                    environmentVariableName: 'APP_ALLOW_INSECURE_COOKIE'
+                }
+            },
+            'INSECURE COOKIE OVERRIDE ENABLED IN PRODUCTION MODE'
         );
     }
 }
@@ -211,6 +247,7 @@ function checkEnvVars({
     checkIsLogger(logger);
     checkMandatoryEnvVars(mandatoryEnvVars, logger);
     checkOptionalEnvVars(optionalEnvVars, logger);
+    checkAppAllowInsecureCookie(logger);
     checkAppApiJwtExpiresIn();
 }
 
