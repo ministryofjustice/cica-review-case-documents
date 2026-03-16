@@ -13,7 +13,11 @@ import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
 import enforceCrnInQuery from './middleware/enforceCrnInQuery/index.js';
-import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
+import ensureEnvVarsAreValid, {
+    checkEnvVars,
+    getMandatoryEnvVars,
+    getOptionalEnvVars
+} from './middleware/ensureEnvVarsAreValid/index.js';
 import errorHandler from './middleware/errors/globalErrorHandler.js';
 import notFoundHandler from './middleware/errors/notFoundHandler.js';
 import getCaseReferenceNumberFromQueryString from './middleware/getCaseReferenceNumberFromQueryString/index.js';
@@ -38,6 +42,17 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     const __dirname = path.dirname(__filename);
 
     const app = express();
+    const loggerMiddleware = createLogger();
+    // Use a dedicated default logger for boot-time validation so tests can inject
+    // lightweight request log middleware without breaking startup config checks.
+    const envValidationLogger = defaultCreateLogger().logger;
+
+    // Fail fast on invalid environment configuration during app boot.
+    checkEnvVars({
+        mandatoryEnvVars: getMandatoryEnvVars(),
+        optionalEnvVars: getOptionalEnvVars(),
+        logger: envValidationLogger
+    });
 
     // https://expressjs.com/en/api.html#express.json
     app.use(express.json());
@@ -51,8 +66,7 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     );
 
     // Use the middleware for request logging
-    app.use(createLogger());
-    // test
+    app.use(loggerMiddleware);
 
     app.use((req, res, next) => {
         res.set({

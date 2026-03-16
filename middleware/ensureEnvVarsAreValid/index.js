@@ -15,6 +15,7 @@ const defaults = {
             'APP_COOKIE_NAME',
             'APP_COOKIE_SECRET',
             'APP_API_URL',
+            'APP_JWT_SECRET',
             'APP_API_JWT_ISSUER',
             'APP_API_JWT_AUDIENCE',
             'APP_DATABASE_URL',
@@ -24,12 +25,75 @@ const defaults = {
             'PORT',
             'APP_SEARCH_PAGINATION_ITEMS_PER_PAGE',
             'APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE',
+            'APP_API_JWT_EXPIRES_IN',
             'APP_LOG_LEVEL',
             'APP_LOG_REDACT_EXTRA',
             'APP_LOG_REDACT_DISABLE'
         ]
     }
 };
+
+const MAX_APP_API_JWT_EXPIRES_IN_SECONDS = 300;
+
+/**
+ * Converts a short duration string like "60s" or "5m" into seconds.
+ *
+ * @param {string} value - Duration string from APP_API_JWT_EXPIRES_IN.
+ * @returns {number | null} Duration in seconds or null for invalid format.
+ */
+function durationToSeconds(value) {
+    if (typeof value !== 'string') {
+        return null;
+    }
+
+    const match = value.trim().match(/^(\d+)([sm])$/i);
+    if (!match) {
+        return null;
+    }
+
+    const amount = Number(match[1]);
+    const unit = match[2].toLowerCase();
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+        return null;
+    }
+
+    return unit === 'm' ? amount * 60 : amount;
+}
+
+/**
+ * Validates APP_API_JWT_EXPIRES_IN if present.
+ * Allowed format: positive integer followed by "s" or "m" (for example: "60s", "5m").
+ * Enforces a maximum TTL of 300 seconds.
+ *
+ * @throws {VError} Throws ConfigurationError when value is malformed or exceeds maximum.
+ */
+function checkAppApiJwtExpiresIn() {
+    const expiresIn = process.env.APP_API_JWT_EXPIRES_IN;
+
+    if (expiresIn === undefined) {
+        return;
+    }
+
+    const expiresInSeconds = durationToSeconds(expiresIn);
+    if (expiresInSeconds === null) {
+        throw new VError(
+            {
+                name: 'ConfigurationError'
+            },
+            'Environment variable "APP_API_JWT_EXPIRES_IN" must be a positive duration ending with "s" or "m" (for example "60s" or "5m")'
+        );
+    }
+
+    if (expiresInSeconds > MAX_APP_API_JWT_EXPIRES_IN_SECONDS) {
+        throw new VError(
+            {
+                name: 'ConfigurationError'
+            },
+            `Environment variable "APP_API_JWT_EXPIRES_IN" must be <= ${MAX_APP_API_JWT_EXPIRES_IN_SECONDS}s`
+        );
+    }
+}
 
 /**
  * Retrieves the list of mandatory environment variables required by the application.
@@ -147,6 +211,7 @@ function checkEnvVars({
     checkIsLogger(logger);
     checkMandatoryEnvVars(mandatoryEnvVars, logger);
     checkOptionalEnvVars(optionalEnvVars, logger);
+    checkAppApiJwtExpiresIn();
 }
 
 /**

@@ -68,5 +68,20 @@ describe('App', () => {
             assert.ok(app);
             // The middleware should be registered
         });
+
+        it('should fail fast at boot when APP_JWT_SECRET is missing', async () => {
+            process.env.NODE_ENV = 'development';
+            process.env.APP_LOG_LEVEL = 'silent';
+            delete process.env.APP_JWT_SECRET;
+
+            await assert.rejects(
+                async () => createApp(),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /APP_JWT_SECRET/);
+                    return true;
+                }
+            );
+        });
     });
 });

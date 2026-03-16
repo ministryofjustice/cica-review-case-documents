@@ -52,6 +52,7 @@ describe('ensureEnvVarsAreValid', () => {
                 'APP_COOKIE_NAME',
                 'APP_COOKIE_SECRET',
                 'APP_API_URL',
+                'APP_JWT_SECRET',
                 'APP_API_JWT_ISSUER',
                 'APP_API_JWT_AUDIENCE',
                 'APP_DATABASE_URL',
@@ -104,6 +105,7 @@ describe('ensureEnvVarsAreValid', () => {
                 'PORT',
                 'APP_SEARCH_PAGINATION_ITEMS_PER_PAGE',
                 'APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE',
+                'APP_API_JWT_EXPIRES_IN',
                 'APP_LOG_LEVEL',
                 'APP_LOG_REDACT_EXTRA',
                 'APP_LOG_REDACT_DISABLE'
@@ -166,6 +168,44 @@ describe('ensureEnvVarsAreValid', () => {
                 (err) => {
                     assert.equal(err.name, 'ConfigurationError');
                     assert.match(err.message, /Invalid logger instance/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should accept APP_API_JWT_EXPIRES_IN in seconds and minutes up to 5 minutes', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.APP_API_JWT_EXPIRES_IN = '60s';
+            assert.doesNotThrow(() => checkEnvVars({ logger: fakeLogger }));
+
+            process.env.APP_API_JWT_EXPIRES_IN = '5m';
+            assert.doesNotThrow(() => checkEnvVars({ logger: fakeLogger }));
+        });
+
+        it('Should throw ConfigurationError when APP_API_JWT_EXPIRES_IN format is invalid', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.APP_API_JWT_EXPIRES_IN = '1h';
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /APP_API_JWT_EXPIRES_IN/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError when APP_API_JWT_EXPIRES_IN exceeds 5 minutes', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.APP_API_JWT_EXPIRES_IN = '301s';
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /<= 300s/);
                     return true;
                 }
             );
