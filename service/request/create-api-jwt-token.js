@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { getApiJwtAudience, getApiJwtIssuer } from '../../utils/apiJwtClaims.js';
+import { getApiJwtAudience, getApiJwtIssuer } from '../../auth/utils/apiJwtClaims/index.js';
 
 /**
  * Creates a short-lived JWT for APP -> API communication.

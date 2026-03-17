@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { getApiJwtAudience, getApiJwtIssuer } from '../../../utils/apiJwtClaims.js';
+import { getApiJwtAudience, getApiJwtIssuer } from '../../auth/apiJwtClaims/index.js';
 
 /**
  * Extracts a bearer token from the Authorization header.
