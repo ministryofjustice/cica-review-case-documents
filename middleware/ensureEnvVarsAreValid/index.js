@@ -19,7 +19,10 @@ const defaults = {
             'APP_API_JWT_ISSUER',
             'APP_API_JWT_AUDIENCE',
             'APP_DATABASE_URL',
-            'OPENSEARCH_INDEX_CHUNKS_NAME'
+            'OPENSEARCH_INDEX_CHUNKS_NAME',
+            'ENTRA_CLIENT_ID',
+            'ENTRA_CLIENT_SECRET_ID',
+            'ENTRA_TENANT_ID'
         ],
         optional: [
             'PORT',
@@ -27,6 +30,8 @@ const defaults = {
             'APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE',
             'APP_ALLOW_INSECURE_COOKIE',
             'APP_API_JWT_EXPIRES_IN',
+            'ENTRA_SCOPE',
+            'ENTRA_INTERACTIVE_FALLBACK',
             'APP_LOG_LEVEL',
             'APP_LOG_REDACT_EXTRA',
             'APP_LOG_REDACT_DISABLE'

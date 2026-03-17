@@ -133,8 +133,14 @@ This application uses a strict allowlist and pattern-based approach to control w
 
 ### Login and authentication
 
-A temporary login feature has been implemented (rather quickly) until the Microsoft Entra ID SSO is implemented.
-Add authention settings to your .env file from the [`.env.example`](./.env.example) template.
+The UI supports Microsoft Entra ID sign-in via authorization code flow.
+When `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET_ID`, and `ENTRA_TENANT_ID` are set, `/auth/login` redirects to Entra and `/auth/callback` completes sign-in.
+
+By default, login starts with silent SSO (`prompt=none`) and automatically falls back to interactive login when Entra returns `login_required`, `interaction_required`, or `consent_required`.
+
+Set `ENTRA_INTERACTIVE_FALLBACK=false` to disable interactive fallback and enforce silent-only sign-in.
+
+Local username/password authentication has been removed. Sign-in is Entra-only.
 
 For APP -> API communication, JWT tokens are short-lived and validated against explicit issuer/audience claims.
 Ensure `APP_API_JWT_ISSUER` and `APP_API_JWT_AUDIENCE` are configured in your environment.

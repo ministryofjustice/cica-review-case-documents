@@ -6,7 +6,6 @@ import session from 'express-session';
 import helmet from 'helmet';
 import { nanoid } from 'nanoid';
 import createApi from './api/app.js';
-import rateLimitErrorHandler from './auth/rateLimiters/authRateLimitErrorHandler.js';
 import authRouter from './auth/routes.js';
 import createDocumentRouter from './document/routes.js';
 import indexRouter from './index/routes.js';
@@ -192,7 +191,6 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     );
 
     app.use(notFoundHandler);
-    app.use(rateLimitErrorHandler(app));
     app.use(errorHandler);
 
     return app;

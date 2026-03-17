@@ -2,23 +2,18 @@ import assert from 'node:assert';
 import { beforeEach, test } from 'node:test';
 import request from 'supertest';
 import createApp from '../app.js';
-import { createLoginHandler } from './routes.js';
 
 let app;
 let agent;
 
-/**
- * Retrieves the CSRF token from the login page using the provided SuperTest agent.
- *
- * @param {import('supertest').SuperAgentTest} agent - The SuperTest agent to perform the GET request.
- * @returns {Promise<string>} The extracted CSRF token from the login page.
- */
-async function getCsrfToken(agent) {
-    const res = await agent.get('/auth/login');
-    return res.text.match(/name="_csrf" value="([^"]+)"/)[1];
-}
-
 beforeEach(async () => {
+    process.env.ENTRA_CLIENT_ID = 'client-id';
+    process.env.ENTRA_CLIENT_SECRET_ID = 'client-secret';
+    delete process.env.ENTRA_CLIENT_SECRET;
+    process.env.ENTRA_TENANT_ID = 'tenant-id';
+    delete process.env.ENTRA_SCOPE;
+    delete process.env.ENTRA_INTERACTIVE_FALLBACK;
+
     app = await createApp({
         createLogger: () => (req, res, next) => {
             req.log = {
@@ -26,7 +21,7 @@ beforeEach(async () => {
                 info: () => {},
                 warn: () => {},
                 debug: () => {},
-                child: () => req.log // Add this line
+                child: () => req.log
             };
             next();
         }
@@ -34,161 +29,55 @@ beforeEach(async () => {
     agent = request.agent(app);
 });
 
-test('GET /auth/login should render login page', async () => {
+test('GET /auth/login with Entra configured should request silent sign-in', async () => {
     const response = await agent.get('/auth/login');
-    assert.strictEqual(response.status, 200);
-    assert.match(response.text, /Sign in/i);
-});
-
-test('GET /auth/login should call next with error when render throws', () => {
-    const renderError = new Error('Render failed');
-    const handler = createLoginHandler(() => ({
-        render: () => {
-            throw renderError;
-        }
-    }));
-
-    const req = {};
-    const res = {
-        locals: { csrfToken: 'csrf-token' },
-        send: () => {
-            throw new Error('send should not be called when render throws');
-        }
-    };
-
-    let nextError;
-    const next = (err) => {
-        nextError = err;
-    };
-
-    handler(req, res, next);
-
-    assert.strictEqual(nextError, renderError);
-});
-
-test('POST /auth/login with no username and no password shows correct errors', async () => {
-    process.env.AUTH_USERNAMES = 'test.user@example.com,valid.user@example.com';
-    process.env.AUTH_SECRET_PASSWORD = 'DemoPass123';
-
-    const csrfToken = await getCsrfToken(agent);
-
-    const response = await agent.post('/auth/login').send({ _csrf: csrfToken });
-
-    assert.strictEqual(response.status, 400);
-    assert.match(response.text, /Enter your username/);
-    assert.match(response.text, /Enter your password/);
-});
-
-test('POST /auth/login with no username shows correct errors', async () => {
-    process.env.AUTH_USERNAMES = 'test.user@example.com,valid.user@example.com';
-    process.env.AUTH_SECRET_PASSWORD = 'DemoPass123';
-
-    const csrfToken = await getCsrfToken(agent);
-
-    const response = await agent
-        .post('/auth/login')
-        .send({ password: 'testPassword123', _csrf: csrfToken });
-
-    assert.strictEqual(response.status, 400);
-    assert.match(response.text, /Enter your username/);
-    assert.doesNotMatch(response.text, /Enter your password/);
-});
-
-test('POST /auth/login with no password shows correct errors', async () => {
-    process.env.AUTH_USERNAMES = 'test.user@example.com,valid.user@example.com';
-    process.env.AUTH_SECRET_PASSWORD = 'DemoPass123';
-
-    const csrfToken = await getCsrfToken(agent);
-
-    const response = await agent
-        .post('/auth/login')
-        .send({ username: 'testuser', _csrf: csrfToken });
-
-    assert.strictEqual(response.status, 400);
-    assert.match(response.text, /Enter your password/);
-    assert.doesNotMatch(response.text, /Enter your username/);
-    assert.match(response.text, /testuser/);
-});
-
-test('POST /auth/login with invalid credentials shows correct errors', async () => {
-    process.env.AUTH_USERNAMES = 'test.user@example.com,valid.user@example.com';
-    process.env.AUTH_SECRET_PASSWORD = 'DemoPass123';
-
-    const csrfToken = await getCsrfToken(agent);
-
-    const response = await agent
-        .post('/auth/login')
-        .send({ username: 'wronguser', password: 'wrongPassword', _csrf: csrfToken });
-
-    assert.strictEqual(response.status, 401);
-    assert.match(response.text, /Enter a valid username and password/);
-    assert.match(response.text, /wronguser/);
-});
-
-test('POST /auth/login with invalid email format shows correct errors', async () => {
-    process.env.AUTH_USERNAMES = 'valid.user@example.com';
-    process.env.AUTH_SECRET_PASSWORD = 'DemoPass123';
-
-    const csrfToken = await getCsrfToken(agent);
-
-    const response = await agent
-        .post('/auth/login')
-        .send({ username: 'not-an-email', password: 'DemoPass123', _csrf: csrfToken });
-
-    assert.strictEqual(response.status, 401);
-    assert.match(response.text, /Enter a valid username and password/);
-    assert.match(response.text, /not-an-email/);
-});
-
-test('POST /auth/login should login successfully and redirect to "/" by default', async () => {
-    process.env.AUTH_USERNAMES = 'test.user@example.com,valid.user@example.com';
-    process.env.AUTH_SECRET_PASSWORD = 'DemoPass123';
-
-    const csrfToken = await getCsrfToken(agent);
-
-    const response = await agent
-        .post('/auth/login')
-        .send({ username: 'test.user@example.com', password: 'DemoPass123', _csrf: csrfToken });
 
     assert.strictEqual(response.status, 302);
-    assert.strictEqual(response.headers.location, '/');
+    assert.match(
+        response.headers.location,
+        /^https:\/\/login\.microsoftonline\.com\/tenant-id\/oauth2\/v2\.0\/authorize\?/
+    );
+    assert.match(response.headers.location, /prompt=none/);
 });
 
-test('POST /auth/login should redirect to returnTo URL after successful login', async () => {
-    process.env.AUTH_USERNAMES = 'test.user@example.com,valid.user@example.com';
-    process.env.AUTH_SECRET_PASSWORD = 'DemoPass123';
+test('GET /auth/callback with login_required should fallback to interactive by default', async () => {
+    await agent.get('/auth/login').expect(302);
 
-    // Visit protected route to set returnTo
-    await agent.get('/search?caseReferenceNumber=12345').expect(302);
-
-    const csrfToken = await getCsrfToken(agent);
-
-    const response = await agent
-        .post('/auth/login')
-        .send({ username: 'test.user@example.com', password: 'DemoPass123', _csrf: csrfToken });
+    const response = await agent.get('/auth/callback').query({
+        error: 'login_required',
+        error_description: 'Silent sign-in required interaction'
+    });
 
     assert.strictEqual(response.status, 302);
-    assert.strictEqual(response.headers.location, '/search?caseReferenceNumber=12345');
+    assert.strictEqual(response.headers.location, '/auth/login?interactive=1');
 });
 
-test('GET /auth/sign-out displays sign out message and case reference link', async () => {
-    process.env.AUTH_USERNAMES = 'test.user@example.com';
-    process.env.AUTH_SECRET_PASSWORD = 'DemoPass123';
+test('GET /auth/callback with login_required should fail when interactive fallback is disabled', async () => {
+    process.env.ENTRA_INTERACTIVE_FALLBACK = 'false';
 
-    // Log in to create a session
-    const csrfToken = await getCsrfToken(agent);
-    await agent
-        .post('/auth/login')
-        .send({ username: 'test.user@example.com', password: 'DemoPass123', _csrf: csrfToken });
+    await agent.get('/auth/login').expect(302);
 
-    // Set the caseReferenceNumber in session by visiting a route that sets it
-    await agent.get('/search?caseReferenceNumber=25-711111');
+    const response = await agent.get('/auth/callback').query({
+        error: 'login_required',
+        error_description: 'Silent sign-in required interaction'
+    });
 
-    // Sign out
+    assert.strictEqual(response.status, 401);
+    assert.match(response.text, /Authentication failed/);
+});
+
+test('GET /auth/login?interactive=1 should skip prompt=none when fallback is enabled', async () => {
+    process.env.ENTRA_INTERACTIVE_FALLBACK = 'true';
+
+    const response = await agent.get('/auth/login').query({ interactive: '1' });
+
+    assert.strictEqual(response.status, 302);
+    assert.doesNotMatch(response.headers.location, /prompt=none/);
+});
+
+test('GET /auth/sign-out displays sign out message without active session', async () => {
     const response = await agent.get('/auth/sign-out');
+
     assert.strictEqual(response.status, 200);
     assert.match(response.text, /You have signed out/);
-    assert.match(response.text, /Sign in/);
-    assert.match(response.text, /25-711111/);
-    assert.match(response.text, /href="\/search\?caseReferenceNumber=25-711111"/);
 });
