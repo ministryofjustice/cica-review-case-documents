@@ -1,75 +1,130 @@
 import express from 'express';
+import { nanoid } from 'nanoid';
 import generalRateLimiter from '../middleware/rateLimiter/index.js';
-import createTemplateEngineService from '../templateEngine/index.js';
-import { loginParamsValidator, signOutUser } from './auth-service.js';
-import failureRateLimiter from './rateLimiters/authRateLimiter.js';
-import { getLoginAttemptContext, renderLoginResponse } from './utils/loginHelpers/login-helpers.js';
+import { signOutUser } from './auth-service.js';
+import {
+    buildEntraAuthorizeUrl,
+    decodeAndValidateEntraIdToken,
+    exchangeEntraAuthorizationCode,
+    getUsernameFromEntraClaims,
+    isEntraConfigured,
+    isEntraInteractiveFallbackEnabled
+} from './utils/entra-auth/index.js';
 
 const router = express.Router();
+const ENTRA_INTERACTION_ERRORS = new Set([
+    'interaction_required',
+    'login_required',
+    'consent_required'
+]);
 
-export const createLoginHandler =
-    (templateEngineServiceFactory = createTemplateEngineService) =>
-    (req, res, next) => {
-        try {
-            const templateEngineService = templateEngineServiceFactory();
-            const { render } = templateEngineService;
-            const html = render('index/login.njk', {
-                csrfToken: res.locals.csrfToken
-            });
-            res.send(html);
-        } catch (err) {
-            next(err);
-        }
-    };
+function getEntraErrorCode(description) {
+    const match = String(description || '').match(/AADSTS\d+/);
+    return match ? match[0] : undefined;
+}
+
+export const createLoginHandler = () => (req, res, next) => {
+    if (!isEntraConfigured()) {
+        return res.status(400).send('Entra authentication is not configured');
+    }
+
+    try {
+        const interactiveRequested =
+            isEntraInteractiveFallbackEnabled() && req.query?.interactive === '1';
+        const state = nanoid();
+        const nonce = nanoid();
+        req.session.entraAuth = {
+            state,
+            nonce,
+            createdAt: Date.now(),
+            mode: interactiveRequested ? 'interactive' : 'silent'
+        };
+
+        const authorizeOptions = interactiveRequested ? {} : { prompt: 'none' };
+        return res.redirect(buildEntraAuthorizeUrl(req, state, nonce, authorizeOptions));
+    } catch (error) {
+        return next(error);
+    }
+};
 
 router.get('/login', generalRateLimiter, createLoginHandler());
 
-router.post('/login', failureRateLimiter, (req, res) => {
-    const { username = '', password = '' } = req.body;
-    const { error, usernameError, passwordError } = loginParamsValidator(username, password);
+router.get('/callback', generalRateLimiter, async (req, res, next) => {
+    try {
+        if (!isEntraConfigured()) {
+            return res.status(400).send('Entra authentication is not configured');
+        }
 
-    const hasBoth = username && password;
-    const { attemptsLeft, lockoutWarning } = getLoginAttemptContext(
-        req,
-        username,
-        password,
-        usernameError,
-        passwordError
-    );
+        if (req.query.error) {
+            const pendingAuth = req.session?.entraAuth;
+            const entraError = String(req.query.error);
+            const entraErrorCode = getEntraErrorCode(req.query.error_description);
+            const entraErrorUri = req.query.error_uri;
 
-    // Missing username or password: Bad Request
-    if (!hasBoth) {
-        return renderLoginResponse(res, {
-            csrfToken: res.locals.csrfToken,
-            error: 'Enter your username and password',
-            usernameError,
-            passwordError,
-            username,
-            attemptsLeft,
-            status: 400
-        });
+            if (
+                pendingAuth?.mode === 'silent' &&
+                isEntraInteractiveFallbackEnabled() &&
+                ENTRA_INTERACTION_ERRORS.has(entraError)
+            ) {
+                req.log?.info(
+                    {
+                        error: entraError,
+                        entraErrorCode,
+                        errorUri: entraErrorUri
+                    },
+                    'Entra silent sign-in requires interaction; retrying with interactive login'
+                );
+                return res.redirect('/auth/login?interactive=1');
+            }
+
+            req.log?.warn(
+                {
+                    error: entraError,
+                    entraErrorCode,
+                    errorUri: entraErrorUri
+                },
+                'Entra authorization failed'
+            );
+            return res.status(401).send('Authentication failed');
+        }
+
+        const { code, state } = req.query;
+        const pendingAuth = req.session?.entraAuth;
+
+        if (!code || !state || !pendingAuth?.state || state !== pendingAuth.state) {
+            req.log?.warn({ hasState: Boolean(state) }, 'Invalid Entra callback state');
+            return res.status(401).send('Invalid authentication state');
+        }
+
+        const tokenResponse = await exchangeEntraAuthorizationCode(req, String(code));
+        const claims = decodeAndValidateEntraIdToken(tokenResponse.id_token, pendingAuth.nonce);
+
+        req.session.username = getUsernameFromEntraClaims(claims);
+        req.session.loggedIn = true;
+        req.session.entraUser = {
+            oid: claims.oid,
+            tid: claims.tid,
+            name: claims.name
+        };
+
+        req.log?.info(
+            {
+                authMethod: 'entra',
+                userId: claims.oid || claims.sub,
+                tenantId: claims.tid
+            },
+            'User authenticated'
+        );
+
+        delete req.session.entraAuth;
+
+        const redirectUrl = req.session.returnTo || '/';
+        delete req.session.returnTo;
+        return res.redirect(redirectUrl);
+    } catch (err) {
+        req.log?.error({ err }, 'Entra callback handling failed');
+        return next(err);
     }
-
-    // Invalid credentials: Unauthorized
-    if (error || usernameError || passwordError) {
-        return renderLoginResponse(res, {
-            csrfToken: res.locals.csrfToken,
-            error: 'Your details do not match',
-            usernameError,
-            passwordError,
-            username,
-            attemptsLeft,
-            lockoutWarning,
-            status: 401
-        });
-    }
-
-    // Success path
-    req.session.username = username;
-    req.session.loggedIn = true;
-    const redirectUrl = req.session.returnTo || '/';
-    delete req.session.returnTo;
-    return res.redirect(redirectUrl);
 });
 
 router.get('/sign-out', generalRateLimiter, (req, res, next) => {

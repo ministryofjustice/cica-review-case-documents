@@ -30,9 +30,16 @@ function resetEnv() {
     process.env = { ...originalEnv };
 }
 
+function setRequiredEntraEnv() {
+    process.env.ENTRA_CLIENT_ID = 'client-id';
+    process.env.ENTRA_CLIENT_SECRET_ID = 'client-secret';
+    process.env.ENTRA_TENANT_ID = 'tenant-id';
+}
+
 describe('ensureEnvVarsAreValid', () => {
     beforeEach(() => {
         resetEnv();
+        setRequiredEntraEnv();
     });
     it('Should calls next() if everything is valid', async () => {
         let nextCalled = false;
@@ -57,7 +64,10 @@ describe('ensureEnvVarsAreValid', () => {
                 'APP_API_JWT_ISSUER',
                 'APP_API_JWT_AUDIENCE',
                 'APP_DATABASE_URL',
-                'OPENSEARCH_INDEX_CHUNKS_NAME'
+                'OPENSEARCH_INDEX_CHUNKS_NAME',
+                'ENTRA_CLIENT_ID',
+                'ENTRA_CLIENT_SECRET_ID',
+                'ENTRA_TENANT_ID'
             ]);
         });
 
@@ -108,6 +118,8 @@ describe('ensureEnvVarsAreValid', () => {
                 'APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE',
                 'APP_ALLOW_INSECURE_COOKIE',
                 'APP_API_JWT_EXPIRES_IN',
+                'ENTRA_SCOPE',
+                'ENTRA_INTERACTIVE_FALLBACK',
                 'APP_LOG_LEVEL',
                 'APP_LOG_REDACT_EXTRA',
                 'APP_LOG_REDACT_DISABLE'
