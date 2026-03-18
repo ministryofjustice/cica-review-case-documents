@@ -1,0 +1,10 @@
+
+/* Hide by default using the single class */
+#main-content .govuk-back-link {
+    display: none;
+}
+
+/* Show when JS is active */
+.govuk-frontend-supported #main-content .govuk-back-link {
+    display: inline-block;
+}

@@ -8,9 +8,12 @@
 {% block innerContent %}
 
 {{ govukBackLink({
-    text: "Back",
-    href: backLink
-  }) }}
+  text: "Back",
+  attributes: {
+    "data-module": "govuk-back-link"
+  },
+  href: "#"
+}) }}
 
   <h1 class="govuk-heading-l">{{ pageTitle }}</h1>
 

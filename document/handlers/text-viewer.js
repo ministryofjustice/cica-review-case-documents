@@ -2,7 +2,7 @@ import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
 import { formatPageTitle } from '../utils/formatters/index.js';
-import { buildBackLink, buildImagePageLink } from '../utils/link-builders/index.js';
+import { buildImagePageLink } from '../utils/link-builders/index.js';
 import { fetchPageMetadata } from '../utils/metadata/index.js';
 import { paginationDataFromMetadata } from '../utils/pagination/index.js';
 
@@ -25,7 +25,7 @@ export function createTextViewerHandler(
 
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
-            const { searchResultsPageNumber = '1', searchTerm = '' } = req.query;
+            const { searchTerm = '' } = req.query;
             const apiJwtToken = createApiJwtToken(req.session?.username);
 
             // Fetch document page metadata from OpenSearch via API
@@ -56,15 +56,7 @@ export function createTextViewerHandler(
             const pageTitle = formatPageTitle(pageMetadata.correspondence_type);
 
             // Provide a link for sub-navigation back to the image page
-            const imagePageLink = buildImagePageLink(
-                documentId,
-                pageNumber,
-                crn,
-                searchTerm,
-                searchResultsPageNumber
-            );
-
-            const backLink = buildBackLink(searchTerm, searchResultsPageNumber, crn);
+            const imagePageLink = buildImagePageLink(documentId, pageNumber, crn, searchTerm);
 
             const { text } = pageMetadata;
 
@@ -79,7 +71,6 @@ export function createTextViewerHandler(
                 csrfToken: res.locals.csrfToken,
                 cspNonce: res.locals.cspNonce,
                 imagePageLink,
-                backLink,
                 pageTitle,
                 pageText,
                 showPagination: paginationData?.results?.count > 1,

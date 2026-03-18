@@ -145,11 +145,11 @@ test('limit function returns UNAUTHENTICATED_LIMIT when no auth present', async 
         const testLimiter = rateLimit({
             windowMs: 60 * 1000,
             limit: (req) => (req.session?.loggedIn || req.user ? 5 : 1),
+            keyGenerator: () => 'unauthenticated-test-client',
             skip: () => !process.env.NODE_ENV || process.env.NODE_ENV !== 'production'
         });
 
         const app = express();
-        app.set('trust proxy', true);
         app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
         app.use(testLimiter);
         app.get('/test', (req, res) => res.send('OK'));

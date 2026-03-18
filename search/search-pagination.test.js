@@ -73,38 +73,36 @@ describe('Search Pagination Persistence', () => {
         app.use('/search', searchRouter);
     });
 
-    describe('Search results page with pageNumber', () => {
-        it('should pass searchResultsPageNumber to result items', async () => {
+    describe('Search results enrichment', () => {
+        it('should pass document search context to result items', async () => {
             const res = await request(app).get('/search?query=test&pageNumber=3');
 
             assert.strictEqual(res.statusCode, 200);
             assert.ok(mockRender.lastParams);
             assert.ok(mockRender.lastParams.searchResults);
 
-            // Check that searchResultsPageNumber is added to results
             const firstResult = mockRender.lastParams.searchResults[0];
-            assert.strictEqual(firstResult.searchResultsPageNumber, 3);
+            assert.strictEqual(firstResult.docUuid, 'doc-123');
+            assert.strictEqual(firstResult.searchTerm, 'test');
+            assert.strictEqual(firstResult.caseReferenceNumber, '12-745678');
         });
 
-        it('should default to pageNumber 1 if not provided', async () => {
+        it('should omit legacy back-link pagination context from result items', async () => {
             const res = await request(app).get('/search?query=test');
 
             assert.strictEqual(res.statusCode, 200);
             const firstResult = mockRender.lastParams.searchResults[0];
-            assert.strictEqual(firstResult.searchResultsPageNumber, 1);
-        });
-    });
-
-    describe('Document links include searchResultsPageNumber', () => {
-        it('should include searchResultsPageNumber in document page links', async () => {
-            const res = await request(app).get('/search?query=test&pageNumber=5');
-
-            assert.strictEqual(res.statusCode, 200);
-
-            const result = mockRender.lastParams.searchResults[0];
-            assert.strictEqual(result.searchResultsPageNumber, 5);
-            assert.strictEqual(result._source.source_doc_id, 'doc-123');
-            assert.strictEqual(result._source.page_number, 5);
+            assert.strictEqual(firstResult.searchResultsPageNumber, undefined);
+            assert.strictEqual(firstResult.docUuid, 'doc-123');
+            assert.strictEqual(firstResult.searchTerm, 'test');
+            assert.strictEqual(firstResult.caseReferenceNumber, '12-745678');
+            assert.deepStrictEqual(firstResult._source, {
+                source_doc_id: 'doc-123',
+                page_number: 5,
+                correspondence_type: 'Letter',
+                source_file_name: 'test.pdf',
+                chunk_text: 'Test content'
+            });
         });
     });
 
