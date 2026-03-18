@@ -96,8 +96,8 @@ function generateDateFormatVariants(dateString, matchedPatterns = {}) {
         for (const dateFormat of relevantDateFormats) {
             const formatted = validDate.toFormat(dateFormat);
             dateVariants.add(formatted);
-            // also emit variants with 'Sept' if the formatted string uses 'Sep' as a standalone month abbreviation.
-            const septVariant = formatted.replace(/\bSep\b/gi, 'Sept');
+            // make sure `sep`, and `sept` are added.
+            const septVariant = formatted.replace(/\bSept\b/gi, 'Sep');
             if (septVariant !== formatted) {
                 dateVariants.add(septVariant);
             }
@@ -126,7 +126,7 @@ function normaliseDateString(dateString) {
         .trim()
         .replace(/[^a-zA-Z0-9]+/g, ' ') // replace any delimiter with space.
         .replace(/\b(\d{1,2})(st|nd|rd|th)\b/gi, '$1') // strip ordinal suffixes from day numbers.
-        .replace(/\bSept\b/gi, 'Sep') // normalise 'Sept' to 'Sep' for parsing.
+        .replace(/\bSep\b/gi, 'Sept') // normalise 'Sept' to 'Sep' for parsing.
         .replace(/\s+/g, ' '); // collapse multiple spaces.
 }
 

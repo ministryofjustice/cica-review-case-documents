@@ -289,6 +289,52 @@ describe('buildQueryJson', () => {
         assert.deepStrictEqual(result, expected);
     });
 
+    it('Should build query for multiple dates with different formats', () => {
+        const params = {
+            keyword:
+                'Dates: 20/04/2022, through to the end of June 2022, with a review on 2022-07-15',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 10
+        };
+
+        const expected = {
+            from: 0,
+            size: 10,
+            query: {
+                bool: {
+                    must: [{ term: { case_ref: '26-711111' } }],
+                    should: [
+                        { match_phrase: { chunk_text: '20 4 22' } },
+                        { match_phrase: { chunk_text: '20 4 2022' } },
+                        { match_phrase: { chunk_text: '20 04 22' } },
+                        { match_phrase: { chunk_text: '20 04 2022' } },
+                        { match_phrase: { chunk_text: 'Jun 22' } },
+                        { match_phrase: { chunk_text: 'Jun 2022' } },
+                        { match_phrase: { chunk_text: 'June 22' } },
+                        { match_phrase: { chunk_text: 'June 2022' } },
+                        { match_phrase: { chunk_text: '2022 7 15' } },
+                        { match_phrase: { chunk_text: '2022 07 15' } },
+                        { match_phrase: { chunk_text: '2022 Jul 15' } },
+                        { match_phrase: { chunk_text: '2022 July 15' } },
+                        {
+                            match: {
+                                chunk_text: {
+                                    query: 'Dates: , through to the end of , with a review on',
+                                    operator: 'or'
+                                }
+                            }
+                        }
+                    ],
+                    minimum_should_match: 1
+                }
+            }
+        };
+
+        const result = buildQueryJson(params);
+        assert.deepStrictEqual(result, expected);
+    });
+
     it('Should not extract numeric date without separators (concatenated)', () => {
         const params = {
             keyword: 'Event on 17102024 was successful',
@@ -324,7 +370,7 @@ describe('buildQueryJson', () => {
 
     it('Should build query for month-name day-month-year date pattern', () => {
         const params = {
-            keyword: 'Meeting on January 5 2024 at office',
+            keyword: 'Meeting on 5 January 2024 at office',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10
