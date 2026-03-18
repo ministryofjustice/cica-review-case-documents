@@ -165,6 +165,6 @@ function ensureEnvVarsAreValid(req, res, next) {
     next();
 }
 
-export { getMandatoryEnvVars, getOptionalEnvVars, checkEnvVars };
+export { checkEnvVars, getMandatoryEnvVars, getOptionalEnvVars };
 
 export default ensureEnvVarsAreValid;

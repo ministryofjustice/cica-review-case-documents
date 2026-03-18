@@ -1,20 +1,4 @@
-# CVE-2026-27903 Inefficient Algorithmic Complexity
-# Published: Feb 26, 2026 | Modified: Feb 27, 2026
-# https://avd.aquasec.com/nvd/2026/cve-2026-27903/
-CVE-2026-27903
-
-# CVE-2026-27904 Inefficient Regular Expression Complexity
-# Published: Feb 26, 2026 | Modified: Feb 27, 2026
-# https://avd.aquasec.com/nvd/2026/cve-2026-27904/
-CVE-2026-27904
-
-
-# CVE-2026-29786 Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')
-# Published: Mar 07, 2026 | Modified: Mar 09, 2026
-# https://avd.aquasec.com/nvd/2026/cve-2026-29786/
-CVE-2026-29786
-
-# CVE-2026-31802
-# Published: Mar 10, 2026 | Modified Mar 10, 2026
-# https://nvd.nist.gov/vuln/detail/CVE-2026-31802
-CVE-2026-31802
+# CVE-2026-33036 Heap-based Buffer Overflow
+# Published: Mar 10, 2026 | Modified Mar 11, 2026
+# https://nvd.nist.gov/vuln/detail/CVE-2026-30936
+CVE-2026-33036

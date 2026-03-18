@@ -112,5 +112,5 @@ const enforceCrnInQuery = (req, res, next) => {
     next();
 };
 
-export { ALLOWED_PATHS, ALLOWED_PATH_PATTERNS, EXCLUDED_PATHS };
+export { ALLOWED_PATH_PATTERNS, ALLOWED_PATHS, EXCLUDED_PATHS };
 export default enforceCrnInQuery;
