@@ -30,6 +30,9 @@ function resetEnv() {
     process.env = { ...originalEnv };
 }
 
+/**
+ * Sets mandatory Entra environment variables used during env validation tests.
+ */
 function setRequiredEntraEnv() {
     process.env.ENTRA_CLIENT_ID = 'client-id';
     process.env.ENTRA_CLIENT_SECRET_ID = 'client-secret';
@@ -118,6 +121,9 @@ describe('ensureEnvVarsAreValid', () => {
                 'APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE',
                 'APP_ALLOW_INSECURE_COOKIE',
                 'APP_API_JWT_EXPIRES_IN',
+                'APP_ENTRA_RATE_LIMIT_WINDOW_MS',
+                'APP_ENTRA_RATE_LIMIT_MAX_LOGIN',
+                'APP_ENTRA_RATE_LIMIT_MAX_CALLBACK',
                 'ENTRA_SCOPE',
                 'ENTRA_INTERACTIVE_FALLBACK',
                 'APP_LOG_LEVEL',

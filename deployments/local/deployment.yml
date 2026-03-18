@@ -98,6 +98,12 @@ spec:
             # with NODE_ENV=production but without HTTPS (not needed for 'npm run start:dev')
             - name: APP_ALLOW_INSECURE_COOKIE
               value: "true"
+            - name: APP_ENTRA_RATE_LIMIT_WINDOW_MS
+              value: "900000"
+            - name: APP_ENTRA_RATE_LIMIT_MAX_LOGIN
+              value: "20"
+            - name: APP_ENTRA_RATE_LIMIT_MAX_CALLBACK
+              value: "40"
           # Added for debugging purposes
         - name: debug
           image: nicolaka/netshoot

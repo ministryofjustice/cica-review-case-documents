@@ -3,6 +3,10 @@ import { nanoid } from 'nanoid';
 import generalRateLimiter from '../middleware/rateLimiter/index.js';
 import { signOutUser } from './auth-service.js';
 import {
+    entraCallbackRateLimiter,
+    entraLoginRateLimiter
+} from './rateLimiters/entraRateLimiter.js';
+import {
     buildEntraAuthorizeUrl,
     decodeAndValidateEntraIdToken,
     exchangeEntraAuthorizationCode,
@@ -18,11 +22,22 @@ const ENTRA_INTERACTION_ERRORS = new Set([
     'consent_required'
 ]);
 
+/**
+ * Extracts an AADSTS error code from an Entra error description string.
+ *
+ * @param {string | undefined} description - Optional Entra error description text.
+ * @returns {string | undefined} Matched AADSTS code when present.
+ */
 function getEntraErrorCode(description) {
     const match = String(description || '').match(/AADSTS\d+/);
     return match ? match[0] : undefined;
 }
 
+/**
+ * Creates an auth login handler that starts the Entra authorization flow.
+ *
+ * @returns {import('express').RequestHandler} Express handler for `/auth/login`.
+ */
 export const createLoginHandler = () => (req, res, next) => {
     if (!isEntraConfigured()) {
         return res.status(400).send('Entra authentication is not configured');
@@ -47,9 +62,9 @@ export const createLoginHandler = () => (req, res, next) => {
     }
 };
 
-router.get('/login', generalRateLimiter, createLoginHandler());
+router.get('/login', entraLoginRateLimiter, createLoginHandler());
 
-router.get('/callback', generalRateLimiter, async (req, res, next) => {
+router.get('/callback', entraCallbackRateLimiter, async (req, res, next) => {
     try {
         if (!isEntraConfigured()) {
             return res.status(400).send('Entra authentication is not configured');

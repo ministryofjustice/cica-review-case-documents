@@ -5,6 +5,9 @@ import createApp from './app.js';
 describe('App', () => {
     let originalEnv;
 
+    /**
+     * Sets required Entra environment variables for app boot in tests.
+     */
     function setRequiredEntraEnv() {
         process.env.ENTRA_CLIENT_ID = 'client-id';
         process.env.ENTRA_CLIENT_SECRET_ID = 'client-secret';

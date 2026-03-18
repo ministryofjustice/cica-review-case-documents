@@ -14,6 +14,9 @@ import {
 
 const originalEnv = { ...process.env };
 
+/**
+ * Restores process environment variables to their initial test snapshot.
+ */
 function resetEnv() {
     process.env = { ...originalEnv };
 }
