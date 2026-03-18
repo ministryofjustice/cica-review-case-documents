@@ -1,9 +1,7 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
 import generalRateLimiter from '../middleware/rateLimiter/index.js';
 import createTemplateEngineService from '../templateEngine/index.js';
 import { loginParamsValidator, signOutUser } from './auth-service.js';
-import jwtCookieOptions from './jwtCookieOptions.js';
 import failureRateLimiter from './rateLimiters/authRateLimiter.js';
 import { getLoginAttemptContext, renderLoginResponse } from './utils/loginHelpers/login-helpers.js';
 
@@ -26,7 +24,7 @@ export const createLoginHandler =
 
 router.get('/login', generalRateLimiter, createLoginHandler());
 
-router.post('/login', failureRateLimiter, (req, res, next) => {
+router.post('/login', failureRateLimiter, (req, res) => {
     const { username = '', password = '' } = req.body;
     const { error, usernameError, passwordError } = loginParamsValidator(username, password);
 
@@ -67,17 +65,8 @@ router.post('/login', failureRateLimiter, (req, res, next) => {
     }
 
     // Success path
-    const user = { username };
-    let token;
-    try {
-        token = jwt.sign(user, process.env.APP_JWT_SECRET, { expiresIn: '1h' });
-    } catch (err) {
-        req.log.error({ err }, 'JWT generation error');
-        return next(err);
-    }
-
     req.session.username = username;
-    res.cookie('jwtToken', token, jwtCookieOptions);
+    req.session.loggedIn = true;
     const redirectUrl = req.session.returnTo || '/';
     delete req.session.returnTo;
     return res.redirect(redirectUrl);

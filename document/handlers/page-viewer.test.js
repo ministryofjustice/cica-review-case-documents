@@ -212,7 +212,6 @@ describe('Page Viewer Handler', () => {
                     searchTerm: 'test',
                     searchResultsPageNumber: '2'
                 },
-                cookies: { jwtToken: 'token' },
                 session: { caseSelected: 'CASE-2024-001' },
                 log: { info: () => {}, error: () => {}, warn: () => {} }
             };

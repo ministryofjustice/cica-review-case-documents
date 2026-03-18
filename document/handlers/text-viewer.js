@@ -1,3 +1,4 @@
+import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
 import { formatPageTitle } from '../utils/formatters/index.js';
@@ -25,6 +26,7 @@ export function createTextViewerHandler(
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
             const { searchResultsPageNumber = '1', searchTerm = '' } = req.query;
+            const apiJwtToken = createApiJwtToken(req.session?.username);
 
             // Fetch document page metadata from OpenSearch via API
             let pageMetadata;
@@ -34,7 +36,7 @@ export function createTextViewerHandler(
                     documentId,
                     pageNumber,
                     crn,
-                    jwtToken: req.cookies?.jwtToken,
+                    jwtToken: apiJwtToken,
                     logger: req.log
                 });
             } catch (error) {

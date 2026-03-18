@@ -1,17 +1,10 @@
 import jwt from 'jsonwebtoken';
+import { getApiJwtAudience, getApiJwtIssuer } from '../../auth/apiJwtClaims/index.js';
 
-// TODO review and reduce to only what's necessary
-// only use authHeader do not use cookies
 /**
- * Extracts token from:
- *   1. Cookies:      req.cookies.jwtToken
- *   2. Authorization header: "Bearer <token>"
+ * Extracts a bearer token from the Authorization header.
  */
 function getTokenFromRequest(req) {
-    // 1. Cookie token
-    if (req.cookies?.jwtToken) return req.cookies.jwtToken;
-
-    // 2. Authorization header
     const authHeader = req.headers?.authorization;
     if (!authHeader) return null;
 
@@ -23,7 +16,7 @@ function getTokenFromRequest(req) {
 }
 
 /**
- * Middleware to authenticate JWT tokens from cookies or Authorization headers.
+ * Middleware to authenticate JWT tokens from Authorization headers.
  * If a valid token is found, attaches the decoded user object to `req.user`.
  * Responds with 401 if no token is provided, or 403 if the token is invalid.
  *
@@ -47,8 +40,35 @@ function authenticateJWTToken(req, res, next) {
         });
     }
 
+    let jwtVerificationOptions;
     try {
-        const user = jwt.verify(token, process.env.APP_JWT_SECRET);
+        if (!process.env.APP_JWT_SECRET) {
+            throw new Error('APP_JWT_SECRET environment variable is not set');
+        }
+
+        jwtVerificationOptions = {
+            algorithms: ['HS256'],
+            issuer: getApiJwtIssuer(),
+            audience: getApiJwtAudience()
+        };
+    } catch (err) {
+        req.log?.error(
+            { url: req.originalUrl, error: err.message },
+            'JWT authentication configuration error'
+        );
+        return res.status(500).json({
+            errors: [
+                {
+                    status: '500',
+                    title: 'Internal Server Error',
+                    detail: 'Authentication service is not configured correctly'
+                }
+            ]
+        });
+    }
+
+    try {
+        const user = jwt.verify(token, process.env.APP_JWT_SECRET, jwtVerificationOptions);
         req.user = user;
         next();
     } catch (err) {

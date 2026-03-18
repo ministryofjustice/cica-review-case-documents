@@ -48,6 +48,21 @@ describe('App', () => {
             const app = await createApp();
             assert.ok(app);
         });
+
+        it('should fail fast at boot when APP_ALLOW_INSECURE_COOKIE has an invalid value', async () => {
+            process.env.NODE_ENV = 'production';
+            process.env.APP_LOG_LEVEL = 'silent';
+            process.env.APP_ALLOW_INSECURE_COOKIE = 'yes';
+
+            await assert.rejects(
+                async () => createApp(),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /APP_ALLOW_INSECURE_COOKIE/);
+                    return true;
+                }
+            );
+        });
     });
 
     describe('App Initialization', () => {
@@ -67,6 +82,21 @@ describe('App', () => {
             const app = await createApp();
             assert.ok(app);
             // The middleware should be registered
+        });
+
+        it('should fail fast at boot when APP_JWT_SECRET is missing', async () => {
+            process.env.NODE_ENV = 'development';
+            process.env.APP_LOG_LEVEL = 'silent';
+            delete process.env.APP_JWT_SECRET;
+
+            await assert.rejects(
+                async () => createApp(),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /APP_JWT_SECRET/);
+                    return true;
+                }
+            );
         });
     });
 });

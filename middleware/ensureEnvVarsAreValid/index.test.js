@@ -17,7 +17,8 @@ import ensureEnvVarsAreValid, { getMandatoryEnvVars, getOptionalEnvVars } from '
 const fakeLogger = {
     info: () => {},
     child: () => fakeLogger,
-    debug: () => {}
+    debug: () => {},
+    warn: () => {}
 };
 
 const originalEnv = { ...process.env };
@@ -52,6 +53,9 @@ describe('ensureEnvVarsAreValid', () => {
                 'APP_COOKIE_NAME',
                 'APP_COOKIE_SECRET',
                 'APP_API_URL',
+                'APP_JWT_SECRET',
+                'APP_API_JWT_ISSUER',
+                'APP_API_JWT_AUDIENCE',
                 'APP_DATABASE_URL',
                 'OPENSEARCH_INDEX_CHUNKS_NAME'
             ]);
@@ -102,6 +106,8 @@ describe('ensureEnvVarsAreValid', () => {
                 'PORT',
                 'APP_SEARCH_PAGINATION_ITEMS_PER_PAGE',
                 'APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE',
+                'APP_ALLOW_INSECURE_COOKIE',
+                'APP_API_JWT_EXPIRES_IN',
                 'APP_LOG_LEVEL',
                 'APP_LOG_REDACT_EXTRA',
                 'APP_LOG_REDACT_DISABLE'
@@ -127,6 +133,7 @@ describe('ensureEnvVarsAreValid', () => {
             const mockLogger = {
                 info: () => {},
                 child: () => mockLogger,
+                warn: () => {},
                 debug: (payload, message) => {
                     debugCalled = true;
                     debugPayload = payload;
@@ -146,6 +153,7 @@ describe('ensureEnvVarsAreValid', () => {
             const mockLogger = {
                 info: () => {},
                 child: () => mockLogger,
+                warn: () => {},
                 debug: () => {
                     debugCalled = true;
                 }
@@ -167,6 +175,79 @@ describe('ensureEnvVarsAreValid', () => {
                     return true;
                 }
             );
+        });
+
+        it('Should accept APP_API_JWT_EXPIRES_IN in seconds and minutes up to 5 minutes', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.APP_API_JWT_EXPIRES_IN = '60s';
+            assert.doesNotThrow(() => checkEnvVars({ logger: fakeLogger }));
+
+            process.env.APP_API_JWT_EXPIRES_IN = '5m';
+            assert.doesNotThrow(() => checkEnvVars({ logger: fakeLogger }));
+        });
+
+        it('Should throw ConfigurationError when APP_API_JWT_EXPIRES_IN format is invalid', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.APP_API_JWT_EXPIRES_IN = '1h';
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /APP_API_JWT_EXPIRES_IN/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError when APP_API_JWT_EXPIRES_IN exceeds 5 minutes', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.APP_API_JWT_EXPIRES_IN = '301s';
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /<= 300s/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError when APP_ALLOW_INSECURE_COOKIE is not true/false', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.APP_ALLOW_INSECURE_COOKIE = 'yes';
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /APP_ALLOW_INSECURE_COOKIE/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should warn when APP_ALLOW_INSECURE_COOKIE is true in production mode', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            let warnCalled = false;
+            const mockLogger = {
+                info: () => {},
+                child: () => mockLogger,
+                debug: () => {},
+                warn: () => {
+                    warnCalled = true;
+                }
+            };
+
+            process.env.NODE_ENV = 'production';
+            process.env.APP_ALLOW_INSECURE_COOKIE = 'true';
+
+            checkEnvVars({ logger: mockLogger });
+
+            assert.equal(warnCalled, true);
         });
     });
 });

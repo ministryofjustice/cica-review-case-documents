@@ -1,4 +1,5 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
+import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
 
 /**
  * Handles the image streaming endpoint.
@@ -13,6 +14,7 @@ export function createImageStreamingHandler(s3Client, createMetadataService) {
         try {
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
+            const apiJwtToken = createApiJwtToken(req.session?.username);
 
             // Fetch metadata from API to get the S3 URI
             let pageMetadata;
@@ -21,7 +23,7 @@ export function createImageStreamingHandler(s3Client, createMetadataService) {
                     documentId,
                     pageNumber,
                     crn,
-                    jwtToken: req.cookies?.jwtToken,
+                    jwtToken: apiJwtToken,
                     logger: req.log
                 });
                 pageMetadata = await metadataService.getPageMetadata();
@@ -93,7 +95,7 @@ export function createImageStreamingHandler(s3Client, createMetadataService) {
                     {
                         status: 500,
                         title: 'Internal Server Error',
-                        detail: err.message
+                        detail: 'An unexpected error occurred while processing the image request'
                     }
                 ]
             });

@@ -1,4 +1,5 @@
 import express from 'express';
+import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 
 /**
  * Creates an Express router for handling search functionality.
@@ -66,7 +67,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 logger: req.log
             });
 
-            const token = req.cookies?.jwtToken;
+            const token = createApiJwtToken(req.session?.username);
             const response = await searchService.getSearchResults(
                 encodeURIComponent(query),
                 pageNumber,

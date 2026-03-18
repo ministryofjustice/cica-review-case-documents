@@ -29,7 +29,6 @@ function createTestApp(mockCreateDocumentMetadataService, mockCreatePageChunksSe
     testApp.use((req, res, next) => {
         req.session.caseSelected = true;
         req.log = { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} };
-        req.cookies = { jwtToken: 'mock-jwt-token' };
         res.locals.csrfToken = 'test-csrf-token';
         res.locals.cspNonce = 'test-csp-nonce';
         next();

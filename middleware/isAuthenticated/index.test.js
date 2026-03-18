@@ -3,18 +3,14 @@
  *
  * These tests cover the following scenarios:
  * - Middleware calls `next` if `session.loggedIn` is true.
- * - Middleware redirects to `/auth/login` if no token is present.
- * - Middleware calls `next` and sets `req.user` if a valid JWT token is present in cookies.
- * - Middleware calls `next` and sets `req.user` if a valid JWT token is present in the Authorization header.
- * - Middleware redirects to `/auth/login` if the JWT token is invalid.
+ * - Middleware redirects to `/auth/login` if no authenticated session is present.
  *
  * Helper functions:
- * - `createMockReq`: Creates a mock request object with customizable session, cookies, headers, log, and originalUrl.
+ * - `createMockReq`: Creates a mock request object with customizable session, log, and originalUrl.
  * - `createMockRes`: Creates a mock response object with a redirect method and a property to check the redirected URL.
  */
 import assert from 'node:assert';
 import { test } from 'node:test';
-import jwt from 'jsonwebtoken';
 import isAuthenticated from './index.js';
 
 /**
@@ -28,14 +24,8 @@ import isAuthenticated from './index.js';
  * @param {string} [options.originalUrl='/test'] - Mock original URL.
  * @returns {Object} Mock request object with session, cookies, headers, log, and originalUrl properties.
  */
-function createMockReq({
-    session = {},
-    cookies = {},
-    headers = {},
-    log = { warn: () => {} },
-    originalUrl = '/test'
-} = {}) {
-    return { session, cookies, headers, log, originalUrl };
+function createMockReq({ session = {}, log = { warn: () => {} }, originalUrl = '/test' } = {}) {
+    return { session, log, originalUrl };
 }
 
 /**
@@ -68,44 +58,9 @@ test('should call next if session.loggedIn is true', (t) => {
     assert.strictEqual(nextCalled, true);
 });
 
-test('should redirect to /auth/login if no token is present', (t) => {
+test('should redirect to /auth/login if no authenticated session is present', (t) => {
     const req = createMockReq();
     const res = createMockRes();
-    isAuthenticated(req, res, () => {});
-    assert.strictEqual(res.redirectedUrl, '/auth/login');
-    assert.strictEqual(req.session.returnTo, req.originalUrl);
-});
-
-test('should call next if valid JWT token in cookie', (t) => {
-    let nextCalled = false;
-    const token = jwt.sign({ username: 'user' }, 'testsecret');
-    const req = createMockReq({ cookies: { jwtToken: token } });
-    const res = createMockRes();
-    process.env.APP_JWT_SECRET = 'testsecret';
-    isAuthenticated(req, res, () => {
-        nextCalled = true;
-    });
-    assert.strictEqual(nextCalled, true);
-    assert.deepStrictEqual(req.user.username, 'user');
-});
-
-test('should call next if valid JWT token in Authorization header', (t) => {
-    let nextCalled = false;
-    const token = jwt.sign({ username: 'user' }, 'testsecret');
-    const req = createMockReq({ headers: { authorization: `Bearer ${token}` } });
-    const res = createMockRes();
-    process.env.APP_JWT_SECRET = 'testsecret';
-    isAuthenticated(req, res, () => {
-        nextCalled = true;
-    });
-    assert.strictEqual(nextCalled, true);
-    assert.deepStrictEqual(req.user.username, 'user');
-});
-
-test('should redirect to /auth/login if JWT token is invalid', (t) => {
-    const req = createMockReq({ cookies: { jwtToken: 'invalidtoken' } });
-    const res = createMockRes();
-    process.env.APP_JWT_SECRET = 'testsecret';
     isAuthenticated(req, res, () => {});
     assert.strictEqual(res.redirectedUrl, '/auth/login');
     assert.strictEqual(req.session.returnTo, req.originalUrl);

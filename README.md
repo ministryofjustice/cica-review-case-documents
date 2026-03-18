@@ -59,6 +59,9 @@ cp .env.example .env
 
 See [`.env.example`](./.env.example) for all available configuration options and descriptions.
 
+Security note: `APP_API_JWT_ISSUER` and `APP_API_JWT_AUDIENCE` are required.
+Set explicit values in each environment (Dev/UAT/Prod) so APP -> API JWT verification is scoped and auditable.
+
 ### 3. Build OpenAPI Specification
 
 ```bash
@@ -132,6 +135,9 @@ This application uses a strict allowlist and pattern-based approach to control w
 
 A temporary login feature has been implemented (rather quickly) until the Microsoft Entra ID SSO is implemented.
 Add authention settings to your .env file from the [`.env.example`](./.env.example) template.
+
+For APP -> API communication, JWT tokens are short-lived and validated against explicit issuer/audience claims.
+Ensure `APP_API_JWT_ISSUER` and `APP_API_JWT_AUDIENCE` are configured in your environment.
 
 
 ### Case Reference Number Selection

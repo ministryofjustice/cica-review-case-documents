@@ -38,7 +38,6 @@ describe('Text Viewer Handler', () => {
             },
             query: {},
             session: { caseSelected: true },
-            cookies: { jwtToken: 'test-jwt' },
             log: {
                 error: () => {
                     errorLogged = true;
@@ -169,7 +168,6 @@ describe('Text Viewer Handler', () => {
             },
             query: {},
             session: { caseSelected: true },
-            cookies: { jwtToken: 'test-jwt' },
             log: { error: () => {} }
         };
         const res = {
@@ -188,13 +186,12 @@ describe('Text Viewer Handler', () => {
         const result = await handler(req, res, next);
 
         assert.equal(nextError, undefined);
-        assert.deepEqual(metadataFactoryArgs, {
-            documentId: '123e4567-e89b-12d3-a456-426614174000',
-            pageNumber: 1,
-            crn: '26-745678',
-            jwtToken: 'test-jwt',
-            logger: req.log
-        });
+        assert.equal(metadataFactoryArgs.documentId, '123e4567-e89b-12d3-a456-426614174000');
+        assert.equal(metadataFactoryArgs.pageNumber, 1);
+        assert.equal(metadataFactoryArgs.crn, '26-745678');
+        assert.equal(typeof metadataFactoryArgs.jwtToken, 'string');
+        assert.ok(metadataFactoryArgs.jwtToken.length > 0);
+        assert.equal(metadataFactoryArgs.logger, req.log);
         assert.equal(renderCallCount, 1);
         assert.equal(renderView, 'document/page/textview.njk');
         assert.equal(sentHtml, renderOutput);
@@ -222,7 +219,6 @@ describe('Text Viewer Handler', () => {
         const req = {
             query: {},
             session: { caseSelected: true },
-            cookies: { jwtToken: 'test-jwt' },
             log: { error: () => {} }
         };
         const res = {
@@ -274,7 +270,6 @@ describe('Text Viewer Handler', () => {
             },
             query: {},
             session: { caseSelected: true },
-            cookies: { jwtToken: 'test-jwt' },
             log: {
                 error: (context, message) => {
                     loggedContext = context;

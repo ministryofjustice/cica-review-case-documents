@@ -13,7 +13,11 @@ import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
 import enforceCrnInQuery from './middleware/enforceCrnInQuery/index.js';
-import ensureEnvVarsAreValid from './middleware/ensureEnvVarsAreValid/index.js';
+import ensureEnvVarsAreValid, {
+    checkEnvVars,
+    getMandatoryEnvVars,
+    getOptionalEnvVars
+} from './middleware/ensureEnvVarsAreValid/index.js';
 import errorHandler from './middleware/errors/globalErrorHandler.js';
 import notFoundHandler from './middleware/errors/notFoundHandler.js';
 import getCaseReferenceNumberFromQueryString from './middleware/getCaseReferenceNumberFromQueryString/index.js';
@@ -38,21 +42,20 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     const __dirname = path.dirname(__filename);
 
     const app = express();
+    const loggerMiddleware = createLogger();
+    // Use a dedicated default logger for boot-time validation so tests can inject
+    // lightweight request log middleware without breaking startup config checks.
+    const envValidationLogger = defaultCreateLogger().logger;
 
-    // https://expressjs.com/en/api.html#express.json
-    app.use(express.json());
-    // https://expressjs.com/en/api.html#express.urlencoded
-    app.use(express.urlencoded({ extended: true }));
-    // CSRF protection is enforced after cookies are parsed
-    app.use(
-        cookieParser(null, {
-            httpOnly: true
-        })
-    );
+    // Fail fast on invalid environment configuration during app boot.
+    checkEnvVars({
+        mandatoryEnvVars: getMandatoryEnvVars(),
+        optionalEnvVars: getOptionalEnvVars(),
+        logger: envValidationLogger
+    });
 
     // Use the middleware for request logging
-    app.use(createLogger());
-    // test
+    app.use(loggerMiddleware);
 
     app.use((req, res, next) => {
         res.set({
@@ -66,7 +69,18 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
 
     app.use(ensureEnvVarsAreValid);
 
+    // https://expressjs.com/en/api.html#express.json
+    app.use(express.json());
+    // https://expressjs.com/en/api.html#express.urlencoded
+    app.use(express.urlencoded({ extended: true }));
+
     app.set('trust proxy', 1); // trust first proxy (ingress)
+
+    // Parse cookies immediately before session + CSRF protection.
+    // doubleCsrfProtection (csrf-csrf) is registered globally after session, but CodeQL
+    // does not model csrf-csrf as a recognised CSRF middleware for this rule.
+    // codeql[js/missing-token-validation]
+    app.use(cookieParser(process.env.APP_COOKIE_SECRET));
 
     app.use(
         session({
@@ -85,6 +99,14 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
             }
         })
     );
+
+    // Register CSRF protection before serving routes or static handlers.
+    const { doubleCsrfProtection, generateCsrfToken } = createCsrf();
+    app.use(doubleCsrfProtection);
+    app.use((req, res, next) => {
+        res.locals.csrfToken = generateCsrfToken(req, res);
+        next();
+    });
 
     app.use((req, res, next) => {
         res.locals.cspNonce = nanoid();
@@ -138,13 +160,6 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
         '/assets',
         express.static(path.join(__dirname, '/node_modules/govuk-frontend/dist/govuk/assets'))
     );
-
-    const { doubleCsrfProtection, generateCsrfToken } = createCsrf();
-    app.use(doubleCsrfProtection);
-    app.use((req, res, next) => {
-        res.locals.csrfToken = generateCsrfToken(req, res);
-        next();
-    });
 
     // Apply General Rate Limiter GLOBALLY (Fixes CodeQL)
     // Note: auth login exclusion is handled within the limiter configuration

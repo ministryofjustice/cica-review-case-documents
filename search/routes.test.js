@@ -50,7 +50,6 @@ describe('Search Routes', () => {
                 caseSelected: true,
                 caseReferenceNumber: '12345'
             };
-            req.cookies = { jwtToken: 'test-token' };
             req.log = { info: () => {}, error: () => {} };
             res.locals.csrfToken = 'test-csrf-token';
             res.locals.cspNonce = 'test-csp-nonce';
@@ -92,8 +91,10 @@ describe('Search Routes', () => {
                 createSearchService: failingSearchService
             });
             testApp.use((req, res, next) => {
-                req.session = { caseSelected: true, caseReferenceNumber: '12345' };
-                req.cookies = { jwtToken: 'test-token' };
+                req.session = {
+                    caseSelected: true,
+                    caseReferenceNumber: '12345'
+                };
                 req.log = { info: () => {}, error: () => {} };
                 next();
             });
@@ -122,8 +123,10 @@ describe('Search Routes', () => {
                 createSearchService: errorSearchService
             });
             testApp.use((req, res, next) => {
-                req.session = { caseSelected: true, caseReferenceNumber: '12345' };
-                req.cookies = { jwtToken: 'test-token' };
+                req.session = {
+                    caseSelected: true,
+                    caseReferenceNumber: '12345'
+                };
                 req.log = { info: () => {}, error: () => {} };
                 res.locals.csrfToken = 'test-csrf-token';
                 res.locals.cspNonce = 'test-csp-nonce';
@@ -150,8 +153,10 @@ describe('Search Routes', () => {
                 createSearchService: errorSearchService
             });
             testApp.use((req, res, next) => {
-                req.session = { caseSelected: true, caseReferenceNumber: '12345' };
-                req.cookies = { jwtToken: 'test-token' };
+                req.session = {
+                    caseSelected: true,
+                    caseReferenceNumber: '12345'
+                };
                 req.log = { info: () => {}, error: () => {} };
                 res.locals.csrfToken = 'test-csrf-token';
                 res.locals.cspNonce = 'test-csp-nonce';
@@ -178,8 +183,10 @@ describe('Search Routes', () => {
                 createSearchService: errorSearchService
             });
             testApp.use((req, res, next) => {
-                req.session = { caseSelected: true, caseReferenceNumber: '12345' };
-                req.cookies = { jwtToken: 'test-token' };
+                req.session = {
+                    caseSelected: true,
+                    caseReferenceNumber: '12345'
+                };
                 req.log = { info: () => {}, error: () => {} };
                 res.locals.csrfToken = 'test-csrf-token';
                 res.locals.cspNonce = 'test-csp-nonce';
@@ -211,8 +218,10 @@ describe('Search Routes', () => {
                 createSearchService: errorSearchService
             });
             testApp.use((req, res, next) => {
-                req.session = { caseSelected: true, caseReferenceNumber: '12345' };
-                req.cookies = { jwtToken: 'test-token' };
+                req.session = {
+                    caseSelected: true,
+                    caseReferenceNumber: '12345'
+                };
                 req.log = { info: () => {}, error: () => {} };
                 res.locals.csrfToken = 'test-csrf-token';
                 res.locals.cspNonce = 'test-csp-nonce';
@@ -255,8 +264,10 @@ describe('Search Routes', () => {
             });
 
             testApp.use((req, res, next) => {
-                req.session = { caseSelected: true, caseReferenceNumber: '12345' };
-                req.cookies = { jwtToken: 'test-token' };
+                req.session = {
+                    caseSelected: true,
+                    caseReferenceNumber: '12345'
+                };
                 req.log = { info: () => {}, error: () => {} };
                 res.locals.csrfToken = 'test-csrf-token';
                 res.locals.cspNonce = 'test-csp-nonce';
