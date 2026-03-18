@@ -99,6 +99,10 @@ The secret scan uses `.gitleaks.toml` as the configuration file.
 
 The project uses Husky for Git hooks:
 
+Cross-platform note: Husky hooks in this repository are POSIX shell scripts (`sh`). They run on macOS and Linux (including WSL Ubuntu) out of the box. On Windows, use Git for Windows with Git Bash (standard install) so `sh` is available when Git executes hooks.
+
+Troubleshooting (Windows): If you see errors such as `sh: not found` or `env: sh: No such file or directory` when committing/pushing, reinstall Git for Windows with Git Bash enabled, then reopen your terminal and run `npm install` to reinitialize Husky hooks.
+
 | Hook Name  | Action       | Description                          |
 | ---------- | ------------ | ------------------------------------ |
 | pre-commit | npm run precommit | Runs format, lint, sass, and gitleaks before commit |

@@ -1,1 +1,22 @@
-npm run precommit
+#!/usr/bin/env sh
+
+run_step() {
+	label="$1"
+	shift
+
+	echo "Running ${label}..."
+
+	if output="$("$@" 2>&1)"; then
+		return 0
+	fi
+
+	status=$?
+	echo "Failed: ${label}"
+	printf "%s\n" "$output"
+	exit "$status"
+}
+
+run_step "format" npm run -s format
+run_step "lint" npm run -s lint
+run_step "sass" npm run -s sass
+run_step "precommit:secrets" npm run -s precommit:secrets
