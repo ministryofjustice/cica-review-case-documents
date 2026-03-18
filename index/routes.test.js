@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { before, describe, it } from 'node:test';
+import { after, before, describe, it } from 'node:test';
 
 import request from 'supertest';
 import createApp from '../app.js';
@@ -29,8 +29,17 @@ const routes = [
 
 describe('Index routes', () => {
     let app;
+    const originalEnv = { ...process.env };
+
     before(async () => {
+        process.env.ENTRA_CLIENT_ID = process.env.ENTRA_CLIENT_ID || 'client-id';
+        process.env.ENTRA_CLIENT_SECRET_ID = process.env.ENTRA_CLIENT_SECRET_ID || 'client-secret';
+        process.env.ENTRA_TENANT_ID = process.env.ENTRA_TENANT_ID || 'tenant-id';
         app = await createApp();
+    });
+
+    after(() => {
+        process.env = originalEnv;
     });
 
     for (const route of routes) {

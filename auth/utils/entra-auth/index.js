@@ -48,7 +48,7 @@ export function isEntraConfigured() {
 /**
  * Builds the callback URI using the incoming request context.
  *
- * @param {import('express').Request} req
+ * @param {import('express').Request} req - Express request used to resolve protocol and host.
  * @returns {string}
  */
 export function getEntraRedirectUri(req) {
@@ -60,10 +60,10 @@ export function getEntraRedirectUri(req) {
 /**
  * Builds an Entra authorize URL for the authorization code flow.
  *
- * @param {import('express').Request} req
- * @param {string} state
- * @param {string} nonce
- * @param {{ prompt?: string, loginHint?: string, domainHint?: string }} [options]
+ * @param {import('express').Request} req - Express request used to derive callback URI.
+ * @param {string} state - OIDC state value bound to the current auth transaction.
+ * @param {string} nonce - OIDC nonce value validated against the returned id token.
+ * @param {{ prompt?: string, loginHint?: string, domainHint?: string }} [options] - Optional authorize request parameters.
  * @returns {string}
  */
 export function buildEntraAuthorizeUrl(req, state, nonce, options = {}) {
@@ -99,8 +99,8 @@ export function buildEntraAuthorizeUrl(req, state, nonce, options = {}) {
 /**
  * Exchanges an authorization code for tokens at Entra token endpoint.
  *
- * @param {import('express').Request} req
- * @param {string} code
+ * @param {import('express').Request} req - Express request used to derive callback URI.
+ * @param {string} code - Authorization code returned by Entra authorize endpoint.
  * @returns {Promise<any>}
  */
 export async function exchangeEntraAuthorizationCode(req, code) {
@@ -126,8 +126,8 @@ export async function exchangeEntraAuthorizationCode(req, code) {
 /**
  * Decodes and validates the nonce claim from an Entra ID token.
  *
- * @param {string} idToken
- * @param {string} expectedNonce
+ * @param {string} idToken - Entra id token JWT value.
+ * @param {string} expectedNonce - Nonce generated for the current auth transaction.
  * @returns {Record<string, any>}
  */
 export function decodeAndValidateEntraIdToken(idToken, expectedNonce) {
@@ -147,7 +147,7 @@ export function decodeAndValidateEntraIdToken(idToken, expectedNonce) {
 /**
  * Extracts a stable username from Entra claims.
  *
- * @param {Record<string, any>} claims
+ * @param {Record<string, any>} claims - Decoded id token claims.
  * @returns {string}
  */
 export function getUsernameFromEntraClaims(claims) {

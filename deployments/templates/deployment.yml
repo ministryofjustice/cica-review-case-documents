@@ -102,5 +102,11 @@ spec:
               value: "900000"
             - name: APP_RATE_LIMIT_MAX
               value: "100"
+            - name: APP_ENTRA_RATE_LIMIT_WINDOW_MS
+              value: "900000"
+            - name: APP_ENTRA_RATE_LIMIT_MAX_LOGIN
+              value: "20"
+            - name: APP_ENTRA_RATE_LIMIT_MAX_CALLBACK
+              value: "40"
             - name: DEPLOY_ENV
               value: "${DEPLOY_ENV}"
