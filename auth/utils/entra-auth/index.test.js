@@ -54,6 +54,8 @@ describe('entra-auth utilities', () => {
     });
 
     it('builds redirect URI from request protocol and host', () => {
+        delete process.env.APP_BASE_URL;
+
         const req = {
             protocol: 'https',
             get: (name) => (name === 'host' ? 'example.test' : undefined)
@@ -85,6 +87,18 @@ describe('entra-auth utilities', () => {
             () => getEntraRedirectUri(req),
             /APP_BASE_URL must be set in production for Entra redirect URI/
         );
+    });
+
+    it('uses request host fallback in non-production when APP_BASE_URL is blank', () => {
+        process.env.NODE_ENV = 'development';
+        process.env.APP_BASE_URL = '   ';
+
+        const req = {
+            protocol: 'http',
+            get: (name) => (name === 'host' ? 'local.test:5000' : undefined)
+        };
+
+        assert.equal(getEntraRedirectUri(req), 'http://local.test:5000/auth/callback');
     });
 
     it('builds authorize URL with expected parameters', () => {
@@ -367,6 +381,96 @@ describe('entra-auth utilities', () => {
                 /Invalid Entra nonce claim/
             );
         } finally {
+            got.get = originalGet;
+        }
+    });
+
+    it('throws when id token header cannot be decoded', async () => {
+        await assert.rejects(
+            () => decodeAndValidateEntraIdToken('not-a-jwt-token', 'nonce-1'),
+            /Invalid Entra id_token header/
+        );
+    });
+
+    it('throws when id token kid header is missing', async () => {
+        const idToken = jwt.sign({ sub: '123', nonce: 'nonce-1' }, 'test-secret', {
+            algorithm: 'HS256',
+            expiresIn: '5m'
+        });
+
+        await assert.rejects(
+            () => decodeAndValidateEntraIdToken(idToken, 'nonce-1'),
+            /Missing Entra id_token kid header/
+        );
+    });
+
+    it('throws when matching signing key cannot be found in JWKS', async () => {
+        const originalGet = got.get;
+
+        try {
+            const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+            const issuer = 'https://login.microsoftonline.com/tenant-id/v2.0';
+
+            got.get = () => ({
+                json: async () => ({})
+            });
+
+            const idToken = jwt.sign({ sub: '123', nonce: 'nonce-1' }, privateKey, {
+                algorithm: 'RS256',
+                keyid: 'missing-kid',
+                issuer,
+                audience: 'client-id',
+                expiresIn: '5m'
+            });
+
+            await assert.rejects(
+                () => decodeAndValidateEntraIdToken(idToken, 'nonce-1'),
+                /Unable to find matching Entra signing key/
+            );
+        } finally {
+            got.get = originalGet;
+        }
+    });
+
+    it('throws when Entra configuration is missing for id_token validation', async () => {
+        delete process.env.ENTRA_CLIENT_ID;
+
+        await assert.rejects(
+            () => decodeAndValidateEntraIdToken('not-used', 'nonce-1'),
+            /Entra configuration missing for id_token validation/
+        );
+    });
+
+    it('throws when jwt verification returns a non-object payload', async () => {
+        const originalGet = got.get;
+        const originalVerify = jwt.verify;
+
+        try {
+            const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+            const kid = 'test-kid';
+            const issuer = 'https://login.microsoftonline.com/tenant-id/v2.0';
+            const jwk = { ...publicKey.export({ format: 'jwk' }), kid, use: 'sig' };
+
+            got.get = () => ({
+                json: async () => ({ keys: [jwk] })
+            });
+
+            jwt.verify = () => 'string-payload';
+
+            const idToken = jwt.sign({ sub: '123', nonce: 'nonce-1' }, privateKey, {
+                algorithm: 'RS256',
+                keyid: kid,
+                issuer,
+                audience: 'client-id',
+                expiresIn: '5m'
+            });
+
+            await assert.rejects(
+                () => decodeAndValidateEntraIdToken(idToken, 'nonce-1'),
+                /Invalid Entra id_token payload/
+            );
+        } finally {
+            jwt.verify = originalVerify;
             got.get = originalGet;
         }
     });

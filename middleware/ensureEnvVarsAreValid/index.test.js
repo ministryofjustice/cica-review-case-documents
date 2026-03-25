@@ -271,6 +271,39 @@ describe('ensureEnvVarsAreValid', () => {
             );
         });
 
+        it('Should throw ConfigurationError when APP_API_JWT_EXPIRES_IN is not a string value', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            // Use a plain object env snapshot so value type remains non-string.
+            process.env = {
+                ...process.env,
+                APP_API_JWT_EXPIRES_IN: 60
+            };
+
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /APP_API_JWT_EXPIRES_IN/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError when APP_API_JWT_EXPIRES_IN is zero seconds', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.APP_API_JWT_EXPIRES_IN = '0s';
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /APP_API_JWT_EXPIRES_IN/);
+                    return true;
+                }
+            );
+        });
+
         it('Should throw ConfigurationError when APP_API_JWT_EXPIRES_IN exceeds 5 minutes', async () => {
             const { checkEnvVars } = await import('./index.js');
 
