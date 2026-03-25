@@ -1,12 +1,12 @@
 import createTemplateEngineService from '../templateEngine/index.js';
 
 /**
- * Signs out the current user by destroying their session,
- * resetting the rate limiter key if applicable, and rendering the sign-out page.
+ * Signs out the current user by destroying their session and rendering the sign-out page.
  *
- * @param {import('express').Request} req - The Express request object.
- * @param {import('express').Response} res - The Express response object.
- * @param {Function} next - The next middleware function.
+ * @export
+ * @param {import('express').Request} req Express request object.
+ * @param {import('express').Response} res Express response object.
+ * @param {import('express').NextFunction} next Express next middleware function.
  */
 export function signOutUser(req, res, next) {
     const caseReferenceNumber = req.session?.caseReferenceNumber;
