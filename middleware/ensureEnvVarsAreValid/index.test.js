@@ -105,7 +105,58 @@ describe('ensureEnvVarsAreValid', () => {
                 () => checkEnvVars({ logger: fakeLogger }),
                 (err) => {
                     assert.equal(err.name, 'ConfigurationError');
-                    assert.match(err.message, /Environment variable "APP_COOKIE_NAME" must be set/);
+                    assert.match(
+                        err.message,
+                        /Environment variable "APP_COOKIE_NAME" must be set and non-empty/
+                    );
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError if required env var is an empty string', async () => {
+            const { checkEnvVars } = await import('./index.js');
+            process.env.APP_COOKIE_NAME = '';
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(
+                        err.message,
+                        /Environment variable "APP_COOKIE_NAME" must be set and non-empty/
+                    );
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError if required env var is whitespace only', async () => {
+            const { checkEnvVars } = await import('./index.js');
+            process.env.APP_COOKIE_NAME = '   ';
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(
+                        err.message,
+                        /Environment variable "APP_COOKIE_NAME" must be set and non-empty/
+                    );
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError if ENTRA_CLIENT_ID is an empty string', async () => {
+            const { checkEnvVars } = await import('./index.js');
+            process.env.ENTRA_CLIENT_ID = '';
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(
+                        err.message,
+                        /Environment variable "ENTRA_CLIENT_ID" must be set and non-empty/
+                    );
                     return true;
                 }
             );

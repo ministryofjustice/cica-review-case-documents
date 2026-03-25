@@ -175,12 +175,13 @@ function checkMandatoryEnvVars(mandatoryEnvVars = getMandatoryEnvVars()) {
     }
 
     mandatoryEnvVars.forEach((mandatoryEnvVar) => {
-        if (!(mandatoryEnvVar in process.env) || process.env[mandatoryEnvVar] === undefined) {
+        const value = process.env[mandatoryEnvVar];
+        if (value === undefined || value.trim() === '') {
             throw new VError(
                 {
                     name: 'ConfigurationError'
                 },
-                `Environment variable "${mandatoryEnvVar}" must be set`
+                `Environment variable "${mandatoryEnvVar}" must be set and non-empty`
             );
         }
     });
