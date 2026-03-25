@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import express from 'express';
+import { ipKeyGenerator } from 'express-rate-limit';
 import session from 'express-session';
 import request from 'supertest';
-
-import { ipKeyGenerator } from 'express-rate-limit';
 import { generateEntraRateLimitKey } from './entraRateLimiter.js';
 
 test('Entra rate limiter applies outside production', async () => {
