@@ -75,6 +75,8 @@ spec:
               value: "1"
             - name: APP_API_URL
               value: http://localhost:5000/api
+            - name: APP_BASE_URL
+              value: http://localhost
             - name: APP_DATABASE_URL
               valueFrom:
                 secretKeyRef:

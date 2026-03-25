@@ -60,6 +60,31 @@ describe('entra-auth utilities', () => {
         assert.equal(getEntraRedirectUri(req), 'https://example.test/auth/callback');
     });
 
+    it('builds redirect URI from APP_BASE_URL when configured', () => {
+        process.env.APP_BASE_URL = 'https://public.example.gov.uk/';
+        const req = {
+            protocol: 'https',
+            get: () => 'spoofed.example.test'
+        };
+
+        assert.equal(getEntraRedirectUri(req), 'https://public.example.gov.uk/auth/callback');
+    });
+
+    it('throws in production when APP_BASE_URL is missing', () => {
+        process.env.NODE_ENV = 'production';
+        delete process.env.APP_BASE_URL;
+
+        const req = {
+            protocol: 'https',
+            get: (name) => (name === 'host' ? 'example.test' : undefined)
+        };
+
+        assert.throws(
+            () => getEntraRedirectUri(req),
+            /APP_BASE_URL must be set in production for Entra redirect URI/
+        );
+    });
+
     it('builds authorize URL with expected parameters', () => {
         const req = {
             protocol: 'https',
