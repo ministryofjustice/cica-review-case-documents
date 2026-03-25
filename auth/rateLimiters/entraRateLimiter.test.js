@@ -4,6 +4,9 @@ import express from 'express';
 import session from 'express-session';
 import request from 'supertest';
 
+import { ipKeyGenerator } from 'express-rate-limit';
+import { generateEntraRateLimitKey } from './entraRateLimiter.js';
+
 test('Entra rate limiter applies outside production', async () => {
     const originalEnv = process.env.NODE_ENV;
     const originalWindow = process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS;
@@ -114,4 +117,18 @@ test('Entra callback limiter uses independent callback threshold', async () => {
             process.env.APP_ENTRA_RATE_LIMIT_MAX_CALLBACK = originalCallbackMax;
         }
     }
+});
+
+test('generateEntraRateLimitKey uses express-rate-limit ipKeyGenerator with request object', () => {
+    const req = {
+        ip: '127.0.0.1',
+        ips: [],
+        socket: { remoteAddress: '127.0.0.1' },
+        headers: {}
+    };
+
+    const expected = ipKeyGenerator(req.ip);
+    const actual = generateEntraRateLimitKey(req);
+
+    assert.equal(actual, expected);
 });

@@ -11,7 +11,7 @@ const CALLBACK_LIMIT = Number(process.env.APP_ENTRA_RATE_LIMIT_MAX_CALLBACK) || 
  * @returns {string} Stable key for rate limiting.
  */
 export function generateEntraRateLimitKey(req) {
-    return ipKeyGenerator(req);
+    return ipKeyGenerator(req.ip);
 }
 
 /**
