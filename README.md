@@ -140,6 +140,11 @@ By default, login starts with silent SSO (`prompt=none`) and automatically falls
 
 Set `ENTRA_INTERACTIVE_FALLBACK=false` to disable interactive fallback and enforce silent-only sign-in.
 
+Entra signing keys (JWKS) are cached in-memory per app instance to reduce callback/token validation latency.
+Cache TTL defaults to 60 seconds and can be tuned via `ENTRA_JWKS_CACHE_TTL_MS`.
+If a token arrives with an unknown `kid`, the app refreshes JWKS immediately.
+In multi-pod deployments this cache is pod-local (not shared), which is typically sufficient for JWKS.
+
 Local username/password authentication has been removed. Sign-in is Entra-only.
 
 For APP -> API communication, JWT tokens are short-lived and validated against explicit issuer/audience claims.
