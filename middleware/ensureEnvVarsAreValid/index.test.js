@@ -165,13 +165,13 @@ describe('ensureEnvVarsAreValid', () => {
 
         it('Should throw ConfigurationError if mandatory env var is not a string', async () => {
             const { checkEnvVars } = await import('./index.js');
-            
+
             // Use a plain object env snapshot so value type remains non-string.
             process.env = {
                 ...process.env,
                 APP_COOKIE_NAME: 123
             };
-            
+
             assert.throws(
                 () => checkEnvVars({ logger: fakeLogger }),
                 (err) => {
