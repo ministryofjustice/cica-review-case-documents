@@ -6,9 +6,8 @@ import createTemplateEngineService from '../templateEngine/index.js';
  * @export
  * @param {import('express').Request} req Express request object.
  * @param {import('express').Response} res Express response object.
- * @param {import('express').NextFunction} next Express next middleware function.
  */
-export function signOutUser(req, res, next) {
+export function signOutUser(req, res) {
     const caseReferenceNumber = req.session?.caseReferenceNumber;
 
     req.session.destroy(() => {
