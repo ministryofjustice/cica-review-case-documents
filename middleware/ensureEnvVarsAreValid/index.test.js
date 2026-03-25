@@ -63,6 +63,7 @@ describe('ensureEnvVarsAreValid', () => {
                 'APP_COOKIE_NAME',
                 'APP_COOKIE_SECRET',
                 'APP_API_URL',
+                'APP_BASE_URL',
                 'APP_JWT_SECRET',
                 'APP_API_JWT_ISSUER',
                 'APP_API_JWT_AUDIENCE',
