@@ -1,6 +1,6 @@
 import express from 'express';
 import { nanoid } from 'nanoid';
-import generalRateLimiter from '../middleware/rateLimiter/index.js';
+
 import { signOutUser } from './auth-service.js';
 import {
     entraCallbackRateLimiter,
