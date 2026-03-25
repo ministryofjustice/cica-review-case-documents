@@ -92,12 +92,25 @@ export function isEntraConfigured() {
 }
 
 /**
- * Builds the callback URI using the incoming request context.
+ * Builds the callback URI using trusted configuration.
+ *
+ * In production this requires APP_BASE_URL to avoid relying on request Host headers.
+ * In non-production, request protocol/host fallback is allowed for local development.
  *
  * @param {import('express').Request} req - Express request used to resolve protocol and host.
  * @returns {string}
  */
 export function getEntraRedirectUri(req) {
+    const appBaseUrl = process.env.APP_BASE_URL;
+
+    if (typeof appBaseUrl === 'string' && appBaseUrl.trim().length > 0) {
+        return `${appBaseUrl.replace(/\/+$/, '')}/auth/callback`;
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+        throw new Error('APP_BASE_URL must be set in production for Entra redirect URI');
+    }
+
     const protocol = req.protocol;
     const host = req.get('host');
     return `${protocol}://${host}/auth/callback`;
