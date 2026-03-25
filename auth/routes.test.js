@@ -382,3 +382,26 @@ test('sign-out route should call next when signOutUser throws', () => {
 
     assert.ok(capturedError instanceof Error);
 });
+
+test('sign-out route should call next when session.destroy fails', () => {
+    const signOutHandler = getRouteHandler('/sign-out');
+    const destroyError = new Error('Store connection failed');
+    const req = {
+        session: {
+            caseReferenceNumber: 'ABC123',
+            destroy: (callback) => {
+                callback(destroyError);
+            }
+        },
+        log: {
+            error: () => {}
+        }
+    };
+
+    let capturedError;
+    signOutHandler(req, {}, (err) => {
+        capturedError = err;
+    });
+
+    assert.strictEqual(capturedError, destroyError);
+});

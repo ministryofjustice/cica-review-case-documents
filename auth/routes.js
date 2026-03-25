@@ -170,7 +170,7 @@ router.get('/callback', entraCallbackRateLimiter, async (req, res, next) => {
 
 router.get('/sign-out', (req, res, next) => {
     try {
-        signOutUser(req, res);
+        signOutUser(req, res, next);
     } catch (err) {
         next(err);
     }

@@ -6,11 +6,17 @@ import createTemplateEngineService from '../templateEngine/index.js';
  * @export
  * @param {import('express').Request} req Express request object.
  * @param {import('express').Response} res Express response object.
+ * @param {import('express').NextFunction} next Express next middleware function.
  */
-export function signOutUser(req, res) {
+export function signOutUser(req, res, next) {
     const caseReferenceNumber = req.session?.caseReferenceNumber;
 
-    req.session.destroy(() => {
+    req.session.destroy((err) => {
+        if (err) {
+            req.log?.error({ err }, 'Session destruction failed');
+            return next(err);
+        }
+
         const templateEngineService = createTemplateEngineService();
         const { render } = templateEngineService;
         const html = render('index/sign-out.njk', {
