@@ -28,7 +28,7 @@ export function generateRateLimitKey(req) {
     if (req.user?.id) {
         return req.user.id;
     }
-    return ipKeyGenerator(req);
+    return ipKeyGenerator(req.ip);
 }
 
 /**

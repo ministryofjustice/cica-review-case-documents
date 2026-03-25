@@ -39,7 +39,7 @@ test('generateRateLimitKey falls back to ipKeyGenerator when no session or user 
         headers: {}
     };
 
-    assert.strictEqual(generateRateLimitKey(req), ipKeyGenerator(req));
+    assert.strictEqual(generateRateLimitKey(req), ipKeyGenerator(req.ip));
 });
 
 test('skip function returns true in non-production mode', async () => {
