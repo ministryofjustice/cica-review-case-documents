@@ -1,19 +1,18 @@
 import assert from 'node:assert';
-import { beforeEach, test } from 'node:test';
+import { afterEach, beforeEach, test } from 'node:test';
 import request from 'supertest';
 import createApp from '../app.js';
+
+const originalEnv = { ...process.env };
 
 let app;
 let agent;
 
-beforeEach(async () => {
-    process.env.ENTRA_CLIENT_ID = 'client-id';
-    process.env.ENTRA_CLIENT_SECRET_ID = 'client-secret';
-    delete process.env.ENTRA_CLIENT_SECRET;
-    process.env.ENTRA_TENANT_ID = 'tenant-id';
-    delete process.env.ENTRA_SCOPE;
-    delete process.env.ENTRA_INTERACTIVE_FALLBACK;
+afterEach(() => {
+    process.env = { ...originalEnv };
+});
 
+beforeEach(async () => {
     app = await createApp({
         createLogger: () => (req, res, next) => {
             req.log = {
@@ -35,7 +34,7 @@ test('GET /auth/login with Entra configured should request silent sign-in', asyn
     assert.strictEqual(response.status, 302);
     assert.match(
         response.headers.location,
-        /^https:\/\/login\.microsoftonline\.com\/tenant-id\/oauth2\/v2\.0\/authorize\?/
+        /^https:\/\/login\.microsoftonline\.com\/test-entra-tenant-id\/oauth2\/v2\.0\/authorize\?/
     );
     assert.match(response.headers.location, /prompt=none/);
 });
