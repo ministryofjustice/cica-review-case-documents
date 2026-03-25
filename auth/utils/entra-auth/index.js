@@ -32,6 +32,16 @@ function getEntraIssuer(tenantId) {
 }
 
 /**
+ * Builds the Entra JWKS URL used to resolve token signing keys.
+ *
+ * @param {string} tenantId - Entra tenant identifier.
+ * @returns {string}
+ */
+function getEntraJwksUrl(tenantId) {
+    return `https://login.microsoftonline.com/${tenantId}/discovery/v2.0/keys`;
+}
+
+/**
  * Resolves the public key for an Entra id_token from JWKS.
  *
  * @param {string} idToken - Entra id token JWT value.
@@ -50,8 +60,7 @@ async function getEntraSigningKey(idToken, tenantId) {
         throw new Error('Missing Entra id_token kid header');
     }
 
-    const issuer = getEntraIssuer(tenantId);
-    const jwksUrl = `${issuer}/discovery/v2.0/keys`;
+    const jwksUrl = getEntraJwksUrl(tenantId);
     const jwks = await got.get(jwksUrl, { responseType: 'json' }).json();
     const signingJwk = Array.isArray(jwks?.keys)
         ? jwks.keys.find((key) => key?.kid === kid && key?.kty === 'RSA')

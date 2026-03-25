@@ -171,7 +171,7 @@ describe('entra-auth utilities', () => {
             got.get = (url) => {
                 assert.equal(
                     url,
-                    'https://login.microsoftonline.com/tenant-id/v2.0/discovery/v2.0/keys'
+                    'https://login.microsoftonline.com/tenant-id/discovery/v2.0/keys'
                 );
                 return {
                     json: async () => ({ keys: [jwk] })
