@@ -1,3 +1,4 @@
+import { createPublicKey } from 'node:crypto';
 import got from 'got';
 import jwt from 'jsonwebtoken';
 
@@ -18,6 +19,49 @@ export function getEntraConfig() {
         tenantId: process.env.ENTRA_TENANT_ID,
         scope: process.env.ENTRA_SCOPE || DEFAULT_ENTRA_SCOPE
     };
+}
+
+/**
+ * Builds the expected issuer URL for Entra v2.0 tokens.
+ *
+ * @param {string} tenantId - Entra tenant identifier.
+ * @returns {string}
+ */
+function getEntraIssuer(tenantId) {
+    return `https://login.microsoftonline.com/${tenantId}/v2.0`;
+}
+
+/**
+ * Resolves the public key for an Entra id_token from JWKS.
+ *
+ * @param {string} idToken - Entra id token JWT value.
+ * @param {string} tenantId - Entra tenant identifier.
+ * @returns {Promise<import('node:crypto').KeyObject>}
+ */
+async function getEntraSigningKey(idToken, tenantId) {
+    const decoded = jwt.decode(idToken, { complete: true });
+
+    if (!decoded || typeof decoded !== 'object' || typeof decoded.header !== 'object') {
+        throw new Error('Invalid Entra id_token header');
+    }
+
+    const kid = decoded.header.kid;
+    if (!kid) {
+        throw new Error('Missing Entra id_token kid header');
+    }
+
+    const issuer = getEntraIssuer(tenantId);
+    const jwksUrl = `${issuer}/discovery/v2.0/keys`;
+    const jwks = await got.get(jwksUrl, { responseType: 'json' }).json();
+    const signingJwk = Array.isArray(jwks?.keys)
+        ? jwks.keys.find((key) => key?.kid === kid && key?.kty === 'RSA')
+        : undefined;
+
+    if (!signingJwk) {
+        throw new Error('Unable to find matching Entra signing key');
+    }
+
+    return createPublicKey({ key: signingJwk, format: 'jwk' });
 }
 
 /**
@@ -126,17 +170,37 @@ export async function exchangeEntraAuthorizationCode(req, code) {
 }
 
 /**
- * Decodes and validates the nonce claim from an Entra ID token.
+ * Verifies and validates an Entra ID token.
  *
  * @param {string} idToken - Entra id token JWT value.
  * @param {string} expectedNonce - Nonce generated for the current auth transaction.
- * @returns {Record<string, any>}
+ * @returns {Promise<Record<string, any>>}
  */
-export function decodeAndValidateEntraIdToken(idToken, expectedNonce) {
-    const claims = jwt.decode(idToken);
+export async function decodeAndValidateEntraIdToken(idToken, expectedNonce) {
+    if (typeof expectedNonce !== 'string' || expectedNonce.trim().length === 0) {
+        throw new Error('Missing expected Entra nonce');
+    }
+
+    const { clientId, tenantId } = getEntraConfig();
+    if (!clientId || !tenantId) {
+        throw new Error('Entra configuration missing for id_token validation');
+    }
+
+    const issuer = getEntraIssuer(tenantId);
+    const signingKey = await getEntraSigningKey(idToken, tenantId);
+    const claims = jwt.verify(idToken, signingKey, {
+        algorithms: ['RS256'],
+        issuer,
+        audience: clientId,
+        clockTolerance: 5
+    });
 
     if (!claims || typeof claims !== 'object') {
         throw new Error('Invalid Entra id_token payload');
+    }
+
+    if (typeof claims.nonce !== 'string' || claims.nonce.trim().length === 0) {
+        throw new Error('Missing Entra nonce claim');
     }
 
     if (claims.nonce !== expectedNonce) {

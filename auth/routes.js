@@ -21,6 +21,8 @@ const ENTRA_INTERACTION_ERRORS = new Set([
     'login_required',
     'consent_required'
 ]);
+const ENTRA_AUTH_TRANSACTION_MAX_AGE_MS =
+    Number(process.env.ENTRA_AUTH_TRANSACTION_MAX_AGE_MS) || 10 * 60 * 1000;
 
 /**
  * Extracts an AADSTS error code from an Entra error description string.
@@ -105,14 +107,38 @@ router.get('/callback', entraCallbackRateLimiter, async (req, res, next) => {
 
         const { code, state } = req.query;
         const pendingAuth = req.session?.entraAuth;
+        const hasNonce =
+            typeof pendingAuth?.nonce === 'string' && pendingAuth.nonce.trim().length > 0;
+        const createdAtMs = Number(pendingAuth?.createdAt);
+        const isStaleAuthTransaction =
+            !Number.isFinite(createdAtMs) ||
+            Date.now() - createdAtMs > ENTRA_AUTH_TRANSACTION_MAX_AGE_MS;
 
-        if (!code || !state || !pendingAuth?.state || state !== pendingAuth.state) {
-            req.log?.warn({ hasState: Boolean(state) }, 'Invalid Entra callback state');
+        if (
+            !code ||
+            !state ||
+            !pendingAuth?.state ||
+            state !== pendingAuth.state ||
+            !hasNonce ||
+            isStaleAuthTransaction
+        ) {
+            delete req.session.entraAuth;
+            req.log?.warn(
+                {
+                    hasState: Boolean(state),
+                    hasNonce,
+                    isStaleAuthTransaction
+                },
+                'Invalid Entra callback state'
+            );
             return res.status(401).send('Invalid authentication state');
         }
 
         const tokenResponse = await exchangeEntraAuthorizationCode(req, String(code));
-        const claims = decodeAndValidateEntraIdToken(tokenResponse.id_token, pendingAuth.nonce);
+        const claims = await decodeAndValidateEntraIdToken(
+            tokenResponse.id_token,
+            pendingAuth.nonce
+        );
 
         req.session.username = getUsernameFromEntraClaims(claims);
         req.session.loggedIn = true;
