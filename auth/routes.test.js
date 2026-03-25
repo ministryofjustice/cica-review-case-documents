@@ -12,6 +12,12 @@ const originalEnv = { ...process.env };
 let app;
 let agent;
 
+/**
+ * Retrieves the route handler for a given path from the authRouter.
+ *
+ * @param {string} path - The path of the route.
+ * @returns {Function|undefined} The route handler function or undefined if not found.
+ */
 function getRouteHandler(path) {
     const layer = authRouter.stack.find((entry) => entry.route?.path === path);
     return layer?.route?.stack?.at(-1)?.handle;
