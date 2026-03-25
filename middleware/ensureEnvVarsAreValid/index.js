@@ -177,7 +177,7 @@ function checkMandatoryEnvVars(mandatoryEnvVars = getMandatoryEnvVars()) {
 
     mandatoryEnvVars.forEach((mandatoryEnvVar) => {
         const value = process.env[mandatoryEnvVar];
-        if (value === undefined || value.trim() === '') {
+        if (value === undefined || typeof value !== 'string' || value.trim() === '') {
             throw new VError(
                 {
                     name: 'ConfigurationError'
