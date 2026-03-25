@@ -131,3 +131,61 @@ test('generateEntraRateLimitKey uses express-rate-limit ipKeyGenerator with requ
 
     assert.equal(actual, expected);
 });
+
+test('Entra rate limiter falls back to default config when env vars are unset', async () => {
+    const originalWindow = process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS;
+    const originalLoginMax = process.env.APP_ENTRA_RATE_LIMIT_MAX_LOGIN;
+    const originalCallbackMax = process.env.APP_ENTRA_RATE_LIMIT_MAX_CALLBACK;
+
+    delete process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS;
+    delete process.env.APP_ENTRA_RATE_LIMIT_MAX_LOGIN;
+    delete process.env.APP_ENTRA_RATE_LIMIT_MAX_CALLBACK;
+
+    try {
+        const { entraLoginRateLimiter, entraCallbackRateLimiter } = await import(
+            `./entraRateLimiter.js?t=${Date.now()}`
+        );
+        const app = express();
+        app.set('trust proxy', true);
+        app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
+
+        app.get('/auth/login', entraLoginRateLimiter, (req, res) => res.status(200).send('ok'));
+        app.get('/auth/callback', entraCallbackRateLimiter, (req, res) =>
+            res.status(200).send('ok')
+        );
+
+        const loginFirst = await request(app).get('/auth/login').set('X-Forwarded-For', '10.4.4.4');
+        const loginSecond = await request(app)
+            .get('/auth/login')
+            .set('X-Forwarded-For', '10.4.4.4');
+
+        const callbackFirst = await request(app)
+            .get('/auth/callback')
+            .set('X-Forwarded-For', '10.5.5.5');
+        const callbackSecond = await request(app)
+            .get('/auth/callback')
+            .set('X-Forwarded-For', '10.5.5.5');
+
+        // Default limits (20/40) should allow initial repeated requests.
+        assert.equal(loginFirst.status, 200);
+        assert.equal(loginSecond.status, 200);
+        assert.equal(callbackFirst.status, 200);
+        assert.equal(callbackSecond.status, 200);
+    } finally {
+        if (originalWindow === undefined) {
+            delete process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS;
+        } else {
+            process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS = originalWindow;
+        }
+        if (originalLoginMax === undefined) {
+            delete process.env.APP_ENTRA_RATE_LIMIT_MAX_LOGIN;
+        } else {
+            process.env.APP_ENTRA_RATE_LIMIT_MAX_LOGIN = originalLoginMax;
+        }
+        if (originalCallbackMax === undefined) {
+            delete process.env.APP_ENTRA_RATE_LIMIT_MAX_CALLBACK;
+        } else {
+            process.env.APP_ENTRA_RATE_LIMIT_MAX_CALLBACK = originalCallbackMax;
+        }
+    }
+});
