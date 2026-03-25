@@ -169,7 +169,11 @@ router.get('/callback', entraCallbackRateLimiter, async (req, res, next) => {
 });
 
 router.get('/sign-out', generalRateLimiter, (req, res, next) => {
-    signOutUser(req, res);
+    try {
+        signOutUser(req, res);
+    } catch (err) {
+        next(err);
+    }
 });
 
 export default router;
