@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 import got from 'got';
 import jwt from 'jsonwebtoken';
 import {
+    __clearEntraJwksCache,
     buildEntraAuthorizeUrl,
     decodeAndValidateEntraIdToken,
     exchangeEntraAuthorizationCode,
@@ -26,6 +27,7 @@ function resetEnv() {
 describe('entra-auth utilities', () => {
     beforeEach(() => {
         resetEnv();
+        __clearEntraJwksCache();
         process.env.ENTRA_CLIENT_ID = 'client-id';
         process.env.ENTRA_CLIENT_SECRET_ID = 'client-secret';
         process.env.ENTRA_TENANT_ID = 'tenant-id';
@@ -198,6 +200,143 @@ describe('entra-auth utilities', () => {
             const claims = await decodeAndValidateEntraIdToken(idToken, 'nonce-1');
             assert.equal(claims.sub, '123');
         } finally {
+            got.get = originalGet;
+        }
+    });
+
+    it('reuses cached signing keys between token validations', async () => {
+        const originalGet = got.get;
+
+        try {
+            const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+            const kid = 'cached-kid';
+            const issuer = 'https://login.microsoftonline.com/tenant-id/v2.0';
+            const jwk = { ...publicKey.export({ format: 'jwk' }), kid, use: 'sig' };
+            let getCount = 0;
+
+            got.get = () => {
+                getCount += 1;
+                return {
+                    json: async () => ({ keys: [jwk] })
+                };
+            };
+
+            const idToken = jwt.sign({ sub: '123', nonce: 'nonce-1' }, privateKey, {
+                algorithm: 'RS256',
+                keyid: kid,
+                issuer,
+                audience: 'client-id',
+                expiresIn: '5m'
+            });
+
+            await decodeAndValidateEntraIdToken(idToken, 'nonce-1');
+            await decodeAndValidateEntraIdToken(idToken, 'nonce-1');
+
+            assert.equal(getCount, 1);
+        } finally {
+            got.get = originalGet;
+        }
+    });
+
+    it('refreshes JWKS when a token kid is missing from cache', async () => {
+        const originalGet = got.get;
+
+        try {
+            const { privateKey: firstPrivateKey, publicKey: firstPublicKey } = generateKeyPairSync(
+                'rsa',
+                { modulusLength: 2048 }
+            );
+            const { privateKey: secondPrivateKey, publicKey: secondPublicKey } =
+                generateKeyPairSync('rsa', {
+                    modulusLength: 2048
+                });
+            const firstKid = 'old-kid';
+            const secondKid = 'new-kid';
+            const issuer = 'https://login.microsoftonline.com/tenant-id/v2.0';
+            const firstJwk = {
+                ...firstPublicKey.export({ format: 'jwk' }),
+                kid: firstKid,
+                use: 'sig'
+            };
+            const secondJwk = {
+                ...secondPublicKey.export({ format: 'jwk' }),
+                kid: secondKid,
+                use: 'sig'
+            };
+            let getCount = 0;
+
+            got.get = () => {
+                getCount += 1;
+                return {
+                    json: async () => ({
+                        keys: getCount === 1 ? [firstJwk] : [firstJwk, secondJwk]
+                    })
+                };
+            };
+
+            const firstToken = jwt.sign({ sub: '123', nonce: 'nonce-1' }, firstPrivateKey, {
+                algorithm: 'RS256',
+                keyid: firstKid,
+                issuer,
+                audience: 'client-id',
+                expiresIn: '5m'
+            });
+
+            const secondToken = jwt.sign({ sub: '123', nonce: 'nonce-1' }, secondPrivateKey, {
+                algorithm: 'RS256',
+                keyid: secondKid,
+                issuer,
+                audience: 'client-id',
+                expiresIn: '5m'
+            });
+
+            await decodeAndValidateEntraIdToken(firstToken, 'nonce-1');
+            await decodeAndValidateEntraIdToken(secondToken, 'nonce-1');
+
+            assert.equal(getCount, 2);
+        } finally {
+            got.get = originalGet;
+        }
+    });
+
+    it('refreshes cached JWKS when cache TTL has expired', async () => {
+        const originalGet = got.get;
+        const originalNow = Date.now;
+
+        try {
+            process.env.ENTRA_JWKS_CACHE_TTL_MS = '5';
+
+            const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+            const kid = 'ttl-kid';
+            const issuer = 'https://login.microsoftonline.com/tenant-id/v2.0';
+            const jwk = { ...publicKey.export({ format: 'jwk' }), kid, use: 'sig' };
+            let getCount = 0;
+            let nowMs = 1000;
+
+            Date.now = () => nowMs;
+
+            got.get = () => {
+                getCount += 1;
+                return {
+                    json: async () => ({ keys: [jwk] })
+                };
+            };
+
+            const idToken = jwt.sign({ sub: '123', nonce: 'nonce-1' }, privateKey, {
+                algorithm: 'RS256',
+                keyid: kid,
+                issuer,
+                audience: 'client-id',
+                expiresIn: '5m'
+            });
+
+            await decodeAndValidateEntraIdToken(idToken, 'nonce-1');
+            nowMs += 10;
+            await decodeAndValidateEntraIdToken(idToken, 'nonce-1');
+
+            assert.equal(getCount, 2);
+        } finally {
+            Date.now = originalNow;
             got.get = originalGet;
         }
     });
