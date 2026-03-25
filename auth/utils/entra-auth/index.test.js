@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
+import { generateKeyPairSync } from 'node:crypto';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import got from 'got';
+import jwt from 'jsonwebtoken';
 import {
     buildEntraAuthorizeUrl,
     decodeAndValidateEntraIdToken,
@@ -132,30 +134,137 @@ describe('entra-auth utilities', () => {
         }
     });
 
-    it('decodes id token and validates nonce', () => {
-        const claims = { sub: '123', nonce: 'nonce-1' };
-        const idToken = [
-            Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url'),
-            Buffer.from(JSON.stringify(claims)).toString('base64url'),
-            ''
-        ].join('.');
+    it('verifies id token signature and validates nonce', async () => {
+        const originalGet = got.get;
 
-        const decoded = decodeAndValidateEntraIdToken(idToken, 'nonce-1');
-        assert.equal(decoded.sub, '123');
+        try {
+            const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+            const kid = 'test-kid';
+            const issuer = 'https://login.microsoftonline.com/tenant-id/v2.0';
+            const jwk = { ...publicKey.export({ format: 'jwk' }), kid, use: 'sig' };
+
+            got.get = (url) => {
+                assert.equal(
+                    url,
+                    'https://login.microsoftonline.com/tenant-id/v2.0/discovery/v2.0/keys'
+                );
+                return {
+                    json: async () => ({ keys: [jwk] })
+                };
+            };
+
+            const idToken = jwt.sign(
+                {
+                    sub: '123',
+                    nonce: 'nonce-1',
+                    tid: 'tenant-id',
+                    preferred_username: 'user@example.com'
+                },
+                privateKey,
+                {
+                    algorithm: 'RS256',
+                    keyid: kid,
+                    issuer,
+                    audience: 'client-id',
+                    expiresIn: '5m'
+                }
+            );
+
+            const claims = await decodeAndValidateEntraIdToken(idToken, 'nonce-1');
+            assert.equal(claims.sub, '123');
+        } finally {
+            got.get = originalGet;
+        }
     });
 
-    it('throws when id token nonce does not match', () => {
-        const claims = { sub: '123', nonce: 'nonce-2' };
-        const idToken = [
-            Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url'),
-            Buffer.from(JSON.stringify(claims)).toString('base64url'),
-            ''
-        ].join('.');
+    it('throws when id token nonce does not match', async () => {
+        const originalGet = got.get;
 
-        assert.throws(
-            () => decodeAndValidateEntraIdToken(idToken, 'nonce-1'),
-            /Invalid Entra nonce claim/
-        );
+        try {
+            const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+            const kid = 'test-kid';
+            const issuer = 'https://login.microsoftonline.com/tenant-id/v2.0';
+            const jwk = { ...publicKey.export({ format: 'jwk' }), kid, use: 'sig' };
+
+            got.get = () => ({
+                json: async () => ({ keys: [jwk] })
+            });
+
+            const idToken = jwt.sign({ sub: '123', nonce: 'nonce-2' }, privateKey, {
+                algorithm: 'RS256',
+                keyid: kid,
+                issuer,
+                audience: 'client-id',
+                expiresIn: '5m'
+            });
+
+            await assert.rejects(
+                () => decodeAndValidateEntraIdToken(idToken, 'nonce-1'),
+                /Invalid Entra nonce claim/
+            );
+        } finally {
+            got.get = originalGet;
+        }
+    });
+
+    it('throws when expected nonce is missing', async () => {
+        const originalGet = got.get;
+
+        try {
+            const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+            const kid = 'test-kid';
+            const issuer = 'https://login.microsoftonline.com/tenant-id/v2.0';
+            const jwk = { ...publicKey.export({ format: 'jwk' }), kid, use: 'sig' };
+
+            got.get = () => ({
+                json: async () => ({ keys: [jwk] })
+            });
+
+            const idToken = jwt.sign({ sub: '123', nonce: 'nonce-1' }, privateKey, {
+                algorithm: 'RS256',
+                keyid: kid,
+                issuer,
+                audience: 'client-id',
+                expiresIn: '5m'
+            });
+
+            await assert.rejects(
+                () => decodeAndValidateEntraIdToken(idToken, ''),
+                /Missing expected Entra nonce/
+            );
+        } finally {
+            got.get = originalGet;
+        }
+    });
+
+    it('throws when id token nonce claim is missing', async () => {
+        const originalGet = got.get;
+
+        try {
+            const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+            const kid = 'test-kid';
+            const issuer = 'https://login.microsoftonline.com/tenant-id/v2.0';
+            const jwk = { ...publicKey.export({ format: 'jwk' }), kid, use: 'sig' };
+
+            got.get = () => ({
+                json: async () => ({ keys: [jwk] })
+            });
+
+            const idToken = jwt.sign({ sub: '123' }, privateKey, {
+                algorithm: 'RS256',
+                keyid: kid,
+                issuer,
+                audience: 'client-id',
+                expiresIn: '5m'
+            });
+
+            await assert.rejects(
+                () => decodeAndValidateEntraIdToken(idToken, 'nonce-1'),
+                /Missing Entra nonce claim/
+            );
+        } finally {
+            got.get = originalGet;
+        }
     });
 
     it('extracts preferred username with fallback order', () => {
