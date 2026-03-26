@@ -9,7 +9,7 @@ export default function safeErrorForLog(err) {
         name: err?.name,
         message: err?.message,
         code: err?.code,
-        statusCode: err?.response?.statusCode
+        statusCode: err?.statusCode ?? err?.response?.statusCode
     };
 
     if (process.env.NODE_ENV !== 'production' && typeof err?.stack === 'string') {
