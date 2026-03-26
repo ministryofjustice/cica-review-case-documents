@@ -59,11 +59,11 @@ spec:
                 secretKeyRef:
                   name: cica-case-review-documents-secrets
                   key: entra_client_id
-            - name: ENTRA_CLIENT_SECRET_ID
+            - name: ENTRA_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: cica-case-review-documents-secrets
-                  key: entra_client_secret_id
+                  key: entra_client_secret
             - name: ENTRA_TENANT_ID
               valueFrom:
                 secretKeyRef:

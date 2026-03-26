@@ -35,7 +35,7 @@ function resetEnv() {
  */
 function setRequiredEntraEnv() {
     process.env.ENTRA_CLIENT_ID = 'client-id';
-    process.env.ENTRA_CLIENT_SECRET_ID = 'client-secret';
+    process.env.ENTRA_CLIENT_SECRET = 'client-secret';
     process.env.ENTRA_TENANT_ID = 'tenant-id';
 }
 
@@ -70,7 +70,7 @@ describe('ensureEnvVarsAreValid', () => {
                 'APP_DATABASE_URL',
                 'OPENSEARCH_INDEX_CHUNKS_NAME',
                 'ENTRA_CLIENT_ID',
-                'ENTRA_CLIENT_SECRET_ID',
+                'ENTRA_CLIENT_SECRET',
                 'ENTRA_TENANT_ID'
             ]);
         });
@@ -179,6 +179,23 @@ describe('ensureEnvVarsAreValid', () => {
                     assert.match(
                         err.message,
                         /Environment variable "APP_COOKIE_NAME" must be set and non-empty/
+                    );
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError if ENTRA_CLIENT_SECRET is an empty string', async () => {
+            const { checkEnvVars } = await import('./index.js');
+            process.env.ENTRA_CLIENT_SECRET = '';
+
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(
+                        err.message,
+                        /Environment variable "ENTRA_CLIENT_SECRET" must be set and non-empty/
                     );
                     return true;
                 }

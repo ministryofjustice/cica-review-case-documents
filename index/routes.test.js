@@ -33,7 +33,7 @@ describe('Index routes', () => {
 
     before(async () => {
         process.env.ENTRA_CLIENT_ID = process.env.ENTRA_CLIENT_ID || 'client-id';
-        process.env.ENTRA_CLIENT_SECRET_ID = process.env.ENTRA_CLIENT_SECRET_ID || 'client-secret';
+        process.env.ENTRA_CLIENT_SECRET = process.env.ENTRA_CLIENT_SECRET || 'client-secret';
         process.env.ENTRA_TENANT_ID = process.env.ENTRA_TENANT_ID || 'tenant-id';
         app = await createApp();
     });

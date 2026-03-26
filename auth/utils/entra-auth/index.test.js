@@ -29,7 +29,7 @@ describe('entra-auth utilities', () => {
         resetEnv();
         __clearEntraJwksCache();
         process.env.ENTRA_CLIENT_ID = 'client-id';
-        process.env.ENTRA_CLIENT_SECRET_ID = 'client-secret';
+        process.env.ENTRA_CLIENT_SECRET = 'client-secret';
         process.env.ENTRA_TENANT_ID = 'tenant-id';
     });
 
@@ -49,7 +49,7 @@ describe('entra-auth utilities', () => {
     it('reports configured only when all required values are present', () => {
         assert.equal(isEntraConfigured(), true);
 
-        delete process.env.ENTRA_CLIENT_SECRET_ID;
+        delete process.env.ENTRA_CLIENT_SECRET;
         assert.equal(isEntraConfigured(), false);
     });
 

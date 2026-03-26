@@ -134,7 +134,7 @@ This application uses a strict allowlist and pattern-based approach to control w
 ### Login and authentication
 
 The UI supports Microsoft Entra ID sign-in via authorization code flow.
-When `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET_ID`, and `ENTRA_TENANT_ID` are set, `/auth/login` redirects to Entra and `/auth/callback` completes sign-in.
+When `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET`, and `ENTRA_TENANT_ID` are set, `/auth/login` redirects to Entra and `/auth/callback` completes sign-in.
 
 By default, login starts with silent SSO (`prompt=none`) and automatically falls back to interactive login when Entra returns `login_required`, `interaction_required`, or `consent_required`.
 

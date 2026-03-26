@@ -15,9 +15,7 @@ const entraJwksCacheByTenant = new Map();
 export function getEntraConfig() {
     return {
         clientId: process.env.ENTRA_CLIENT_ID,
-        // Infra currently maps the client secret value via ENTRA_CLIENT_SECRET_ID.
-        // Keep ENTRA_CLIENT_SECRET as a compatible fallback for local/dev and future renaming.
-        clientSecret: process.env.ENTRA_CLIENT_SECRET_ID || process.env.ENTRA_CLIENT_SECRET,
+        clientSecret: process.env.ENTRA_CLIENT_SECRET,
         tenantId: process.env.ENTRA_TENANT_ID,
         scope: process.env.ENTRA_SCOPE || DEFAULT_ENTRA_SCOPE
     };
