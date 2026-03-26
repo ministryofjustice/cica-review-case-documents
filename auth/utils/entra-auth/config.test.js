@@ -38,6 +38,14 @@ describe('entra-auth config utilities', () => {
         assert.equal(config.scope, 'openid profile email');
     });
 
+    it('uses custom scope from environment when provided', () => {
+        process.env.ENTRA_SCOPE = 'openid profile api://example/read';
+
+        const config = getEntraConfig();
+
+        assert.equal(config.scope, 'openid profile api://example/read');
+    });
+
     it('reports configured only when all required values are present', () => {
         assert.equal(isEntraConfigured(), true);
 
