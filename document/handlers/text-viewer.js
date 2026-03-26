@@ -2,6 +2,7 @@ import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
 import { formatPageTitle } from '../utils/formatters/index.js';
+import { buildTextHighlightSegments } from '../utils/highlight/index.js';
 import { buildImagePageLink } from '../utils/link-builders/index.js';
 import { fetchPageMetadata } from '../utils/metadata/index.js';
 import { paginationDataFromMetadata } from '../utils/pagination/index.js';
@@ -11,11 +12,13 @@ import { paginationDataFromMetadata } from '../utils/pagination/index.js';
  * Renders a text viewer page displaying OCR text content from document page metadata
  *
  * @param {Function} createMetadataServiceFactory -  Factory that returns a metadata service, that throws an error on invalid or malformed data.
+ * @param {Function} createPageChunksServiceFactory - Factory that returns a page chunks service used for text highlights.
  * @param {Function} [createTemplateEngineServiceFactory=createTemplateEngineService] - Factory that returns a template engine service with a render method
  * @returns {Function} Express route handler
  */
 export function createTextViewerHandler(
     createMetadataServiceFactory,
+    createPageChunksServiceFactory,
     createTemplateEngineServiceFactory = createTemplateEngineService
 ) {
     return async (req, res, next) => {
@@ -62,6 +65,37 @@ export function createTextViewerHandler(
 
             const pageText = text || 'No text content available for this page.'; // TODO: confirm with content team whether this is the desired fallback text when no OCR text is available
 
+            const safeSearchTerm = typeof searchTerm === 'string' ? searchTerm.trim() : '';
+            let pageChunks = [];
+
+            if (safeSearchTerm !== '') {
+                try {
+                    const pageChunksServiceInstance = createPageChunksServiceFactory({
+                        documentId,
+                        pageNumber,
+                        crn,
+                        searchTerm: safeSearchTerm,
+                        jwtToken: apiJwtToken,
+                        logger: req.log
+                    });
+
+                    pageChunks = await pageChunksServiceInstance.getPageChunks();
+                } catch (error) {
+                    req.log?.error(
+                        {
+                            error: error.message,
+                            documentId,
+                            pageNumber,
+                            searchTerm: safeSearchTerm
+                        },
+                        'Failed to retrieve document page chunks for text highlights'
+                    );
+                    return next(error);
+                }
+            }
+
+            const pageTextSegments = buildTextHighlightSegments(pageText, pageChunks);
+
             const html = render('document/page/textview.njk', {
                 documentId,
                 pageNumber,
@@ -73,6 +107,7 @@ export function createTextViewerHandler(
                 imagePageLink,
                 pageTitle,
                 pageText,
+                pageTextSegments,
                 showPagination: paginationData?.results?.count > 1,
                 paginationData
             });
