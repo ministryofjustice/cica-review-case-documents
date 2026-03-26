@@ -81,7 +81,7 @@ These commands read values from the file in the project root to create the secre
         --from-literal=app_api_jwt_issuer=$(grep -E '^APP_API_JWT_ISSUER=' .env | cut -d '=' -f2) \
         --from-literal=app_api_jwt_audience=$(grep -E '^APP_API_JWT_AUDIENCE=' .env | cut -d '=' -f2) \
         --from-literal=entra_client_id=$(grep -E '^ENTRA_CLIENT_ID=' .env | cut -d '=' -f2) \
-        --from-literal=entra_client_secret_id=$(grep -E '^ENTRA_CLIENT_SECRET_ID=' .env | cut -d '=' -f2) \
+        --from-literal=entra_client_secret=$(grep -E '^ENTRA_CLIENT_SECRET=' .env | cut -d '=' -f2) \
         --from-literal=entra_tenant_id=$(grep -E '^ENTRA_TENANT_ID=' .env | cut -d '=' -f2)
     ```
 
@@ -93,7 +93,7 @@ These commands read values from the file in the project root to create the secre
         --from-literal=app_api_jwt_issuer="%APP_API_JWT_ISSUER%" ^
         --from-literal=app_api_jwt_audience="%APP_API_JWT_AUDIENCE%" ^
         --from-literal=entra_client_id="%ENTRA_CLIENT_ID%" ^
-        --from-literal=entra_client_secret_id="%ENTRA_CLIENT_SECRET_ID%" ^
+        --from-literal=entra_client_secret="%ENTRA_CLIENT_SECRET%" ^
         --from-literal=entra_tenant_id="%ENTRA_TENANT_ID%"
     ```
 
