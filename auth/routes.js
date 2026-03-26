@@ -79,6 +79,27 @@ function getEntraErrorCode(description) {
 }
 
 /**
+ * Validates that a query parameter is a single non-empty string.
+ *
+ * Express query parsing may produce arrays for repeated parameters; those are
+ * rejected to avoid parameter pollution edge cases.
+ *
+ * @param {unknown} value - Query parameter value from Express.
+ * @returns {string | undefined} The original string value when valid.
+ */
+function getSingleNonEmptyQueryParam(value) {
+    if (typeof value !== 'string') {
+        return undefined;
+    }
+
+    if (value.trim().length === 0) {
+        return undefined;
+    }
+
+    return value;
+}
+
+/**
  * Creates an auth login handler that starts the Entra authorization flow.
  *
  * @returns {import('express').RequestHandler} Express handler for `/auth/login`.
@@ -148,7 +169,8 @@ router.get('/callback', entraCallbackRateLimiter, async (req, res, next) => {
             return res.status(401).send('Authentication failed');
         }
 
-        const { code, state } = req.query;
+        const code = getSingleNonEmptyQueryParam(req.query?.code);
+        const state = getSingleNonEmptyQueryParam(req.query?.state);
         const pendingAuth = req.session?.entraAuth;
         const hasNonce =
             typeof pendingAuth?.nonce === 'string' && pendingAuth.nonce.trim().length > 0;

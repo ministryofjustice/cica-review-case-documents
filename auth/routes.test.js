@@ -232,6 +232,88 @@ test('callback handler should reject stale auth transaction and clear pending st
     assert.strictEqual(req.session.entraAuth, undefined);
 });
 
+test('callback handler should reject callback when code is an array query parameter', async () => {
+    const callbackHandler = getRouteHandler('/callback');
+    const req = {
+        query: {
+            code: ['auth-code-a', 'auth-code-b'],
+            state: 'state-1'
+        },
+        session: {
+            entraAuth: {
+                state: 'state-1',
+                nonce: 'nonce-1',
+                createdAt: Date.now()
+            }
+        },
+        log: {
+            warn: () => {},
+            info: () => {},
+            error: () => {}
+        }
+    };
+
+    const responsePayload = {};
+    const res = {
+        status: (statusCode) => {
+            responsePayload.statusCode = statusCode;
+            return {
+                send: (body) => {
+                    responsePayload.body = body;
+                    return body;
+                }
+            };
+        }
+    };
+
+    await callbackHandler(req, res, () => {});
+
+    assert.strictEqual(responsePayload.statusCode, 401);
+    assert.strictEqual(responsePayload.body, 'Invalid authentication state');
+    assert.strictEqual(req.session.entraAuth, undefined);
+});
+
+test('callback handler should reject callback when state is an array query parameter', async () => {
+    const callbackHandler = getRouteHandler('/callback');
+    const req = {
+        query: {
+            code: 'auth-code',
+            state: ['state-1', 'state-2']
+        },
+        session: {
+            entraAuth: {
+                state: 'state-1',
+                nonce: 'nonce-1',
+                createdAt: Date.now()
+            }
+        },
+        log: {
+            warn: () => {},
+            info: () => {},
+            error: () => {}
+        }
+    };
+
+    const responsePayload = {};
+    const res = {
+        status: (statusCode) => {
+            responsePayload.statusCode = statusCode;
+            return {
+                send: (body) => {
+                    responsePayload.body = body;
+                    return body;
+                }
+            };
+        }
+    };
+
+    await callbackHandler(req, res, () => {});
+
+    assert.strictEqual(responsePayload.statusCode, 401);
+    assert.strictEqual(responsePayload.body, 'Invalid authentication state');
+    assert.strictEqual(req.session.entraAuth, undefined);
+});
+
 test('callback handler should regenerate session and preserve required values after sign-in', async () => {
     const callbackHandler = getRouteHandler('/callback');
     const originalGet = got.get;
