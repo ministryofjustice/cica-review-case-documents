@@ -7,14 +7,16 @@ import {
     entraCallbackRateLimiter,
     entraLoginRateLimiter
 } from './rateLimiters/entraRateLimiter.js';
+import { getUsernameFromEntraClaims } from './utils/entra-auth/claims.js';
 import {
     buildEntraAuthorizeUrl,
-    decodeAndValidateEntraIdToken,
-    exchangeEntraAuthorizationCode,
-    getUsernameFromEntraClaims,
     isEntraConfigured,
     isEntraInteractiveFallbackEnabled
-} from './utils/entra-auth/index.js';
+} from './utils/entra-auth/config.js';
+import {
+    decodeAndValidateEntraIdToken,
+    exchangeEntraAuthorizationCode
+} from './utils/entra-auth/token.js';
 
 const router = express.Router();
 const ENTRA_INTERACTION_ERRORS = new Set([
