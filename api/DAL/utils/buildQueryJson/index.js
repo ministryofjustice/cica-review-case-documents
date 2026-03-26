@@ -1,4 +1,6 @@
+import crypto from 'node:crypto';
 import extractDatesFromSearchString from '../extractDatesFromSearchString/index.js';
+import generateDateFormatVariants from '../generateDateFormatVariants/index.js';
 
 /**
  * Builds an OpenSearch  query JSON object based on the provided search parameters.
@@ -14,10 +16,12 @@ import extractDatesFromSearchString from '../extractDatesFromSearchString/index.
  * @param {string} params.caseReferenceNumber - Exact case reference number to filter results by.
  * @param {number} params.pageNumber - The current page number (1-based).
  * @param {number} params.itemsPerPage - Number of results to return per page.
+ * @param {Logger} [params.logger] - Optional structured logger instance.
  *
  * @returns {Object} OpenSearch query DSL JSON object.
  */
-function buildQueryJson({ keyword, caseReferenceNumber, pageNumber, itemsPerPage }) {
+function buildQueryJson({ keyword, caseReferenceNumber, pageNumber, itemsPerPage, logger }) {
+    const startBuild = Date.now();
     const queryJson = {
         from: itemsPerPage * (pageNumber - 1),
         size: itemsPerPage,
@@ -30,12 +34,36 @@ function buildQueryJson({ keyword, caseReferenceNumber, pageNumber, itemsPerPage
         }
     };
 
-    const { dates: phrases, remainingText } = extractDatesFromSearchString(keyword);
+    const extractStart = Date.now();
+    const {
+        dates: phrases,
+        remainingText,
+        matchedPatterns
+    } = extractDatesFromSearchString(keyword);
+    const extractEnd = Date.now();
+
     const shouldClauses = [];
 
+    const variantStart = Date.now();
+    // build variants for each extracted phrase, falling back to the
+    // original phrase if no variants are produced, and then
+    // deduplicate (via the new Set) across all phrases.
+    const phrasesVariants = Array.from(
+        new Set(
+            phrases.flatMap((phrase, index) => {
+                const variants = generateDateFormatVariants(phrase, matchedPatterns[index]);
+                if (!variants || variants.length === 0) {
+                    return [phrase];
+                }
+                return variants;
+            })
+        )
+    );
+    const variantEnd = Date.now();
+
     // add match_phrase queries for each extracted date phrase.
-    if (phrases.length !== 0) {
-        phrases.forEach((phrase) => {
+    if (phrasesVariants.length !== 0) {
+        phrasesVariants.forEach((phrase) => {
             shouldClauses.push({
                 match_phrase: {
                     chunk_text: phrase
@@ -59,6 +87,50 @@ function buildQueryJson({ keyword, caseReferenceNumber, pageNumber, itemsPerPage
     if (shouldClauses.length > 0) {
         queryJson.query.bool.should = shouldClauses;
         queryJson.query.bool.minimum_should_match = 1;
+    }
+
+    // metrics.
+    const buildEnd = Date.now();
+    const phraseCount = phrases.length;
+    const variantCount = phrasesVariants.length;
+    const shouldClauseCount = shouldClauses.length;
+    const payloadSize = JSON.stringify(queryJson).length;
+    const extractMs = extractEnd - extractStart;
+    const variantMs = variantEnd - variantStart;
+    const buildMs = buildEnd - startBuild;
+
+    // thresholds.
+    const VARIANT_THRESHOLD = 50;
+    const SHOULD_THRESHOLD = 50;
+
+    // safe query hash for correlation, not raw text.
+    const queryHash = crypto.createHash('sha256').update(keyword).digest('hex').slice(0, 8);
+    if (logger) {
+        logger.info(
+            {
+                caseReferenceNumber,
+                queryHash,
+                phraseCount,
+                variantCount,
+                shouldClauseCount,
+                payloadSize,
+                extractMs,
+                variantMs,
+                buildMs
+            },
+            '[QueryBuilder] Query metrics'
+        );
+        if (variantCount > VARIANT_THRESHOLD || shouldClauseCount > SHOULD_THRESHOLD) {
+            logger.warn(
+                {
+                    caseReferenceNumber,
+                    queryHash,
+                    variantCount,
+                    shouldClauseCount
+                },
+                '[QueryBuilder] Variant/clause count exceeds safe threshold'
+            );
+        }
     }
 
     return queryJson;
