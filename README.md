@@ -150,6 +150,29 @@ Local username/password authentication has been removed. Sign-in is Entra-only.
 For APP -> API communication, JWT tokens are short-lived and validated against explicit issuer/audience claims.
 Ensure `APP_API_JWT_ISSUER` and `APP_API_JWT_AUDIENCE` are configured in your environment.
 
+#### Getting Entra settings from AWS Secrets Manager
+
+For DEV and UAT, Entra credentials are stored in AWS Secrets Manager.
+
+
+See [Acccessing the cloud platform](https://user-guide.cloud-platform.service.justice.gov.uk/documentation/getting-started/accessing-the-cloud-console.html)
+
+
+Secret naming patterns:
+- `live-cica-review-case-documents-dev-<hash>`
+- `live-cica-review-case-documents-uat-<hash>`
+
+Retrieve the secret JSON for your environment and map values into your local `.env`:
+- `ENTRA_CLIENT_ID`
+- `ENTRA_CLIENT_SECRET`
+- `ENTRA_TENANT_ID`
+- `ENTRA_SCOPE` (if present)
+
+Security guidance:
+- Never commit secret values to git.
+- Never paste secret values into pull requests, tickets, or chat.
+- If exposure is suspected, rotate the secret via standard platform processes.
+
 
 ### Case Reference Number Selection
 
