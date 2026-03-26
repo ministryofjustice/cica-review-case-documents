@@ -18,7 +18,7 @@ test('Entra rate limiter applies outside production', async () => {
     try {
         const { entraLoginRateLimiter } = await import(`./entraRateLimiter.js?t=${Date.now()}`);
         const app = express();
-        app.set('trust proxy', true);
+        app.set('trust proxy', 1);
         app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
         app.use(entraLoginRateLimiter);
         app.get('/auth/login', (req, res) => res.status(200).send('ok'));
@@ -55,7 +55,7 @@ test('Entra login limiter applies in production and returns 429 when exceeded', 
     try {
         const { entraLoginRateLimiter } = await import(`./entraRateLimiter.js?t=${Date.now()}`);
         const app = express();
-        app.set('trust proxy', true);
+        app.set('trust proxy', 1);
         app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
         app.use(entraLoginRateLimiter);
         app.get('/auth/login', (req, res) => res.status(200).send('ok'));
@@ -93,7 +93,7 @@ test('Entra callback limiter uses independent callback threshold', async () => {
     try {
         const { entraCallbackRateLimiter } = await import(`./entraRateLimiter.js?t=${Date.now()}`);
         const app = express();
-        app.set('trust proxy', true);
+        app.set('trust proxy', 1);
         app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
         app.use(entraCallbackRateLimiter);
         app.get('/auth/callback', (req, res) => res.status(200).send('ok'));
@@ -146,7 +146,7 @@ test('Entra rate limiter falls back to default config when env vars are unset', 
             `./entraRateLimiter.js?t=${Date.now()}`
         );
         const app = express();
-        app.set('trust proxy', true);
+        app.set('trust proxy', 1);
         app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
 
         app.get('/auth/login', entraLoginRateLimiter, (req, res) => res.status(200).send('ok'));
