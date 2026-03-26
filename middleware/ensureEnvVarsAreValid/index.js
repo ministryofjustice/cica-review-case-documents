@@ -189,12 +189,6 @@ function checkMandatoryEnvVars(mandatoryEnvVars = getMandatoryEnvVars()) {
 }
 
 /**
- * Checks that at least one environment variable in a group is set and non-empty.
- *
- * @param {string[]} envVarNames - Candidate environment variable names.
- * @throws {VError} Throws if envVarNames is not a non-empty array or none of the variables are valid strings.
- */
-/**
  * Checks the presence of optional environment variables and logs a debug message for each variable that is not set.
  *
  * @param {string[]} [optionalEnvVars=getOptionalEnvVars()] - An array of optional environment variable names to check. Defaults to the result of getOptionalEnvVars().
