@@ -232,6 +232,108 @@ test('callback handler should reject stale auth transaction and clear pending st
     assert.strictEqual(req.session.entraAuth, undefined);
 });
 
+test('callback handler should regenerate session and preserve required values after sign-in', async () => {
+    const callbackHandler = getRouteHandler('/callback');
+    const originalGet = got.get;
+    const originalPost = got.post;
+
+    try {
+        const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+        const kid = 'test-kid-session-regeneration';
+        const issuer = 'https://login.microsoftonline.com/test-entra-tenant-id/v2.0';
+        const jwk = { ...publicKey.export({ format: 'jwk' }), kid, use: 'sig', kty: 'RSA' };
+
+        const nonce = 'nonce-session-regen';
+        const idToken = jwt.sign(
+            {
+                sub: 'entra-user-regen',
+                nonce,
+                tid: 'tenant-1',
+                oid: 'oid-session-regen',
+                name: 'Session Regen User',
+                preferred_username: 'session.regen@example.com'
+            },
+            privateKey,
+            {
+                algorithm: 'RS256',
+                keyid: kid,
+                issuer,
+                audience: 'test-entra-client-id',
+                expiresIn: '5m'
+            }
+        );
+
+        got.get = () => ({
+            json: async () => ({ keys: [jwk] })
+        });
+        got.post = () => ({
+            json: async () => ({ id_token: idToken })
+        });
+
+        let regenerateCalls = 0;
+        const req = {
+            query: {
+                code: 'auth-code',
+                state: 'state-session-regen'
+            },
+            protocol: 'https',
+            get: () => 'example.test',
+            session: {
+                entraAuth: {
+                    state: 'state-session-regen',
+                    nonce,
+                    createdAt: Date.now()
+                },
+                returnTo: '/search?query=abc',
+                caseSelected: true,
+                caseReferenceNumber: '12-123456',
+                regenerate: (callback) => {
+                    regenerateCalls += 1;
+                    req.session = {
+                        regenerate: req.session.regenerate
+                    };
+                    callback();
+                }
+            },
+            log: {
+                warn: () => {},
+                info: () => {},
+                error: () => {}
+            }
+        };
+
+        let redirectedTo;
+        const res = {
+            redirect: (location) => {
+                redirectedTo = location;
+                return location;
+            }
+        };
+
+        let nextError;
+        await callbackHandler(req, res, (err) => {
+            nextError = err;
+        });
+
+        assert.strictEqual(nextError, undefined);
+        assert.strictEqual(regenerateCalls, 1);
+        assert.strictEqual(redirectedTo, '/search?query=abc');
+        assert.strictEqual(req.session.loggedIn, true);
+        assert.strictEqual(req.session.username, 'session.regen@example.com');
+        assert.deepStrictEqual(req.session.entraUser, {
+            oid: 'oid-session-regen',
+            tid: 'tenant-1',
+            name: 'Session Regen User'
+        });
+        assert.strictEqual(req.session.returnTo, undefined);
+        assert.strictEqual(req.session.caseSelected, true);
+        assert.strictEqual(req.session.caseReferenceNumber, '12-123456');
+    } finally {
+        got.get = originalGet;
+        got.post = originalPost;
+    }
+});
+
 test('GET /auth/callback should complete sign-in when state and token are valid', async () => {
     const originalGet = got.get;
     const originalPost = got.post;

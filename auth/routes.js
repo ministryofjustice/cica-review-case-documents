@@ -26,6 +26,46 @@ const ENTRA_INTERACTION_ERRORS = new Set([
 ]);
 const ENTRA_AUTH_TRANSACTION_MAX_AGE_MS =
     Number(process.env.ENTRA_AUTH_TRANSACTION_MAX_AGE_MS) || 10 * 60 * 1000;
+const SESSION_KEYS_TO_PRESERVE_ON_AUTH_REGENERATION = [
+    'returnTo',
+    'caseSelected',
+    'caseReferenceNumber'
+];
+
+/**
+ * Regenerates the current Express session to mitigate session fixation.
+ *
+ * @param {import('express').Request} req - Express request carrying the active session.
+ * @returns {Promise<void>}
+ */
+function regenerateSession(req) {
+    return new Promise((resolve, reject) => {
+        req.session.regenerate((err) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            resolve();
+        });
+    });
+}
+
+/**
+ * Copies a fixed set of session values to preserve across session regeneration.
+ *
+ * @param {import('express-session').Session & Partial<import('express-session').SessionData>} session - Existing session.
+ * @returns {Partial<import('express-session').SessionData>} Session values to restore.
+ */
+function getSessionValuesToPreserve(session) {
+    return SESSION_KEYS_TO_PRESERVE_ON_AUTH_REGENERATION.reduce((acc, key) => {
+        if (session?.[key] !== undefined) {
+            acc[key] = session[key];
+        }
+
+        return acc;
+    }, {});
+}
 
 /**
  * Extracts an AADSTS error code from an Entra error description string.
@@ -142,6 +182,10 @@ router.get('/callback', entraCallbackRateLimiter, async (req, res, next) => {
             tokenResponse.id_token,
             pendingAuth.nonce
         );
+
+        const preservedSessionValues = getSessionValuesToPreserve(req.session);
+        await regenerateSession(req);
+        Object.assign(req.session, preservedSessionValues);
 
         req.session.username = getUsernameFromEntraClaims(claims);
         req.session.loggedIn = true;
