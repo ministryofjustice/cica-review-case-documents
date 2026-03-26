@@ -11,10 +11,13 @@
 
 {% block innerContent %}
 
-    {{ govukBackLink({
-        text: "Back",
-        href: "/search"
-    }) }}
+{{ govukBackLink({
+  text: "Back",
+  attributes: {
+    "data-module": "govuk-back-link"
+  },
+  href: "#"
+}) }}
 
     {% if errors %}
         {%

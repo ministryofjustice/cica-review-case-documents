@@ -133,7 +133,7 @@ describe('Document Routes', () => {
             );
 
             const res = await request(appWithPassingServices).get(
-                `/document/${docId}/view/page/1?crn=12-745678&searchTerm=test%20query&searchResultsPageNumber=2`
+                `/document/${docId}/view/page/1?crn=12-745678&searchTerm=test%20query`
             );
             assert.equal(res.statusCode, 200);
             // Ensure mock correspondence_type influences title rendering indirectly
@@ -189,7 +189,7 @@ describe('Document Routes', () => {
         it('renders text view with valid parameters', async () => {
             const docId = '123e4567-e89b-12d3-a456-426614174000';
             const res = await request(app).get(
-                `/document/${docId}/view/text/page/1?crn=12-745678&searchTerm=test&searchResultsPageNumber=2`
+                `/document/${docId}/view/text/page/1?crn=12-745678&searchTerm=test`
             );
 
             assert.equal(res.statusCode, 200);

@@ -209,8 +209,7 @@ describe('Page Viewer Handler', () => {
                     crn: 'CASE-2024-001'
                 },
                 query: {
-                    searchTerm: 'test',
-                    searchResultsPageNumber: '2'
+                    searchTerm: 'test'
                 },
                 session: { caseSelected: 'CASE-2024-001' },
                 log: { info: () => {}, error: () => {}, warn: () => {} }

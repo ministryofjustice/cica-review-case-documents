@@ -90,18 +90,16 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             const hits = searchResults?.hits || [];
             const totalItemCount = Number(searchResults?.total?.value || 0);
 
-            // Enrich each result with docUuid, searchResultsPageNumber, searchTerm, and caseReferenceNumber (crn)
+            // Enrich each result with docUuid, searchTerm, and caseReferenceNumber (crn)
             const searchResultsWithDocUuid = hits.map((hit) => ({
                 ...hit,
                 docUuid: hit._source?.source_doc_id || 0,
-                searchResultsPageNumber: pageNumber,
                 searchTerm: query,
                 caseReferenceNumber: req.session?.caseReferenceNumber
             }));
 
             templateParams.searchResults = searchResultsWithDocUuid;
             templateParams.searchTerm = query;
-            templateParams.searchResultsPageNumber = pageNumber;
 
             // TODO: move this logic into the view.
             templateParams.showPaginationItems = totalItemCount > itemsPerPage;

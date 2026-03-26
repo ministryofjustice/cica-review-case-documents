@@ -2,7 +2,7 @@ import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
 import { formatPageTitle } from '../utils/formatters/index.js';
-import { buildBackLink, buildImageUrl, buildTextPageLink } from '../utils/link-builders/index.js';
+import { buildImageUrl, buildTextPageLink } from '../utils/link-builders/index.js';
 import { fetchPageMetadata } from '../utils/metadata/index.js';
 import { determineHighlightAlignmentStrategy } from '../utils/overlap-strategy/index.js';
 import { paginationDataFromMetadata } from '../utils/pagination/index.js';
@@ -28,7 +28,7 @@ export function createPageViewerHandler(
 
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
-            const { searchResultsPageNumber = '', searchTerm = '', align = 'on' } = req.query;
+            const { searchTerm = '', align = 'on' } = req.query;
             const apiJwtToken = createApiJwtToken(req.session?.username);
 
             // Fetch document page metadata from API (which queries OpenSearch)
@@ -59,15 +59,7 @@ export function createPageViewerHandler(
             const imageUrl = buildImageUrl(documentId, pageNumber, crn);
 
             // Provide a link for sub-navigation to the text view page for this document page
-            const textPageLink = buildTextPageLink(
-                documentId,
-                pageNumber,
-                crn,
-                searchTerm,
-                searchResultsPageNumber
-            );
-
-            const backLink = buildBackLink(searchTerm, searchResultsPageNumber, crn);
+            const textPageLink = buildTextPageLink(documentId, pageNumber, crn, searchTerm);
 
             const pageTitle = formatPageTitle(pageMetadata.correspondence_type);
 
@@ -104,7 +96,6 @@ export function createPageViewerHandler(
                 csrfToken: res.locals.csrfToken,
                 cspNonce: res.locals.cspNonce,
                 textPageLink,
-                backLink,
                 pageTitle,
                 pageChunks: alignedPageHighlights,
                 showPagination: paginationData?.results?.count > 1,
