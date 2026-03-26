@@ -1,3 +1,4 @@
+import safeErrorForLog from '../middleware/logger/utils/safeErrorForLog/index.js';
 import createTemplateEngineService from '../templateEngine/index.js';
 
 /**
@@ -13,7 +14,7 @@ export function signOutUser(req, res, next) {
 
     req.session.destroy((err) => {
         if (err) {
-            req.log?.error({ err }, 'Session destruction failed');
+            req.log?.error(safeErrorForLog(err), 'Session destruction failed');
             return next(err);
         }
 

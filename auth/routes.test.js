@@ -355,6 +355,71 @@ test('GET /auth/callback should pass token exchange errors to error handler', as
     }
 });
 
+test('callback handler should log a sanitized error when token exchange fails', async () => {
+    const callbackHandler = getRouteHandler('/callback');
+    const originalPost = got.post;
+    const tokenExchangeError = Object.assign(new Error('entra-token-exchange-failed'), {
+        name: 'HTTPError',
+        code: 'ERR_NON_2XX_3XX_RESPONSE',
+        options: {
+            json: {
+                client_secret: 'super-secret',
+                code: 'auth-code'
+            }
+        },
+        response: {
+            statusCode: 401,
+            body: 'sensitive-response'
+        }
+    });
+
+    const loggedErrors = [];
+    const req = {
+        query: {
+            code: 'auth-code',
+            state: 'state-1'
+        },
+        session: {
+            entraAuth: {
+                state: 'state-1',
+                nonce: 'nonce-1',
+                createdAt: Date.now()
+            }
+        },
+        log: {
+            warn: () => {},
+            info: () => {},
+            error: (payload, message) => {
+                loggedErrors.push({ payload, message });
+            }
+        }
+    };
+
+    try {
+        got.post = () => {
+            throw tokenExchangeError;
+        };
+
+        let capturedError;
+        await callbackHandler(req, {}, (err) => {
+            capturedError = err;
+        });
+
+        assert.strictEqual(capturedError, tokenExchangeError);
+        assert.strictEqual(loggedErrors.length, 1);
+        assert.deepStrictEqual(loggedErrors[0].payload.name, 'HTTPError');
+        assert.deepStrictEqual(loggedErrors[0].payload.message, 'entra-token-exchange-failed');
+        assert.deepStrictEqual(loggedErrors[0].payload.code, 'ERR_NON_2XX_3XX_RESPONSE');
+        assert.deepStrictEqual(loggedErrors[0].payload.statusCode, 401);
+        assert.strictEqual(loggedErrors[0].message, 'Entra callback handling failed');
+        assert.equal(typeof loggedErrors[0].payload.stack, 'string');
+        assert.equal('options' in loggedErrors[0].payload, false);
+        assert.equal('response' in loggedErrors[0].payload, false);
+    } finally {
+        got.post = originalPost;
+    }
+});
+
 test('GET /auth/login?interactive=1 should skip prompt=none when fallback is enabled', async () => {
     process.env.ENTRA_INTERACTIVE_FALLBACK = 'true';
 
@@ -385,7 +450,20 @@ test('sign-out route should call next when signOutUser throws', () => {
 
 test('sign-out route should call next when session.destroy fails', () => {
     const signOutHandler = getRouteHandler('/sign-out');
-    const destroyError = new Error('Store connection failed');
+    const destroyError = Object.assign(new Error('Store connection failed'), {
+        name: 'StoreError',
+        code: 'STORE_DOWN',
+        response: {
+            statusCode: 503,
+            body: 'sensitive-store-response'
+        },
+        options: {
+            json: {
+                token: 'sensitive-token'
+            }
+        }
+    });
+    const loggedErrors = [];
     const req = {
         session: {
             caseReferenceNumber: 'ABC123',
@@ -394,7 +472,9 @@ test('sign-out route should call next when session.destroy fails', () => {
             }
         },
         log: {
-            error: () => {}
+            error: (payload, message) => {
+                loggedErrors.push({ payload, message });
+            }
         }
     };
 
@@ -404,4 +484,13 @@ test('sign-out route should call next when session.destroy fails', () => {
     });
 
     assert.strictEqual(capturedError, destroyError);
+    assert.strictEqual(loggedErrors.length, 1);
+    assert.deepStrictEqual(loggedErrors[0].payload.name, 'StoreError');
+    assert.deepStrictEqual(loggedErrors[0].payload.message, 'Store connection failed');
+    assert.deepStrictEqual(loggedErrors[0].payload.code, 'STORE_DOWN');
+    assert.deepStrictEqual(loggedErrors[0].payload.statusCode, 503);
+    assert.strictEqual(loggedErrors[0].message, 'Session destruction failed');
+    assert.equal(typeof loggedErrors[0].payload.stack, 'string');
+    assert.equal('options' in loggedErrors[0].payload, false);
+    assert.equal('response' in loggedErrors[0].payload, false);
 });
