@@ -118,7 +118,7 @@ test('Entra callback limiter uses independent callback threshold', async () => {
     }
 });
 
-test('generateEntraRateLimitKey uses express-rate-limit ipKeyGenerator with request object', () => {
+test('generateEntraRateLimitKey uses express-rate-limit ipKeyGenerator with req.ip string', () => {
     const req = {
         ip: '127.0.0.1',
         ips: [],
