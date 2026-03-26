@@ -152,10 +152,9 @@ Ensure `APP_API_JWT_ISSUER` and `APP_API_JWT_AUDIENCE` are configured in your en
 
 #### Getting Entra settings from AWS Secrets Manager
 
-For DEV and UAT, Entra credentials are stored in AWS Secrets Manager.
+For DEV and UAT, Entra credentials are stored in AWS Secrets Mana
 
-
-See [Acccessing the cloud platform](https://user-guide.cloud-platform.service.justice.gov.uk/documentation/getting-started/accessing-the-cloud-console.html)
+See [Accessing the cloud platform](https://user-guide.cloud-platform.service.justice.gov.uk/documentation/getting-started/accessing-the-cloud-console.html)
 
 
 Secret naming patterns:
