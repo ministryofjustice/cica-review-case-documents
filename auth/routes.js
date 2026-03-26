@@ -1,6 +1,7 @@
 import express from 'express';
 import { nanoid } from 'nanoid';
 
+import safeErrorForLog from '../middleware/logger/utils/safeErrorForLog/index.js';
 import { signOutUser } from './auth-service.js';
 import {
     entraCallbackRateLimiter,
@@ -163,7 +164,7 @@ router.get('/callback', entraCallbackRateLimiter, async (req, res, next) => {
         delete req.session.returnTo;
         return res.redirect(redirectUrl);
     } catch (err) {
-        req.log?.error({ err }, 'Entra callback handling failed');
+        req.log?.error(safeErrorForLog(err), 'Entra callback handling failed');
         return next(err);
     }
 });
