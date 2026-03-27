@@ -1,10 +1,9 @@
-import safeErrorForLog from '../middleware/logger/utils/safeErrorForLog/index.js';
-import createTemplateEngineService from '../templateEngine/index.js';
+import safeErrorForLog from '../../middleware/logger/utils/safeErrorForLog/index.js';
+import createTemplateEngineService from '../../templateEngine/index.js';
 
 /**
  * Signs out the current user by destroying their session and rendering the sign-out page.
  *
- * @export
  * @param {import('express').Request} req Express request object.
  * @param {import('express').Response} res Express response object.
  * @param {import('express').NextFunction} next Express next middleware function.
