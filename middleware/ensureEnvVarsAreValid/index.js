@@ -15,6 +15,7 @@ const defaults = {
             'APP_COOKIE_NAME',
             'APP_COOKIE_SECRET',
             'APP_API_URL',
+            'APP_BASE_URL',
             'APP_JWT_SECRET',
             'APP_API_JWT_ISSUER',
             'APP_API_JWT_AUDIENCE',
@@ -192,13 +193,50 @@ function checkMandatoryEnvVars(mandatoryEnvVars = getMandatoryEnvVars()) {
 /**
  * Validates APP_BASE_URL for trusted Entra redirect URI generation.
  *
- * @throws {VError} Throws ConfigurationError when APP_BASE_URL is required but missing.
+ * Requires an absolute URL. In production the URL must use https. In non-production,
+ * https is allowed everywhere and http is only allowed for localhost.
+ *
+ * @throws {VError} Throws ConfigurationError when APP_BASE_URL is missing or unsafe.
  */
 function checkAppBaseUrlForEntraRedirectUri() {
     const appBaseUrl = process.env.APP_BASE_URL;
     const hasNonEmptyAppBaseUrl = typeof appBaseUrl === 'string' && appBaseUrl.trim().length > 0;
 
     if (hasNonEmptyAppBaseUrl) {
+        let parsedUrl;
+
+        try {
+            parsedUrl = new URL(appBaseUrl);
+        } catch {
+            throw new VError(
+                {
+                    name: 'ConfigurationError'
+                },
+                'Environment variable "APP_BASE_URL" must be a valid absolute URL for Entra redirect URI'
+            );
+        }
+
+        const isHttps = parsedUrl.protocol === 'https:';
+        const isLocalHttp = parsedUrl.protocol === 'http:' && parsedUrl.hostname === 'localhost';
+
+        if (process.env.NODE_ENV === 'production' && !isHttps) {
+            throw new VError(
+                {
+                    name: 'ConfigurationError'
+                },
+                'Environment variable "APP_BASE_URL" must use https in production for Entra redirect URI'
+            );
+        }
+
+        if (!isHttps && !isLocalHttp) {
+            throw new VError(
+                {
+                    name: 'ConfigurationError'
+                },
+                'Environment variable "APP_BASE_URL" must use https or be http://localhost for Entra redirect URI'
+            );
+        }
+
         return;
     }
 
