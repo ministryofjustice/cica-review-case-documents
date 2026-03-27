@@ -144,6 +144,16 @@ This avoids relying on request host/protocol values when generating authenticati
 By default, login starts with silent SSO (`prompt=none`) and automatically falls back to interactive login when Entra returns `login_required`, `interaction_required`, or `consent_required`.
 
 Set `ENTRA_INTERACTIVE_FALLBACK=false` to disable interactive fallback and enforce silent-only sign-in.
+When unset, interactive fallback is enabled by default.
+To explicitly enable, set `ENTRA_INTERACTIVE_FALLBACK` to `true`, `1`, `yes`, or `on`.
+
+Auth callback transactions expire after 10 minutes by default.
+You can tune this with `ENTRA_AUTH_TRANSACTION_MAX_AGE_MS`.
+
+Entra login and callback endpoints use dedicated rate limits:
+- `APP_ENTRA_RATE_LIMIT_WINDOW_MS` (default `900000`)
+- `APP_ENTRA_RATE_LIMIT_MAX_LOGIN` (default `20`)
+- `APP_ENTRA_RATE_LIMIT_MAX_CALLBACK` (default `40`)
 
 Entra signing keys (JWKS) are cached in-memory per app instance to reduce callback/token validation latency.
 Cache TTL defaults to 60 seconds and can be tuned via `ENTRA_JWKS_CACHE_TTL_MS`.
@@ -154,6 +164,22 @@ Local username/password authentication has been removed. Sign-in is Entra-only.
 
 For APP -> API communication, JWT tokens are short-lived and validated against explicit issuer/audience claims.
 Ensure `APP_API_JWT_ISSUER` and `APP_API_JWT_AUDIENCE` are configured in your environment.
+
+Auth configuration references:
+- Canonical env variable definitions and defaults: [`.env.example`](./.env.example)
+- Runtime validation of required and optional settings: [`middleware/ensureEnvVarsAreValid/index.js`](./middleware/ensureEnvVarsAreValid/index.js)
+- Kubernetes deployment env wiring: [`deployments/templates/deployment.yml`](./deployments/templates/deployment.yml)
+
+#### Auth security controls
+
+The Entra authentication flow includes the following controls:
+- Redirect URI generation is based on trusted `APP_BASE_URL` (not request host headers)
+- OIDC `state` and `nonce` values are generated and validated per auth transaction
+- Session regeneration is performed after successful sign-in
+- Only a fixed allowlist of session keys is preserved after regeneration
+- Callback query parameters `code` and `state` are validated as single non-empty string values
+- Post-auth redirects use safe relative paths only
+- OAuth callback parameters are redacted in logs
 
 #### Getting Entra settings from AWS Secrets Manager
 

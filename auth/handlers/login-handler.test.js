@@ -5,10 +5,16 @@ import { createLoginHandler } from './login-handler.js';
 
 const originalEnv = { ...process.env };
 
+/**
+ * Restores process environment variables to the initial test snapshot.
+ */
 function resetEnv() {
     process.env = { ...originalEnv };
 }
 
+/**
+ * Sets the minimum Entra variables required for handler tests.
+ */
 function setRequiredEntraEnv() {
     process.env.ENTRA_CLIENT_ID = 'test-entra-client-id';
     process.env.ENTRA_CLIENT_SECRET = 'test-entra-client-secret';
@@ -16,6 +22,11 @@ function setRequiredEntraEnv() {
     process.env.APP_BASE_URL = 'https://example.test';
 }
 
+/**
+ * Creates a lightweight response stub that records status, body, and redirect.
+ *
+ * @returns {{ responsePayload: Record<string, unknown>, res: { status: (statusCode: number) => { send: (body: unknown) => unknown }, redirect: (location: string) => string } }}
+ */
 function createResponseRecorder() {
     const responsePayload = {};
 
