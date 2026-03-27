@@ -64,6 +64,7 @@ describe('ensureEnvVarsAreValid', () => {
                 'APP_COOKIE_NAME',
                 'APP_COOKIE_SECRET',
                 'APP_API_URL',
+                'APP_BASE_URL',
                 'APP_JWT_SECRET',
                 'APP_API_JWT_ISSUER',
                 'APP_API_JWT_AUDIENCE',
@@ -257,6 +258,24 @@ describe('ensureEnvVarsAreValid', () => {
             );
         });
 
+        it('Should accept http://localhost APP_BASE_URL in development', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.NODE_ENV = 'development';
+            process.env.APP_BASE_URL = 'http://localhost:5000';
+
+            assert.doesNotThrow(() => checkEnvVars({ logger: fakeLogger }));
+        });
+
+        it('Should accept https APP_BASE_URL in production', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.NODE_ENV = 'production';
+            process.env.APP_BASE_URL = 'https://example.test';
+
+            assert.doesNotThrow(() => checkEnvVars({ logger: fakeLogger }));
+        });
+
         it('Should throw ConfigurationError when APP_BASE_URL is missing in production', async () => {
             const { checkEnvVars } = await import('./index.js');
 
@@ -268,6 +287,54 @@ describe('ensureEnvVarsAreValid', () => {
                 (err) => {
                     assert.equal(err.name, 'ConfigurationError');
                     assert.match(err.message, /APP_BASE_URL/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError when APP_BASE_URL is not a valid absolute URL', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.NODE_ENV = 'development';
+            process.env.APP_BASE_URL = 'not-a-url';
+
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /valid absolute URL/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError when APP_BASE_URL uses http for non-localhost', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.NODE_ENV = 'development';
+            process.env.APP_BASE_URL = 'http://example.test';
+
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /must use https or be http:\/\/localhost/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError when APP_BASE_URL uses http in production', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.NODE_ENV = 'production';
+            process.env.APP_BASE_URL = 'http://localhost:5000';
+
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /must use https in production/);
                     return true;
                 }
             );
