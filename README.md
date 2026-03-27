@@ -136,6 +136,16 @@ This application uses a strict allowlist and pattern-based approach to control w
 The UI supports Microsoft Entra ID sign-in via authorization code flow.
 When `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET`, and `ENTRA_TENANT_ID` are set, `/auth/login` redirects to Entra and `/auth/callback` completes sign-in.
 
+`APP_BASE_URL` is used as the trusted base URL for Entra redirect URI generation.
+In production, `APP_BASE_URL` is always required.
+In non-production, host/protocol fallback can be enabled explicitly with `ENTRA_REDIRECT_URI_FALLBACK_ENABLED=true`.
+If `ENTRA_REDIRECT_URI_FALLBACK_ENABLED` is unset, it is treated as `false`.
+
+Cluster deployments set `ENTRA_REDIRECT_URI_FALLBACK_ENABLED=false` for all environments.
+At present, redirect fallback is intended for local runtime only, where it must be explicitly enabled.
+
+Further investigation will be undertaken with security stakeholders to confirm long-term best practice for enabling redirect fallback and any additional controls that may be required.
+
 By default, login starts with silent SSO (`prompt=none`) and automatically falls back to interactive login when Entra returns `login_required`, `interaction_required`, or `consent_required`.
 
 Set `ENTRA_INTERACTIVE_FALLBACK=false` to disable interactive fallback and enforce silent-only sign-in.

@@ -136,6 +136,11 @@ jobs:
           echo "Templating Kubernetes manifests for $DEPLOY_ENV"
           export HOST_NAME="cica-review-case-documents-$DEPLOY_ENV.apps.live.cloud-platform.service.justice.gov.uk"
           echo "HOST_NAME is $HOST_NAME"
+
+          # Cluster deployments always disable request host/protocol fallback.
+          export ENTRA_REDIRECT_URI_FALLBACK_ENABLED="false"
+          echo "ENTRA_REDIRECT_URI_FALLBACK_ENABLED is $ENTRA_REDIRECT_URI_FALLBACK_ENABLED"
+
           mkdir -p deployments
           cat deployments/templates/deployment.yml | envsubst > deployments/deployment.yml
           cat deployments/templates/ingress.yml | envsubst > deployments/ingress.yml
