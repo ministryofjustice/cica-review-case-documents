@@ -231,10 +231,14 @@ router.get('/callback', entraCallbackRateLimiter, async (req, res, next) => {
             'User authenticated'
         );
 
-        delete req.session.entraAuth;
+        if (req.session) {
+            delete req.session.entraAuth;
+        }
 
-        const redirectUrl = req.session.returnTo || '/';
-        delete req.session.returnTo;
+        const redirectUrl = req.session?.returnTo || '/';
+        if (req.session) {
+            delete req.session.returnTo;
+        }
         return res.redirect(redirectUrl);
     } catch (err) {
         req.log?.error(safeErrorForLog(err), 'Entra callback handling failed');
