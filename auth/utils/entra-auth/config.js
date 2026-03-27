@@ -2,23 +2,6 @@ const DEFAULT_ENTRA_SCOPE = 'openid profile email';
 const TRUE_VALUES = ['1', 'true', 'yes', 'on'];
 
 /**
- * Determines if request host/protocol fallback is enabled for redirect URI generation.
- *
- * Defaults to disabled when ENTRA_REDIRECT_URI_FALLBACK_ENABLED is unset.
- *
- * @returns {boolean}
- */
-export function isEntraRedirectUriFallbackEnabled() {
-    const rawValue = process.env.ENTRA_REDIRECT_URI_FALLBACK_ENABLED;
-
-    if (rawValue == null) {
-        return false;
-    }
-
-    return TRUE_VALUES.includes(String(rawValue).toLowerCase());
-}
-
-/**
  * Returns Entra configuration from environment variables.
  *
  * @returns {{ clientId: string | undefined, clientSecret: string | undefined, tenantId: string | undefined, scope: string }}
@@ -82,9 +65,7 @@ export function isEntraConfigured() {
 /**
  * Builds the callback URI using trusted configuration.
  *
- * In production this requires APP_BASE_URL to avoid relying on request Host headers.
- * In non-production, request protocol/host fallback is available only when
- * ENTRA_REDIRECT_URI_FALLBACK_ENABLED is enabled.
+ * APP_BASE_URL is required to avoid relying on request Host headers.
  *
  * @param {import('express').Request} req - Express request used to resolve protocol and host.
  * @returns {string}
@@ -96,19 +77,7 @@ export function getEntraRedirectUri(req) {
         return `${appBaseUrl.replace(/\/+$/, '')}/auth/callback`;
     }
 
-    if (process.env.NODE_ENV === 'production') {
-        throw new Error('APP_BASE_URL must be set in production for Entra redirect URI');
-    }
-
-    if (!isEntraRedirectUriFallbackEnabled()) {
-        throw new Error(
-            'APP_BASE_URL must be set when ENTRA_REDIRECT_URI_FALLBACK_ENABLED is not enabled'
-        );
-    }
-
-    const protocol = req.protocol;
-    const host = req.get('host');
-    return `${protocol}://${host}/auth/callback`;
+    throw new Error('APP_BASE_URL must be set for Entra redirect URI');
 }
 
 /**

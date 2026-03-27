@@ -1,8 +1,6 @@
 import VError from 'verror';
 import isLogger from '../logger/utils/isLogger/index.js';
 
-const TRUE_VALUES = ['1', 'true', 'yes', 'on'];
-
 /**
  * Default configuration object specifying required and optional environment variables.
  *
@@ -37,7 +35,6 @@ const defaults = {
             'APP_ENTRA_RATE_LIMIT_MAX_CALLBACK',
             'ENTRA_SCOPE',
             'ENTRA_INTERACTIVE_FALLBACK',
-            'ENTRA_REDIRECT_URI_FALLBACK_ENABLED',
             'APP_LOG_LEVEL',
             'APP_LOG_REDACT_EXTRA',
             'APP_LOG_REDACT_DISABLE'
@@ -191,25 +188,7 @@ function checkMandatoryEnvVars(mandatoryEnvVars = getMandatoryEnvVars()) {
 }
 
 /**
- * Determines if request host/protocol fallback is enabled for Entra redirect URI generation.
- *
- * @returns {boolean}
- */
-function isEntraRedirectUriFallbackEnabled() {
-    const rawValue = process.env.ENTRA_REDIRECT_URI_FALLBACK_ENABLED;
-
-    if (rawValue == null) {
-        return false;
-    }
-
-    return TRUE_VALUES.includes(String(rawValue).toLowerCase());
-}
-
-/**
- * Validates APP_BASE_URL depending on environment and fallback setting.
- *
- * APP_BASE_URL is always required in production.
- * In non-production, APP_BASE_URL can be omitted only when redirect fallback is explicitly enabled.
+ * Validates APP_BASE_URL for trusted Entra redirect URI generation.
  *
  * @throws {VError} Throws ConfigurationError when APP_BASE_URL is required but missing.
  */
@@ -221,23 +200,12 @@ function checkAppBaseUrlForEntraRedirectUri() {
         return;
     }
 
-    if (process.env.NODE_ENV === 'production') {
-        throw new VError(
-            {
-                name: 'ConfigurationError'
-            },
-            'Environment variable "APP_BASE_URL" must be set and non-empty in production'
-        );
-    }
-
-    if (!isEntraRedirectUriFallbackEnabled()) {
-        throw new VError(
-            {
-                name: 'ConfigurationError'
-            },
-            'Environment variable "APP_BASE_URL" must be set and non-empty unless ENTRA_REDIRECT_URI_FALLBACK_ENABLED is enabled'
-        );
-    }
+    throw new VError(
+        {
+            name: 'ConfigurationError'
+        },
+        'Environment variable "APP_BASE_URL" must be set and non-empty for Entra redirect URI'
+    );
 }
 
 /**

@@ -37,6 +37,7 @@ function setRequiredEntraEnv() {
     process.env.ENTRA_CLIENT_ID = 'client-id';
     process.env.ENTRA_CLIENT_SECRET = 'client-secret';
     process.env.ENTRA_TENANT_ID = 'tenant-id';
+    process.env.APP_BASE_URL = 'https://example.test';
 }
 
 describe('ensureEnvVarsAreValid', () => {
@@ -216,18 +217,16 @@ describe('ensureEnvVarsAreValid', () => {
                 'APP_ENTRA_RATE_LIMIT_MAX_CALLBACK',
                 'ENTRA_SCOPE',
                 'ENTRA_INTERACTIVE_FALLBACK',
-                'ENTRA_REDIRECT_URI_FALLBACK_ENABLED',
                 'APP_LOG_LEVEL',
                 'APP_LOG_REDACT_EXTRA',
                 'APP_LOG_REDACT_DISABLE'
             ]);
         });
 
-        it('Should throw ConfigurationError when APP_BASE_URL is missing and redirect fallback is disabled', async () => {
+        it('Should throw ConfigurationError when APP_BASE_URL is missing', async () => {
             const { checkEnvVars } = await import('./index.js');
 
             process.env.NODE_ENV = 'development';
-            process.env.ENTRA_REDIRECT_URI_FALLBACK_ENABLED = 'false';
             delete process.env.APP_BASE_URL;
 
             assert.throws(
@@ -235,27 +234,31 @@ describe('ensureEnvVarsAreValid', () => {
                 (err) => {
                     assert.equal(err.name, 'ConfigurationError');
                     assert.match(err.message, /APP_BASE_URL/);
-                    assert.match(err.message, /ENTRA_REDIRECT_URI_FALLBACK_ENABLED/);
                     return true;
                 }
             );
         });
 
-        it('Should allow APP_BASE_URL to be missing in non-production when redirect fallback is enabled', async () => {
+        it('Should throw ConfigurationError when APP_BASE_URL is blank', async () => {
             const { checkEnvVars } = await import('./index.js');
 
             process.env.NODE_ENV = 'development';
-            process.env.ENTRA_REDIRECT_URI_FALLBACK_ENABLED = 'true';
-            delete process.env.APP_BASE_URL;
+            process.env.APP_BASE_URL = '   ';
 
-            assert.doesNotThrow(() => checkEnvVars({ logger: fakeLogger }));
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /APP_BASE_URL/);
+                    return true;
+                }
+            );
         });
 
         it('Should throw ConfigurationError when APP_BASE_URL is missing in production', async () => {
             const { checkEnvVars } = await import('./index.js');
 
             process.env.NODE_ENV = 'production';
-            process.env.ENTRA_REDIRECT_URI_FALLBACK_ENABLED = 'true';
             delete process.env.APP_BASE_URL;
 
             assert.throws(
@@ -263,7 +266,6 @@ describe('ensureEnvVarsAreValid', () => {
                 (err) => {
                     assert.equal(err.name, 'ConfigurationError');
                     assert.match(err.message, /APP_BASE_URL/);
-                    assert.match(err.message, /production/);
                     return true;
                 }
             );

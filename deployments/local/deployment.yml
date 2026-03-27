@@ -96,8 +96,6 @@ spec:
               value: "20"
             - name: APP_ENTRA_RATE_LIMIT_MAX_CALLBACK
               value: "40"
-            - name: ENTRA_REDIRECT_URI_FALLBACK_ENABLED
-              value: "false"
           # Added for debugging purposes
         - name: debug
           image: nicolaka/netshoot

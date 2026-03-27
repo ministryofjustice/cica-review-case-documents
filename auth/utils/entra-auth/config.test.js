@@ -5,8 +5,7 @@ import {
     getEntraConfig,
     getEntraRedirectUri,
     isEntraConfigured,
-    isEntraInteractiveFallbackEnabled,
-    isEntraRedirectUriFallbackEnabled
+    isEntraInteractiveFallbackEnabled
 } from './config.js';
 
 const originalEnv = { ...process.env };
@@ -24,6 +23,7 @@ describe('entra-auth config utilities', () => {
         process.env.ENTRA_CLIENT_ID = 'client-id';
         process.env.ENTRA_CLIENT_SECRET = 'client-secret';
         process.env.ENTRA_TENANT_ID = 'tenant-id';
+        process.env.APP_BASE_URL = 'https://example.test';
     });
 
     afterEach(() => {
@@ -54,18 +54,6 @@ describe('entra-auth config utilities', () => {
         assert.equal(isEntraConfigured(), false);
     });
 
-    it('builds redirect URI from request protocol and host when redirect fallback is enabled', () => {
-        delete process.env.APP_BASE_URL;
-        process.env.ENTRA_REDIRECT_URI_FALLBACK_ENABLED = 'true';
-
-        const req = {
-            protocol: 'https',
-            get: (name) => (name === 'host' ? 'example.test' : undefined)
-        };
-
-        assert.equal(getEntraRedirectUri(req), 'https://example.test/auth/callback');
-    });
-
     it('builds redirect URI from APP_BASE_URL when configured', () => {
         process.env.APP_BASE_URL = 'https://public.example.gov.uk/';
         const req = {
@@ -76,8 +64,7 @@ describe('entra-auth config utilities', () => {
         assert.equal(getEntraRedirectUri(req), 'https://public.example.gov.uk/auth/callback');
     });
 
-    it('throws in production when APP_BASE_URL is missing', () => {
-        process.env.NODE_ENV = 'production';
+    it('throws when APP_BASE_URL is missing', () => {
         delete process.env.APP_BASE_URL;
 
         const req = {
@@ -87,27 +74,12 @@ describe('entra-auth config utilities', () => {
 
         assert.throws(
             () => getEntraRedirectUri(req),
-            /APP_BASE_URL must be set in production for Entra redirect URI/
+            /APP_BASE_URL must be set for Entra redirect URI/
         );
     });
 
-    it('uses request host fallback in non-production when APP_BASE_URL is blank', () => {
-        process.env.NODE_ENV = 'development';
+    it('throws when APP_BASE_URL is blank', () => {
         process.env.APP_BASE_URL = '   ';
-        process.env.ENTRA_REDIRECT_URI_FALLBACK_ENABLED = 'yes';
-
-        const req = {
-            protocol: 'http',
-            get: (name) => (name === 'host' ? 'local.test:5000' : undefined)
-        };
-
-        assert.equal(getEntraRedirectUri(req), 'http://local.test:5000/auth/callback');
-    });
-
-    it('throws in non-production when APP_BASE_URL is blank and redirect fallback is disabled', () => {
-        process.env.NODE_ENV = 'development';
-        process.env.APP_BASE_URL = '   ';
-        process.env.ENTRA_REDIRECT_URI_FALLBACK_ENABLED = 'false';
 
         const req = {
             protocol: 'http',
@@ -116,7 +88,7 @@ describe('entra-auth config utilities', () => {
 
         assert.throws(
             () => getEntraRedirectUri(req),
-            /APP_BASE_URL must be set when ENTRA_REDIRECT_URI_FALLBACK_ENABLED is not enabled/
+            /APP_BASE_URL must be set for Entra redirect URI/
         );
     });
 
@@ -163,15 +135,5 @@ describe('entra-auth config utilities', () => {
     it('supports disabling interactive fallback using env flag', () => {
         process.env.ENTRA_INTERACTIVE_FALLBACK = 'false';
         assert.equal(isEntraInteractiveFallbackEnabled(), false);
-    });
-
-    it('keeps redirect fallback disabled by default when env is unset', () => {
-        delete process.env.ENTRA_REDIRECT_URI_FALLBACK_ENABLED;
-        assert.equal(isEntraRedirectUriFallbackEnabled(), false);
-    });
-
-    it('supports enabling redirect fallback using env flag', () => {
-        process.env.ENTRA_REDIRECT_URI_FALLBACK_ENABLED = 'on';
-        assert.equal(isEntraRedirectUriFallbackEnabled(), true);
     });
 });
