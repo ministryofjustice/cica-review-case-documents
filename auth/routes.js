@@ -166,6 +166,9 @@ router.get('/callback', entraCallbackRateLimiter, async (req, res, next) => {
                 },
                 'Entra authorization failed'
             );
+            if (req.session) {
+                delete req.session.entraAuth;
+            }
             return res.status(401).send('Authentication failed');
         }
 
@@ -187,7 +190,9 @@ router.get('/callback', entraCallbackRateLimiter, async (req, res, next) => {
             !hasNonce ||
             isStaleAuthTransaction
         ) {
-            delete req.session.entraAuth;
+            if (req.session) {
+                delete req.session.entraAuth;
+            }
             req.log?.warn(
                 {
                     hasState: Boolean(state),

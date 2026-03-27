@@ -314,6 +314,80 @@ test('callback handler should reject callback when state is an array query param
     assert.strictEqual(req.session.entraAuth, undefined);
 });
 
+test('callback handler should return 401 for Entra errors when session is missing', async () => {
+    const callbackHandler = getRouteHandler('/callback');
+    const req = {
+        query: {
+            error: 'server_error',
+            error_description: 'AADSTS50058: User session missing'
+        },
+        log: {
+            warn: () => {},
+            info: () => {},
+            error: () => {}
+        }
+    };
+
+    const responsePayload = {};
+    const res = {
+        status: (statusCode) => {
+            responsePayload.statusCode = statusCode;
+            return {
+                send: (body) => {
+                    responsePayload.body = body;
+                    return body;
+                }
+            };
+        }
+    };
+
+    let nextError;
+    await callbackHandler(req, res, (err) => {
+        nextError = err;
+    });
+
+    assert.strictEqual(nextError, undefined);
+    assert.strictEqual(responsePayload.statusCode, 401);
+    assert.strictEqual(responsePayload.body, 'Authentication failed');
+});
+
+test('callback handler should return 401 for invalid auth transaction when session is missing', async () => {
+    const callbackHandler = getRouteHandler('/callback');
+    const req = {
+        query: {
+            code: 'auth-code',
+            state: 'state-1'
+        },
+        log: {
+            warn: () => {},
+            info: () => {},
+            error: () => {}
+        }
+    };
+
+    const responsePayload = {};
+    const res = {
+        status: (statusCode) => {
+            responsePayload.statusCode = statusCode;
+            return {
+                send: (body) => {
+                    responsePayload.body = body;
+                    return body;
+                }
+            };
+        }
+    };
+
+    let nextError;
+    await callbackHandler(req, res, (err) => {
+        nextError = err;
+    });
+
+    assert.strictEqual(nextError, undefined);
+    assert.strictEqual(responsePayload.statusCode, 401);
+    assert.strictEqual(responsePayload.body, 'Invalid authentication state');
+});
+
 test('callback handler should regenerate session and preserve required values after sign-in', async () => {
     const callbackHandler = getRouteHandler('/callback');
     const originalGet = got.get;
