@@ -13,7 +13,12 @@ export function buildRedactConfig() {
         'req.headers.authorization',
         'req.headers.cookie',
         'req.headers["x-api-key"]',
+        'req.query.code',
+        'req.query.state',
+        'req.query.id_token',
+        'req.query.access_token',
         'req.body.password',
+        'req.body.username',
         'req.body.token',
         'req.body._csrf',
         'res.headers["set-cookie"]'

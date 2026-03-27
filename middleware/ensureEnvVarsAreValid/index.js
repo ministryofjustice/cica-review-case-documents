@@ -15,11 +15,15 @@ const defaults = {
             'APP_COOKIE_NAME',
             'APP_COOKIE_SECRET',
             'APP_API_URL',
+            'APP_BASE_URL',
             'APP_JWT_SECRET',
             'APP_API_JWT_ISSUER',
             'APP_API_JWT_AUDIENCE',
             'APP_DATABASE_URL',
-            'OPENSEARCH_INDEX_CHUNKS_NAME'
+            'OPENSEARCH_INDEX_CHUNKS_NAME',
+            'ENTRA_CLIENT_ID',
+            'ENTRA_CLIENT_SECRET',
+            'ENTRA_TENANT_ID'
         ],
         optional: [
             'PORT',
@@ -27,6 +31,13 @@ const defaults = {
             'APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE',
             'APP_ALLOW_INSECURE_COOKIE',
             'APP_API_JWT_EXPIRES_IN',
+            'APP_ENTRA_RATE_LIMIT_WINDOW_MS',
+            'APP_ENTRA_RATE_LIMIT_MAX_LOGIN',
+            'APP_ENTRA_RATE_LIMIT_MAX_CALLBACK',
+            'ENTRA_SCOPE',
+            'ENTRA_INTERACTIVE_FALLBACK',
+            'ENTRA_AUTH_TRANSACTION_MAX_AGE_MS',
+            'ENTRA_JWKS_CACHE_TTL_MS',
             'APP_LOG_LEVEL',
             'APP_LOG_REDACT_EXTRA',
             'APP_LOG_REDACT_DISABLE'
@@ -167,15 +178,74 @@ function checkMandatoryEnvVars(mandatoryEnvVars = getMandatoryEnvVars()) {
     }
 
     mandatoryEnvVars.forEach((mandatoryEnvVar) => {
-        if (!(mandatoryEnvVar in process.env) || process.env[mandatoryEnvVar] === undefined) {
+        const value = process.env[mandatoryEnvVar];
+        if (value === undefined || typeof value !== 'string' || value.trim() === '') {
             throw new VError(
                 {
                     name: 'ConfigurationError'
                 },
-                `Environment variable "${mandatoryEnvVar}" must be set`
+                `Environment variable "${mandatoryEnvVar}" must be set and non-empty`
             );
         }
     });
+}
+
+/**
+ * Validates APP_BASE_URL for trusted Entra redirect URI generation.
+ *
+ * Requires an absolute URL. In production the URL must use https. In non-production,
+ * https is allowed everywhere and http is only allowed for localhost.
+ *
+ * @throws {VError} Throws ConfigurationError when APP_BASE_URL is missing or unsafe.
+ */
+function checkAppBaseUrlForEntraRedirectUri() {
+    const appBaseUrl = process.env.APP_BASE_URL;
+    const hasNonEmptyAppBaseUrl = typeof appBaseUrl === 'string' && appBaseUrl.trim().length > 0;
+
+    if (hasNonEmptyAppBaseUrl) {
+        let parsedUrl;
+
+        try {
+            parsedUrl = new URL(appBaseUrl);
+        } catch {
+            throw new VError(
+                {
+                    name: 'ConfigurationError'
+                },
+                'Environment variable "APP_BASE_URL" must be a valid absolute URL for Entra redirect URI'
+            );
+        }
+
+        const isHttps = parsedUrl.protocol === 'https:';
+        const isLocalHttp = parsedUrl.protocol === 'http:' && parsedUrl.hostname === 'localhost';
+
+        if (process.env.NODE_ENV === 'production' && !isHttps) {
+            throw new VError(
+                {
+                    name: 'ConfigurationError'
+                },
+                'Environment variable "APP_BASE_URL" must use https in production for Entra redirect URI'
+            );
+        }
+
+        if (!isHttps && !isLocalHttp) {
+            throw new VError(
+                {
+                    name: 'ConfigurationError'
+                },
+                'Environment variable "APP_BASE_URL" must use https or be http://localhost for Entra redirect URI'
+            );
+        }
+
+        return;
+    }
+
+    throw new VError(
+        {
+            name: 'ConfigurationError'
+        },
+        'Environment variable "APP_BASE_URL" must be set and non-empty for Entra redirect URI'
+    );
 }
 
 /**
@@ -195,10 +265,11 @@ function checkOptionalEnvVars(optionalEnvVars = getOptionalEnvVars(), logger) {
         );
     }
 
+    // Keep this list aligned with all supported runtime tuning variables.
+    // Review optional env vars whenever new configurable settings are added.
+
     optionalEnvVars.forEach((optionalEnvVar) => {
         if (!(optionalEnvVar in process.env) || process.env[optionalEnvVar] === undefined) {
-            // Optional environment variable not set
-            // TODO review
             logger.debug(
                 {
                     data: {
@@ -245,8 +316,9 @@ function checkEnvVars({
     logger
 } = {}) {
     checkIsLogger(logger);
-    checkMandatoryEnvVars(mandatoryEnvVars, logger);
+    checkMandatoryEnvVars(mandatoryEnvVars);
     checkOptionalEnvVars(optionalEnvVars, logger);
+    checkAppBaseUrlForEntraRedirectUri();
     checkAppAllowInsecureCookie(logger);
     checkAppApiJwtExpiresIn();
 }

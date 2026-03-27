@@ -76,6 +76,9 @@ describe('buildRedactConfig', () => {
         const result = buildRedactConfig();
         assert.ok(result);
         assert.ok(result.paths.includes('req.headers.authorization'));
+        assert.ok(result.paths.includes('req.query.code'));
+        assert.ok(result.paths.includes('req.query.state'));
+        assert.ok(result.paths.includes('req.body.username'));
         assert.ok(result.paths.includes('req.headers.x-extra'));
         assert.strictEqual(result.censor, '[REDACTED]');
     });
@@ -128,6 +131,7 @@ describe('Logger integration', () => {
         app.get('/warn', (req, res) => res.status(404).send({ error: 'not found' }));
         app.get('/error', (req, res) => res.status(500).send({ error: 'boom' }));
         app.post('/redact', (req, res) => res.json(req.body));
+        app.get('/query-redact', (req, res) => res.send('ok'));
     });
 
     afterEach(() => {
@@ -206,5 +210,20 @@ describe('Logger integration', () => {
         const entry = lines.find((l) => l.req);
         assert.strictEqual(entry.req.headers.authorization, 'Bearer test-token');
         assert.strictEqual(entry.req.headers['x-custom-secret'], 'foobar');
+    });
+
+    it('should redact oauth callback query parameters and username', async () => {
+        await request(app)
+            .get('/query-redact')
+            .query({ code: 'secret-code', state: 'secret-state', access_token: 'access-123' });
+
+        const queryEntry = lines.find((l) => l.req?.url?.startsWith('/query-redact'));
+        assert.ok(queryEntry, 'expected query-redact log entry');
+        assert.strictEqual(queryEntry.req.query.code, '[REDACTED]');
+        assert.strictEqual(queryEntry.req.query.state, '[REDACTED]');
+        assert.strictEqual(queryEntry.req.query.access_token, '[REDACTED]');
+
+        const redactConfig = buildRedactConfig();
+        assert.ok(redactConfig?.paths.includes('req.body.username'));
     });
 });

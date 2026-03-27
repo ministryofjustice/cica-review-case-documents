@@ -6,14 +6,13 @@ import session from 'express-session';
 import helmet from 'helmet';
 import { nanoid } from 'nanoid';
 import createApi from './api/app.js';
-import rateLimitErrorHandler from './auth/rateLimiters/authRateLimitErrorHandler.js';
 import authRouter from './auth/routes.js';
 import createDocumentRouter from './document/routes.js';
 import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
 import enforceCrnInQuery from './middleware/enforceCrnInQuery/index.js';
-import ensureEnvVarsAreValid, {
+import {
     checkEnvVars,
     getMandatoryEnvVars,
     getOptionalEnvVars
@@ -66,8 +65,6 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
         });
         next();
     });
-
-    app.use(ensureEnvVarsAreValid);
 
     // https://expressjs.com/en/api.html#express.json
     app.use(express.json());
@@ -192,7 +189,6 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     );
 
     app.use(notFoundHandler);
-    app.use(rateLimitErrorHandler(app));
     app.use(errorHandler);
 
     return app;

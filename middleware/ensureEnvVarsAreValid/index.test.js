@@ -30,9 +30,20 @@ function resetEnv() {
     process.env = { ...originalEnv };
 }
 
+/**
+ * Sets mandatory Entra environment variables used during env validation tests.
+ */
+function setRequiredEntraEnv() {
+    process.env.ENTRA_CLIENT_ID = 'client-id';
+    process.env.ENTRA_CLIENT_SECRET = 'client-secret';
+    process.env.ENTRA_TENANT_ID = 'tenant-id';
+    process.env.APP_BASE_URL = 'https://example.test';
+}
+
 describe('ensureEnvVarsAreValid', () => {
     beforeEach(() => {
         resetEnv();
+        setRequiredEntraEnv();
     });
     it('Should calls next() if everything is valid', async () => {
         let nextCalled = false;
@@ -53,11 +64,15 @@ describe('ensureEnvVarsAreValid', () => {
                 'APP_COOKIE_NAME',
                 'APP_COOKIE_SECRET',
                 'APP_API_URL',
+                'APP_BASE_URL',
                 'APP_JWT_SECRET',
                 'APP_API_JWT_ISSUER',
                 'APP_API_JWT_AUDIENCE',
                 'APP_DATABASE_URL',
-                'OPENSEARCH_INDEX_CHUNKS_NAME'
+                'OPENSEARCH_INDEX_CHUNKS_NAME',
+                'ENTRA_CLIENT_ID',
+                'ENTRA_CLIENT_SECRET',
+                'ENTRA_TENANT_ID'
             ]);
         });
 
@@ -92,7 +107,97 @@ describe('ensureEnvVarsAreValid', () => {
                 () => checkEnvVars({ logger: fakeLogger }),
                 (err) => {
                     assert.equal(err.name, 'ConfigurationError');
-                    assert.match(err.message, /Environment variable "APP_COOKIE_NAME" must be set/);
+                    assert.match(
+                        err.message,
+                        /Environment variable "APP_COOKIE_NAME" must be set and non-empty/
+                    );
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError if required env var is an empty string', async () => {
+            const { checkEnvVars } = await import('./index.js');
+            process.env.APP_COOKIE_NAME = '';
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(
+                        err.message,
+                        /Environment variable "APP_COOKIE_NAME" must be set and non-empty/
+                    );
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError if required env var is whitespace only', async () => {
+            const { checkEnvVars } = await import('./index.js');
+            process.env.APP_COOKIE_NAME = '   ';
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(
+                        err.message,
+                        /Environment variable "APP_COOKIE_NAME" must be set and non-empty/
+                    );
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError if ENTRA_CLIENT_ID is an empty string', async () => {
+            const { checkEnvVars } = await import('./index.js');
+            process.env.ENTRA_CLIENT_ID = '';
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(
+                        err.message,
+                        /Environment variable "ENTRA_CLIENT_ID" must be set and non-empty/
+                    );
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError if mandatory env var is not a string', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            // Use a plain object env snapshot so value type remains non-string.
+            process.env = {
+                ...process.env,
+                APP_COOKIE_NAME: 123
+            };
+
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(
+                        err.message,
+                        /Environment variable "APP_COOKIE_NAME" must be set and non-empty/
+                    );
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError if ENTRA_CLIENT_SECRET is an empty string', async () => {
+            const { checkEnvVars } = await import('./index.js');
+            process.env.ENTRA_CLIENT_SECRET = '';
+
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(
+                        err.message,
+                        /Environment variable "ENTRA_CLIENT_SECRET" must be set and non-empty/
+                    );
                     return true;
                 }
             );
@@ -108,10 +213,131 @@ describe('ensureEnvVarsAreValid', () => {
                 'APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE',
                 'APP_ALLOW_INSECURE_COOKIE',
                 'APP_API_JWT_EXPIRES_IN',
+                'APP_ENTRA_RATE_LIMIT_WINDOW_MS',
+                'APP_ENTRA_RATE_LIMIT_MAX_LOGIN',
+                'APP_ENTRA_RATE_LIMIT_MAX_CALLBACK',
+                'ENTRA_SCOPE',
+                'ENTRA_INTERACTIVE_FALLBACK',
+                'ENTRA_AUTH_TRANSACTION_MAX_AGE_MS',
+                'ENTRA_JWKS_CACHE_TTL_MS',
                 'APP_LOG_LEVEL',
                 'APP_LOG_REDACT_EXTRA',
                 'APP_LOG_REDACT_DISABLE'
             ]);
+        });
+
+        it('Should throw ConfigurationError when APP_BASE_URL is missing', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.NODE_ENV = 'development';
+            delete process.env.APP_BASE_URL;
+
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /APP_BASE_URL/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError when APP_BASE_URL is blank', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.NODE_ENV = 'development';
+            process.env.APP_BASE_URL = '   ';
+
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /APP_BASE_URL/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should accept http://localhost APP_BASE_URL in development', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.NODE_ENV = 'development';
+            process.env.APP_BASE_URL = 'http://localhost:5000';
+
+            assert.doesNotThrow(() => checkEnvVars({ logger: fakeLogger }));
+        });
+
+        it('Should accept https APP_BASE_URL in production', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.NODE_ENV = 'production';
+            process.env.APP_BASE_URL = 'https://example.test';
+
+            assert.doesNotThrow(() => checkEnvVars({ logger: fakeLogger }));
+        });
+
+        it('Should throw ConfigurationError when APP_BASE_URL is missing in production', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.NODE_ENV = 'production';
+            delete process.env.APP_BASE_URL;
+
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /APP_BASE_URL/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError when APP_BASE_URL is not a valid absolute URL', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.NODE_ENV = 'development';
+            process.env.APP_BASE_URL = 'not-a-url';
+
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /valid absolute URL/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError when APP_BASE_URL uses http for non-localhost', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.NODE_ENV = 'development';
+            process.env.APP_BASE_URL = 'http://example.test';
+
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /must use https or be http:\/\/localhost/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError when APP_BASE_URL uses http in production', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.NODE_ENV = 'production';
+            process.env.APP_BASE_URL = 'http://localhost:5000';
+
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /must use https in production/);
+                    return true;
+                }
+            );
         });
 
         it('Should throw ConfigurationError if optionalEnvVars is not an array', async () => {
@@ -191,6 +417,39 @@ describe('ensureEnvVarsAreValid', () => {
             const { checkEnvVars } = await import('./index.js');
 
             process.env.APP_API_JWT_EXPIRES_IN = '1h';
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /APP_API_JWT_EXPIRES_IN/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError when APP_API_JWT_EXPIRES_IN is not a string value', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            // Use a plain object env snapshot so value type remains non-string.
+            process.env = {
+                ...process.env,
+                APP_API_JWT_EXPIRES_IN: 60
+            };
+
+            assert.throws(
+                () => checkEnvVars({ logger: fakeLogger }),
+                (err) => {
+                    assert.equal(err.name, 'ConfigurationError');
+                    assert.match(err.message, /APP_API_JWT_EXPIRES_IN/);
+                    return true;
+                }
+            );
+        });
+
+        it('Should throw ConfigurationError when APP_API_JWT_EXPIRES_IN is zero seconds', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.APP_API_JWT_EXPIRES_IN = '0s';
             assert.throws(
                 () => checkEnvVars({ logger: fakeLogger }),
                 (err) => {

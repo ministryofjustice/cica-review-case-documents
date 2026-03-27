@@ -39,7 +39,7 @@ test('generateRateLimitKey falls back to ipKeyGenerator when no session or user 
         headers: {}
     };
 
-    assert.strictEqual(generateRateLimitKey(req), ipKeyGenerator(req));
+    assert.strictEqual(generateRateLimitKey(req), ipKeyGenerator(req.ip));
 });
 
 test('skip function returns true in non-production mode', async () => {
@@ -150,6 +150,7 @@ test('limit function returns UNAUTHENTICATED_LIMIT when no auth present', async 
         });
 
         const app = express();
+        app.set('trust proxy', 1);
         app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
         app.use(testLimiter);
         app.get('/test', (req, res) => res.send('OK'));
@@ -254,7 +255,7 @@ test('keyGenerator uses ipKeyGenerator when no session or user', async () => {
         });
 
         const app = express();
-        app.set('trust proxy', true);
+        app.set('trust proxy', 1);
         app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
         app.use(testLimiter);
         app.get('/test', (req, res) => res.send('OK'));
