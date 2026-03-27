@@ -35,6 +35,8 @@ const defaults = {
             'APP_ENTRA_RATE_LIMIT_MAX_CALLBACK',
             'ENTRA_SCOPE',
             'ENTRA_INTERACTIVE_FALLBACK',
+            'ENTRA_AUTH_TRANSACTION_MAX_AGE_MS',
+            'ENTRA_JWKS_CACHE_TTL_MS',
             'APP_LOG_LEVEL',
             'APP_LOG_REDACT_EXTRA',
             'APP_LOG_REDACT_DISABLE'
@@ -225,10 +227,11 @@ function checkOptionalEnvVars(optionalEnvVars = getOptionalEnvVars(), logger) {
         );
     }
 
+    // Keep this list aligned with all supported runtime tuning variables.
+    // Review optional env vars whenever new configurable settings are added.
+
     optionalEnvVars.forEach((optionalEnvVar) => {
         if (!(optionalEnvVar in process.env) || process.env[optionalEnvVar] === undefined) {
-            // Optional environment variable not set
-            // TODO review
             logger.debug(
                 {
                     data: {
