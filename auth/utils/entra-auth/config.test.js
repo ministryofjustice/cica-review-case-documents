@@ -5,7 +5,8 @@ import {
     getEntraConfig,
     getEntraRedirectUri,
     isEntraConfigured,
-    isEntraInteractiveFallbackEnabled
+    isEntraInteractiveFallbackEnabled,
+    isEntraRedirectUriFallbackEnabled
 } from './config.js';
 
 const originalEnv = { ...process.env };
@@ -53,8 +54,9 @@ describe('entra-auth config utilities', () => {
         assert.equal(isEntraConfigured(), false);
     });
 
-    it('builds redirect URI from request protocol and host', () => {
+    it('builds redirect URI from request protocol and host when redirect fallback is enabled', () => {
         delete process.env.APP_BASE_URL;
+        process.env.ENTRA_REDIRECT_URI_FALLBACK_ENABLED = 'true';
 
         const req = {
             protocol: 'https',
@@ -92,6 +94,7 @@ describe('entra-auth config utilities', () => {
     it('uses request host fallback in non-production when APP_BASE_URL is blank', () => {
         process.env.NODE_ENV = 'development';
         process.env.APP_BASE_URL = '   ';
+        process.env.ENTRA_REDIRECT_URI_FALLBACK_ENABLED = 'yes';
 
         const req = {
             protocol: 'http',
@@ -99,6 +102,22 @@ describe('entra-auth config utilities', () => {
         };
 
         assert.equal(getEntraRedirectUri(req), 'http://local.test:5000/auth/callback');
+    });
+
+    it('throws in non-production when APP_BASE_URL is blank and redirect fallback is disabled', () => {
+        process.env.NODE_ENV = 'development';
+        process.env.APP_BASE_URL = '   ';
+        process.env.ENTRA_REDIRECT_URI_FALLBACK_ENABLED = 'false';
+
+        const req = {
+            protocol: 'http',
+            get: (name) => (name === 'host' ? 'local.test:5000' : undefined)
+        };
+
+        assert.throws(
+            () => getEntraRedirectUri(req),
+            /APP_BASE_URL must be set when ENTRA_REDIRECT_URI_FALLBACK_ENABLED is not enabled/
+        );
     });
 
     it('builds authorize URL with expected parameters', () => {
@@ -144,5 +163,15 @@ describe('entra-auth config utilities', () => {
     it('supports disabling interactive fallback using env flag', () => {
         process.env.ENTRA_INTERACTIVE_FALLBACK = 'false';
         assert.equal(isEntraInteractiveFallbackEnabled(), false);
+    });
+
+    it('keeps redirect fallback disabled by default when env is unset', () => {
+        delete process.env.ENTRA_REDIRECT_URI_FALLBACK_ENABLED;
+        assert.equal(isEntraRedirectUriFallbackEnabled(), false);
+    });
+
+    it('supports enabling redirect fallback using env flag', () => {
+        process.env.ENTRA_REDIRECT_URI_FALLBACK_ENABLED = 'on';
+        assert.equal(isEntraRedirectUriFallbackEnabled(), true);
     });
 });
