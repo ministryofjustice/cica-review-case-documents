@@ -12,7 +12,7 @@ import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
 import enforceCrnInQuery from './middleware/enforceCrnInQuery/index.js';
-import ensureEnvVarsAreValid, {
+import {
     checkEnvVars,
     getMandatoryEnvVars,
     getOptionalEnvVars
@@ -65,8 +65,6 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
         });
         next();
     });
-
-    app.use(ensureEnvVarsAreValid);
 
     // https://expressjs.com/en/api.html#express.json
     app.use(express.json());
