@@ -275,7 +275,7 @@ function checkEnvVars({
     logger
 } = {}) {
     checkIsLogger(logger);
-    checkMandatoryEnvVars(mandatoryEnvVars, logger);
+    checkMandatoryEnvVars(mandatoryEnvVars);
     checkOptionalEnvVars(optionalEnvVars, logger);
     checkAppBaseUrlForEntraRedirectUri();
     checkAppAllowInsecureCookie(logger);

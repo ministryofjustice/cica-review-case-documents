@@ -39,7 +39,7 @@ describe('Index routes', () => {
     });
 
     after(() => {
-        process.env = originalEnv;
+        process.env = { ...originalEnv };
     });
 
     for (const route of routes) {

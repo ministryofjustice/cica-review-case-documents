@@ -490,6 +490,93 @@ test('callback handler should regenerate session and preserve required values af
     }
 });
 
+test('callback handler should redirect to root when returnTo is not present after sign-in', async () => {
+    const callbackHandler = getRouteHandler('/callback');
+    const originalGet = got.get;
+    const originalPost = got.post;
+
+    try {
+        const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+        const kid = 'test-kid-no-return-to';
+        const issuer = 'https://login.microsoftonline.com/test-entra-tenant-id/v2.0';
+        const jwk = { ...publicKey.export({ format: 'jwk' }), kid, use: 'sig', kty: 'RSA' };
+
+        const nonce = 'nonce-no-return-to';
+        const idToken = jwt.sign(
+            {
+                sub: 'entra-user-no-return-to',
+                nonce,
+                tid: 'tenant-1',
+                oid: 'oid-no-return-to',
+                name: 'No ReturnTo User',
+                preferred_username: 'no.return.to@example.com'
+            },
+            privateKey,
+            {
+                algorithm: 'RS256',
+                keyid: kid,
+                issuer,
+                audience: 'test-entra-client-id',
+                expiresIn: '5m'
+            }
+        );
+
+        got.get = () => ({
+            json: async () => ({ keys: [jwk] })
+        });
+        got.post = () => ({
+            json: async () => ({ id_token: idToken })
+        });
+
+        const req = {
+            query: {
+                code: 'auth-code',
+                state: 'state-no-return-to'
+            },
+            protocol: 'https',
+            get: () => 'example.test',
+            session: {
+                entraAuth: {
+                    state: 'state-no-return-to',
+                    nonce,
+                    createdAt: Date.now()
+                },
+                regenerate: (callback) => {
+                    req.session = {
+                        regenerate: req.session.regenerate
+                    };
+                    callback();
+                }
+            },
+            log: {
+                warn: () => {},
+                info: () => {},
+                error: () => {}
+            }
+        };
+
+        let redirectedTo;
+        const res = {
+            redirect: (location) => {
+                redirectedTo = location;
+                return location;
+            }
+        };
+
+        let nextError;
+        await callbackHandler(req, res, (err) => {
+            nextError = err;
+        });
+
+        assert.strictEqual(nextError, undefined);
+        assert.strictEqual(redirectedTo, '/');
+        assert.strictEqual(req.session.returnTo, undefined);
+    } finally {
+        got.get = originalGet;
+        got.post = originalPost;
+    }
+});
+
 test('GET /auth/callback should complete sign-in when state and token are valid', async () => {
     const originalGet = got.get;
     const originalPost = got.post;
