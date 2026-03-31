@@ -5,7 +5,8 @@ metadata:
   annotations:
     external-dns.alpha.kubernetes.io/set-identifier: cica-case-review-documents-ingress-cica-review-case-documents-${DEPLOY_ENV}-green
     external-dns.alpha.kubernetes.io/aws-weight: "100"
-    nginx.ingress.kubernetes.io/affinity: cookie # forces cookie sessions to be "sticky" and always use the same pod.
+    nginx.ingress.kubernetes.io/affinity: cookie # route a browser session to the same pod while auth state is held in-memory.
+    nginx.ingress.kubernetes.io/affinity-mode: persistent # avoid rebalancing sticky sessions during scale events between /auth/login and /auth/callback.
     nginx.ingress.kubernetes.io/whitelist-source-range: "213.107.167.128/32,35.176.93.186/32,18.169.147.172/32,18.130.148.126/32,35.176.148.126/32,128.77.75.64/26"
 
 spec:
