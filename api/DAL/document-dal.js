@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import VError from 'verror';
 import createDBQueryDefault from '../../db/index.js';
 import buildQueryJson from './utils/buildQueryJson/index.js';
@@ -92,32 +93,48 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
      */
     async function getDocumentsChunksByKeyword(keyword, pageNumber, itemsPerPage) {
         try {
+            const buildStart = Date.now();
             const queryBody = buildQueryJson({
                 keyword,
                 caseReferenceNumber,
                 pageNumber,
-                itemsPerPage
+                itemsPerPage,
+                logger
             });
+            const buildEnd = Date.now();
 
+            // safe query hash for correlation, not raw text.
+            const queryHash = crypto.createHash('sha256').update(keyword).digest('hex').slice(0, 8);
             logger.info(
                 {
                     index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
                     queryBody,
-                    keyword,
+                    queryHash,
                     caseReferenceNumber,
                     pageNumber,
-                    itemsPerPage
+                    itemsPerPage,
+                    buildMs: buildEnd - buildStart
                 },
                 'OpenSearch Performing search'
             );
 
+            const dbStart = Date.now();
             const response = await db.query({
                 index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
                 body: queryBody
             });
+            const dbEnd = Date.now();
             const hits = response?.body?.hits ?? {};
 
-            logger.info({ hitsCount: hits?.hits?.length ?? 0 }, 'OpenSearch Search response');
+            logger?.info?.(
+                {
+                    keyword,
+                    caseReferenceNumber,
+                    hitsCount: hits?.hits?.length ?? 0,
+                    dbMs: dbEnd - dbStart
+                },
+                '[OpenSearch] Search response'
+            );
 
             if (hits?.hits?.length === 0) {
                 logger?.warn?.(
