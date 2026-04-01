@@ -12,7 +12,7 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Appointment scheduled',
                 matchedPatterns: [
                     {
-                        dayMonthYear: true
+                        threeParts: true
                     }
                 ]
             });
@@ -26,7 +26,7 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Hearing confirmed',
                 matchedPatterns: [
                     {
-                        dayMonthYear: true
+                        threeParts: true
                     }
                 ]
             });
@@ -40,7 +40,7 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Review completed',
                 matchedPatterns: [
                     {
-                        monthYear: true
+                        twoParts: true
                     }
                 ]
             });
@@ -54,7 +54,7 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Review completed',
                 matchedPatterns: [
                     {
-                        monthYear: true
+                        twoParts: true
                     }
                 ]
             });
@@ -70,7 +70,7 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Case opened',
                 matchedPatterns: [
                     {
-                        yearMonthDay: true
+                        threeParts: true
                     }
                 ]
             });
@@ -87,7 +87,7 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Deadline submission',
                 matchedPatterns: [
                     {
-                        numeric: true
+                        threeParts: true
                     }
                 ]
             });
@@ -102,7 +102,7 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Event on confirmed',
                 matchedPatterns: [
                     {
-                        numeric: true
+                        threeParts: true
                     }
                 ]
             });
@@ -117,7 +117,7 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Meeting scheduled',
                 matchedPatterns: [
                     {
-                        numeric: true
+                        threeParts: true
                     }
                 ]
             });
@@ -132,7 +132,7 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Date recorded',
                 matchedPatterns: [
                     {
-                        numeric: true
+                        threeParts: true
                     }
                 ]
             });
@@ -147,7 +147,7 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Meeting scheduled',
                 matchedPatterns: [
                     {
-                        numeric: true
+                        threeParts: true
                     }
                 ]
             });
@@ -162,7 +162,7 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Payment due now',
                 matchedPatterns: [
                     {
-                        numeric: true
+                        threeParts: true
                     }
                 ]
             });
@@ -178,7 +178,7 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Appointment scheduled',
                 matchedPatterns: [
                     {
-                        dayMonthYear: true
+                        threeParts: true
                     }
                 ]
             });
@@ -272,10 +272,10 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Meeting scheduled',
                 matchedPatterns: [
                     {
-                        numeric: true
+                        threeParts: true
                     },
                     {
-                        numeric: true
+                        threeParts: true
                     }
                 ]
             });
@@ -290,13 +290,13 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Events: , ,',
                 matchedPatterns: [
                     {
-                        numeric: true
+                        threeParts: true
                     },
                     {
-                        numeric: true
+                        threeParts: true
                     },
                     {
-                        numeric: true
+                        threeParts: true
                     }
                 ]
             });
@@ -311,10 +311,10 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Conference - Berlin',
                 matchedPatterns: [
                     {
-                        numeric: true
+                        threeParts: true
                     },
                     {
-                        numeric: true
+                        threeParts: true
                     }
                 ]
             });
@@ -329,10 +329,10 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Dates:,',
                 matchedPatterns: [
                     {
-                        numeric: true
+                        threeParts: true
                     },
                     {
-                        numeric: true
+                        threeParts: true
                     }
                 ]
             });
@@ -347,10 +347,10 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Archive',
                 matchedPatterns: [
                     {
-                        numeric: true
+                        threeParts: true
                     },
                     {
-                        numeric: true
+                        threeParts: true
                     }
                 ]
             });
@@ -365,10 +365,10 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'meeting discussion',
                 matchedPatterns: [
                     {
-                        numeric: true
+                        threeParts: true
                     },
                     {
-                        numeric: true
+                        threeParts: true
                     }
                 ]
             });
@@ -383,10 +383,10 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Dates 50/04/92',
                 matchedPatterns: [
                     {
-                        numeric: true
+                        threeParts: true
                     },
                     {
-                        numeric: true
+                        threeParts: true
                     }
                 ]
             });
@@ -401,10 +401,10 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Payments confirmed',
                 matchedPatterns: [
                     {
-                        numeric: true
+                        threeParts: true
                     },
                     {
-                        numeric: true
+                        threeParts: true
                     }
                 ]
             });
@@ -419,10 +419,10 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'Travel –',
                 matchedPatterns: [
                     {
-                        numeric: true
+                        threeParts: true
                     },
                     {
-                        numeric: true
+                        threeParts: true
                     }
                 ]
             });
@@ -437,13 +437,13 @@ describe('extractDatesFromSearchString', () => {
                 remainingText: 'report budget meeting summary',
                 matchedPatterns: [
                     {
-                        numeric: true
+                        threeParts: true
                     },
                     {
-                        numeric: true
+                        threeParts: true
                     },
                     {
-                        numeric: true
+                        threeParts: true
                     }
                 ]
             });

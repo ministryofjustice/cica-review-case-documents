@@ -1,28 +1,24 @@
 import { DateTime } from 'luxon';
 
 const possibleDateFormats = {
-    dayMonthYear: [
-        'd MMM yy',
-        'd MMM yyyy',
-        'd MMMM yy',
-        'd MMMM yyyy',
-        'dd MMM yy',
-        'dd MMM yyyy',
-        'dd MMMM yy',
-        'dd MMMM yyyy'
-    ],
-    numeric: [
+    twoParts: ['MMM yy', 'MMM yyyy', 'MMMM yy', 'MMMM yyyy'],
+    threeParts: [
         'd M yy',
         'd M yyyy',
         'd MM yy',
         'd MM yyyy',
+        'd MMM yy',
+        'd MMM yyyy',
+        'd MMMM yy',
+        'd MMMM yyyy',
         'dd M yy',
         'dd M yyyy',
         'dd MM yy',
-        'dd MM yyyy'
-    ],
-    monthYear: ['MMM yy', 'MMM yyyy', 'MMMM yy', 'MMMM yyyy'],
-    yearMonthDay: [
+        'dd MM yyyy',
+        'dd MMM yy',
+        'dd MMM yyyy',
+        'dd MMMM yy',
+        'dd MMMM yyyy',
         'yyyy M d',
         'yyyy M dd',
         'yyyy MM d',
@@ -37,7 +33,7 @@ const possibleDateFormats = {
  * Generates all possible formatted variants for a given date string, based on matched date patterns.
  *
  * This function:
- * 1. Determines relevant date format templates (day/month/year, numeric, month-year, year-month-day) based on detected patterns.
+ * 1. Determines relevant date format templates (day/month/year, month-year, year-month-day) based on detected patterns.
  * 2. Attempts to parse the input date string using each relevant format (locale: en-gb).
  * 3. If parsing succeeds, produces all possible variants by formatting the parsed date with each template.
  *
@@ -62,7 +58,7 @@ const possibleDateFormats = {
  * - Returns an empty array if parsing fails.
  *
  * @param {string} dateString - The user-provided date string to parse and format (e.g. "1/1/24", "01 Jan 2024", "January-2024").
- * @param {Object} matchedPatterns - Object indicating which date patterns were matched (e.g. `{ dayMonthYear: true, numeric: false }`).
+ * @param {Object} matchedPatterns - Object indicating which date patterns were matched (e.g. `{ threeParts: true, twoParts: false }`).
  *
  * @returns {string[]} Array of unique formatted date variants. Empty if input cannot be parsed.
  */
@@ -76,9 +72,14 @@ function generateDateFormatVariants(dateString, matchedPatterns = {}) {
         }
     }
 
-    // parse the inputted date to see if it is valid and to get the date
-    // components. Then use the date components to generate the date
-    // variants in the correct format.
+    // dual-format generation strategy:
+    // for any valid date input, this function always generates both numeric and month-name
+    // variants. There is no separate numeric pattern identifier; instead, all relevant
+    // formats (e.g., 'd M yyyy', 'd MMM yyyy', 'd MMMM yyyy') are included for each
+    // matched pattern, so both styles are produced for the same input.
+
+    // parse the inputted date to see if it is valid and to get the date components.
+    // Then use the date components to generate the date variants in the correct format.
     const dateVariants = new Set();
     let validDate = null;
     for (const dateFormat of relevantDateFormats) {
@@ -96,7 +97,7 @@ function generateDateFormatVariants(dateString, matchedPatterns = {}) {
         for (const dateFormat of relevantDateFormats) {
             const formatted = validDate.toFormat(dateFormat);
             dateVariants.add(formatted);
-            // make sure `sep`, and `sept` are added.
+            // Ensure both 'Sep' and 'Sept' are included for September.
             const septVariant = formatted.replace(/\bSept\b/gi, 'Sep');
             if (septVariant !== formatted) {
                 dateVariants.add(septVariant);
