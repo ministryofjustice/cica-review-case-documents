@@ -38,7 +38,7 @@ function createCsrf(doubleCsrf = defaultDoubleCsrf) {
          * @returns {string} Session ID to associate with the CSRF token.
          */
         getSessionIdentifier: (req) => {
-            if (!req.session || !req.session.id) {
+            if (!req.session?.id) {
                 throw new VError(
                     {
                         name: 'ConfigurationError'

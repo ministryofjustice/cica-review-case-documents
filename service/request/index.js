@@ -2,6 +2,19 @@ import got from 'got';
 import merge from 'lodash.merge';
 
 /**
+ * Executes a Got request using the v15 calling shape.
+ *
+ * @param {Object} options - Request options including the target URL.
+ * @param {string} options.url - Absolute or relative URL passed as the first Got argument.
+ * @returns {Promise<Object>} Promise resolving to the Got response.
+ */
+function executeRequest(options) {
+    const { url, ...requestOptions } = options;
+
+    return got(url, requestOptions);
+}
+
+/**
  * Creates a request service with methods for making HTTP requests (GET, POST)
  * using default options suitable for JSON:API.
  *
@@ -39,7 +52,7 @@ function createRequestService() {
         // allow external overriding of the default internal opts
         // for example to change responseType, or headers
         opts = merge(opts, options);
-        return got(opts);
+        return executeRequest(opts);
     }
 
     /**
@@ -65,7 +78,7 @@ function createRequestService() {
         // allow externl overriding of the default internal opts
         // for example to change responseType, or headers
         opts = merge(opts, options);
-        return got(opts);
+        return executeRequest(opts);
     }
 
     return Object.freeze({
