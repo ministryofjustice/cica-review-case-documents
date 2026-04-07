@@ -28,18 +28,18 @@
  * - `remainingText`: The original string with dates removed and whitespace normalized
  *
  * @example
- * extractDatesFromSearchString("report 12/05/2024 meeting 01-02-24");
+ * extractDatesFromSearchString("report 12/05/2024 meeting 2024-10-19");
  * // {
- * //   dates: ["12/05/2024", "01-02-24"],
+ * //   dates: ["12/05/2024", "2024-10-19"],
  * //   remainingText: "report meeting",
- * //   matchedPatterns: [{numeric: true}, {numeric: true}]
+ * //   matchedPatterns: [{threeParts: true}, {threeParts: true}]
  * // }
  *
  * extractDatesFromSearchString("Appointment 1st Jan 2024 scheduled");
  * // {
  * //   dates: ["1st Jan 2024"],
  * //   remainingText: "Appointment scheduled",
- * //   matchedPatterns: [{dayMonthYear: true}]
+ * //   matchedPatterns: [{threeParts: true}]
  * // }
  */
 function extractDatesFromSearchString(searchString) {
@@ -71,20 +71,17 @@ function extractDatesFromSearchString(searchString) {
     const year = `(?:${year4Digit}|${year2Digit})`;
 
     // day-month-year. e.g. 12 Jan 2024, 12 January 2024.
-    const dayMonthYear = `${dayNumberWithOrdinal}${separator}(?:${monthName})${separator}${year}`;
+    const dayMonthYear = `${dayNumberWithOrdinal}${separator}(?:${monthNumber}|${monthName})${separator}${year}`;
 
     // month-year. e.g. Jan 2024, January-2024.
     const monthYear = `(?:${monthName})${separator}${year}`;
-
-    // purely numeric with separators: e.g. 12/01/2024, 12-01-24, 12 01 24.
-    const numeric = `${dayNumber}${separator}${monthNumber}${separator}${year}`;
 
     // year-month-day. e.g. 2022-10-25, 2024-01-12.
     const yearMonthDay = `${year4Digit}${separator}(?:${monthNumber})${separator}${dayNumber}`;
 
     // combine all variants (with named groups).
     // order matters: most specific -> more general, to ensure correct matching and group detection.
-    const datePattern = `(?<!\\w)(?:(?<dayMonthYear>${dayMonthYear})|(?<numeric>${numeric})|(?<monthYear>${monthYear})|(?<yearMonthDay>${yearMonthDay}))(?!\\w)`;
+    const datePattern = `(?<!\\w)(?:(?<threeParts>(?:${dayMonthYear}|${yearMonthDay}))|(?<twoParts>${monthYear}))(?!\\w)`;
     const dateRegex = new RegExp(datePattern, 'giu');
 
     // extract all matches and which pattern matched.
