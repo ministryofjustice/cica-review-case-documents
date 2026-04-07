@@ -30,8 +30,10 @@ export default function errorHandler(
     }
 
     const { render } = templateEngineService;
+    const userName = req.session?.username;
     const html = render('page/error.njk', {
-        error: 'Sorry, there is a problem with the service.'
+        error: 'Sorry, there is a problem with the service.',
+        userName
     });
 
     res.status(status).send(html);

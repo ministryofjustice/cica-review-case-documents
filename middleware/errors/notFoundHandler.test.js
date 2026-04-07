@@ -4,14 +4,21 @@ import notFoundHandler from './notFoundHandler.js';
 
 const mockHtml = '<h1>404 Not Found</h1>';
 const mockTemplateEngineService = {
-    render: (template) => {
+    render: (template, context) => {
         assert.equal(template, 'page/404.njk');
+        assert.deepEqual(context, {
+            userName: 'test.user@example.com'
+        });
         return mockHtml;
     }
 };
 
 test('notFoundHandler sends 404 and renders 404 page', async () => {
-    const req = {};
+    const req = {
+        session: {
+            username: 'test.user@example.com'
+        }
+    };
     let statusCode, sentHtml;
     const res = {
         status(code) {

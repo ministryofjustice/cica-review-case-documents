@@ -85,6 +85,7 @@ export function createPageViewerHandler(
             }
 
             const alignedPageHighlights = determineHighlightAlignmentStrategy(align, pageChunks);
+            const userName = req.session?.username;
 
             const html = render('document/page/imageview.njk', {
                 documentId,
@@ -95,6 +96,7 @@ export function createPageViewerHandler(
                 pageType: ['document'],
                 csrfToken: res.locals.csrfToken,
                 cspNonce: res.locals.cspNonce,
+                userName,
                 textPageLink,
                 pageTitle,
                 pageChunks: alignedPageHighlights,

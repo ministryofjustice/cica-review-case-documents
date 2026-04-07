@@ -16,6 +16,10 @@ export default function notFoundHandler(
     templateEngineService = createTemplateEngineService()
 ) {
     const { render } = templateEngineService;
-    const html = render('page/404.njk');
+    const userName = req.session?.username;
+
+    const html = render('page/404.njk', {
+        userName
+    });
     res.status(404).send(html);
 }

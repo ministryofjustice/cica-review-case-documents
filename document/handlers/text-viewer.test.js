@@ -37,7 +37,7 @@ describe('Text Viewer Handler', () => {
                 crn: '26-745678'
             },
             query: {},
-            session: { caseSelected: true },
+            session: { caseSelected: true, username: 'viewer@example.com' },
             log: {
                 error: () => {
                     errorLogged = true;
@@ -64,6 +64,7 @@ describe('Text Viewer Handler', () => {
         assert.equal(errorLogged, false);
         assert.equal(sentHtml, renderOutput);
         assert.equal(renderParams.pageText, 'Resolved metadata text');
+        assert.equal(renderParams.userName, 'viewer@example.com');
         assert.equal(renderParams.showPagination, true);
         assert.equal(renderParams.paginationData?.results?.count, 3);
         assert.equal(
