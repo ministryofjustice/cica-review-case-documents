@@ -61,6 +61,7 @@ export function createTextViewerHandler(
             const { text } = pageMetadata;
 
             const pageText = text || 'No text content available for this page.'; // TODO: confirm with content team whether this is the desired fallback text when no OCR text is available
+            const userName = req.session?.username;
 
             const html = render('document/page/textview.njk', {
                 documentId,
@@ -70,6 +71,7 @@ export function createTextViewerHandler(
                 pageType: ['document'],
                 csrfToken: res.locals.csrfToken,
                 cspNonce: res.locals.cspNonce,
+                userName,
                 imagePageLink,
                 pageTitle,
                 pageText,

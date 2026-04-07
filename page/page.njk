@@ -22,7 +22,7 @@
         navigation: {
             label: 'Account navigation',
             items: [{
-                text: 'User One',
+                text: userName | default('User', true),
                 href: '#',
                 active: true
             }, {
