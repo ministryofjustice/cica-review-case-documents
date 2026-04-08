@@ -42,11 +42,9 @@ test('GET /auth/login should render login page', async () => {
 
 test('GET /auth/login should call next with error when render throws', () => {
     const renderError = new Error('Render failed');
-    const handler = createLoginHandler(() => ({
-        render: () => {
-            throw renderError;
-        }
-    }));
+    const handler = createLoginHandler(() => {
+        throw renderError;
+    });
 
     const req = {};
     const res = {

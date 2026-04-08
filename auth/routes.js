@@ -1,6 +1,6 @@
 import express from 'express';
 import generalRateLimiter from '../middleware/rateLimiter/index.js';
-import createTemplateEngineService from '../templateEngine/index.js';
+import { renderHtml as defaultRenderHtml } from '../templateEngine/render-html.js';
 import { loginParamsValidator, signOutUser } from './auth-service.js';
 import failureRateLimiter from './rateLimiters/authRateLimiter.js';
 import { getLoginAttemptContext, renderLoginResponse } from './utils/loginHelpers/login-helpers.js';
@@ -8,15 +8,10 @@ import { getLoginAttemptContext, renderLoginResponse } from './utils/loginHelper
 const router = express.Router();
 
 export const createLoginHandler =
-    (templateEngineServiceFactory = createTemplateEngineService) =>
+    (renderHtml = defaultRenderHtml) =>
     (req, res, next) => {
         try {
-            const templateEngineService = templateEngineServiceFactory();
-            const { render } = templateEngineService;
-            const html = render('index/login.njk', {
-                csrfToken: res.locals.csrfToken
-            });
-            res.send(html);
+            res.send(renderHtml('index/login.njk', {}, req, res));
         } catch (err) {
             next(err);
         }
@@ -39,29 +34,37 @@ router.post('/login', failureRateLimiter, (req, res) => {
 
     // Missing username or password: Bad Request
     if (!hasBoth) {
-        return renderLoginResponse(res, {
-            csrfToken: res.locals.csrfToken,
-            error: 'Enter your username and password',
-            usernameError,
-            passwordError,
-            username,
-            attemptsLeft,
-            status: 400
-        });
+        return renderLoginResponse(
+            res,
+            {
+                csrfToken: res.locals.csrfToken,
+                error: 'Enter your username and password',
+                usernameError,
+                passwordError,
+                username,
+                attemptsLeft,
+                status: 400
+            },
+            req
+        );
     }
 
     // Invalid credentials: Unauthorized
     if (error || usernameError || passwordError) {
-        return renderLoginResponse(res, {
-            csrfToken: res.locals.csrfToken,
-            error: 'Your details do not match',
-            usernameError,
-            passwordError,
-            username,
-            attemptsLeft,
-            lockoutWarning,
-            status: 401
-        });
+        return renderLoginResponse(
+            res,
+            {
+                csrfToken: res.locals.csrfToken,
+                error: 'Your details do not match',
+                usernameError,
+                passwordError,
+                username,
+                attemptsLeft,
+                lockoutWarning,
+                status: 401
+            },
+            req
+        );
     }
 
     // Success path

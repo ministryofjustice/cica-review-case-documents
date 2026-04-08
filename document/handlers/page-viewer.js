@@ -1,5 +1,5 @@
 import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
-import createTemplateEngineService from '../../templateEngine/index.js';
+import { renderHtml as defaultRenderHtml } from '../../templateEngine/render-html.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
 import { formatPageTitle } from '../utils/formatters/index.js';
 import { buildImageUrl, buildTextPageLink } from '../utils/link-builders/index.js';
@@ -13,19 +13,16 @@ import { paginationDataFromMetadata } from '../utils/pagination/index.js';
  *
  * @param {Function} createMetadataServiceFactory - Factory function to create metadata service
  * @param {Function} createPageChunksServiceFactory - Factory function to create document page chunks service
- * @param {Function} [createTemplateEngineServiceFactory=createTemplateEngineService] - Factory that returns a template engine service with a render method
+ * @param {Function} [renderHtml=defaultRenderHtml] - Shared HTML render helper.
  * @returns {Function} Express route handler
  */
 export function createPageViewerHandler(
     createMetadataServiceFactory,
     createPageChunksServiceFactory,
-    createTemplateEngineServiceFactory = createTemplateEngineService
+    renderHtml = defaultRenderHtml
 ) {
     return async (req, res, next) => {
         try {
-            const templateEngineService = createTemplateEngineServiceFactory();
-            const { render } = templateEngineService;
-
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
             const { searchTerm = '', align = 'on' } = req.query;
@@ -86,23 +83,20 @@ export function createPageViewerHandler(
 
             const alignedPageHighlights = determineHighlightAlignmentStrategy(align, pageChunks);
 
-            const html = render('document/page/imageview.njk', {
+            const pageData = {
                 documentId,
                 pageNumber,
                 imageUrl,
                 caseReferenceNumber: crn,
                 caseSelected: req.session?.caseSelected,
                 pageType: ['document'],
-                csrfToken: res.locals.csrfToken,
-                cspNonce: res.locals.cspNonce,
                 textPageLink,
                 pageTitle,
                 pageChunks: alignedPageHighlights,
                 showPagination: paginationData?.results?.count > 1,
                 paginationData
-            });
-
-            return res.send(html);
+            };
+            return res.send(renderHtml('document/page/imageview.njk', pageData, req, res));
         } catch (err) {
             next(err);
         }

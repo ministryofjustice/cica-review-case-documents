@@ -6,14 +6,21 @@ import createSearchRouter from './routes.js';
 
 describe('Search Routes', () => {
     let app;
-    let mockCreateTemplateEngineService;
+    let mockRenderHtml;
     let mockCreateSearchService;
-    let mockRender;
     let mockGetSearchResults;
+    let lastRenderParams;
 
     beforeEach(() => {
         // Mock implementations
-        mockRender = (template, params) => `<html>${template}</html>`;
+        mockRenderHtml = (template, params, req, res) => {
+            lastRenderParams = {
+                ...(res?.locals || {}),
+                userName: req?.session?.username,
+                ...params
+            };
+            return `<html>${template}</html>`;
+        };
         mockGetSearchResults = async () => ({
             body: {
                 data: {
@@ -27,17 +34,13 @@ describe('Search Routes', () => {
             }
         });
 
-        // Mock factory functions
-        mockCreateTemplateEngineService = () => ({
-            render: mockRender
-        });
         mockCreateSearchService = () => ({
             getSearchResults: mockGetSearchResults
         });
 
         const searchRouter = createSearchRouter({
-            createTemplateEngineService: mockCreateTemplateEngineService,
-            createSearchService: mockCreateSearchService
+            createSearchService: mockCreateSearchService,
+            renderHtml: mockRenderHtml
         });
 
         app = express();
@@ -48,7 +51,8 @@ describe('Search Routes', () => {
         app.use((req, res, next) => {
             req.session = {
                 caseSelected: true,
-                caseReferenceNumber: '12345'
+                caseReferenceNumber: '12345',
+                username: 'search.user@example.com'
             };
             req.log = { info: () => {}, error: () => {} };
             res.locals.csrfToken = 'test-csrf-token';
@@ -69,12 +73,14 @@ describe('Search Routes', () => {
             const res = await request(app).get('/search');
             assert.strictEqual(res.statusCode, 200);
             assert.match(res.text, /search\/page\/index.njk/);
+            assert.strictEqual(lastRenderParams.userName, 'search.user@example.com');
         });
 
         it('should call search service and render results when a query is provided', async () => {
             const res = await request(app).get('/search?query=test');
             assert.strictEqual(res.statusCode, 200);
             assert.match(res.text, /search\/page\/results.njk/);
+            assert.strictEqual(lastRenderParams.userName, 'search.user@example.com');
         });
 
         it('should handle errors from the search service', async () => {
@@ -87,8 +93,8 @@ describe('Search Routes', () => {
                 getSearchResults: failingSearch
             });
             const routerWithFailingService = createSearchRouter({
-                createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: failingSearchService
+                createSearchService: failingSearchService,
+                renderHtml: mockRenderHtml
             });
             testApp.use((req, res, next) => {
                 req.session = {
@@ -119,8 +125,8 @@ describe('Search Routes', () => {
                 getSearchResults: errorResponseSearch
             });
             const routerWithErrorService = createSearchRouter({
-                createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: errorSearchService
+                createSearchService: errorSearchService,
+                renderHtml: mockRenderHtml
             });
             testApp.use((req, res, next) => {
                 req.session = {
@@ -149,8 +155,8 @@ describe('Search Routes', () => {
                 getSearchResults: errorResponseSearch
             });
             const routerWithErrorService = createSearchRouter({
-                createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: errorSearchService
+                createSearchService: errorSearchService,
+                renderHtml: mockRenderHtml
             });
             testApp.use((req, res, next) => {
                 req.session = {
@@ -179,8 +185,8 @@ describe('Search Routes', () => {
                 getSearchResults: errorResponseSearch
             });
             const routerWithErrorService = createSearchRouter({
-                createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: errorSearchService
+                createSearchService: errorSearchService,
+                renderHtml: mockRenderHtml
             });
             testApp.use((req, res, next) => {
                 req.session = {
@@ -214,8 +220,8 @@ describe('Search Routes', () => {
                 getSearchResults: errorResponseSearch
             });
             const routerWithErrorService = createSearchRouter({
-                createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: errorSearchService
+                createSearchService: errorSearchService,
+                renderHtml: mockRenderHtml
             });
             testApp.use((req, res, next) => {
                 req.session = {
@@ -259,8 +265,8 @@ describe('Search Routes', () => {
             });
 
             const routerWithResults = createSearchRouter({
-                createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: searchService
+                createSearchService: searchService,
+                renderHtml: mockRenderHtml
             });
 
             testApp.use((req, res, next) => {
@@ -319,8 +325,8 @@ describe('Search Routes', () => {
             });
 
             const router = createSearchRouter({
-                createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: mockCreateSearchService
+                createSearchService: mockCreateSearchService,
+                renderHtml: mockRenderHtml
             });
             errorApp.use('/search', router);
 

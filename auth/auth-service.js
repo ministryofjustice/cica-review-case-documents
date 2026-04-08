@@ -1,7 +1,6 @@
-import createTemplateEngineService from '../templateEngine/index.js';
+import { renderHtml as defaultRenderHtml } from '../templateEngine/render-html.js';
 import failureRateLimiter, { getRateLimitKey } from './rateLimiters/authRateLimiter.js';
 import { getAuthConfig } from './utils/getAuthConfig/index.js';
-
 /**
  * Validates login parameters (username and password) against authentication configuration.
  *
@@ -51,7 +50,7 @@ export function loginParamsValidator(username, password) {
  * @param {import('express').Response} res - The Express response object.
  * @param {Function} next - The next middleware function.
  */
-export function signOutUser(req, res, next) {
+export function signOutUser(req, res, next, renderHtml = defaultRenderHtml) {
     const caseReferenceNumber = req.session?.caseReferenceNumber;
     const rateLimitKey = getRateLimitKey(req);
 
@@ -60,12 +59,10 @@ export function signOutUser(req, res, next) {
     }
 
     req.session.destroy(() => {
-        const templateEngineService = createTemplateEngineService();
-        const { render } = templateEngineService;
-        const html = render('index/sign-out.njk', {
+        const pageData = {
             message: 'You have signed out',
             caseReferenceNumber
-        });
-        res.send(html);
+        };
+        res.send(renderHtml('index/sign-out.njk', pageData, req, res));
     });
 }

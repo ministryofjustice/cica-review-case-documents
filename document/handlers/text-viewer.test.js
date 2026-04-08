@@ -19,12 +19,14 @@ describe('Text Viewer Handler', () => {
                         }
                     })
             }),
-            () => ({
-                render: (_view, params) => {
-                    renderParams = params;
-                    return renderOutput;
-                }
-            })
+            (_view, params, req, res) => {
+                renderParams = {
+                    ...(res?.locals || {}),
+                    userName: req?.session?.username,
+                    ...params
+                };
+                return renderOutput;
+            }
         );
 
         let sentHtml;
@@ -37,7 +39,7 @@ describe('Text Viewer Handler', () => {
                 crn: '26-745678'
             },
             query: {},
-            session: { caseSelected: true },
+            session: { caseSelected: true, username: 'viewer@example.com' },
             log: {
                 error: () => {
                     errorLogged = true;
@@ -64,6 +66,7 @@ describe('Text Viewer Handler', () => {
         assert.equal(errorLogged, false);
         assert.equal(sentHtml, renderOutput);
         assert.equal(renderParams.pageText, 'Resolved metadata text');
+        assert.equal(renderParams.userName, 'viewer@example.com');
         assert.equal(renderParams.showPagination, true);
         assert.equal(renderParams.paginationData?.results?.count, 3);
         assert.equal(
@@ -94,12 +97,14 @@ describe('Text Viewer Handler', () => {
                         }
                     })
             }),
-            () => ({
-                render: (_view, params) => {
-                    renderParams = params;
-                    return 'render-output-single-page';
-                }
-            })
+            (_view, params, req, res) => {
+                renderParams = {
+                    ...(res?.locals || {}),
+                    userName: req?.session?.username,
+                    ...params
+                };
+                return 'render-output-single-page';
+            }
         );
 
         const req = {
@@ -133,14 +138,16 @@ describe('Text Viewer Handler', () => {
         const renderOutput = 'render-output-fallback';
         const sendResult = { sent: true };
 
-        const createTemplateEngineServiceFactory = () => ({
-            render: (view, params) => {
-                renderCallCount += 1;
-                renderView = view;
-                renderParams = params;
-                return renderOutput;
-            }
-        });
+        const renderHtml = (view, params, req, res) => {
+            renderCallCount += 1;
+            renderView = view;
+            renderParams = {
+                ...(res?.locals || {}),
+                userName: req?.session?.username,
+                ...params
+            };
+            return renderOutput;
+        };
 
         const createMetadataServiceFactory = (args) => {
             metadataFactoryArgs = args;
@@ -154,10 +161,7 @@ describe('Text Viewer Handler', () => {
             };
         };
 
-        const handler = createTextViewerHandler(
-            createMetadataServiceFactory,
-            createTemplateEngineServiceFactory
-        );
+        const handler = createTextViewerHandler(createMetadataServiceFactory, renderHtml);
 
         let sentHtml;
         const req = {
@@ -213,7 +217,7 @@ describe('Text Viewer Handler', () => {
                         })
                 };
             },
-            () => ({ render: () => 'render-output-outer-catch' })
+            () => 'render-output-outer-catch'
         );
 
         const req = {
@@ -254,12 +258,10 @@ describe('Text Viewer Handler', () => {
                     throw metadataError;
                 }
             }),
-            () => ({
-                render: () => {
-                    renderCalled = true;
-                    return 'render-output-metadata-failure';
-                }
-            })
+            () => {
+                renderCalled = true;
+                return 'render-output-metadata-failure';
+            }
         );
 
         const req = {

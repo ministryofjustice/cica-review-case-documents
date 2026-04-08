@@ -1,5 +1,5 @@
 import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
-import createTemplateEngineService from '../../templateEngine/index.js';
+import { renderHtml as defaultRenderHtml } from '../../templateEngine/render-html.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
 import { formatPageTitle } from '../utils/formatters/index.js';
 import { buildImagePageLink } from '../utils/link-builders/index.js';
@@ -11,18 +11,15 @@ import { paginationDataFromMetadata } from '../utils/pagination/index.js';
  * Renders a text viewer page displaying OCR text content from document page metadata
  *
  * @param {Function} createMetadataServiceFactory -  Factory that returns a metadata service, that throws an error on invalid or malformed data.
- * @param {Function} [createTemplateEngineServiceFactory=createTemplateEngineService] - Factory that returns a template engine service with a render method
+ * @param {Function} [renderHtml=defaultRenderHtml] - Shared HTML render helper.
  * @returns {Function} Express route handler
  */
 export function createTextViewerHandler(
     createMetadataServiceFactory,
-    createTemplateEngineServiceFactory = createTemplateEngineService
+    renderHtml = defaultRenderHtml
 ) {
     return async (req, res, next) => {
         try {
-            const templateEngineService = createTemplateEngineServiceFactory();
-            const { render } = templateEngineService;
-
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
             const { searchTerm = '' } = req.query;
@@ -62,20 +59,20 @@ export function createTextViewerHandler(
 
             const pageText = text || 'No text content available for this page.'; // TODO: confirm with content team whether this is the desired fallback text when no OCR text is available
 
-            const html = render('document/page/textview.njk', {
+            const pageData = {
                 documentId,
                 pageNumber,
                 caseReferenceNumber: crn,
                 caseSelected: req.session?.caseSelected,
                 pageType: ['document'],
-                csrfToken: res.locals.csrfToken,
-                cspNonce: res.locals.cspNonce,
                 imagePageLink,
                 pageTitle,
                 pageText,
                 showPagination: paginationData?.results?.count > 1,
                 paginationData
-            });
+            };
+
+            const html = renderHtml('document/page/textview.njk', pageData, req, res);
 
             return res.send(html);
         } catch (err) {

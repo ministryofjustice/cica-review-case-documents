@@ -24,18 +24,12 @@ import rateLimitErrorHandler from './authRateLimitErrorHandler.js';
 import { LoginLockoutError } from './authRateLimiter.js';
 
 /**
- * Mocks the creation of a template engine service for testing purposes.
- * Returns an object with a `render` method that generates a string containing the lockout warning.
+ * Mocks the shared HTML render helper for testing purposes.
  *
- * @param {Object} app - The Express application instance (unused in mock).
- * @returns {{ render: function(string, Object): string }} An object with a render function.
+ * @returns {string} Rendered lockout HTML.
  */
-function mockCreateTemplateEngineService(app) {
-    return {
-        render: (template, context) => {
-            return `LOCKOUT:${context.lockoutWarning}`;
-        }
-    };
+function mockRenderHtml(template, context) {
+    return `LOCKOUT:${context.lockoutWarning}`;
 }
 
 test('responds with 429 and lockout message for LoginLockoutError', async () => {
@@ -46,7 +40,7 @@ test('responds with 429 and lockout message for LoginLockoutError', async () => 
         next(new LoginLockoutError());
     });
 
-    app.use(rateLimitErrorHandler(app, mockCreateTemplateEngineService));
+    app.use(rateLimitErrorHandler(mockRenderHtml));
 
     const res = await request(app).get('/test-lockout');
     assert.equal(res.status, 429);
@@ -64,7 +58,7 @@ test('passes non-rate-limit errors to next error handler', async () => {
         next(new Error('Generic error'));
     });
 
-    app.use(rateLimitErrorHandler(app, mockCreateTemplateEngineService));
+    app.use(rateLimitErrorHandler(mockRenderHtml));
 
     app.use((err, req, res, next) => {
         res.status(500).send(`GENERIC:${err.message}`);

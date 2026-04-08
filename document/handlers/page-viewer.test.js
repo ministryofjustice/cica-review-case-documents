@@ -184,6 +184,7 @@ describe('Page Viewer Handler', () => {
     describe('Successful rendering', () => {
         it('renders page with valid metadata', async () => {
             let responseSent = false;
+            let renderParams;
 
             const mockCreateMetadataService = () => ({
                 getPageMetadata: async () =>
@@ -199,7 +200,14 @@ describe('Page Viewer Handler', () => {
             const handler = createPageViewerHandler(
                 mockCreateMetadataService,
                 mockCreatePageChunksService,
-                () => ({ render: () => 'render-output-valid-metadata' })
+                (_view, params, req, res) => {
+                    renderParams = {
+                        ...(res?.locals || {}),
+                        userName: req?.session?.username,
+                        ...params
+                    };
+                    return 'render-output-valid-metadata';
+                }
             );
 
             const req = {
@@ -211,7 +219,10 @@ describe('Page Viewer Handler', () => {
                 query: {
                     searchTerm: 'test'
                 },
-                session: { caseSelected: 'CASE-2024-001' },
+                session: {
+                    caseSelected: 'CASE-2024-001',
+                    username: 'viewer@example.com'
+                },
                 log: { info: () => {}, error: () => {}, warn: () => {} }
             };
 
@@ -234,6 +245,7 @@ describe('Page Viewer Handler', () => {
 
             assert.equal(nextError, undefined);
             assert.equal(responseSent, true);
+            assert.equal(renderParams.userName, 'viewer@example.com');
         });
 
         it('handles missing query parameters with defaults', async () => {
@@ -251,7 +263,7 @@ describe('Page Viewer Handler', () => {
             const handler = createPageViewerHandler(
                 mockCreateMetadataService,
                 mockCreatePageChunksService,
-                () => ({ render: () => 'render-output-default-query' })
+                () => 'render-output-default-query'
             );
 
             const req = {

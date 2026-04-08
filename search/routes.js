@@ -1,18 +1,19 @@
 import express from 'express';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
+import { renderHtml as defaultRenderHtml } from '../templateEngine/render-html.js';
 
 /**
  * Creates an Express router for handling search functionality.
  *
  * @param {Object} services - The services required to create the router.
- * @param {Function} services.createTemplateEngineService - Factory function to create the template engine service.
  * @param {Function} services.createSearchService - Factory function to create the search service.
+ * @param {Function} [services.renderHtml=defaultRenderHtml] - Shared HTML render helper.
  * @returns {express.Router} The configured Express router for search routes.
  *
  * @route POST /search
  * @route GET /search
  */
-function createSearchRouter({ createTemplateEngineService, createSearchService }) {
+function createSearchRouter({ createSearchService, renderHtml = defaultRenderHtml }) {
     const router = express.Router();
 
     router.post('/', (req, res, next) => {
@@ -30,20 +31,15 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
 
     router.get('/', async (req, res, next) => {
         try {
-            const templateEngineService = createTemplateEngineService();
-            const { render } = templateEngineService;
-
             const { query, pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.query;
 
             if (!query) {
-                const html = render('search/page/index.njk', {
+                const pageData = {
                     caseSelected: req.session.caseSelected,
                     caseReferenceNumber: req.session.caseReferenceNumber,
-                    pageType: 'search',
-                    csrfToken: res.locals.csrfToken,
-                    cspNonce: res.locals.cspNonce
-                });
-                return res.send(html);
+                    pageType: 'search'
+                };
+                return res.send(renderHtml('search/page/index.njk', pageData, req, res));
             }
 
             const pageNumber = Math.max(Number(rawPageNumber) || 1, 1);
@@ -56,8 +52,6 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 caseSelected: req.session.caseSelected,
                 caseReferenceNumber: req.session.caseReferenceNumber,
                 pageType: 'search',
-                csrfToken: res.locals.csrfToken,
-                cspNonce: res.locals.cspNonce,
                 query
             };
 
@@ -82,8 +76,9 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                     href: `#${error.source?.pointer?.split('/')?.pop() || 'error'}`
                 }));
 
-                const html = render('search/page/results.njk', templateParams);
-                return res.status(400).send(html);
+                return res
+                    .status(400)
+                    .send(renderHtml('search/page/results.njk', templateParams, req, res));
             }
 
             const searchResults = body?.data?.attributes?.results;
@@ -117,8 +112,9 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 isLastPage: currentPageIndex >= totalPageCount
             };
 
-            const html = render('search/page/results.njk', templateParams);
-            return res.status(200).send(html);
+            return res
+                .status(200)
+                .send(renderHtml('search/page/results.njk', templateParams, req, res));
         } catch (error) {
             req.log.error('Error occurred while processing search request:', error);
             next(error);

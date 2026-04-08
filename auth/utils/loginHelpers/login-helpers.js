@@ -1,4 +1,4 @@
-import createTemplateEngineService from '../../../templateEngine/index.js';
+import { renderHtml as defaultRenderHtml } from '../../../templateEngine/render-html.js';
 
 /**
  * Renders the login response using a template engine and sends it to the client.
@@ -26,19 +26,24 @@ export function renderLoginResponse(
         attemptsLeft,
         lockoutWarning,
         status = 400
-    }
+    },
+    req,
+    renderHtml = defaultRenderHtml
 ) {
-    const templateEngineService = createTemplateEngineService();
-    const { render } = templateEngineService;
-    const html = render('index/login.njk', {
-        csrfToken,
-        error,
-        usernameError,
-        passwordError,
-        username,
-        attemptsLeft,
-        lockoutWarning
-    });
+    const html = renderHtml(
+        'index/login.njk',
+        {
+            csrfToken,
+            error,
+            usernameError,
+            passwordError,
+            username,
+            attemptsLeft,
+            lockoutWarning
+        },
+        req,
+        res
+    );
     return res.status(status).send(html);
 }
 

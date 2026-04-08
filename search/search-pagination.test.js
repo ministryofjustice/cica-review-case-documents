@@ -6,23 +6,18 @@ import createSearchRouter from './routes.js';
 
 describe('Search Pagination Persistence', () => {
     let app;
-    let mockCreateTemplateEngineService;
+    let mockRenderHtml;
     let mockCreateSearchService;
-    let mockRender;
     let sessionData;
 
     beforeEach(() => {
         sessionData = {};
 
         // Mock render function that captures template params
-        mockRender = mock.fn((template, params) => {
+        mockRenderHtml = mock.fn((template, params) => {
             // Store params for inspection
-            mockRender.lastParams = params;
+            mockRenderHtml.lastParams = params;
             return `<html>${template}</html>`;
-        });
-
-        mockCreateTemplateEngineService = () => ({
-            render: mockRender
         });
 
         mockCreateSearchService = () => ({
@@ -51,8 +46,8 @@ describe('Search Pagination Persistence', () => {
         });
 
         const searchRouter = createSearchRouter({
-            createTemplateEngineService: mockCreateTemplateEngineService,
-            createSearchService: mockCreateSearchService
+            createSearchService: mockCreateSearchService,
+            renderHtml: mockRenderHtml
         });
 
         app = express();
@@ -78,10 +73,10 @@ describe('Search Pagination Persistence', () => {
             const res = await request(app).get('/search?query=test&pageNumber=3');
 
             assert.strictEqual(res.statusCode, 200);
-            assert.ok(mockRender.lastParams);
-            assert.ok(mockRender.lastParams.searchResults);
+            assert.ok(mockRenderHtml.lastParams);
+            assert.ok(mockRenderHtml.lastParams.searchResults);
 
-            const firstResult = mockRender.lastParams.searchResults[0];
+            const firstResult = mockRenderHtml.lastParams.searchResults[0];
             assert.strictEqual(firstResult.docUuid, 'doc-123');
             assert.strictEqual(firstResult.searchTerm, 'test');
             assert.strictEqual(firstResult.caseReferenceNumber, '12-745678');
@@ -91,7 +86,7 @@ describe('Search Pagination Persistence', () => {
             const res = await request(app).get('/search?query=test');
 
             assert.strictEqual(res.statusCode, 200);
-            const firstResult = mockRender.lastParams.searchResults[0];
+            const firstResult = mockRenderHtml.lastParams.searchResults[0];
             assert.strictEqual(firstResult.searchResultsPageNumber, undefined);
             assert.strictEqual(firstResult.docUuid, 'doc-123');
             assert.strictEqual(firstResult.searchTerm, 'test');
@@ -111,7 +106,7 @@ describe('Search Pagination Persistence', () => {
             const res = await request(app).get('/search?query=test&pageNumber=1');
 
             assert.strictEqual(res.statusCode, 200);
-            const pagination = mockRender.lastParams.pagination;
+            const pagination = mockRenderHtml.lastParams.pagination;
             assert.strictEqual(pagination.currentPageIndex, 1);
             assert.strictEqual(pagination.isFirstPage, true);
         });

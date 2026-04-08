@@ -1,4 +1,4 @@
-import createTemplateEngineService from '../../templateEngine/index.js';
+import { renderHtml as defaultRenderHtml } from '../../templateEngine/render-html.js';
 
 /**
  * Express middleware for handling global errors.
@@ -10,16 +10,9 @@ import createTemplateEngineService from '../../templateEngine/index.js';
  * @param {import('express').Request} req - The Express request object.
  * @param {import('express').Response} res - The Express response object.
  * @param {Function} next - The next middleware function.
- * @param {Object} [templateEngineService=createTemplateEngineService()] - Service for rendering templates.
- * @param {Function} templateEngineService.render - Function to render templates.
+ * @param {Function} [renderHtml=defaultRenderHtml] - Shared HTML render helper.
  */
-export default function errorHandler(
-    err,
-    req,
-    res,
-    next,
-    templateEngineService = createTemplateEngineService()
-) {
+export default function errorHandler(err, req, res, next, renderHtml = defaultRenderHtml) {
     const log = req.log || console;
     const status = err.status || err.statusCode || 500;
 
@@ -29,10 +22,14 @@ export default function errorHandler(
         return next(err);
     }
 
-    const { render } = templateEngineService;
-    const html = render('page/error.njk', {
-        error: 'Sorry, there is a problem with the service.'
-    });
+    const html = renderHtml(
+        'page/error.njk',
+        {
+            error: 'Sorry, there is a problem with the service.'
+        },
+        req,
+        res
+    );
 
     res.status(status).send(html);
 }

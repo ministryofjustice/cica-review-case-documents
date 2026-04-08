@@ -188,11 +188,11 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
         generalRateLimiter,
         getCaseReferenceNumberFromQueryString,
         caseSelected,
-        searchRouter({ createTemplateEngineService, createSearchService })
+        searchRouter({ createSearchService })
     );
 
     app.use(notFoundHandler);
-    app.use(rateLimitErrorHandler(app));
+    app.use(rateLimitErrorHandler());
     app.use(errorHandler);
 
     return app;
