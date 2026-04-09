@@ -10,10 +10,14 @@ describe('Search Routes', () => {
     let mockCreateSearchService;
     let mockRender;
     let mockGetSearchResults;
+    let lastRenderParams;
 
     beforeEach(() => {
         // Mock implementations
-        mockRender = (template, params) => `<html>${template}</html>`;
+        mockRender = (template, params) => {
+            lastRenderParams = params;
+            return `<html>${template}</html>`;
+        };
         mockGetSearchResults = async () => ({
             body: {
                 data: {
@@ -48,7 +52,8 @@ describe('Search Routes', () => {
         app.use((req, res, next) => {
             req.session = {
                 caseSelected: true,
-                caseReferenceNumber: '12345'
+                caseReferenceNumber: '12345',
+                username: 'search.user@example.com'
             };
             req.log = { info: () => {}, error: () => {} };
             res.locals.csrfToken = 'test-csrf-token';
@@ -69,12 +74,14 @@ describe('Search Routes', () => {
             const res = await request(app).get('/search');
             assert.strictEqual(res.statusCode, 200);
             assert.match(res.text, /search\/page\/index.njk/);
+            assert.strictEqual(lastRenderParams.userName, 'search.user@example.com');
         });
 
         it('should call search service and render results when a query is provided', async () => {
             const res = await request(app).get('/search?query=test');
             assert.strictEqual(res.statusCode, 200);
             assert.match(res.text, /search\/page\/results.njk/);
+            assert.strictEqual(lastRenderParams.userName, 'search.user@example.com');
         });
 
         it('should handle errors from the search service', async () => {

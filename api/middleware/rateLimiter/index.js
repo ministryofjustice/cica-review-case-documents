@@ -25,7 +25,7 @@ const dynamicRateLimiter = rateLimit({
         const unauthenticatedLimit = Number(process.env.API_RATE_LIMIT_MAX_UNAUTH) || 50;
         return req.user ? authenticatedLimit : unauthenticatedLimit;
     },
-    keyGenerator: (req) => (req.user?.id ? req.user.id : ipKeyGenerator(req)),
+    keyGenerator: (req) => (req.user?.id ? req.user.id : ipKeyGenerator(req.ip)),
     skip: (req) => process.env.NODE_ENV !== 'production', // Evaluate at request time
     handler: (req, res) => {
         res.status(429).json({ error: 'Too many requests, please try again later' });

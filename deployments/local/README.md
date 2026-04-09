@@ -75,24 +75,26 @@ These commands read values from the file in the project root to create the secre
 1.  **Create the main application secret:**
     ```wsl macos shell
     kubectl create secret generic cica-case-review-documents-secrets \
-      --from-literal=app_cookie_name=$(grep -E '^APP_COOKIE_NAME=' .env | cut -d '=' -f2) \
-      --from-literal=app_cookie_secret=$(grep -E '^APP_COOKIE_SECRET=' .env | cut -d '=' -f2) \
-      --from-literal=auth_secret_password=$(grep -E '^AUTH_SECRET_PASSWORD=' .env | cut -d '=' -f2) \
-      --from-literal=auth_usernames=$(grep -E '^AUTH_USERNAMES=' .env | cut -d '=' -f2) \
-      --from-literal=app_jwt_secret=$(grep -E '^APP_JWT_SECRET=' .env | cut -d '=' -f2) \
-      --from-literal=app_api_jwt_issuer=$(grep -E '^APP_API_JWT_ISSUER=' .env | cut -d '=' -f2) \
-      --from-literal=app_api_jwt_audience=$(grep -E '^APP_API_JWT_AUDIENCE=' .env | cut -d '=' -f2)
+        --from-literal=app_cookie_name=$(grep -E '^APP_COOKIE_NAME=' .env | cut -d '=' -f2) \
+        --from-literal=app_cookie_secret=$(grep -E '^APP_COOKIE_SECRET=' .env | cut -d '=' -f2) \
+        --from-literal=app_jwt_secret=$(grep -E '^APP_JWT_SECRET=' .env | cut -d '=' -f2) \
+        --from-literal=app_api_jwt_issuer=$(grep -E '^APP_API_JWT_ISSUER=' .env | cut -d '=' -f2) \
+        --from-literal=app_api_jwt_audience=$(grep -E '^APP_API_JWT_AUDIENCE=' .env | cut -d '=' -f2) \
+        --from-literal=entra_client_id=$(grep -E '^ENTRA_CLIENT_ID=' .env | cut -d '=' -f2) \
+        --from-literal=entra_client_secret=$(grep -E '^ENTRA_CLIENT_SECRET=' .env | cut -d '=' -f2) \
+        --from-literal=entra_tenant_id=$(grep -E '^ENTRA_TENANT_ID=' .env | cut -d '=' -f2)
     ```
 
     ```cmder windows
     kubectl create secret generic cica-case-review-documents-secrets ^
         --from-literal=app_cookie_name="%APP_COOKIE_NAME%" ^
         --from-literal=app_cookie_secret="%APP_COOKIE_SECRET%" ^
-        --from-literal=auth_secret_password="%AUTH_SECRET_PASSWORD%" ^
-        --from-literal=auth_usernames="%AUTH_USERNAMES%" ^
         --from-literal=app_jwt_secret="%APP_JWT_SECRET%" ^
         --from-literal=app_api_jwt_issuer="%APP_API_JWT_ISSUER%" ^
-        --from-literal=app_api_jwt_audience="%APP_API_JWT_AUDIENCE%"
+        --from-literal=app_api_jwt_audience="%APP_API_JWT_AUDIENCE%" ^
+        --from-literal=entra_client_id="%ENTRA_CLIENT_ID%" ^
+        --from-literal=entra_client_secret="%ENTRA_CLIENT_SECRET%" ^
+        --from-literal=entra_tenant_id="%ENTRA_TENANT_ID%"
     ```
 
 2.  **Create the OpenSearch proxy URL secret:**

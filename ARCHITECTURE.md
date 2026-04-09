@@ -278,6 +278,8 @@ This parameter is:
 
 2. **Session Management**
    - Main app maintains user sessions
+   - In Kubernetes, if sticky sessions are removed, session state should use a shared store (for example Redis) so requests can be served by any pod.
+   - Entra JWKS caching is currently in-memory per pod with short TTL and refresh on unknown key id; this is usually sufficient and does not require Redis unless metrics show repeated cold-start fetch pressure or throttling.
    - Case reference number (CRN) required for all document access
 
 3. **CSRF Protection**

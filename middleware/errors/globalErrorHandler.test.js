@@ -6,7 +6,10 @@ const mockHtml = '<h1>Error Page</h1>';
 const mockTemplateEngineService = {
     render: (template, context) => {
         assert.equal(template, 'page/error.njk');
-        assert.deepEqual(context, { error: 'Sorry, there is a problem with the service.' });
+        assert.deepEqual(context, {
+            error: 'Sorry, there is a problem with the service.',
+            userName: 'test.user@example.com'
+        });
         return mockHtml;
     }
 };
@@ -16,6 +19,9 @@ test('errorHandler logs error and sends error page', async () => {
     err.status = 500;
     let logged = false;
     const req = {
+        session: {
+            username: 'test.user@example.com'
+        },
         log: {
             error: ({ err: loggedErr, status }, msg) => {
                 logged = true;
