@@ -140,10 +140,10 @@ jobs:
                   echo "=== SARIF (first 20 lines) ==="
                   head -n 20 snyk-test-results.sarif || true
 
-            - name: Dump full Snyk JSON
+            - name: Dump full application Snyk JSON
               if: ${{ inputs.skip_security_scan != true }}
               run: |
-                  echo "=== FULL SNYK JSON OUTPUT ==="
+                  echo "=== FULL APPLICATION SNYK JSON OUTPUT ==="
                   cat snyk-test-results.json | jq . || cat snyk-test-results.json
 
             - name: Build Docker image
@@ -205,6 +205,12 @@ jobs:
                   '
 
                   echo "SNYK_CONTAINER_SCAN_EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV
+
+            - name: Dump full container Snyk JSON
+              if: ${{ inputs.skip_security_scan != true }}
+              run: |
+                  echo "=== FULL CONTAINER SNYK JSON OUTPUT ==="
+                  cat snyk-container-test-results.json | jq . || cat snyk-container-test-results.json
 
             - name: Upload container SARIF to GitHub
               if: ${{ inputs.skip_security_scan != true  && hashFiles('snyk-container-test-results.sarif') != '' }}
