@@ -140,6 +140,12 @@ jobs:
                   echo "=== SARIF (first 20 lines) ==="
                   head -n 20 snyk-test-results.sarif || true
 
+            - name: Dump full Snyk JSON
+              if: ${{ inputs.skip_security_scan != true }}
+              run: |
+                  echo "=== FULL SNYK JSON OUTPUT ==="
+                  cat snyk-test-results.json | jq . || cat snyk-test-results.json
+
             - name: Build Docker image
               env:
                   REGISTRY: ${{ steps.login-ecr.outputs.registry }}
