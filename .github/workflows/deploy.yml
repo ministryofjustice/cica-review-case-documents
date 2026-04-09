@@ -94,7 +94,7 @@ jobs:
                   snyk test \
                       --all-projects \
                       --severity-threshold=high \
-                      --fail-on=upgradable \
+                      --fail-on=all \
                       --json > snyk-test-results.json
 
                   EXIT_CODE=$?
@@ -106,7 +106,7 @@ jobs:
                   snyk test \
                       --all-projects \
                       --severity-threshold=high \
-                      --fail-on=upgradable \
+                      --fail-on=all \
                       --sarif > snyk-test-results.sarif || true
 
                   # Ensure SARIF exists
@@ -172,7 +172,7 @@ jobs:
                   snyk container test "$IMAGE" \
                       --file=Dockerfile \
                       --severity-threshold=high \
-                      --fail-on=upgradable \
+                      --fail-on=all \
                       --json > snyk-container-test-results.json
 
                   EXIT_CODE=$?
@@ -183,7 +183,7 @@ jobs:
                   snyk container test "$IMAGE" \
                       --file=Dockerfile \
                       --severity-threshold=high \
-                      --fail-on=upgradable \
+                      --fail-on=all \
                       --sarif > snyk-container-test-results.sarif || true
 
                   if [ ! -s snyk-container-test-results.sarif ]; then
