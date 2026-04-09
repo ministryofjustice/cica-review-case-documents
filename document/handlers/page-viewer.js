@@ -1,3 +1,4 @@
+import { getFeatureFlagValue } from '../../middleware/featureFlags/index.js';
 import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
@@ -28,8 +29,10 @@ export function createPageViewerHandler(
 
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
-            const { searchTerm = '', align = 'on' } = req.query;
-            const apiJwtToken = createApiJwtToken(req.session?.username);
+            const { searchTerm = '' } = req.query;
+            const alignFlag = getFeatureFlagValue(req.session, 'align');
+            const userName = req.session?.username;
+            const apiJwtToken = createApiJwtToken(userName);
 
             // Fetch document page metadata from API (which queries OpenSearch)
             let pageMetadata;
@@ -84,8 +87,10 @@ export function createPageViewerHandler(
                 return next(error);
             }
 
-            const alignedPageHighlights = determineHighlightAlignmentStrategy(align, pageChunks);
-            const userName = req.session?.username;
+            const alignedPageHighlights = determineHighlightAlignmentStrategy(
+                alignFlag,
+                pageChunks
+            );
 
             const html = render('document/page/imageview.njk', {
                 documentId,

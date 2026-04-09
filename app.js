@@ -19,6 +19,7 @@ import {
 } from './middleware/ensureEnvVarsAreValid/index.js';
 import errorHandler from './middleware/errors/globalErrorHandler.js';
 import notFoundHandler from './middleware/errors/notFoundHandler.js';
+import featureFlags from './middleware/featureFlags/index.js';
 import getCaseReferenceNumberFromQueryString from './middleware/getCaseReferenceNumberFromQueryString/index.js';
 import isAuthenticated from './middleware/isAuthenticated/index.js';
 import defaultCreateLogger from './middleware/logger/index.js';
@@ -177,6 +178,7 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
         generalRateLimiter,
         getCaseReferenceNumberFromQueryString,
         caseSelected,
+        featureFlags,
         createDocumentRouter()
     );
     app.use(
@@ -185,6 +187,7 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
         generalRateLimiter,
         getCaseReferenceNumberFromQueryString,
         caseSelected,
+        featureFlags,
         searchRouter({ createTemplateEngineService, createSearchService })
     );
 
