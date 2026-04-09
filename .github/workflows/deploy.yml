@@ -114,17 +114,17 @@ jobs:
 
                   echo "=== APPLICATION VULN SUMMARY ==="
 
-                  ALL_VULNS='[
-                    (.vulnerabilities[]?),
-                    (.applications[]?.vulnerabilities[]?)
-                  ]'
-
                   cat snyk-test-results.json | jq '
+                    def all_vulns:
+                        [
+                            (.vulnerabilities[]?),
+                            (.applications[]?.vulnerabilities[]?)
+                        ];
                     {
-                        total: ($ALL_VULNS | length),
-                        high: ($ALL_VULNS | map(select(.severity==\"high\")) | length),
-                        critical: ($ALL_VULNS | map(select(.severity==\"critical\")) | length),
-                        fixable: ($ALL_VULNS | map(select(.isUpgradable==true or .isPatchable==true)) | length)
+                        total: (all_vulns | length),
+                        high: (all_vulns | map(select(.severity==\"high\")) | length),
+                        critical: (all_vulns | map(select(.severity==\"critical\")) | length),
+                        fixable: (all_vulns | map(select(.isUpgradable==true or .isPatchable==true)) | length)
                     }'
 
                   echo "SNYK_APPLICATION_SCAN_EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV
@@ -204,11 +204,16 @@ jobs:
                   ]'
 
                   cat snyk-container-test-results.json | jq '
+                    def all_vulns:
+                        [
+                            (.vulnerabilities[]?),
+                            (.applications[]?.vulnerabilities[]?)
+                        ];
                     {
-                        total: ($ALL_VULNS | length),
-                        high: ($ALL_VULNS | map(select(.severity==\"high\")) | length),
-                        critical: ($ALL_VULNS | map(select(.severity==\"critical\")) | length),
-                        fixable: ($ALL_VULNS | map(select(.isUpgradable==true or .isPatchable==true)) | length)
+                        total: (all_vulns | length),
+                        high: (all_vulns | map(select(.severity==\"high\")) | length),
+                        critical: (all_vulns | map(select(.severity==\"critical\")) | length),
+                        fixable: (all_vulns | map(select(.isUpgradable==true or .isPatchable==true)) | length)
                     }'
 
                   echo "SNYK_CONTAINER_SCAN_EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV
