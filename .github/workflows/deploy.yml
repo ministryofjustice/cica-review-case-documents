@@ -122,8 +122,8 @@ jobs:
                         ];
                     {
                         total: (all_vulns | length),
-                        high: (all_vulns | map(select(.severity==\"high\")) | length),
-                        critical: (all_vulns | map(select(.severity==\"critical\")) | length),
+                        high: (all_vulns | map(select(.severity=="high")) | length),
+                        critical: (all_vulns | map(select(.severity=="critical")) | length),
                         fixable: (all_vulns | map(select(.isUpgradable==true or .isPatchable==true)) | length)
                     }'
 
@@ -211,8 +211,8 @@ jobs:
                         ];
                     {
                         total: (all_vulns | length),
-                        high: (all_vulns | map(select(.severity==\"high\")) | length),
-                        critical: (all_vulns | map(select(.severity==\"critical\")) | length),
+                        high: (all_vulns | map(select(.severity=="high")) | length),
+                        critical: (all_vulns | map(select(.severity=="critical")) | length),
                         fixable: (all_vulns | map(select(.isUpgradable==true or .isPatchable==true)) | length)
                     }'
 
