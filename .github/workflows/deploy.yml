@@ -114,15 +114,18 @@ jobs:
 
                   echo "=== APPLICATION VULN SUMMARY ==="
 
+                  ALL_VULNS='[
+                    (.vulnerabilities[]?),
+                    (.applications[]?.vulnerabilities[]?)
+                  ]'
+
                   cat snyk-test-results.json | jq '
-                      {
-                      ok: .ok,
-                      total: (.vulnerabilities // [] | length),
-                      high: ([.vulnerabilities[]? | select(.severity=="high")] // [] | length),
-                      critical: ([.vulnerabilities[]? | select(.severity=="critical")] // [] | length),
-                      fixable: ([.vulnerabilities[]? | select(.isUpgradable==true or .isPatchable==true)] // [] | length)
-                      }
-                  '
+                    {
+                        total: ($ALL_VULNS | length),
+                        high: ($ALL_VULNS | map(select(.severity==\"high\")) | length),
+                        critical: ($ALL_VULNS | map(select(.severity==\"critical\")) | length),
+                        fixable: ($ALL_VULNS | map(select(.isUpgradable==true or .isPatchable==true)) | length)
+                    }'
 
                   echo "SNYK_APPLICATION_SCAN_EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV
 
@@ -194,15 +197,19 @@ jobs:
 
                   echo "=== CONTAINER VULN SUMMARY ==="
 
+
+                  ALL_VULNS='[
+                    (.vulnerabilities[]?),
+                    (.applications[]?.vulnerabilities[]?)
+                  ]'
+
                   cat snyk-container-test-results.json | jq '
-                      {
-                      ok: .ok,
-                      total: (.vulnerabilities // [] | length),
-                      high: ([.vulnerabilities[]? | select(.severity=="high")] // [] | length),
-                      critical: ([.vulnerabilities[]? | select(.severity=="critical")] // [] | length),
-                      fixable: ([.vulnerabilities[]? | select(.isUpgradable==true or .isPatchable==true)] // [] | length)
-                      }
-                  '
+                    {
+                        total: ($ALL_VULNS | length),
+                        high: ($ALL_VULNS | map(select(.severity==\"high\")) | length),
+                        critical: ($ALL_VULNS | map(select(.severity==\"critical\")) | length),
+                        fixable: ($ALL_VULNS | map(select(.isUpgradable==true or .isPatchable==true)) | length)
+                    }'
 
                   echo "SNYK_CONTAINER_SCAN_EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV
 
@@ -235,7 +242,10 @@ jobs:
                   echo "⚠️ No Snyk JSON output found!"
                   else
                     VULNS=$(jq -r '
-                    .vulnerabilities[]?
+                    (
+                    .vulnerabilities[]?,
+                    .applications[]?.vulnerabilities[]?
+                    )
                     | select(.severity=="high" or .severity=="critical")
                     | "- \(.id) | severity=\(.severity) | fixable=\((.isUpgradable == true) or (.isPatchable == true))"
                     ' snyk-test-results.json)
@@ -256,7 +266,10 @@ jobs:
                   echo "⚠️ No Snyk JSON output found!"
                   else
                     VULNS=$(jq -r '
-                    .vulnerabilities[]?
+                    (
+                    .vulnerabilities[]?,
+                    .applications[]?.vulnerabilities[]?
+                    )
                     | select(.severity=="high" or .severity=="critical")
                     | "- \(.id) | severity=\(.severity) | fixable=\((.isUpgradable == true) or (.isPatchable == true))"
                     ' snyk-container-test-results.json)
@@ -271,10 +284,20 @@ jobs:
             - name: Warn on non-fixable container vulnerabilities
               if: ${{ inputs.skip_security_scan != true }}
               run: |
-                  NON_FIXABLE=$(jq '[.vulnerabilities[]? | select((.severity=="high" or .severity=="critical") and (.isUpgradable!=true and .isPatchable!=true))] | length' snyk-container-test-results.json)
+                  NON_FIXABLE=$(jq '
+                    [
+                    (.vulnerabilities[]?),
+                    (.applications[]?.vulnerabilities[]?)
+                    ]
+                    | map(select(
+                        (.severity=="high" or .severity=="critical")
+                        and (.isUpgradable!=true and .isPatchable!=true)
+                    ))
+                    | length
+                    ' snyk-container-test-results.json)
 
                   if [ "$NON_FIXABLE" -gt 0 ]; then
-                      echo "::warning::High/critical vulnerabilities found in base image that are NOT fixable ($NON_FIXABLE)"
+                      echo "::warning::High/critical vulnerabilities found that are NOT fixable ($NON_FIXABLE)"
                   fi
 
             - name: Fail workflow on application vulnerabilities (fixable only)
@@ -283,11 +306,55 @@ jobs:
                   echo "⚠️ Fixable high/critical application vulnerabilities found"
                   exit 1
 
-            - name: Fail on fixable container vulnerabilities
-              if: ${{ inputs.skip_security_scan != true && env.SNYK_CONTAINER_SCAN_EXIT_CODE != '0' }}
+            - name: Fail on fixable container vulnerabilities (jq evaluation)
+              if: ${{ inputs.skip_security_scan != true }}
               run: |
-                  echo "⚠️ Fixable container vulnerabilities found"
-                  exit 1
+                  set -euo pipefail
+
+                  echo "=== EVALUATING CONTAINER VULNERABILITIES (FIXABLE ONLY) ==="
+
+                  if [ ! -s snyk-container-test-results.json ]; then
+                      echo "⚠️ No Snyk JSON output found!"
+                      exit 1
+                  fi
+
+                  FIXABLE=$(jq '
+                      [
+                      (.vulnerabilities[]?),
+                      (.applications[]?.vulnerabilities[]?)
+                      ]
+                      | map(select(
+                          (.severity=="high" or .severity=="critical")
+                          and (.isUpgradable==true or .isPatchable==true)
+                      ))
+                      | length
+                  ' snyk-container-test-results.json)
+
+                  echo "Fixable high/critical vulnerabilities: $FIXABLE"
+
+                  if [ "$FIXABLE" -gt 0 ]; then
+                      echo "❌ Failing build due to fixable high/critical vulnerabilities"
+
+                      echo ""
+                      echo "=== LIST OF FAILING VULNERABILITIES ==="
+
+                      jq -r '
+                      [
+                          (.vulnerabilities[]?),
+                          (.applications[]?.vulnerabilities[]?)
+                      ]
+                      | map(select(
+                          (.severity=="high" or .severity=="critical")
+                          and (.isUpgradable==true or .isPatchable==true)
+                      ))
+                      | .[]
+                      | "- \(.id) | package=\(.packageName) | severity=\(.severity) | fixable=true"
+                      ' snyk-container-test-results.json
+
+                      exit 1
+                  else
+                      echo "✅ No fixable high/critical vulnerabilities found"
+                  fi
 
             - name: Monitor container (informational scan)
               if: ${{ inputs.skip_security_scan != true }}
