@@ -92,6 +92,7 @@ jobs:
                   # Allow command to fail without killing step
                   set +e
                   snyk test \
+                      --policy-path=.snyk \
                       --all-projects \
                       --severity-threshold=high \
                       --json > snyk-test-results.json
@@ -103,6 +104,7 @@ jobs:
 
                   # Convert to SARIF (always succeeds)
                   snyk test \
+                      --policy-path=.snyk \
                       --all-projects \
                       --severity-threshold=high \
                       --sarif > snyk-test-results.sarif || true
@@ -177,6 +179,7 @@ jobs:
 
                   set +e
                   snyk container test "$IMAGE" \
+                      --policy-path=.snyk \
                       --file=Dockerfile \
                       --severity-threshold=high \
                       --json > snyk-container-test-results.json
@@ -187,6 +190,7 @@ jobs:
                   echo "Snyk raw exit code: $EXIT_CODE"
 
                   snyk container test "$IMAGE" \
+                      --policy-path=.snyk \
                       --file=Dockerfile \
                       --severity-threshold=high \
                       --sarif > snyk-container-test-results.sarif || true
