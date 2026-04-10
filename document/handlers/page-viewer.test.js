@@ -122,7 +122,7 @@ describe('alignOverlappingHighlights', () => {
 });
 
 describe('Chunk strategy', () => {
-    it('uses processed chunks when align is on', () => {
+    it('uses processed chunks when align is enabled', () => {
         const input = [
             {
                 id: 'chunk-1',
@@ -135,16 +135,16 @@ describe('Chunk strategy', () => {
         ];
 
         const expected = alignOverlappingHighlights(input);
-        const result = determineHighlightAlignmentStrategy('on', input);
+        const result = determineHighlightAlignmentStrategy(true, input);
 
         assert.deepStrictEqual(result, expected);
         assert.notDeepStrictEqual(result, input);
     });
 
-    it('uses original chunks when align is off', () => {
+    it('uses original chunks when align is disabled', () => {
         const input = [{ id: 'chunk-raw', bounding_box: { top: 1, left: 1, width: 1, height: 1 } }];
 
-        const result = determineHighlightAlignmentStrategy('off', input);
+        const result = determineHighlightAlignmentStrategy(false, input);
 
         assert.strictEqual(result, input);
     });
@@ -244,6 +244,74 @@ describe('Page Viewer Handler', () => {
             assert.equal(nextError, undefined);
             assert.equal(responseSent, true);
             assert.equal(renderParams.userName, 'viewer@example.com');
+        });
+
+        it('uses the session feature flag to control alignment', async () => {
+            let renderedPageChunks;
+
+            const stubCreateMetadataService = () => ({
+                getPageMetadata: async () =>
+                    buildPageMetadataFixture({
+                        overrides: {
+                            correspondence_type: 'TC19 - REQUEST',
+                            page_num: 1,
+                            page_count: 1
+                        }
+                    })
+            });
+            const stubPageChunks = [
+                {
+                    id: 'chunk-1',
+                    bounding_box: { top: 1, left: 1, width: 4, height: 6 }
+                },
+                {
+                    id: 'chunk-2',
+                    bounding_box: { top: 2, left: 0, width: 8, height: 2 }
+                }
+            ];
+            const stubCreatePageChunksService = () => ({
+                getPageChunks: async () => stubPageChunks
+            });
+
+            const handler = createPageViewerHandler(
+                stubCreateMetadataService,
+                stubCreatePageChunksService,
+                () => ({
+                    render: (_template, params) => {
+                        renderedPageChunks = params.pageChunks;
+                        return 'render-output-session-align';
+                    }
+                })
+            );
+
+            const req = {
+                validatedParams: {
+                    documentId: 'doc-789',
+                    pageNumber: 1,
+                    crn: 'CASE-2024-003'
+                },
+                query: {
+                    searchTerm: 'test'
+                },
+                session: {
+                    featureFlags: {
+                        align: false
+                    }
+                },
+                log: { info: () => {}, error: () => {}, warn: () => {} }
+            };
+
+            const res = {
+                locals: {
+                    csrfToken: 'csrf-token',
+                    cspNonce: 'nonce'
+                },
+                send: () => {}
+            };
+
+            await handler(req, res, () => {});
+
+            assert.strictEqual(renderedPageChunks, stubPageChunks);
         });
 
         it('handles missing query parameters with defaults', async () => {

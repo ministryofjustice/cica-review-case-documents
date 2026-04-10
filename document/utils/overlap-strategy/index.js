@@ -129,9 +129,9 @@ export const alignOverlappingHighlights = (highlights = []) => {
 /**
  * Resolves whether highlight overlap alignment should be applied.
  *
- * @param {string} align - Query flag controlling highlight alignment
+ * @param {boolean} align - Feature flag controlling highlight alignment
  * @param {Array<object>} [highlights=[]] - Raw highlighted areas from the page chunks service
  * @returns {Array<object>} Processed or original highlighted areas based on align flag
  */
 export const determineHighlightAlignmentStrategy = (align, highlights = []) =>
-    align === 'on' ? alignOverlappingHighlights(highlights) : highlights;
+    align ? alignOverlappingHighlights(highlights) : highlights;
