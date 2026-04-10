@@ -1,161 +1,444 @@
 name: Deploy to environment
 
 on:
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: Environment to deploy to
-        required: true
-        type: choice
-        options:
-          - dev
-          - uat
-          # - prod   # Uncomment when ready to support production
-        default: dev
-      ref:
-        description: Git ref (branch, tag, or SHA) to deploy
-        required: true
-        default: main
-        type: string
-      skip_security_scan:
-        description: Skip security vulnerability scan (emergency deployments only)
-        required: false
-        type: boolean
-        default: false
+    workflow_dispatch:
+        inputs:
+            environment:
+                description: Environment to deploy to
+                required: true
+                type: choice
+                options:
+                    - dev
+                    - uat
+                    # - prod   # Uncomment when ready to support production
+                default: dev
+            ref:
+                description: Git ref (branch, tag, or SHA) to deploy
+                required: true
+                default: main
+                type: string
+            skip_security_scan:
+                description: Skip security vulnerability scan (emergency deployments only)
+                required: false
+                type: boolean
+                default: false
 
 permissions:
-  contents: read
-  id-token: write # Required for OIDC authentication with AWS
+    contents: read
+    id-token: write # Required for OIDC authentication with AWS
 
 jobs:
-  build-and-scan:
-    name: Build and scan image for ${{ inputs.environment || 'dev' }}
-    environment: ${{ inputs.environment || 'dev' }}
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    outputs:
-      image-tag: ${{ github.sha }}
-      registry: ${{ steps.login-ecr.outputs.registry }}
-      repository: ${{ vars.ECR_REPOSITORY }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v4
-        with:
-          ref: ${{ inputs.ref || github.sha }}
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: "24.12.0"
-
-      - name: Show deployment info
-        run: |
-          echo "Building and scanning for environment ${{ inputs.environment || 'dev' }}"
-          echo "Workflow triggered from branch: ${{ github.ref_name }}"
-          echo "Workflow triggered by: ${{ github.event_name }}"
-          echo "Deploying ref/branch: ${{ inputs.ref || github.ref_name }}"
-          echo "Commit SHA being deployed: ${{ github.sha }}"
-          echo "Skip security scan: ${{ inputs.skip_security_scan || 'false' }}"
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
-        with:
-          role-to-assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}
-          aws-region: ${{ vars.ECR_REGION }}
-          audience: sts.amazonaws.com
-
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@f2e9fc6c2b355c1890b65e6f6f0e2ac3e6e22f78 # v2
-        id: login-ecr
-
-      - name: Build Docker image
+    build-and-scan:
+        name: Build and scan image for ${{ inputs.environment }}
+        environment: ${{ inputs.environment }}
         env:
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REPOSITORY: ${{ vars.ECR_REPOSITORY }}
-        run: |
-          echo "Building Docker image for $REGISTRY/$REPOSITORY"
-          docker build --build-arg NODE_ENV=production -t $REGISTRY/$REPOSITORY:${{ github.sha }} .
+            SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        runs-on: ubuntu-latest
+        permissions:
+            id-token: write
+            contents: read
+            security-events: write
+        outputs:
+            image-tag: ${{ github.sha }}
+            registry: ${{ steps.login-ecr.outputs.registry }}
+            repository: ${{ vars.ECR_REPOSITORY }}
 
-      - name: Security scan bypassed warning
-        if: ${{ inputs.skip_security_scan }}
-        run: |
-          echo "::warning::⚠️ SECURITY SCAN BYPASSED - This is an emergency deployment without vulnerability scanning"
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v4
+              with:
+                  ref: ${{ inputs.ref || github.sha }}
 
-      - name: Scan for breaking vulnerabilities
-        if: ${{ !inputs.skip_security_scan }}
-        run: exit 0 # trivy-action step removed
-      - name: Scan for vulnerabilities (informative, non-breaking)
-        if: ${{ !inputs.skip_security_scan }}
-        run: exit 0 # trivy-action step removed
-      - name: Push Docker image
-        env:
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REPOSITORY: ${{ vars.ECR_REPOSITORY }}
-        run: |
-          echo "Pushing Docker image to $REGISTRY/$REPOSITORY"
-          docker push $REGISTRY/$REPOSITORY:${{ github.sha }}
+            - name: Set up Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: "24.12.0"
 
-  deploy:
-    needs: build-and-scan
-    name: Deploy to environment
-    environment: ${{ inputs.environment || 'dev' }}
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
+            - name: Show deployment info
+              run: |
+                  echo "Building and scanning for environment ${{ inputs.environment }}"
+                  echo "Workflow triggered from branch: ${{ github.ref_name }}"
+                  echo "Workflow triggered by: ${{ github.event_name }}"
+                  echo "Deploying ref/branch: ${{ inputs.ref || github.ref_name }}"
+                  echo "Commit SHA being deployed: ${{ github.sha }}"
+                  echo "Skip security scan: ${{ inputs.skip_security_scan || 'false' }}"
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v4
-        with:
-          ref: ${{ inputs.ref || github.sha }}
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+              with:
+                  role-to-assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}
+                  aws-region: ${{ vars.ECR_REGION }}
+                  audience: sts.amazonaws.com
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
-        with:
-          role-to-assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}
-          aws-region: ${{ vars.ECR_REGION }}
-          audience: sts.amazonaws.com
+            - name: Login to Amazon ECR
+              uses: aws-actions/amazon-ecr-login@f2e9fc6c2b355c1890b65e6f6f0e2ac3e6e22f78 # v2
 
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@f2e9fc6c2b355c1890b65e6f6f0e2ac3e6e22f78 # v2
-        id: login-ecr
+              id: login-ecr
 
-      - name: Template Kubernetes manifests
-        env:
-          NODE_ENV: production
-          IMAGE_TAG: ${{ needs.build-and-scan.outputs.image-tag }}
-          REGISTRY: ${{ needs.build-and-scan.outputs.registry }}
-          REPOSITORY: ${{ needs.build-and-scan.outputs.repository }}
-          NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
-          DEPLOY_ENV: ${{ inputs.environment || 'dev' }}
-        run: |
-          echo "Templating Kubernetes manifests for $DEPLOY_ENV"
-          export HOST_NAME="cica-review-case-documents-$DEPLOY_ENV.apps.live.cloud-platform.service.justice.gov.uk"
-          echo "HOST_NAME is $HOST_NAME"
+            - name: Install Snyk CLI
+              if: ${{ inputs.skip_security_scan != true }}
+              run: npm install -g snyk
 
-          mkdir -p deployments
-          cat deployments/templates/deployment.yml | envsubst > deployments/deployment.yml
-          cat deployments/templates/ingress.yml | envsubst > deployments/ingress.yml
-          cat deployments/templates/service.yml | envsubst > deployments/service.yml
+            - name: Install dependencies
+              run: npm ci
 
-      - name: Deploy to Kubernetes
-        env:
-          KUBE_CERT: ${{ secrets.KUBE_CERT }}
-          KUBE_CLUSTER: ${{ secrets.KUBE_CLUSTER }}
-          KUBE_NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
-          KUBE_TOKEN: ${{ secrets.KUBE_TOKEN }}
-        run: |
-          echo "Deploying to cluster $KUBE_CLUSTER namespace $KUBE_NAMESPACE"
-          echo "$KUBE_CERT" > ca.crt
-          kubectl config set-cluster $KUBE_CLUSTER --certificate-authority=./ca.crt --server=https://$KUBE_CLUSTER
-          kubectl config set-credentials deploy-user --token=$KUBE_TOKEN
-          kubectl config set-context $KUBE_CLUSTER --cluster=$KUBE_CLUSTER --user=deploy-user --namespace=$KUBE_NAMESPACE
-          kubectl config use-context $KUBE_CLUSTER
-          kubectl -n $KUBE_NAMESPACE apply -f deployments/
+            - name: Scan application (SARIF + policy evaluation)
+              if: ${{ inputs.skip_security_scan != true }}
+              run: |
+                  set -euo pipefail
+
+                  echo "=== APPLICATION SCAN START ==="
+
+                  # Allow command to fail without killing step
+                  set +e
+                  snyk test \
+                      --policy-path=.snyk \
+                      --all-projects \
+                      --severity-threshold=high \
+                      --json > snyk-test-results.json
+
+                  EXIT_CODE=$?
+                  set -e
+
+                  echo "Snyk raw exit code: $EXIT_CODE"
+
+                  # Convert to SARIF (always succeeds)
+                  snyk test \
+                      --policy-path=.snyk \
+                      --all-projects \
+                      --severity-threshold=high \
+                      --sarif > snyk-test-results.sarif || true
+
+                  # Ensure SARIF exists
+                  if [ ! -s snyk-test-results.sarif ]; then
+                      echo '{"version":"2.1.0","runs":[]}' > snyk-test-results.sarif
+                  fi
+
+                  echo "=== APPLICATION VULN SUMMARY ==="
+
+                  cat snyk-test-results.json | jq '
+                    def all_vulns:
+                        [
+                            (.vulnerabilities[]?),
+                            (.applications[]?.vulnerabilities[]?)
+                        ];
+                    {
+                        total: (all_vulns | length),
+                        high: (all_vulns | map(select(.severity=="high")) | length),
+                        critical: (all_vulns | map(select(.severity=="critical")) | length),
+                        fixable: (all_vulns | map(select(.isUpgradable==true or .isPatchable==true)) | length)
+                    }'
+
+                  echo "SNYK_APPLICATION_SCAN_EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV
+
+            - name: Upload dependency SARIF to GitHub
+              if: ${{ inputs.skip_security_scan != true  && hashFiles('snyk-test-results.sarif') != '' }}
+              uses: github/codeql-action/upload-sarif@v4
+              with:
+                  sarif_file: snyk-test-results.sarif
+
+            - name: Debug SARIF output (application scan)
+              if: ${{ inputs.skip_security_scan != true }}
+              run: |
+                  echo "=== STDERR ==="
+                  cat snyk-test-results.log || true
+                  echo "=== SARIF (first 20 lines) ==="
+                  head -n 20 snyk-test-results.sarif || true
+
+            - name: Dump full application Snyk JSON
+              if: ${{ inputs.skip_security_scan != true }}
+              run: |
+                  echo "=== FULL APPLICATION SNYK JSON OUTPUT ==="
+                  cat snyk-test-results.json | jq . || cat snyk-test-results.json
+
+            - name: Build Docker image
+              env:
+                  REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+                  REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+              run: |
+                  echo "Building Docker image for $REGISTRY/$REPOSITORY"
+                  docker build --build-arg NODE_ENV=production -t $REGISTRY/$REPOSITORY:${{ github.sha }} .
+
+            - name: Security scan bypassed warning
+              if: ${{ inputs.skip_security_scan == true}}
+              run: |
+                  echo "::warning::⚠️ SECURITY SCAN BYPASSED - This is an emergency deployment without vulnerability scanning"
+
+            - name: Scan container (SARIF + policy evaluation)
+              if: ${{ inputs.skip_security_scan != true }}
+              env:
+                  REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+                  REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+              run: |
+                  set -euo pipefail
+
+                  IMAGE="$REGISTRY/$REPOSITORY:${{ github.sha }}"
+
+                  echo "=== CONTAINER SCAN START ==="
+                  echo "Scanning image: $IMAGE"
+
+                  set +e
+                  snyk container test "$IMAGE" \
+                      --policy-path=.snyk \
+                      --file=Dockerfile \
+                      --severity-threshold=high \
+                      --json > snyk-container-test-results.json
+
+                  EXIT_CODE=$?
+                  set -e
+
+                  echo "Snyk raw exit code: $EXIT_CODE"
+
+                  snyk container test "$IMAGE" \
+                      --policy-path=.snyk \
+                      --file=Dockerfile \
+                      --severity-threshold=high \
+                      --sarif > snyk-container-test-results.sarif || true
+
+                  if [ ! -s snyk-container-test-results.sarif ]; then
+                      echo '{"version":"2.1.0","runs":[]}' > snyk-container-test-results.sarif
+                  fi
+
+                  echo "=== CONTAINER VULN SUMMARY ==="
+
+
+                  ALL_VULNS='[
+                    (.vulnerabilities[]?),
+                    (.applications[]?.vulnerabilities[]?)
+                  ]'
+
+                  cat snyk-container-test-results.json | jq '
+                    def all_vulns:
+                        [
+                            (.vulnerabilities[]?),
+                            (.applications[]?.vulnerabilities[]?)
+                        ];
+                    {
+                        total: (all_vulns | length),
+                        high: (all_vulns | map(select(.severity=="high")) | length),
+                        critical: (all_vulns | map(select(.severity=="critical")) | length),
+                        fixable: (all_vulns | map(select(.isUpgradable==true or .isPatchable==true)) | length)
+                    }'
+
+                  echo "SNYK_CONTAINER_SCAN_EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV
+
+            - name: Dump full container Snyk JSON
+              if: ${{ inputs.skip_security_scan != true }}
+              run: |
+                  echo "=== FULL CONTAINER SNYK JSON OUTPUT ==="
+                  cat snyk-container-test-results.json | jq . || cat snyk-container-test-results.json
+
+            - name: Upload container SARIF to GitHub
+              if: ${{ inputs.skip_security_scan != true  && hashFiles('snyk-container-test-results.sarif') != '' }}
+              uses: github/codeql-action/upload-sarif@v4
+              with:
+                  sarif_file: snyk-container-test-results.sarif
+
+            - name: Debug SARIF output (container scan)
+              if: ${{ inputs.skip_security_scan != true }}
+              run: |
+                  echo "=== STDERR ==="
+                  cat snyk-container-test-results.log || true
+                  echo "=== SARIF (first 20 lines) ==="
+                  head -n 20 snyk-container-test-results.sarif || true
+
+            - name: Explain application scan result
+              if: ${{ inputs.skip_security_scan != true }}
+              run: |
+                  echo "=== WHY DID THE APPLICATION SCAN NOT FAIL? ==="
+
+                  if [ ! -s snyk-test-results.json ]; then
+                  echo "⚠️ No Snyk JSON output found!"
+                  else
+                    VULNS=$(jq -r '
+                    (
+                    .vulnerabilities[]?,
+                    .applications[]?.vulnerabilities[]?
+                    )
+                    | select(.severity=="high" or .severity=="critical")
+                    | "- \(.id) | severity=\(.severity) | fixable=\((.isUpgradable == true) or (.isPatchable == true))"
+                    ' snyk-test-results.json)
+
+                    if [ -z "$VULNS" ]; then
+                        echo "✅ No high/critical application vulnerabilities found."
+                    else
+                        echo "$VULNS"
+                    fi
+                  fi
+
+            - name: Explain container scan result
+              if: ${{ inputs.skip_security_scan != true }}
+              run: |
+                  echo "=== WHY DID THE CONTAINER SCAN NOT FAIL? ==="
+
+                  if [ ! -s snyk-container-test-results.json ]; then
+                  echo "⚠️ No Snyk JSON output found!"
+                  else
+                    VULNS=$(jq -r '
+                    (
+                    .vulnerabilities[]?,
+                    .applications[]?.vulnerabilities[]?
+                    )
+                    | select(.severity=="high" or .severity=="critical")
+                    | "- \(.id) | severity=\(.severity) | fixable=\((.isUpgradable == true) or (.isPatchable == true))"
+                    ' snyk-container-test-results.json)
+
+                    if [ -z "$VULNS" ]; then
+                        echo "✅ No high/critical container vulnerabilities found."
+                    else
+                        echo "$VULNS"
+                    fi
+                  fi
+
+            - name: Warn on non-fixable container vulnerabilities
+              if: ${{ inputs.skip_security_scan != true }}
+              run: |
+                  NON_FIXABLE=$(jq '
+                    [
+                    (.vulnerabilities[]?),
+                    (.applications[]?.vulnerabilities[]?)
+                    ]
+                    | map(select(
+                        (.severity=="high" or .severity=="critical")
+                        and (.isUpgradable!=true and .isPatchable!=true)
+                    ))
+                    | length
+                    ' snyk-container-test-results.json)
+
+                  if [ "$NON_FIXABLE" -gt 0 ]; then
+                      echo "::warning::High/critical vulnerabilities found that are NOT fixable ($NON_FIXABLE)"
+                  fi
+
+            - name: Fail workflow on application vulnerabilities (fixable only)
+              if: ${{ inputs.skip_security_scan != true && env.SNYK_APPLICATION_SCAN_EXIT_CODE != '0' }}
+              run: |
+                  echo "⚠️ Fixable high/critical application vulnerabilities found"
+                  exit 1
+
+            - name: Fail on fixable container vulnerabilities (jq evaluation)
+              if: ${{ inputs.skip_security_scan != true }}
+              run: |
+                  set -euo pipefail
+
+                  echo "=== EVALUATING CONTAINER VULNERABILITIES (FIXABLE ONLY) ==="
+
+                  if [ ! -s snyk-container-test-results.json ]; then
+                      echo "⚠️ No Snyk JSON output found!"
+                      exit 1
+                  fi
+
+                  FIXABLE=$(jq '
+                      [
+                      (.vulnerabilities[]?),
+                      (.applications[]?.vulnerabilities[]?)
+                      ]
+                      | map(select(
+                          (.severity=="high" or .severity=="critical")
+                          and (.isUpgradable==true or .isPatchable==true)
+                      ))
+                      | length
+                  ' snyk-container-test-results.json)
+
+                  echo "Fixable high/critical vulnerabilities: $FIXABLE"
+
+                  if [ "$FIXABLE" -gt 0 ]; then
+                      echo "❌ Failing build due to fixable high/critical vulnerabilities"
+
+                      echo ""
+                      echo "=== LIST OF FAILING VULNERABILITIES ==="
+
+                      jq -r '
+                      [
+                          (.vulnerabilities[]?),
+                          (.applications[]?.vulnerabilities[]?)
+                      ]
+                      | map(select(
+                          (.severity=="high" or .severity=="critical")
+                          and (.isUpgradable==true or .isPatchable==true)
+                      ))
+                      | .[]
+                      | "- \(.id) | package=\(.packageName) | severity=\(.severity) | fixable=true"
+                      ' snyk-container-test-results.json
+
+                      exit 1
+                  else
+                      echo "✅ No fixable high/critical vulnerabilities found"
+                  fi
+
+            - name: Monitor container (informational scan)
+              if: ${{ inputs.skip_security_scan != true }}
+              env:
+                  REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+                  REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+              run: |
+                  echo "Sending results to Snyk for continuous monitoring..."
+                  snyk container monitor $REGISTRY/$REPOSITORY:${{ github.sha }}
+
+            - name: Push Docker image
+              env:
+                  REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+                  REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+              run: |
+                  echo "Pushing Docker image to $REGISTRY/$REPOSITORY"
+                  docker push $REGISTRY/$REPOSITORY:${{ github.sha }}
+
+    deploy:
+        needs: build-and-scan
+        name: Deploy to environment
+        environment: ${{ inputs.environment }}
+        runs-on: ubuntu-latest
+        permissions:
+            id-token: write
+            contents: read
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v4
+              with:
+                  ref: ${{ inputs.ref || github.sha }}
+
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+              with:
+                  role-to-assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}
+                  aws-region: ${{ vars.ECR_REGION }}
+                  audience: sts.amazonaws.com
+
+            - name: Login to Amazon ECR
+              uses: aws-actions/amazon-ecr-login@f2e9fc6c2b355c1890b65e6f6f0e2ac3e6e22f78 # v2
+              id: login-ecr
+
+            - name: Template Kubernetes manifests
+              env:
+                  NODE_ENV: production
+                  IMAGE_TAG: ${{ needs.build-and-scan.outputs.image-tag }}
+                  REGISTRY: ${{ needs.build-and-scan.outputs.registry }}
+                  REPOSITORY: ${{ needs.build-and-scan.outputs.repository }}
+                  NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
+                  DEPLOY_ENV: ${{ inputs.environment }}
+              run: |
+                  echo "Templating Kubernetes manifests for $DEPLOY_ENV"
+                  export HOST_NAME="cica-review-case-documents-$DEPLOY_ENV.apps.live.cloud-platform.service.justice.gov.uk"
+                  echo "HOST_NAME is $HOST_NAME"
+                  mkdir -p deployments
+                  cat deployments/templates/deployment.yml | envsubst > deployments/deployment.yml
+                  cat deployments/templates/ingress.yml | envsubst > deployments/ingress.yml
+                  cat deployments/templates/service.yml | envsubst > deployments/service.yml
+
+            - name: Deploy to Kubernetes
+              env:
+                  KUBE_CERT: ${{ secrets.KUBE_CERT }}
+                  KUBE_CLUSTER: ${{ secrets.KUBE_CLUSTER }}
+                  KUBE_NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
+                  KUBE_TOKEN: ${{ secrets.KUBE_TOKEN }}
+              run: |
+                  echo "Deploying to cluster $KUBE_CLUSTER namespace $KUBE_NAMESPACE"
+                  echo "$KUBE_CERT" > ca.crt
+                  kubectl config set-cluster $KUBE_CLUSTER --certificate-authority=./ca.crt --server=https://$KUBE_CLUSTER
+                  kubectl config set-credentials deploy-user --token=$KUBE_TOKEN
+                  kubectl config set-context $KUBE_CLUSTER --cluster=$KUBE_CLUSTER --user=deploy-user --namespace=$KUBE_NAMESPACE
+                  kubectl config use-context $KUBE_CLUSTER
+                  kubectl -n $KUBE_NAMESPACE apply -f deployments/
 
 # Recommended next steps for prod:
 # - Add 'prod' to the environment options above
