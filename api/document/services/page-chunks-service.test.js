@@ -94,7 +94,7 @@ describe('page-chunks-service', () => {
             assert.strictEqual(capturedSearchTerm, 'keyword');
         });
 
-        it('should pass search flags to DAL method', async () => {
+        it('should pass searchType to DAL method', async () => {
             let capturedSearchType;
             mockDAL.getPageChunksByDocumentIdAndPageNumber = async (_, __, ___, searchType) => {
                 capturedSearchType = searchType;

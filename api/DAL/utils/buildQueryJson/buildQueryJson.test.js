@@ -63,7 +63,7 @@ describe('buildQueryJson', () => {
             size: 5,
             query: {
                 bool: {
-                    filter: [{ term: { case_ref: '26-711111' } }],
+                    must: [{ term: { case_ref: '26-711111' } }],
                     should: [{ match: { chunk_text: { query: 'Important meeting' } } }],
                     minimum_should_match: 1
                 }
@@ -517,6 +517,164 @@ describe('buildQueryJson', () => {
         assert.deepStrictEqual(result, expected);
     });
 
+    it('Should build a hybrid query when search type is hybrid', () => {
+        const params = {
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 2,
+            itemsPerPage: 5,
+            searchType: 'hybrid'
+        };
+
+        const expected = {
+            from: 5,
+            size: 5,
+            query: {
+                bool: {
+                    must: [{ term: { case_ref: '26-711111' } }],
+                    should: [
+                        {
+                            match: {
+                                chunk_text: {
+                                    query: 'Important meeting',
+                                    boost: 12
+                                }
+                            }
+                        },
+                        {
+                            neural: {
+                                embedding: {
+                                    query_text: 'Important meeting',
+                                    boost: 4
+                                }
+                            }
+                        }
+                    ],
+                    minimum_should_match: 1
+                }
+            }
+        };
+
+        const result = buildQueryJson(params);
+        assert.equal(typeof result.min_score, 'number');
+        assert.ok(result.min_score >= 0);
+        assert.ok(result.min_score <= 1);
+
+        const { min_score: _hybridMinScore, ...resultWithoutMinScore } = result;
+        const hybridNeuralClause = resultWithoutMinScore.query.bool.should.find(
+            (clause) => clause.neural?.embedding
+        );
+        const { k: hybridK, ...hybridEmbeddingWithoutK } = hybridNeuralClause.neural.embedding;
+        assert.equal(typeof hybridK, 'number');
+        assert.ok(hybridK > 0);
+        hybridNeuralClause.neural.embedding = hybridEmbeddingWithoutK;
+        assert.deepStrictEqual(resultWithoutMinScore, expected);
+    });
+
+    it('Should build a semantic query when search type is semantic', () => {
+        const params = {
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 2,
+            itemsPerPage: 5,
+            searchType: 'semantic'
+        };
+
+        const expected = {
+            from: 5,
+            size: 5,
+            query: {
+                neural: {
+                    embedding: {
+                        query_text: 'Important meeting',
+                        filter: {
+                            term: {
+                                case_ref: '26-711111'
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        const result = buildQueryJson(params);
+        assert.equal(typeof result.min_score, 'number');
+        assert.ok(result.min_score >= 0);
+        assert.ok(result.min_score <= 1);
+
+        const { min_score: _semanticMinScore, ...resultWithoutMinScore } = result;
+        const { k: semanticK, ...semanticEmbeddingWithoutK } =
+            resultWithoutMinScore.query.neural.embedding;
+        assert.equal(typeof semanticK, 'number');
+        assert.ok(semanticK > 0);
+        resultWithoutMinScore.query.neural.embedding = semanticEmbeddingWithoutK;
+        assert.deepStrictEqual(resultWithoutMinScore, expected);
+    });
+
+    it('Should apply separate boosts for date and keyword clauses in hybrid mode', () => {
+        const params = {
+            keyword: 'brain injury september 2021',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 5,
+            searchType: 'hybrid'
+        };
+
+        const result = buildQueryJson(params);
+        const lexicalMust = result.query.bool.must;
+        const hybridShould = result.query.bool.should;
+        const dateBoolClause = hybridShould.find(
+            (clause) => clause.bool && Array.isArray(clause.bool.should)
+        );
+        const keywordClause = hybridShould.find((clause) => clause.match?.chunk_text);
+        const neuralClause = hybridShould.find((clause) => clause.neural?.embedding);
+
+        assert.strictEqual(lexicalMust[0].term.case_ref, '26-711111');
+        assert.strictEqual(result.query.bool.minimum_should_match, 1);
+        assert.strictEqual(dateBoolClause.bool.boost, 1);
+        assert.strictEqual(dateBoolClause.bool.minimum_should_match, 1);
+        assert.strictEqual(keywordClause.match.chunk_text.boost, 12);
+        assert.strictEqual(neuralClause.neural.embedding.boost, 4);
+    });
+
+    it('Should correctly compute hybrid pagination when page params are strings', () => {
+        const result = buildQueryJson({
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: '2',
+            itemsPerPage: '5',
+            searchType: 'hybrid'
+        });
+
+        assert.strictEqual(result.from, 5);
+        assert.strictEqual(result.size, 5);
+        assert.strictEqual(result.query.bool.must[0].term.case_ref, '26-711111');
+        assert.strictEqual(result.query.bool.minimum_should_match, 1);
+    });
+
+    it('Should not build semantic or hybrid query for an empty keyword even when type is semantic', () => {
+        const params = {
+            keyword: '',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 10,
+            searchType: 'semantic'
+        };
+
+        const expected = {
+            from: 0,
+            size: 10,
+            query: {
+                bool: {
+                    must: [{ term: { case_ref: '26-711111' } }]
+                }
+            }
+        };
+
+        const result = buildQueryJson(params);
+        assert.deepStrictEqual(result, expected);
+    });
+
     it('Should build query for multiple dates with different separators and whitespace', () => {
         const params = {
             keyword: 'Dates: 01/02/2024 03-04-24 07 / 08 / 2024 09 – 10 – 2024',
@@ -812,14 +970,14 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            options: { includePagination: false }
+            queryIntent: 'pageChunkMatches'
         };
 
         const result = buildQueryJson(params);
 
         assert.strictEqual(Object.hasOwn(result, 'from'), false);
         assert.strictEqual(Object.hasOwn(result, 'size'), false);
-        assert.deepStrictEqual(result.query.bool.filter, [{ term: { case_ref: '26-711111' } }]);
+        assert.deepStrictEqual(result.query.bool.must, [{ term: { case_ref: '26-711111' } }]);
     });
 
     it('Should omit from and size for semantic page chunk matches intent', () => {
@@ -828,7 +986,8 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            options: { searchType: 'semantic', includePagination: false }
+            searchType: 'semantic',
+            queryIntent: 'pageChunkMatches'
         };
 
         const result = buildQueryJson(params);
@@ -837,388 +996,5 @@ describe('buildQueryJson', () => {
         assert.strictEqual(Object.hasOwn(result, 'size'), false);
         assert.strictEqual(typeof result.query.neural.embedding.k, 'number');
         assert.ok(result.query.neural.embedding.k > 0);
-    });
-
-    it('Should apply queryDslConfig overrides for min score, k and default boosts', () => {
-        // Use a simple first-page request and verify the configured semanticK
-        // override is passed through unchanged in the built query.
-        const result = buildQueryJson({
-            keyword: 'acute 28/11/2022',
-            caseReferenceNumber: '26-711111',
-            pageNumber: 1,
-            itemsPerPage: 5,
-            options: {
-                searchType: 'hybrid-dates',
-                queryDslConfig: {
-                    semanticMinScore: 0.91,
-                    semanticK: 7,
-                    lexicalBoost: 31,
-                    dateBoost: 2,
-                    neuralBoost: 9
-                }
-            }
-        });
-
-        const shouldClauses = result.query.bool.should;
-        const keywordClause = shouldClauses.find((clause) => clause.match?.chunk_text);
-        const dateClause = shouldClauses.find((clause) => clause.bool?.should);
-        const neuralClause = shouldClauses.find((clause) => clause.neural?.embedding);
-
-        assert.strictEqual(result.min_score, 0.91);
-        assert.strictEqual(keywordClause.match.chunk_text.boost, 31);
-        assert.strictEqual(dateClause.bool.boost, 2);
-        assert.strictEqual(neuralClause.neural.embedding.boost, 9);
-        assert.strictEqual(neuralClause.neural.embedding.k, 7);
-    });
-
-    it('Should log queryTypeBuilder parameters and output when logger is provided', () => {
-        const originalPrettyFlag = process.env.APP_LOG_PRETTY_JSON;
-        const debugCalls = [];
-        const infoCalls = [];
-        const warnCalls = [];
-        const logger = {
-            debug(...args) {
-                debugCalls.push(args);
-            },
-            info(...args) {
-                infoCalls.push(args);
-            },
-            warn(...args) {
-                warnCalls.push(args);
-            }
-        };
-
-        process.env.APP_LOG_PRETTY_JSON = 'true';
-
-        const result = buildQueryJson({
-            keyword: 'Important meeting',
-            caseReferenceNumber: '26-711111',
-            pageNumber: 1,
-            itemsPerPage: 5,
-            options: {
-                logger,
-                searchType: 'keyword'
-            }
-        });
-
-        if (originalPrettyFlag === undefined) {
-            delete process.env.APP_LOG_PRETTY_JSON;
-        } else {
-            process.env.APP_LOG_PRETTY_JSON = originalPrettyFlag;
-        }
-
-        assert.strictEqual(result.query.bool.filter[0].term.case_ref, '26-711111');
-        assert.ok(debugCalls.length >= 5);
-        assert.strictEqual(infoCalls.length, 0);
-        assert.strictEqual(warnCalls.length, 0);
-
-        const debugMessages = debugCalls.map((call) => call[1]).filter(Boolean);
-
-        assert.ok(debugMessages.some((message) => message.includes('Built query JSON')));
-        assert.ok(
-            debugMessages.some((message) =>
-                message.includes('[BuildQueryJson] keyword queryTypeBuilder parameters')
-            )
-        );
-        assert.ok(
-            debugMessages.some((message) =>
-                message.includes('[BuildQueryJson] keyword queryTypeBuilder output')
-            )
-        );
-    });
-
-    it('Should fallback to original extracted phrase when no date variants are produced', () => {
-        const result = buildDateAwareShouldClauses({
-            keyword: '31/02/2024',
-            enableDateExtraction: true
-        });
-
-        assert.deepStrictEqual(result.phrases, ['31/02/2024']);
-        assert.deepStrictEqual(result.phrasesVariants, ['31/02/2024']);
-        assert.deepStrictEqual(result.shouldClauses, [
-            { match_phrase: { chunk_text: '31/02/2024' } }
-        ]);
-    });
-
-    it('Should append document filters in keyword query builder when documentId is provided', () => {
-        const queryTypeBuilders = createQueryTypeBuilders();
-        const result = queryTypeBuilders[SEARCH_TYPES.KEYWORD]({
-            keyword: 'Important meeting',
-            caseReferenceNumber: '26-711111',
-            safePageNumber: 3,
-            documentId: 'a-doc-id'
-        });
-
-        assert.deepStrictEqual(result.queryJson.query.bool.filter, [
-            { term: { case_ref: '26-711111' } },
-            { term: { source_doc_id: 'a-doc-id' } },
-            { term: { page_number: 3 } }
-        ]);
-    });
-
-    it('Should execute logger debug branches for all query type builders', () => {
-        const debugCalls = [];
-        const logger = {
-            debug(...args) {
-                debugCalls.push(args);
-            }
-        };
-        const queryTypeBuilders = createQueryTypeBuilders();
-
-        queryTypeBuilders[SEARCH_TYPES.KEYWORD]({
-            keyword: 'keyword mode',
-            caseReferenceNumber: '26-711111',
-            safePageNumber: 1,
-            logger
-        });
-        queryTypeBuilders[SEARCH_TYPES.KEYWORD_DATES]({
-            keyword: 'keyword-dates 12/05/2024',
-            caseReferenceNumber: '26-711111',
-            safePageNumber: 1,
-            logger
-        });
-        queryTypeBuilders[SEARCH_TYPES.SEMANTIC]({
-            keyword: 'semantic mode',
-            caseReferenceNumber: '26-711111',
-            safePageNumber: 1,
-            logger
-        });
-        queryTypeBuilders[SEARCH_TYPES.HYBRID]({
-            keyword: 'hybrid mode',
-            caseReferenceNumber: '26-711111',
-            safePageNumber: 1,
-            logger
-        });
-        queryTypeBuilders[SEARCH_TYPES.HYBRID_DATES]({
-            keyword: 'hybrid-dates 12/05/2024',
-            caseReferenceNumber: '26-711111',
-            safePageNumber: 1,
-            logger
-        });
-
-        const debugMessages = debugCalls.map((call) => call[1]).filter(Boolean);
-
-        assert.ok(
-            debugMessages.some((message) =>
-                message.includes('[QueryTypeBuilder] Building keyword query')
-            )
-        );
-        assert.ok(
-            debugMessages.some((message) =>
-                message.includes('[QueryTypeBuilder] Building keyword-dates query')
-            )
-        );
-        assert.ok(
-            debugMessages.some((message) =>
-                message.includes('[QueryTypeBuilder] Building semantic query')
-            )
-        );
-        assert.ok(
-            debugMessages.some((message) =>
-                message.includes('[QueryTypeBuilder] Building hybrid query')
-            )
-        );
-        assert.ok(
-            debugMessages.some((message) =>
-                message.includes('[QueryTypeBuilder] Building hybrid-dates query')
-            )
-        );
-    });
-
-    it('Should build semantic bool query with date match clauses and document scoping', () => {
-        const result = buildSemanticQuery({
-            keyword: 'injury on 12/05/2024',
-            caseReferenceNumber: '26-711111',
-            safePageNumber: 4,
-            documentId: 'doc-123',
-            matchPhraseClauses: [{ match_phrase: { chunk_text: '12 May 2024' } }],
-            queryDslConfig: {
-                semanticK: 9,
-                semanticMinScore: 0.77
-            }
-        });
-
-        assert.strictEqual(result.min_score, 0.77);
-        assert.deepStrictEqual(result.query.bool.filter, [
-            { term: { case_ref: '26-711111' } },
-            { term: { source_doc_id: 'doc-123' } },
-            { term: { page_number: 4 } }
-        ]);
-        assert.deepStrictEqual(result.query.bool.should[0], {
-            bool: {
-                should: [{ match_phrase: { chunk_text: '12 May 2024' } }],
-                minimum_should_match: 1
-            }
-        });
-        assert.deepStrictEqual(result.query.bool.should[1], {
-            neural: {
-                embedding: {
-                    query_text: 'injury on 12/05/2024',
-                    k: 9,
-                    filter: {
-                        bool: {
-                            filter: [
-                                { term: { case_ref: '26-711111' } },
-                                { term: { source_doc_id: 'doc-123' } },
-                                { term: { page_number: 4 } }
-                            ]
-                        }
-                    }
-                }
-            }
-        });
-    });
-
-    it('Should build pure semantic query with document-scoped neural filter', () => {
-        const result = buildSemanticQuery({
-            keyword: 'injury details',
-            caseReferenceNumber: '26-711111',
-            safePageNumber: 2,
-            documentId: 'doc-456',
-            queryDslConfig: {
-                semanticK: 11,
-                // Pure neural mode uses semanticOnlyMinScore (cosine 0..1 range),
-                // not semanticMinScore (which is for combined hybrid scores).
-                semanticOnlyMinScore: 0.66
-            }
-        });
-
-        assert.strictEqual(result.min_score, 0.66);
-        assert.deepStrictEqual(result.query.neural.embedding.filter, {
-            bool: {
-                filter: [
-                    { term: { case_ref: '26-711111' } },
-                    { term: { source_doc_id: 'doc-456' } },
-                    { term: { page_number: 2 } }
-                ]
-            }
-        });
-    });
-
-    it('Should append document filters in hybrid query builder when documentId is provided', () => {
-        const result = buildQueryJson({
-            keyword: 'important meeting',
-            caseReferenceNumber: '26-711111',
-            pageNumber: 1,
-            itemsPerPage: 10,
-            options: {
-                searchType: SEARCH_TYPES.HYBRID,
-                documentId: 'doc-789'
-            }
-        });
-
-        assert.deepStrictEqual(result.query.bool.filter, [
-            { term: { case_ref: '26-711111' } },
-            { term: { source_doc_id: 'doc-789' } },
-            { term: { page_number: 1 } }
-        ]);
-    });
-
-    it('Should fall back to defaults when queryDslConfig contains undefined values', () => {
-        // When overrides contain undefined values, they should not replace defaults.
-        // This ensures partial config objects like { semanticK: undefined } don't break queries.
-        const baseline = buildQueryJson({
-            keyword: 'test search',
-            caseReferenceNumber: '26-711111',
-            pageNumber: 1,
-            itemsPerPage: 10,
-            options: {
-                searchType: SEARCH_TYPES.SEMANTIC
-            }
-        });
-
-        const result = buildQueryJson({
-            keyword: 'test search',
-            caseReferenceNumber: '26-711111',
-            pageNumber: 1,
-            itemsPerPage: 10,
-            options: {
-                searchType: SEARCH_TYPES.SEMANTIC,
-                queryDslConfig: {
-                    semanticK: undefined,
-                    semanticMinScore: undefined
-                    // other fields omitted to test partial override
-                }
-            }
-        });
-
-        // Undefined overrides should behave exactly like no overrides.
-        assert.strictEqual(result.query.neural.embedding.k, baseline.query.neural.embedding.k);
-        assert.strictEqual(result.min_score, baseline.min_score);
-    });
-
-    it('Should remove min_score from hybrid query when keyword is empty with no date phrases', () => {
-        // When keyword is empty and there are no date phrases, the hybrid query has
-        // no scoring clauses (only filter clauses). min_score must be removed to
-        // prevent filtering out all results from a filter-only query.
-        const result = buildQueryJson({
-            keyword: '',
-            caseReferenceNumber: '26-711111',
-            pageNumber: 1,
-            itemsPerPage: 10,
-            options: { searchType: SEARCH_TYPES.HYBRID }
-        });
-
-        const expected = {
-            from: 0,
-            size: 10,
-            query: {
-                bool: {
-                    filter: [{ term: { case_ref: '26-711111' } }]
-                }
-            }
-        };
-
-        // min_score should be removed (undefined)
-        assert.strictEqual(result.min_score, undefined);
-        assert.deepStrictEqual(result, expected);
-    });
-
-    it('Should remove min_score from hybrid-dates query when keyword is empty with no date phrases', () => {
-        // Even with hybrid-dates searchType, when keyword is empty and date extraction
-        // finds no dates, the result is filter-only. min_score must be removed.
-        const result = buildQueryJson({
-            keyword: '',
-            caseReferenceNumber: '26-711111',
-            pageNumber: 1,
-            itemsPerPage: 10,
-            options: { searchType: SEARCH_TYPES.HYBRID_DATES }
-        });
-
-        const expected = {
-            from: 0,
-            size: 10,
-            query: {
-                bool: {
-                    filter: [{ term: { case_ref: '26-711111' } }]
-                }
-            }
-        };
-
-        // min_score should be removed (undefined)
-        assert.strictEqual(result.min_score, undefined);
-        assert.deepStrictEqual(result, expected);
-    });
-
-    it('Should keep min_score in hybrid query when there are scoring clauses despite empty keyword', () => {
-        // If date phrases are extracted (keyword is not truly empty in content),
-        // min_score should be kept since there are scoring clauses.
-        const result = buildQueryJson({
-            keyword: '12/05/2024',
-            caseReferenceNumber: '26-711111',
-            pageNumber: 1,
-            itemsPerPage: 10,
-            options: { searchType: SEARCH_TYPES.HYBRID_DATES }
-        });
-
-        // min_score should be present since there are date phrase clauses
-        assert.strictEqual(typeof result.min_score, 'number');
-        assert.ok(result.min_score > 0);
-        // Should have date phrase scoring clauses
-        assert.ok(
-            result.query.bool.should.some((clause) =>
-                clause.bool?.should?.some((c) => c.match_phrase)
-            )
-        );
     });
 });

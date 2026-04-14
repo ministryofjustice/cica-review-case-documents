@@ -10,7 +10,7 @@ import createRequestServiceDefault from '../../service/request/index.js';
  * @param {number|string} options.pageNumber - The page number to fetch chunks for.
  * @param {string} options.crn - The case reference number.
  * @param {string} [options.searchTerm] - Search term to filter chunks by content.
- * @param {string} [options.searchType=DEFAULT_SEARCH_TYPE] - Search mode (one of SEARCH_TYPES: keyword, keyword-dates, semantic, hybrid, hybrid-dates).
+ * @param {'keyword'|'semantic'|'hybrid'} [options.searchType='keyword'] - Search mode for chunk matching.
  * @param {string} [options.jwtToken] - Optional JWT token for authentication.
  * @param {Object} options.logger - Logger instance for logging actions.
  * @param {Function} [options.createRequestService=createRequestServiceDefault] - Factory function to create a request service.
@@ -21,7 +21,7 @@ function createPageChunksService({
     pageNumber,
     crn,
     searchTerm,
-    searchType = DEFAULT_SEARCH_TYPE,
+    searchType = 'keyword',
     jwtToken,
     logger,
     createRequestService = createRequestServiceDefault
@@ -45,7 +45,7 @@ function createPageChunksService({
         }
 
         // there's an issue with URLSearchParams encoding spaces to '+' which is breaking the api call. When encoded as %20 it works fine.
-        const baseUrl = `${process.env.APP_API_URL}/document/${documentId}/page/${pageNumber}/chunks?crn=${encodeURIComponent(crn)}&type=${searchType}`;
+        const baseUrl = `${process.env.APP_API_URL}/document/${documentId}/page/${pageNumber}/chunks?crn=${encodeURIComponent(crn)}&type=${encodeURIComponent(searchType)}`;
         const url = searchTerm
             ? `${baseUrl}&searchTerm=${encodeURIComponent(searchTerm)}`
             : baseUrl;

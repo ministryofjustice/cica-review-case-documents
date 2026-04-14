@@ -84,7 +84,7 @@ describe('Search Routes', () => {
             assert.strictEqual(res.statusCode, 200);
             assert.match(res.text, /search\/page\/results.njk/);
             assert.strictEqual(lastRenderParams.userName, 'search.user@example.com');
-            assert.strictEqual(lastRenderParams.searchType, DEFAULT_SEARCH_TYPE);
+            assert.strictEqual(lastRenderParams.searchType, 'keyword');
         });
 
         it('should pass the search type to the search service when set in session', async () => {
@@ -121,7 +121,7 @@ describe('Search Routes', () => {
                     caseReferenceNumber: '12345',
                     username: 'search.user@example.com',
                     featureFlags: {
-                        type: 'semantic'
+                        type: 'hybrid'
                     }
                 };
                 req.log = { info: () => {}, error: () => {} };
@@ -131,68 +131,10 @@ describe('Search Routes', () => {
             });
             testApp.use('/search', searchRouter);
 
-            const res = await request(testApp).get('/search?query=test&type=semantic');
+            const res = await request(testApp).get('/search?query=test');
 
             assert.strictEqual(res.statusCode, 200);
-            assert.deepStrictEqual(serviceCallArgs[4], {
-                searchType: 'semantic'
-            });
-        });
-
-        it('should fall back to default search type when session type is invalid', async () => {
-            const testApp = express();
-            const captured = { searchType: undefined };
-
-            const router = createSearchRouter({
-                createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: () => ({
-                    getSearchResults: async (
-                        _query,
-                        _pageNumber,
-                        _itemsPerPage,
-                        _token,
-                        options
-                    ) => {
-                        captured.searchType = options.searchType;
-                        return {
-                            body: {
-                                data: {
-                                    attributes: {
-                                        results: {
-                                            hits: [],
-                                            total: { value: 0 }
-                                        }
-                                    }
-                                }
-                            }
-                        };
-                    }
-                })
-            });
-
-            testApp.use(express.json());
-            testApp.use(express.urlencoded({ extended: true }));
-            testApp.use((req, res, next) => {
-                req.session = {
-                    caseSelected: true,
-                    caseReferenceNumber: '12345',
-                    username: 'search.user@example.com',
-                    featureFlags: {
-                        type: 'old-value'
-                    }
-                };
-                req.log = { info: () => {}, error: () => {} };
-                res.locals.csrfToken = 'test-csrf-token';
-                res.locals.cspNonce = 'test-csp-nonce';
-                next();
-            });
-            testApp.use('/search', router);
-
-            const res = await request(testApp).get('/search?query=test&type=old-value');
-
-            assert.strictEqual(res.statusCode, 200);
-            assert.strictEqual(captured.searchType, DEFAULT_SEARCH_TYPE);
-            assert.strictEqual(lastRenderParams.searchType, DEFAULT_SEARCH_TYPE);
+            assert.deepStrictEqual(serviceCallArgs[4], { searchType: 'hybrid' });
         });
 
         it('should handle errors from the search service', async () => {
@@ -409,10 +351,7 @@ describe('Search Routes', () => {
         it('should redirect to the GET route with the query parameter and default type', async () => {
             const res = await request(app).post('/search').send({ query: ' search term ' });
             assert.strictEqual(res.statusCode, 302);
-            assert.strictEqual(
-                res.headers.location,
-                `/search?query=search+term&pageNumber=1&type=${DEFAULT_SEARCH_TYPE}`
-            );
+            assert.strictEqual(res.headers.location, '/search?query=search+term&pageNumber=1');
         });
 
         it('should preserve pageNumber and type in the redirect when provided', async () => {
@@ -445,6 +384,18 @@ describe('Search Routes', () => {
             assert.strictEqual(
                 res.headers.location,
                 `/search?query=test&pageNumber=2&type=${DEFAULT_SEARCH_TYPE}`
+            );
+        });
+
+        it('should preserve the type value in the redirect when provided', async () => {
+            const res = await request(app)
+                .post('/search?pageNumber=2')
+                .send({ query: 'test', type: 'semantic' });
+
+            assert.strictEqual(res.statusCode, 302);
+            assert.strictEqual(
+                res.headers.location,
+                '/search?query=test&pageNumber=2&type=semantic'
             );
         });
 

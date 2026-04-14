@@ -5,6 +5,13 @@ import { DEFAULT_SEARCH_TYPE } from '../search/constants/searchTypes.js';
 import buildQueryJson from './utils/buildQueryJson/index.js';
 
 /**
+ *  TODO: both chunk queries have a `preference` attribute set to work around the issue of non-deterministic results when paginating through chunks.
+ *  When a better solution is found this can be removed or replaced
+ */
+
+const PAGE_CHUNK_QUERY_INTENT = 'pageChunkMatches';
+
+/**
  * @typedef {object} Logger
  * @property {(info: object, message?: string) => void} info
  *   Logs informational messages, typically structured objects with metadata.
@@ -41,8 +48,8 @@ import buildQueryJson from './utils/buildQueryJson/index.js';
  *
  * @param {Logger} [params.logger]
  *   Optional structured logger instance.
- * @param {string} [params.searchType=DEFAULT_SEARCH_TYPE]
- *   Search mode. One of `'keyword'`, `'semantic'`, or `'hybrid'`.
+ * @param {'keyword' | 'semantic' | 'hybrid'} [params.searchType='keyword']
+ *   Which search mode should be used.
  *
  * @throws {VError} Throws a `ConfigurationError` if the environment variable
  *   `OPENSEARCH_INDEX_CHUNKS_NAME` is not defined.
@@ -60,7 +67,7 @@ function createDocumentDAL({
     caseReferenceNumber,
     createDBQuery = createDBQueryDefault,
     logger,
-    searchType = DEFAULT_SEARCH_TYPE
+    searchType = 'keyword'
 }) {
     if (process.env.OPENSEARCH_INDEX_CHUNKS_NAME === undefined) {
         throw new VError(
@@ -118,10 +125,8 @@ function createDocumentDAL({
                 caseReferenceNumber,
                 pageNumber,
                 itemsPerPage,
-                options: {
-                    logger,
-                    searchType
-                }
+                logger,
+                searchType
             });
             const buildEnd = Date.now();
 
@@ -234,7 +239,7 @@ function createDocumentDAL({
      * @param {string} documentId - The UUID of the document (source_doc_id in OpenSearch).
      * @param {number|string} pageNumber - The page number.
      * @param {string} [keyword] - Search term to filter chunks by content.
-     * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - Search mode (one of SEARCH_TYPES).
+     * @param {'keyword'|'semantic'|'hybrid'} [searchType='keyword'] - Search mode used to find chunks.
      * @returns {Promise<Array<Object>>} Array of chunk objects containing only bounding_box data.
      * @throws {VError} If the database query fails.
      */
@@ -242,7 +247,7 @@ function createDocumentDAL({
         documentId,
         pageNumber,
         keyword = '',
-        searchType = DEFAULT_SEARCH_TYPE
+        searchType = 'keyword'
     ) {
         try {
             logger?.info?.(
@@ -254,12 +259,10 @@ function createDocumentDAL({
                 keyword,
                 caseReferenceNumber,
                 pageNumber,
-                options: {
-                    searchType,
-                    includePagination: false,
-                    documentId,
-                    logger
-                }
+                searchType,
+                queryIntent: PAGE_CHUNK_QUERY_INTENT,
+                documentId,
+                logger
             });
 
             queryBody._source = [

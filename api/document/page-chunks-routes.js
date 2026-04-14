@@ -1,5 +1,8 @@
 import express from 'express';
-import { resolveSearchType } from '../search/constants/searchTypes.js';
+import {
+    FEATURE_FLAG_ENUM_OPTIONS,
+    parseEnumFlagValue
+} from '../../middleware/featureFlags/index.js';
 import createPageChunksService from './services/page-chunks-service.js';
 
 const CRN_REGEX = /^\d{2}-[78]\d{5}$/;
@@ -54,7 +57,8 @@ function createPageChunksRouter(options = {}) {
         try {
             const { documentId, pageNumber } = req.params;
             const { crn, searchTerm } = req.query;
-            const searchType = resolveSearchType(req.query.type, req.session);
+            const searchType =
+                parseEnumFlagValue(req.query.type, FEATURE_FLAG_ENUM_OPTIONS.type) || 'keyword';
 
             if (!crn) {
                 const err = new Error('Case reference number (crn) is required');

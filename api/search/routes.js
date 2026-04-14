@@ -1,5 +1,9 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import {
+    FEATURE_FLAG_ENUM_OPTIONS,
+    parseEnumFlagValue
+} from '../../middleware/featureFlags/index.js';
 
 import { resolveSearchType } from './constants/searchTypes.js';
 
@@ -57,13 +61,9 @@ export default function searchRouter({ searchService }) {
 
     router.get('/', async (req, res, next) => {
         try {
-            const { query, pageNumber, itemsPerPage, type: rawSearchType } = req.query;
-
-            // Resolve and validate the search type, falling back to DEFAULT_SEARCH_TYPE
-            // when absent or invalid. This ensures downstream consumers always receive
-            // a valid type string, not an array or enum object.
-            const searchType = resolveSearchType(rawSearchType);
-
+            const { query, pageNumber, itemsPerPage } = req.query;
+            const searchType =
+                parseEnumFlagValue(req.query.type, FEATURE_FLAG_ENUM_OPTIONS.type) || 'keyword';
             const searchResults = await searchService.getSearchResultsByKeyword(
                 query,
                 pageNumber,

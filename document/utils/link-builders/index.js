@@ -35,8 +35,7 @@ export function buildImageUrl(
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
- * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - The active search type value
- * @param {Object} [session={}] - The session object
+ * @param {'keyword'|'semantic'|'hybrid'} [searchType='keyword'] - Search type mode
  * @returns {string} The text view URL
  */
 export function buildTextPageLink(
@@ -44,11 +43,9 @@ export function buildTextPageLink(
     pageNumber,
     crn,
     searchTerm = '',
-    searchType = DEFAULT_SEARCH_TYPE,
-    session = {}
+    searchType = 'keyword'
 ) {
-    const base = `/document/${documentId}/view/text/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
-    return `${base}&type=${encodeURIComponent(resolveSearchType(searchType, session))}`;
+    return `/document/${documentId}/view/text/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}&type=${encodeURIComponent(searchType)}`;
 }
 
 /**
@@ -58,8 +55,7 @@ export function buildTextPageLink(
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
- * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - The active search type value
- * @param {Object} [session={}] - The session object
+ * @param {'keyword'|'semantic'|'hybrid'} [searchType='keyword'] - Search type mode
  * @returns {string} The image view URL
  */
 export function buildImagePageLink(
@@ -67,9 +63,7 @@ export function buildImagePageLink(
     pageNumber,
     crn,
     searchTerm = '',
-    searchType = DEFAULT_SEARCH_TYPE,
-    session = {}
+    searchType = 'keyword'
 ) {
-    const base = `/document/${documentId}/view/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
-    return `${base}&type=${encodeURIComponent(resolveSearchType(searchType, session))}`;
+    return `/document/${documentId}/view/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}&type=${encodeURIComponent(searchType)}`;
 }

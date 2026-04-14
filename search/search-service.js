@@ -26,7 +26,7 @@ function createSearchService({
      * @param {number} itemsPerPage - Number of items per page.
      * @param {string} token - The authentication token.
      * @param {Object} [options] - Additional request options.
-     * @param {string} [options.searchType=DEFAULT_SEARCH_TYPE] - Search mode (one of SEARCH_TYPES: keyword, keyword-dates, semantic, hybrid, hybrid-dates).
+     * @param {'keyword' | 'semantic' | 'hybrid'} [options.searchType='keyword'] - Which search mode to use.
      * @returns {Promise<object>} A promise that resolves to the search results.
      */
     async function getSearchResults(
@@ -34,9 +34,9 @@ function createSearchService({
         pageNumber,
         itemsPerPage,
         token,
-        { searchType = DEFAULT_SEARCH_TYPE } = {}
+        { searchType = 'keyword' } = {}
     ) {
-        logger?.debug?.({ query, pageNumber, itemsPerPage }, 'Fetching search results');
+        logger.info({ query, pageNumber, itemsPerPage }, 'Fetching search results');
         const opts = {
             url:
                 `${process.env.APP_API_URL}/search/?query=${query}` +

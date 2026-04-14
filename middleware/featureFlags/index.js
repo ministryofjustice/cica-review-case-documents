@@ -2,7 +2,11 @@ import { DEFAULT_SEARCH_TYPE, resolveSearchType } from '../../api/search/constan
 
 export const FEATURE_FLAG_DEFAULTS = Object.freeze({
     align: true, // toggle alignment of image highlighting to prevent or show overlapping
-    type: DEFAULT_SEARCH_TYPE // search mode: keyword, keyword-dates, semantic, hybrid, or hybrid-dates
+    type: 'keyword' // search type: 'keyword', 'semantic', or 'hybrid'
+});
+
+export const FEATURE_FLAG_ENUM_OPTIONS = Object.freeze({
+    type: Object.freeze(['keyword', 'semantic', 'hybrid'])
 });
 
 /**
@@ -31,12 +35,10 @@ export function parseFeatureFlagValue(value) {
 }
 
 /**
- * Parses a query-string string feature flag value.
- *
- * Returns the trimmed string value when provided, otherwise undefined.
+ * Parses a query-string enum feature flag value against a set of allowed values.
  *
  * @param {unknown} value - Raw query-string value.
- * @param {readonly string[] | undefined} allowedValues - Optional allowlist; if omitted any non-empty string is accepted.
+ * @param {readonly string[]} allowedValues - Valid values for this flag.
  * @returns {string | undefined} Matched value when valid, otherwise undefined.
  */
 export function parseEnumFlagValue(value, allowedValues) {
@@ -47,10 +49,7 @@ export function parseEnumFlagValue(value, allowedValues) {
     }
 
     const normalized = flagValue.trim().toLowerCase();
-    if (!normalized) return undefined;
-    return allowedValues === undefined || allowedValues.includes(normalized)
-        ? normalized
-        : undefined;
+    return allowedValues.includes(normalized) ? normalized : undefined;
 }
 
 /**
@@ -64,20 +63,15 @@ export function getFeatureFlagValue(session, flagName) {
     const sessionFlagValue = session?.featureFlags?.[flagName];
     const defaultValue = FEATURE_FLAG_DEFAULTS[flagName];
 
-    // Validate the session value matches the expected type for this flag.
-    // Boolean flags like 'align' should only accept booleans; string flags like 'type'
-    // should only accept strings. Stale/corrupt sessions with mismatched types fall back
-    // to the default.
-    if (typeof defaultValue === 'boolean') {
-        // align flag expects a boolean
-        if (typeof sessionFlagValue === 'boolean') {
+    if (flagName in FEATURE_FLAG_ENUM_OPTIONS) {
+        if (FEATURE_FLAG_ENUM_OPTIONS[flagName].includes(sessionFlagValue)) {
             return sessionFlagValue;
         }
-    } else if (typeof defaultValue === 'string') {
-        // type flag expects a string
-        if (typeof sessionFlagValue === 'string') {
-            return sessionFlagValue;
-        }
+        return FEATURE_FLAG_DEFAULTS[flagName];
+    }
+
+    if (typeof sessionFlagValue === 'boolean') {
+        return sessionFlagValue;
     }
 
     return defaultValue;
@@ -108,30 +102,17 @@ export default function featureFlags(req, res, next) {
                 flags[flagName] = getFeatureFlagValue(req.session, flagName);
             }
 
-            if (typeof FEATURE_FLAG_DEFAULTS[flagName] === 'boolean') {
-                const queryFlagValue = parseFeatureFlagValue(req.query?.[flagName]);
-                if (typeof queryFlagValue === 'boolean') {
+            if (flagName in FEATURE_FLAG_ENUM_OPTIONS) {
+                const queryFlagValue = parseEnumFlagValue(
+                    req.query?.[flagName],
+                    FEATURE_FLAG_ENUM_OPTIONS[flagName]
+                );
+                if (queryFlagValue !== undefined) {
                     flags[flagName] = queryFlagValue;
                 }
-            } else if (flagName === 'type') {
-                // Express parses repeated query params (e.g. ?type=a&type=b) as an array.
-                // Normalize to the last entry first, consistent with parseFeatureFlagValue /
-                // parseEnumFlagValue.
-                const queryType = Array.isArray(req.query?.type)
-                    ? req.query.type.at(-1)
-                    : req.query?.type;
-
-                if (typeof queryType === 'string' && queryType.trim().length > 0) {
-                    // Only process a non-empty type value. An empty or whitespace-only
-                    // ?type= query param is treated as absent so the session value is preserved.
-                    const searchType = resolveSearchType(queryType, req.session);
-                    if (typeof searchType === 'string') {
-                        flags[flagName] = searchType;
-                    }
-                }
             } else {
-                const queryFlagValue = parseEnumFlagValue(req.query?.[flagName]);
-                if (typeof queryFlagValue === 'string') {
+                const queryFlagValue = parseFeatureFlagValue(req.query?.[flagName]);
+                if (typeof queryFlagValue === 'boolean') {
                     flags[flagName] = queryFlagValue;
                 }
             }

@@ -1,5 +1,8 @@
-import { resolveSearchType } from '../../api/search/constants/searchTypes.js';
-import { getFeatureFlagValue } from '../../middleware/featureFlags/index.js';
+import {
+    FEATURE_FLAG_ENUM_OPTIONS,
+    getFeatureFlagValue,
+    parseEnumFlagValue
+} from '../../middleware/featureFlags/index.js';
 import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
@@ -31,7 +34,9 @@ export function createPageViewerHandler(
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
             const { searchTerm = '' } = req.query;
-            const searchType = resolveSearchType(req.session?.featureFlags?.type, req.session);
+            const searchType =
+                parseEnumFlagValue(req.query.type, FEATURE_FLAG_ENUM_OPTIONS.type) ||
+                getFeatureFlagValue(req.session, 'type');
             const alignFlag = getFeatureFlagValue(req.session, 'align');
             const userName = req.session?.username;
             const apiJwtToken = createApiJwtToken(userName);
@@ -70,8 +75,7 @@ export function createPageViewerHandler(
                 pageNumber,
                 crn,
                 searchTerm,
-                searchType,
-                req.session
+                searchType
             );
 
             const pageTitle = formatPageTitle(pageMetadata.correspondence_type);

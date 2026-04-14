@@ -1,5 +1,9 @@
 import express from 'express';
-import { resolveSearchType } from '../api/search/constants/searchTypes.js';
+import {
+    FEATURE_FLAG_ENUM_OPTIONS,
+    getFeatureFlagValue,
+    parseEnumFlagValue
+} from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 
 /**
@@ -18,15 +22,18 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
 
     router.post('/', (req, res, next) => {
         try {
-            const { query } = req.body;
+            const { query, type: rawSearchType } = req.body;
             const { pageNumber = 1 } = req.query;
-            const searchType = resolveSearchType(req.body?.type, req.session);
+            const searchType = parseEnumFlagValue(rawSearchType, FEATURE_FLAG_ENUM_OPTIONS.type);
 
             const redirectParams = new URLSearchParams({
                 query: query.trim(),
-                pageNumber: String(pageNumber),
-                type: searchType
+                pageNumber: String(pageNumber)
             });
+
+            if (searchType) {
+                redirectParams.set('type', searchType);
+            }
 
             return res.redirect(`/search?${redirectParams.toString()}`);
         } catch (err) {
@@ -41,7 +48,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
 
             const { query, pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.query;
             const userName = req.session?.username;
-            const searchType = resolveSearchType(req.session?.featureFlags?.type, req.session);
+            const searchType = getFeatureFlagValue(req.session, 'type');
 
             if (!query) {
                 const html = render('search/page/index.njk', {
@@ -85,7 +92,9 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 pageNumber,
                 itemsPerPage,
                 token,
-                { searchType }
+                {
+                    searchType
+                }
             );
             const { body } = response || {};
 

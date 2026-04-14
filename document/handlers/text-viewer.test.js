@@ -285,7 +285,7 @@ describe('Text Viewer Handler', () => {
                 pageNumber: 1,
                 crn: '26-745678',
                 searchTerm: '12/12/1995',
-                searchType: 'hybrid-dates',
+                searchType: 'keyword',
                 jwtToken: undefined,
                 logger: req.log
             }

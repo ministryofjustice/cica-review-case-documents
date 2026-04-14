@@ -33,9 +33,11 @@ describe('search-service', () => {
         const query = 'example';
         const pageNumber = 2;
         const itemsPerPage = 5;
+        const searchType = 'semantic';
 
-        const result = await service.getSearchResults(query, pageNumber, itemsPerPage, undefined, {
-            searchType: 'semantic'
+        const req = { headers: { cookie: 'session=abc123' } };
+        const result = await service.getSearchResults(query, pageNumber, itemsPerPage, req, {
+            searchType
         });
 
         assert.deepEqual(result, { body: { data: 'fake results' } });
