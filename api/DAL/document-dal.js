@@ -243,6 +243,12 @@ function createDocumentDAL({
                 { match: { case_ref: caseReferenceNumber } }
             ];
 
+            const semanticFilterClauses = [
+                { term: { source_doc_id: documentId } },
+                { term: { page_number: parseInt(pageNumber, 10) } },
+                { term: { case_ref: caseReferenceNumber } }
+            ];
+
             const hasSearchTerm = typeof searchTerm === 'string' && searchTerm.trim().length > 0;
             const runSemanticSearch =
                 hasSearchTerm && (searchType === 'semantic' || searchType === 'all');
@@ -265,7 +271,7 @@ function createDocumentDAL({
                         k: 50,
                         filter: {
                             bool: {
-                                must: filterClauses
+                                must: semanticFilterClauses
                             }
                         }
                     }

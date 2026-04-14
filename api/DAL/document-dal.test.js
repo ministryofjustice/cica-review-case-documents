@@ -658,6 +658,36 @@ describe('document-dal', () => {
             );
         });
 
+        it('should build semantic page chunks query with term filters and min_score', async () => {
+            let queryArgs;
+            const mockDB = {
+                query: async (args) => {
+                    queryArgs = args;
+                    return { body: { hits: { hits: [] } } };
+                }
+            };
+
+            const dal = createDocumentDAL({
+                caseReferenceNumber: '12-745678',
+                createDBQuery: () => mockDB,
+                logger: mockLogger
+            });
+
+            await dal.getPageChunksByDocumentIdAndPageNumber('doc-123', 1, 'needle', 'semantic');
+
+            assert.equal(queryArgs.body.min_score, 0.6);
+            assert.equal(queryArgs.body.query.neural.embedding.query_text, 'needle');
+            assert.deepStrictEqual(queryArgs.body.query.neural.embedding.filter, {
+                bool: {
+                    must: [
+                        { term: { source_doc_id: 'doc-123' } },
+                        { term: { page_number: 1 } },
+                        { term: { case_ref: '12-745678' } }
+                    ]
+                }
+            });
+        });
+
         it('should return empty array when no chunks found', async () => {
             const mockDB = {
                 query: async () => ({
