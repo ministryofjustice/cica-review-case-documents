@@ -33,16 +33,19 @@ describe('search-service', () => {
         const query = 'example';
         const pageNumber = 2;
         const itemsPerPage = 5;
+        const searchType = 'semantic';
 
         const req = { headers: { cookie: 'session=abc123' } };
-        const result = await service.getSearchResults(query, pageNumber, itemsPerPage, req);
+        const result = await service.getSearchResults(query, pageNumber, itemsPerPage, req, {
+            searchType
+        });
 
         assert.deepEqual(result, { body: { data: 'fake results' } });
         assert.equal(mockCreateRequestService.mock.callCount(), 1);
         const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
         assert.equal(
             mockGetCallArguments.url,
-            `${process.env.APP_API_URL}/search/?query=${query}&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}`
+            `${process.env.APP_API_URL}/search/?query=${query}&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}&type=semantic`
         );
         assert.equal(mockGetCallArguments.headers['On-Behalf-Of'], '12-745678');
     });

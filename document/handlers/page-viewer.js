@@ -1,4 +1,8 @@
-import { getFeatureFlagValue } from '../../middleware/featureFlags/index.js';
+import {
+    FEATURE_FLAG_ENUM_OPTIONS,
+    getFeatureFlagValue,
+    parseEnumFlagValue
+} from '../../middleware/featureFlags/index.js';
 import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
@@ -30,6 +34,9 @@ export function createPageViewerHandler(
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
             const { searchTerm = '' } = req.query;
+            const searchType =
+                parseEnumFlagValue(req.query.type, FEATURE_FLAG_ENUM_OPTIONS.type) ||
+                getFeatureFlagValue(req.session, 'type');
             const alignFlag = getFeatureFlagValue(req.session, 'align');
             const userName = req.session?.username;
             const apiJwtToken = createApiJwtToken(userName);
@@ -62,7 +69,13 @@ export function createPageViewerHandler(
             const imageUrl = buildImageUrl(documentId, pageNumber, crn);
 
             // Provide a link for sub-navigation to the text view page for this document page
-            const textPageLink = buildTextPageLink(documentId, pageNumber, crn, searchTerm);
+            const textPageLink = buildTextPageLink(
+                documentId,
+                pageNumber,
+                crn,
+                searchTerm,
+                searchType
+            );
 
             const pageTitle = formatPageTitle(pageMetadata.correspondence_type);
 
@@ -74,6 +87,7 @@ export function createPageViewerHandler(
                     pageNumber,
                     crn,
                     searchTerm,
+                    searchType,
                     jwtToken: apiJwtToken,
                     logger: req.log
                 });
