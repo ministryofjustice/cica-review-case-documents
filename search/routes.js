@@ -1,4 +1,9 @@
 import express from 'express';
+import {
+    FEATURE_FLAG_ENUM_OPTIONS,
+    getFeatureFlagValue,
+    parseEnumFlagValue
+} from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 
 /**
@@ -17,12 +22,20 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
 
     router.post('/', (req, res, next) => {
         try {
-            const { query } = req.body;
+            const { query, type: rawSearchType } = req.body;
             const { pageNumber = 1 } = req.query;
+            const searchType = parseEnumFlagValue(rawSearchType, FEATURE_FLAG_ENUM_OPTIONS.type);
 
-            return res.redirect(
-                `/search?query=${encodeURIComponent(query.trim())}&pageNumber=${pageNumber}`
-            );
+            const redirectParams = new URLSearchParams({
+                query: query.trim(),
+                pageNumber: String(pageNumber)
+            });
+
+            if (searchType) {
+                redirectParams.set('type', searchType);
+            }
+
+            return res.redirect(`/search?${redirectParams.toString()}`);
         } catch (err) {
             next(err);
         }
@@ -35,6 +48,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
 
             const { query, pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.query;
             const userName = req.session?.username;
+            const searchType = getFeatureFlagValue(req.session, 'type');
 
             if (!query) {
                 const html = render('search/page/index.njk', {
@@ -43,7 +57,8 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                     pageType: 'search',
                     csrfToken: res.locals.csrfToken,
                     cspNonce: res.locals.cspNonce,
-                    userName
+                    userName,
+                    searchType
                 });
                 return res.send(html);
             }
@@ -61,7 +76,8 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 csrfToken: res.locals.csrfToken,
                 cspNonce: res.locals.cspNonce,
                 userName,
-                query
+                query,
+                searchType
             };
 
             req.log.info({ query, pageNumber, itemsPerPage }, 'Creating search service');
@@ -75,7 +91,10 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 encodeURIComponent(query),
                 pageNumber,
                 itemsPerPage,
-                token
+                token,
+                {
+                    searchType
+                }
             );
             const { body } = response || {};
 
@@ -98,6 +117,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 ...hit,
                 docUuid: hit._source?.source_doc_id || 0,
                 searchTerm: query,
+                searchType,
                 caseReferenceNumber: req.session?.caseReferenceNumber
             }));
 
