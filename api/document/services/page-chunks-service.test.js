@@ -94,6 +94,21 @@ describe('page-chunks-service', () => {
             assert.strictEqual(capturedSearchTerm, 'keyword');
         });
 
+        it('should pass searchType to DAL method', async () => {
+            let capturedSearchType;
+            mockDAL.getPageChunksByDocumentIdAndPageNumber = async (_, __, ___, searchType) => {
+                capturedSearchType = searchType;
+                return [];
+            };
+
+            await pageChunksService.getPageChunks('doc-123', 1, '12-745678', 'keyword', {
+                logger: mockLogger,
+                searchType: 'semantic'
+            });
+
+            assert.strictEqual(capturedSearchType, 'semantic');
+        });
+
         it('should handle DAL errors and throw with status code', async () => {
             const dalError = new Error('OpenSearch connection failed');
             dalError.status = 503;

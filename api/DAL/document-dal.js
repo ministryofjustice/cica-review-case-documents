@@ -4,6 +4,13 @@ import createDBQueryDefault from '../../db/index.js';
 import buildQueryJson from './utils/buildQueryJson/index.js';
 
 /**
+ *  TODO: both chunk queries have a `preference` attribute set to work around the issue of non-deterministic results when paginating through chunks.
+ *  When a better solution is found this can be removed or replaced
+ */
+
+const PAGE_CHUNK_QUERY_INTENT = 'pageChunkMatches';
+
+/**
  * @typedef {object} Logger
  * @property {(info: object, message?: string) => void} info
  *   Logs informational messages, typically structured objects with metadata.
@@ -40,6 +47,8 @@ import buildQueryJson from './utils/buildQueryJson/index.js';
  *
  * @param {Logger} [params.logger]
  *   Optional structured logger instance.
+ * @param {'keyword' | 'semantic' | 'hybrid'} [params.searchType='keyword']
+ *   Which search mode should be used.
  *
  * @throws {VError} Throws a `ConfigurationError` if the environment variable
  *   `OPENSEARCH_INDEX_CHUNKS_NAME` is not defined.
@@ -51,7 +60,12 @@ import buildQueryJson from './utils/buildQueryJson/index.js';
  * }}
  *   A frozen object exposing document and chunk retrieval methods.
  */
-function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryDefault, logger }) {
+function createDocumentDAL({
+    caseReferenceNumber,
+    createDBQuery = createDBQueryDefault,
+    logger,
+    searchType = 'keyword'
+}) {
     if (process.env.OPENSEARCH_INDEX_CHUNKS_NAME === undefined) {
         throw new VError(
             {
@@ -81,6 +95,15 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
     }
 
     /**
+     * Generates a consistent OpenSearch `preference` value based on the provided keyword.
+     * @param {string} searchTerm Keyword used to derive a deterministic preference value.
+     * @returns {string} unique preference string for this search term
+     */
+    function sessionPreference(searchTerm) {
+        return `session-${crypto.createHash('sha256').update(searchTerm).digest('hex')}`;
+    }
+
+    /**
      * Searches document chunks by keyword and paginates the results.
      *
      * @async
@@ -99,7 +122,8 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
                 caseReferenceNumber,
                 pageNumber,
                 itemsPerPage,
-                logger
+                logger,
+                searchType
             });
             const buildEnd = Date.now();
 
@@ -121,6 +145,7 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
             const dbStart = Date.now();
             const response = await db.query({
                 index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
+                preference: sessionPreference(keyword),
                 body: queryBody
             });
             const dbEnd = Date.now();
@@ -210,47 +235,60 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
      * @async
      * @param {string} documentId - The UUID of the document (source_doc_id in OpenSearch).
      * @param {number|string} pageNumber - The page number.
-     * @param {string} [searchTerm] - Search term to filter chunks by content.
+     * @param {string} [keyword] - Search term to filter chunks by content.
+     * @param {'keyword'|'semantic'|'hybrid'} [searchType='keyword'] - Search mode used to find chunks.
      * @returns {Promise<Array<Object>>} Array of chunk objects containing only bounding_box data.
      * @throws {VError} If the database query fails.
      */
-    async function getPageChunksByDocumentIdAndPageNumber(documentId, pageNumber, searchTerm) {
+    async function getPageChunksByDocumentIdAndPageNumber(
+        documentId,
+        pageNumber,
+        keyword = '',
+        searchType = 'keyword'
+    ) {
         try {
             logger?.info?.(
-                { documentId, pageNumber, searchTerm },
+                { documentId, pageNumber, searchType },
                 'Querying OpenSearch for page chunks with bounding boxes'
             );
 
-            const mustQuery = [
-                { match: { source_doc_id: documentId } },
-                { match: { page_number: parseInt(pageNumber, 10) } },
-                { match: { case_ref: caseReferenceNumber } }
+            const queryBody = buildQueryJson({
+                keyword,
+                caseReferenceNumber,
+                pageNumber,
+                searchType,
+                queryIntent: PAGE_CHUNK_QUERY_INTENT,
+                documentId,
+                logger
+            });
+
+            queryBody._source = [
+                'chunk_id',
+                'bounding_box',
+                'chunk_type',
+                'chunk_index',
+                'chunk_text'
             ];
+            queryBody.sort = [{ chunk_index: { order: 'asc' } }];
 
-            if (searchTerm) {
-                mustQuery.push({ match: { chunk_text: searchTerm } });
-            }
-
-            const queryBody = {
-                query: {
-                    bool: {
-                        must: mustQuery
-                    }
-                },
-                _source: ['chunk_id', 'bounding_box', 'chunk_type', 'chunk_index', 'chunk_text'],
-                sort: [{ chunk_index: { order: 'asc' } }]
-            };
-
+            const dbStart = Date.now();
             const response = await db.query({
                 index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
+                preference: sessionPreference(keyword),
                 body: queryBody
             });
+            const dbEnd = Date.now();
 
             const hits = response?.body?.hits?.hits || [];
 
             logger?.info?.(
-                { documentId, pageNumber, chunksCount: hits.length, searchTerm },
-                'Retrieved page chunks'
+                {
+                    keyword,
+                    caseReferenceNumber,
+                    hitsCount: hits.length,
+                    dbMs: dbEnd - dbStart
+                },
+                '[OpenSearch] Search response page chunks'
             );
 
             return hits.map((hit) => hit._source);
