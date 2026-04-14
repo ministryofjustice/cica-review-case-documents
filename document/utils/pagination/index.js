@@ -89,17 +89,19 @@ const buildPaginationItems = ({ visiblePages, currentPageIndex, buildPageUrl }) 
  * @param {object} options - Query options.
  * @param {object} [options.query] - Optional request query object.
  * @param {string} [options.query.searchTerm] - Search term to preserve in links.
+ * @param {string} [options.query.type] - Search type to preserve in links.
  * @param {object} [options.params] - Optional route params object.
  * @param {string} [options.params.crn] - Case reference number.
  * @returns {string} Encoded query string.
  */
 const buildQueryString = ({ query, params }) => {
-    const { searchTerm = '' } = query || {};
+    const { searchTerm = '', type = '' } = query || {};
     const { crn } = params || {};
     const queryParams = new URLSearchParams();
 
     if (crn) queryParams.append('crn', crn);
     if (searchTerm) queryParams.append('searchTerm', searchTerm);
+    if (type) queryParams.append('type', type);
 
     return queryParams.toString();
 };

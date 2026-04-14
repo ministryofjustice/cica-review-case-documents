@@ -97,6 +97,7 @@ describe('createPageChunksService', () => {
                 pageNumber: mockPageNumber,
                 crn: mockCrn,
                 searchTerm: mockSearchTerm,
+                searchType: 'semantic',
                 jwtToken: mockJwtToken,
                 logger: mockLogger,
                 createRequestService: mockCreateRequestService
@@ -108,7 +109,7 @@ describe('createPageChunksService', () => {
             assert.strictEqual(mockGet.calls.length, 1);
             assert.strictEqual(
                 mockGet.calls[0].url,
-                `http://localhost:3000/api/document/${mockDocumentId}/page/${mockPageNumber}/chunks?crn=${mockCrn}&searchTerm=${encodeURIComponent(mockSearchTerm)}`
+                `http://localhost:3000/api/document/${mockDocumentId}/page/${mockPageNumber}/chunks?crn=${mockCrn}&type=semantic&searchTerm=${encodeURIComponent(mockSearchTerm)}`
             );
             assert.deepStrictEqual(mockGet.calls[0].headers, {
                 Authorization: `Bearer ${mockJwtToken}`
@@ -159,6 +160,7 @@ describe('createPageChunksService', () => {
                 pageNumber: mockPageNumber,
                 crn: mockCrn,
                 searchTerm: mockSearchTerm,
+                searchType: 'hybrid',
                 jwtToken: mockJwtToken,
                 logger: mockLogger,
                 createRequestService: mockCreateRequestService
@@ -168,6 +170,7 @@ describe('createPageChunksService', () => {
 
             assert.strictEqual(mockGet.calls.length, 1);
             assert.strictEqual(mockGet.calls[0].url.includes(`crn=${mockCrn}`), true);
+            assert.strictEqual(mockGet.calls[0].url.includes('type=hybrid'), true);
             assert.strictEqual(
                 mockGet.calls[0].url.includes(`searchTerm=${encodeURIComponent(mockSearchTerm)}`),
                 true
