@@ -101,6 +101,44 @@ describe('document-dal', () => {
         assert.equal(results[0]._source.chunk_text, 'foo');
     });
 
+    it('Should include a hybrid query when search type is all', async () => {
+        let queryArgs;
+        const mockDB = {
+            query: async (args) => {
+                queryArgs = args;
+                return {
+                    body: {
+                        hits: {
+                            hits: []
+                        }
+                    }
+                };
+            }
+        };
+
+        const dal = createDocumentDAL({
+            caseReferenceNumber: '12-745678',
+            createDBQuery: () => mockDB,
+            logger: mockLogger,
+            searchType: 'all'
+        });
+
+        await dal.getDocumentsChunksByKeyword('keyword', 2, 10);
+
+        assert.equal(queryArgs.body.min_score, 0.6);
+        assert.deepStrictEqual(queryArgs.body.query.hybrid.queries[0], {
+            bool: {
+                must: [{ term: { case_ref: '12-745678' } }],
+                should: [{ match: { chunk_text: { query: 'keyword', operator: 'or' } } }],
+                minimum_should_match: 1
+            }
+        });
+        assert.equal(queryArgs.body.query.hybrid.queries[1].neural.embedding.k, 20);
+        assert.deepStrictEqual(queryArgs.body.query.hybrid.queries[1].neural.embedding.filter, {
+            term: { case_ref: '12-745678' }
+        });
+    });
+
     it('Should rethrow if an error if db.query throws', async () => {
         const dal = createDocumentDAL({
             caseReferenceNumber: '12-745678',

@@ -1,3 +1,8 @@
+import {
+    FEATURE_FLAG_ENUM_OPTIONS,
+    getFeatureFlagValue,
+    parseEnumFlagValue
+} from '../../middleware/featureFlags/index.js';
 import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
@@ -26,6 +31,9 @@ export function createTextViewerHandler(
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
             const { searchTerm = '' } = req.query;
+            const searchType =
+                parseEnumFlagValue(req.query.type, FEATURE_FLAG_ENUM_OPTIONS.type) ||
+                getFeatureFlagValue(req.session, 'type');
             const apiJwtToken = createApiJwtToken(req.session?.username);
 
             // Fetch document page metadata from OpenSearch via API
@@ -56,7 +64,13 @@ export function createTextViewerHandler(
             const pageTitle = formatPageTitle(pageMetadata.correspondence_type);
 
             // Provide a link for sub-navigation back to the image page
-            const imagePageLink = buildImagePageLink(documentId, pageNumber, crn, searchTerm);
+            const imagePageLink = buildImagePageLink(
+                documentId,
+                pageNumber,
+                crn,
+                searchTerm,
+                searchType
+            );
 
             const { text } = pageMetadata;
 

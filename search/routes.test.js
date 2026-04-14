@@ -82,6 +82,57 @@ describe('Search Routes', () => {
             assert.strictEqual(res.statusCode, 200);
             assert.match(res.text, /search\/page\/results.njk/);
             assert.strictEqual(lastRenderParams.userName, 'search.user@example.com');
+            assert.strictEqual(lastRenderParams.searchType, 'keyword');
+        });
+
+        it('should pass the search type to the search service when set in session', async () => {
+            let serviceCallArgs;
+            mockCreateSearchService = () => ({
+                getSearchResults: async (...args) => {
+                    serviceCallArgs = args;
+                    return {
+                        body: {
+                            data: {
+                                attributes: {
+                                    results: {
+                                        hits: [],
+                                        total: { value: 0 }
+                                    }
+                                }
+                            }
+                        }
+                    };
+                }
+            });
+
+            const searchRouter = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: mockCreateSearchService
+            });
+
+            const testApp = express();
+            testApp.use(express.json());
+            testApp.use(express.urlencoded({ extended: true }));
+            testApp.use((req, res, next) => {
+                req.session = {
+                    caseSelected: true,
+                    caseReferenceNumber: '12345',
+                    username: 'search.user@example.com',
+                    featureFlags: {
+                        type: 'all'
+                    }
+                };
+                req.log = { info: () => {}, error: () => {} };
+                res.locals.csrfToken = 'test-csrf-token';
+                res.locals.cspNonce = 'test-csp-nonce';
+                next();
+            });
+            testApp.use('/search', searchRouter);
+
+            const res = await request(testApp).get('/search?query=test');
+
+            assert.strictEqual(res.statusCode, 200);
+            assert.deepStrictEqual(serviceCallArgs[4], { searchType: 'all' });
         });
 
         it('should handle errors from the search service', async () => {
@@ -292,13 +343,25 @@ describe('Search Routes', () => {
         it('should redirect to the GET route with the query parameter', async () => {
             const res = await request(app).post('/search').send({ query: ' search term ' });
             assert.strictEqual(res.statusCode, 302);
-            assert.strictEqual(res.headers.location, '/search?query=search%20term&pageNumber=1');
+            assert.strictEqual(res.headers.location, '/search?query=search+term&pageNumber=1');
         });
 
         it('should redirect with pageNumber when provided', async () => {
             const res = await request(app).post('/search?pageNumber=5').send({ query: 'test' });
             assert.strictEqual(res.statusCode, 302);
             assert.strictEqual(res.headers.location, '/search?query=test&pageNumber=5');
+        });
+
+        it('should preserve the type value in the redirect when provided', async () => {
+            const res = await request(app)
+                .post('/search?pageNumber=2')
+                .send({ query: 'test', type: 'semantic' });
+
+            assert.strictEqual(res.statusCode, 302);
+            assert.strictEqual(
+                res.headers.location,
+                '/search?query=test&pageNumber=2&type=semantic'
+            );
         });
 
         it('handles errors in POST /search route', async () => {

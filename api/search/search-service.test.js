@@ -42,16 +42,19 @@ describe('Search Service', () => {
 
         const caseReferenceNumber = '12-745678';
         const logger = { info: () => {} };
+        const searchType = 'all';
 
         await searchService.getSearchResultsByKeyword('test', 1, 10, {
             caseReferenceNumber,
-            logger
+            logger,
+            searchType
         });
 
         assert.equal(mockDALFactory.mock.callCount(), 1);
         const [dalOptions] = mockDALFactory.mock.calls[0].arguments;
         assert.equal(dalOptions.caseReferenceNumber, caseReferenceNumber);
         assert.deepEqual(dalOptions.logger, logger);
+        assert.equal(dalOptions.searchType, searchType);
     });
 
     it('should call getDocumentsChunksByKeyword with correct parameters', async () => {

@@ -3,6 +3,8 @@ import VError from 'verror';
 import createDBQueryDefault from '../../db/index.js';
 import buildQueryJson from './utils/buildQueryJson/index.js';
 
+const SEMANTIC_MIN_SCORE = 0.6;
+
 /**
  * @typedef {object} Logger
  * @property {(info: object, message?: string) => void} info
@@ -40,6 +42,8 @@ import buildQueryJson from './utils/buildQueryJson/index.js';
  *
  * @param {Logger} [params.logger]
  *   Optional structured logger instance.
+ * @param {'keyword' | 'semantic' | 'all'} [params.searchType='keyword']
+ *   Which search mode should be used.
  *
  * @throws {VError} Throws a `ConfigurationError` if the environment variable
  *   `OPENSEARCH_INDEX_CHUNKS_NAME` is not defined.
@@ -51,7 +55,12 @@ import buildQueryJson from './utils/buildQueryJson/index.js';
  * }}
  *   A frozen object exposing document and chunk retrieval methods.
  */
-function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryDefault, logger }) {
+function createDocumentDAL({
+    caseReferenceNumber,
+    createDBQuery = createDBQueryDefault,
+    logger,
+    searchType = 'keyword'
+}) {
     if (process.env.OPENSEARCH_INDEX_CHUNKS_NAME === undefined) {
         throw new VError(
             {
@@ -99,7 +108,8 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
                 caseReferenceNumber,
                 pageNumber,
                 itemsPerPage,
-                logger
+                logger,
+                searchType
             });
             const buildEnd = Date.now();
 
@@ -211,35 +221,77 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
      * @param {string} documentId - The UUID of the document (source_doc_id in OpenSearch).
      * @param {number|string} pageNumber - The page number.
      * @param {string} [searchTerm] - Search term to filter chunks by content.
+     * @param {'keyword'|'semantic'|'all'} [searchType='keyword'] - Search mode used to find chunks.
      * @returns {Promise<Array<Object>>} Array of chunk objects containing only bounding_box data.
      * @throws {VError} If the database query fails.
      */
-    async function getPageChunksByDocumentIdAndPageNumber(documentId, pageNumber, searchTerm) {
+    async function getPageChunksByDocumentIdAndPageNumber(
+        documentId,
+        pageNumber,
+        searchTerm,
+        searchType = 'keyword'
+    ) {
         try {
             logger?.info?.(
-                { documentId, pageNumber, searchTerm },
+                { documentId, pageNumber, searchTerm, searchType },
                 'Querying OpenSearch for page chunks with bounding boxes'
             );
 
-            const mustQuery = [
+            const filterClauses = [
                 { match: { source_doc_id: documentId } },
                 { match: { page_number: parseInt(pageNumber, 10) } },
                 { match: { case_ref: caseReferenceNumber } }
             ];
 
-            if (searchTerm) {
-                mustQuery.push({ match: { chunk_text: searchTerm } });
+            const hasSearchTerm = typeof searchTerm === 'string' && searchTerm.trim().length > 0;
+            const runSemanticSearch =
+                hasSearchTerm && (searchType === 'semantic' || searchType === 'all');
+            const runKeywordSearch = searchType === 'keyword' || searchType === 'all';
+
+            const lexicalPageQuery = {
+                bool: {
+                    must: [...filterClauses]
+                }
+            };
+
+            if (hasSearchTerm) {
+                lexicalPageQuery.bool.must.push({ match: { chunk_text: searchTerm } });
             }
 
-            const queryBody = {
-                query: {
-                    bool: {
-                        must: mustQuery
+            const neuralPageQuery = {
+                neural: {
+                    embedding: {
+                        query_text: searchTerm,
+                        k: 50,
+                        filter: {
+                            bool: {
+                                must: filterClauses
+                            }
+                        }
                     }
-                },
+                }
+            };
+
+            const queryBody = {
                 _source: ['chunk_id', 'bounding_box', 'chunk_type', 'chunk_index', 'chunk_text'],
                 sort: [{ chunk_index: { order: 'asc' } }]
             };
+
+            if (runSemanticSearch) {
+                queryBody.min_score = SEMANTIC_MIN_SCORE;
+            }
+
+            if (runKeywordSearch && runSemanticSearch) {
+                queryBody.query = {
+                    hybrid: {
+                        queries: [lexicalPageQuery, neuralPageQuery]
+                    }
+                };
+            } else if (runSemanticSearch) {
+                queryBody.query = neuralPageQuery;
+            } else {
+                queryBody.query = lexicalPageQuery;
+            }
 
             const response = await db.query({
                 index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,

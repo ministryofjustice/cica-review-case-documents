@@ -2,6 +2,8 @@ import crypto from 'node:crypto';
 import extractDatesFromSearchString from '../extractDatesFromSearchString/index.js';
 import generateDateFormatVariants from '../generateDateFormatVariants/index.js';
 
+const SEMANTIC_MIN_SCORE = 0.6;
+
 /**
  * Builds an OpenSearch  query JSON object based on the provided search parameters.
  *
@@ -17,20 +19,28 @@ import generateDateFormatVariants from '../generateDateFormatVariants/index.js';
  * @param {number} params.pageNumber - The current page number (1-based).
  * @param {number} params.itemsPerPage - Number of results to return per page.
  * @param {Logger} [params.logger] - Optional structured logger instance.
+ * @param {'keyword' | 'semantic' | 'all'} [params.searchType='keyword'] - Which search mode to use.
  *
  * @returns {Object} OpenSearch query DSL JSON object.
  */
-function buildQueryJson({ keyword, caseReferenceNumber, pageNumber, itemsPerPage, logger }) {
+function buildQueryJson({
+    keyword,
+    caseReferenceNumber,
+    pageNumber,
+    itemsPerPage,
+    logger,
+    searchType = 'keyword'
+}) {
     const startBuild = Date.now();
     const queryJson = {
         from: itemsPerPage * (pageNumber - 1),
-        size: itemsPerPage,
-        query: {
-            bool: {
-                // `term` is used for exact matching of the case reference
-                // number, otherwise it will be tokenised.
-                must: [{ term: { case_ref: caseReferenceNumber } }]
-            }
+        size: itemsPerPage
+    };
+    const lexicalQuery = {
+        bool: {
+            // `term` is used for exact matching of the case reference
+            // number, otherwise it will be tokenised.
+            must: [{ term: { case_ref: caseReferenceNumber } }]
         }
     };
 
@@ -85,8 +95,48 @@ function buildQueryJson({ keyword, caseReferenceNumber, pageNumber, itemsPerPage
     }
 
     if (shouldClauses.length > 0) {
-        queryJson.query.bool.should = shouldClauses;
-        queryJson.query.bool.minimum_should_match = 1;
+        lexicalQuery.bool.should = shouldClauses;
+        lexicalQuery.bool.minimum_should_match = 1;
+    }
+
+    const hasKeyword = keyword.trim().length > 0;
+    const runKeywordSearch = searchType === 'keyword' || searchType === 'all';
+    const runSemanticSearch = (searchType === 'semantic' || searchType === 'all') && hasKeyword;
+
+    if (runSemanticSearch) {
+        queryJson.min_score = SEMANTIC_MIN_SCORE;
+    }
+
+    const neuralQuery = {
+        neural: {
+            embedding: {
+                query_text: keyword,
+                k: queryJson.from + queryJson.size,
+                filter: {
+                    term: { case_ref: caseReferenceNumber }
+                }
+            }
+        }
+    };
+
+    if (runKeywordSearch && runSemanticSearch) {
+        const hybridQueries = [];
+
+        if (shouldClauses.length > 0) {
+            hybridQueries.push(lexicalQuery);
+        }
+
+        hybridQueries.push(neuralQuery);
+
+        queryJson.query = {
+            hybrid: {
+                queries: hybridQueries
+            }
+        };
+    } else if (runSemanticSearch) {
+        queryJson.query = neuralQuery;
+    } else {
+        queryJson.query = lexicalQuery;
     }
 
     // metrics.

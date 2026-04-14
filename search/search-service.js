@@ -24,12 +24,23 @@ function createSearchService({
      * @param {number} pageNumber - The page number of results to fetch.
      * @param {number} itemsPerPage - Number of items per page.
      * @param {string} token - The authentication token.
+     * @param {Object} [options] - Additional request options.
+     * @param {'keyword' | 'semantic' | 'all'} [options.searchType='keyword'] - Which search mode to use.
      * @returns {Promise<object>} A promise that resolves to the search results.
      */
-    async function getSearchResults(query, pageNumber, itemsPerPage, token) {
+    async function getSearchResults(
+        query,
+        pageNumber,
+        itemsPerPage,
+        token,
+        { searchType = 'keyword' } = {}
+    ) {
         logger.info({ query, pageNumber, itemsPerPage }, 'Fetching search results');
         const opts = {
-            url: `${process.env.APP_API_URL}/search/?query=${query}&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}`,
+            url:
+                `${process.env.APP_API_URL}/search/?query=${query}` +
+                `&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}` +
+                `&type=${searchType}`,
             headers: {
                 'On-Behalf-Of': caseReferenceNumber
             }

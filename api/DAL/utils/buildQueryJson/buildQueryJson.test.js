@@ -289,6 +289,115 @@ describe('buildQueryJson', () => {
         assert.deepStrictEqual(result, expected);
     });
 
+    it('Should build a hybrid query when search type is all', () => {
+        const params = {
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 2,
+            itemsPerPage: 5,
+            searchType: 'all'
+        };
+
+        const expected = {
+            from: 5,
+            size: 5,
+            min_score: 0.6,
+            query: {
+                hybrid: {
+                    queries: [
+                        {
+                            bool: {
+                                must: [{ term: { case_ref: '26-711111' } }],
+                                should: [
+                                    {
+                                        match: {
+                                            chunk_text: {
+                                                query: 'Important meeting',
+                                                operator: 'or'
+                                            }
+                                        }
+                                    }
+                                ],
+                                minimum_should_match: 1
+                            }
+                        },
+                        {
+                            neural: {
+                                embedding: {
+                                    query_text: 'Important meeting',
+                                    k: 10,
+                                    filter: {
+                                        term: {
+                                            case_ref: '26-711111'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        };
+
+        const result = buildQueryJson(params);
+        assert.deepStrictEqual(result, expected);
+    });
+
+    it('Should build a semantic query when search type is semantic', () => {
+        const params = {
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 2,
+            itemsPerPage: 5,
+            searchType: 'semantic'
+        };
+
+        const expected = {
+            from: 5,
+            size: 5,
+            min_score: 0.6,
+            query: {
+                neural: {
+                    embedding: {
+                        query_text: 'Important meeting',
+                        k: 10,
+                        filter: {
+                            term: {
+                                case_ref: '26-711111'
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        const result = buildQueryJson(params);
+        assert.deepStrictEqual(result, expected);
+    });
+
+    it('Should not build semantic or hybrid query for an empty keyword even when type is semantic', () => {
+        const params = {
+            keyword: '',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 10,
+            searchType: 'semantic'
+        };
+
+        const expected = {
+            from: 0,
+            size: 10,
+            query: {
+                bool: {
+                    must: [{ term: { case_ref: '26-711111' } }]
+                }
+            }
+        };
+
+        const result = buildQueryJson(params);
+        assert.deepStrictEqual(result, expected);
+    });
+
     it('Should build query for multiple dates with different separators and whitespace', () => {
         const params = {
             keyword: 'Dates: 01/02/2024 03-04-24 07 / 08 / 2024 09 – 10 – 2024',
