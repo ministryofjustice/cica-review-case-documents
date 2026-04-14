@@ -29,7 +29,7 @@ describe('buildQueryJson', () => {
                         { match_phrase: { chunk_text: '2024 May 12' } },
                         {
                             match: {
-                                chunk_text: { query: 'Meeting on at office', operator: 'or' }
+                                chunk_text: { query: 'Meeting on at office' }
                             }
                         }
                     ],
@@ -56,9 +56,7 @@ describe('buildQueryJson', () => {
             query: {
                 bool: {
                     must: [{ term: { case_ref: '26-711111' } }],
-                    should: [
-                        { match: { chunk_text: { query: 'Important meeting', operator: 'or' } } }
-                    ],
+                    should: [{ match: { chunk_text: { query: 'Important meeting' } } }],
                     minimum_should_match: 1
                 }
             }
@@ -110,8 +108,7 @@ describe('buildQueryJson', () => {
                         {
                             match: {
                                 chunk_text: {
-                                    query: 'Event dates: , in the calendar',
-                                    operator: 'or'
+                                    query: 'Event dates: , in the calendar'
                                 }
                             }
                         }
@@ -152,8 +149,7 @@ describe('buildQueryJson', () => {
                         {
                             match: {
                                 chunk_text: {
-                                    query: 'Dates: 50/04/92, , 17/10/123',
-                                    operator: 'or'
+                                    query: 'Dates: 50/04/92, , 17/10/123'
                                 }
                             }
                         }
@@ -209,7 +205,7 @@ describe('buildQueryJson', () => {
                         { match_phrase: { chunk_text: '2024 5 14' } },
                         { match_phrase: { chunk_text: '2024 05 14' } },
                         { match_phrase: { chunk_text: '2024 May 14' } },
-                        { match: { chunk_text: { query: 'Dates:,,', operator: 'or' } } }
+                        { match: { chunk_text: { query: 'Dates:,,' } } }
                     ],
                     minimum_should_match: 1
                 }
@@ -256,7 +252,7 @@ describe('buildQueryJson', () => {
                         { match_phrase: { chunk_text: '2024 06 13' } },
                         { match_phrase: { chunk_text: '2024 Jun 13' } },
                         { match_phrase: { chunk_text: '2024 June 13' } },
-                        { match: { chunk_text: { query: 'project discussion', operator: 'or' } } }
+                        { match: { chunk_text: { query: 'project discussion' } } }
                     ],
                     minimum_should_match: 1
                 }
@@ -273,6 +269,154 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10
+        };
+
+        const expected = {
+            from: 0,
+            size: 10,
+            query: {
+                bool: {
+                    must: [{ term: { case_ref: '26-711111' } }]
+                }
+            }
+        };
+
+        const result = buildQueryJson(params);
+        assert.deepStrictEqual(result, expected);
+    });
+
+    it('Should build a hybrid query when search type is hybrid', () => {
+        const params = {
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 2,
+            itemsPerPage: 5,
+            searchType: 'hybrid'
+        };
+
+        const expected = {
+            from: 5,
+            size: 5,
+            query: {
+                bool: {
+                    must: [{ term: { case_ref: '26-711111' } }],
+                    should: [
+                        {
+                            match: {
+                                chunk_text: {
+                                    query: 'Important meeting',
+                                    boost: 12
+                                }
+                            }
+                        },
+                        {
+                            neural: {
+                                embedding: {
+                                    query_text: 'Important meeting',
+                                    k: 50,
+                                    boost: 4
+                                }
+                            }
+                        }
+                    ],
+                    minimum_should_match: 1
+                }
+            }
+        };
+
+        const result = buildQueryJson(params);
+        assert.equal(typeof result.min_score, 'number');
+        assert.ok(result.min_score >= 0);
+        assert.ok(result.min_score <= 1);
+
+        const { min_score: _hybridMinScore, ...resultWithoutMinScore } = result;
+        assert.deepStrictEqual(resultWithoutMinScore, expected);
+    });
+
+    it('Should build a semantic query when search type is semantic', () => {
+        const params = {
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 2,
+            itemsPerPage: 5,
+            searchType: 'semantic'
+        };
+
+        const expected = {
+            from: 5,
+            size: 5,
+            query: {
+                neural: {
+                    embedding: {
+                        query_text: 'Important meeting',
+                        k: 50,
+                        filter: {
+                            term: {
+                                case_ref: '26-711111'
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        const result = buildQueryJson(params);
+        assert.equal(typeof result.min_score, 'number');
+        assert.ok(result.min_score >= 0);
+        assert.ok(result.min_score <= 1);
+
+        const { min_score: _semanticMinScore, ...resultWithoutMinScore } = result;
+        assert.deepStrictEqual(resultWithoutMinScore, expected);
+    });
+
+    it('Should apply separate boosts for date and keyword clauses in hybrid mode', () => {
+        const params = {
+            keyword: 'brain injury september 2021',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 5,
+            searchType: 'hybrid'
+        };
+
+        const result = buildQueryJson(params);
+        const lexicalMust = result.query.bool.must;
+        const hybridShould = result.query.bool.should;
+        const dateBoolClause = hybridShould.find(
+            (clause) => clause.bool && Array.isArray(clause.bool.should)
+        );
+        const keywordClause = hybridShould.find((clause) => clause.match?.chunk_text);
+        const neuralClause = hybridShould.find((clause) => clause.neural?.embedding);
+
+        assert.strictEqual(lexicalMust[0].term.case_ref, '26-711111');
+        assert.strictEqual(result.query.bool.minimum_should_match, 1);
+        assert.strictEqual(dateBoolClause.bool.boost, 1);
+        assert.strictEqual(dateBoolClause.bool.minimum_should_match, 1);
+        assert.strictEqual(keywordClause.match.chunk_text.boost, 12);
+        assert.strictEqual(neuralClause.neural.embedding.boost, 4);
+    });
+
+    it('Should correctly compute hybrid pagination when page params are strings', () => {
+        const result = buildQueryJson({
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: '2',
+            itemsPerPage: '5',
+            searchType: 'hybrid'
+        });
+
+        assert.strictEqual(result.from, 5);
+        assert.strictEqual(result.size, 5);
+        assert.strictEqual(result.query.bool.must[0].term.case_ref, '26-711111');
+        assert.strictEqual(result.query.bool.minimum_should_match, 1);
+    });
+
+    it('Should not build semantic or hybrid query for an empty keyword even when type is semantic', () => {
+        const params = {
+            keyword: '',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 10,
+            searchType: 'semantic'
         };
 
         const expected = {
@@ -394,7 +538,7 @@ describe('buildQueryJson', () => {
                         { match_phrase: { chunk_text: '2024 Oct 09' } },
                         { match_phrase: { chunk_text: '2024 October 9' } },
                         { match_phrase: { chunk_text: '2024 October 09' } },
-                        { match: { chunk_text: { query: 'Dates:', operator: 'or' } } }
+                        { match: { chunk_text: { query: 'Dates:' } } }
                     ],
                     minimum_should_match: 1
                 }
@@ -452,8 +596,7 @@ describe('buildQueryJson', () => {
                         {
                             match: {
                                 chunk_text: {
-                                    query: 'Dates: , through to the end of , with a review on',
-                                    operator: 'or'
+                                    query: 'Dates: , through to the end of , with a review on'
                                 }
                             }
                         }
@@ -485,8 +628,7 @@ describe('buildQueryJson', () => {
                         {
                             match: {
                                 chunk_text: {
-                                    query: 'Event on 17102024 was successful',
-                                    operator: 'or'
+                                    query: 'Event on 17102024 was successful'
                                 }
                             }
                         }
@@ -571,5 +713,38 @@ describe('buildQueryJson', () => {
                     Object.hasOwn(condition, 'match_phrase')
                 )
         );
+    });
+
+    it('Should omit from and size for page chunk matches intent', () => {
+        const params = {
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 2,
+            itemsPerPage: 5,
+            queryIntent: 'pageChunkMatches'
+        };
+
+        const result = buildQueryJson(params);
+
+        assert.strictEqual(Object.hasOwn(result, 'from'), false);
+        assert.strictEqual(Object.hasOwn(result, 'size'), false);
+        assert.deepStrictEqual(result.query.bool.must, [{ term: { case_ref: '26-711111' } }]);
+    });
+
+    it('Should omit from and size for semantic page chunk matches intent', () => {
+        const params = {
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 2,
+            itemsPerPage: 5,
+            searchType: 'semantic',
+            queryIntent: 'pageChunkMatches'
+        };
+
+        const result = buildQueryJson(params);
+
+        assert.strictEqual(Object.hasOwn(result, 'from'), false);
+        assert.strictEqual(Object.hasOwn(result, 'size'), false);
+        assert.strictEqual(result.query.neural.embedding.k, 50);
     });
 });

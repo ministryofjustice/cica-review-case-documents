@@ -3,6 +3,8 @@ import VError from 'verror';
 import createDBQueryDefault from '../../db/index.js';
 import buildQueryJson from './utils/buildQueryJson/index.js';
 
+const PAGE_CHUNK_QUERY_INTENT = 'pageChunkMatches';
+
 /**
  * @typedef {object} Logger
  * @property {(info: object, message?: string) => void} info
@@ -40,6 +42,8 @@ import buildQueryJson from './utils/buildQueryJson/index.js';
  *
  * @param {Logger} [params.logger]
  *   Optional structured logger instance.
+ * @param {'keyword' | 'semantic' | 'hybrid'} [params.searchType='keyword']
+ *   Which search mode should be used.
  *
  * @throws {VError} Throws a `ConfigurationError` if the environment variable
  *   `OPENSEARCH_INDEX_CHUNKS_NAME` is not defined.
@@ -51,7 +55,12 @@ import buildQueryJson from './utils/buildQueryJson/index.js';
  * }}
  *   A frozen object exposing document and chunk retrieval methods.
  */
-function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryDefault, logger }) {
+function createDocumentDAL({
+    caseReferenceNumber,
+    createDBQuery = createDBQueryDefault,
+    logger,
+    searchType = 'keyword'
+}) {
     if (process.env.OPENSEARCH_INDEX_CHUNKS_NAME === undefined) {
         throw new VError(
             {
@@ -99,7 +108,8 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
                 caseReferenceNumber,
                 pageNumber,
                 itemsPerPage,
-                logger
+                logger,
+                searchType
             });
             const buildEnd = Date.now();
 
@@ -211,35 +221,40 @@ function createDocumentDAL({ caseReferenceNumber, createDBQuery = createDBQueryD
      * @param {string} documentId - The UUID of the document (source_doc_id in OpenSearch).
      * @param {number|string} pageNumber - The page number.
      * @param {string} [searchTerm] - Search term to filter chunks by content.
+     * @param {'keyword'|'semantic'|'hybrid'} [searchType='keyword'] - Search mode used to find chunks.
      * @returns {Promise<Array<Object>>} Array of chunk objects containing only bounding_box data.
      * @throws {VError} If the database query fails.
      */
-    async function getPageChunksByDocumentIdAndPageNumber(documentId, pageNumber, searchTerm) {
+    async function getPageChunksByDocumentIdAndPageNumber(
+        documentId,
+        pageNumber,
+        searchTerm,
+        searchType = 'keyword'
+    ) {
         try {
             logger?.info?.(
-                { documentId, pageNumber, searchTerm },
+                { documentId, pageNumber, searchTerm, searchType },
                 'Querying OpenSearch for page chunks with bounding boxes'
             );
 
-            const mustQuery = [
-                { match: { source_doc_id: documentId } },
-                { match: { page_number: parseInt(pageNumber, 10) } },
-                { match: { case_ref: caseReferenceNumber } }
+            const queryBody = buildQueryJson({
+                keyword: searchTerm || '',
+                caseReferenceNumber,
+                pageNumber,
+                searchType,
+                queryIntent: PAGE_CHUNK_QUERY_INTENT,
+                documentId,
+                logger
+            });
+
+            queryBody._source = [
+                'chunk_id',
+                'bounding_box',
+                'chunk_type',
+                'chunk_index',
+                'chunk_text'
             ];
-
-            if (searchTerm) {
-                mustQuery.push({ match: { chunk_text: searchTerm } });
-            }
-
-            const queryBody = {
-                query: {
-                    bool: {
-                        must: mustQuery
-                    }
-                },
-                _source: ['chunk_id', 'bounding_box', 'chunk_type', 'chunk_index', 'chunk_text'],
-                sort: [{ chunk_index: { order: 'asc' } }]
-            };
+            queryBody.sort = [{ chunk_index: { order: 'asc' } }];
 
             const response = await db.query({
                 index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
