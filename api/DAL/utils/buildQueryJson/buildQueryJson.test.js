@@ -681,4 +681,37 @@ describe('buildQueryJson', () => {
                 )
         );
     });
+
+    it('Should omit from and size for page chunk matches intent', () => {
+        const params = {
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 2,
+            itemsPerPage: 5,
+            queryIntent: 'pageChunkMatches'
+        };
+
+        const result = buildQueryJson(params);
+
+        assert.strictEqual(Object.hasOwn(result, 'from'), false);
+        assert.strictEqual(Object.hasOwn(result, 'size'), false);
+        assert.deepStrictEqual(result.query.bool.must, [{ term: { case_ref: '26-711111' } }]);
+    });
+
+    it('Should omit from and size for semantic page chunk matches intent', () => {
+        const params = {
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 2,
+            itemsPerPage: 5,
+            searchType: 'semantic',
+            queryIntent: 'pageChunkMatches'
+        };
+
+        const result = buildQueryJson(params);
+
+        assert.strictEqual(Object.hasOwn(result, 'from'), false);
+        assert.strictEqual(Object.hasOwn(result, 'size'), false);
+        assert.strictEqual(result.query.neural.embedding.k, 10);
+    });
 });
