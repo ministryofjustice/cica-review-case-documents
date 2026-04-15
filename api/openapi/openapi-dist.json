@@ -83,16 +83,16 @@
                         "name": "type",
                         "in": "query",
                         "required": false,
-                        "description": "Search type to run: keyword lexical search, semantic neural search, or all",
+                        "description": "Search type to run: keyword lexical search, semantic neural search, or hybrid",
                         "schema": {
                             "type": "string",
                             "enum": [
                                 "keyword",
                                 "semantic",
-                                "all"
+                                "hybrid"
                             ]
                         },
-                        "example": "all"
+                        "example": "hybrid"
                     },
                     {
                         "name": "On-Behalf-Of",
@@ -812,7 +812,7 @@
                             "enum": [
                                 "keyword",
                                 "semantic",
-                                "all"
+                                "hybrid"
                             ]
                         },
                         "example": "semantic"
@@ -1171,16 +1171,16 @@
                 "name": "type",
                 "in": "query",
                 "required": false,
-                "description": "Search type to run: keyword lexical search, semantic neural search, or all",
+                "description": "Search type to run: keyword lexical search, semantic neural search, or hybrid",
                 "schema": {
                     "type": "string",
                     "enum": [
                         "keyword",
                         "semantic",
-                        "all"
+                        "hybrid"
                     ]
                 },
-                "example": "all"
+                "example": "hybrid"
             },
             "onBehalfOf": {
                 "name": "On-Behalf-Of",

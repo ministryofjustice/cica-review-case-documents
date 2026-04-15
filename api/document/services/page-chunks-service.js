@@ -21,7 +21,7 @@ function createPageChunksService({
      * @param {string} [searchTerm] - Optional search term to filter chunks.
      * @param {Object} [context] - Context for the call.
      * @param {Object} [context.logger] - Logger instance.
-     * @param {'keyword'|'semantic'|'all'} [context.searchType='keyword'] - Search mode used for chunk matching.
+     * @param {'keyword'|'semantic'|'hybrid'} [context.searchType='keyword'] - Search mode used for chunk matching.
      * @returns {Promise<Array<Object>>} Array of chunks with bounding boxes.
      */
     async function getPageChunks(

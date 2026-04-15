@@ -160,7 +160,7 @@ describe('createPageChunksService', () => {
                 pageNumber: mockPageNumber,
                 crn: mockCrn,
                 searchTerm: mockSearchTerm,
-                searchType: 'all',
+                searchType: 'hybrid',
                 jwtToken: mockJwtToken,
                 logger: mockLogger,
                 createRequestService: mockCreateRequestService
@@ -170,7 +170,7 @@ describe('createPageChunksService', () => {
 
             assert.strictEqual(mockGet.calls.length, 1);
             assert.strictEqual(mockGet.calls[0].url.includes(`crn=${mockCrn}`), true);
-            assert.strictEqual(mockGet.calls[0].url.includes('type=all'), true);
+            assert.strictEqual(mockGet.calls[0].url.includes('type=hybrid'), true);
             assert.strictEqual(
                 mockGet.calls[0].url.includes(`searchTerm=${encodeURIComponent(mockSearchTerm)}`),
                 true

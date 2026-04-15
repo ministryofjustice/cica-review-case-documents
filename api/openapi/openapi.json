@@ -288,7 +288,7 @@
                         "description": "Search type to run for chunk matching",
                         "schema": {
                             "type": "string",
-                            "enum": ["keyword", "semantic", "all"]
+                            "enum": ["keyword", "semantic", "hybrid"]
                         },
                         "example": "semantic"
                     }
@@ -471,12 +471,12 @@
                 "name": "type",
                 "in": "query",
                 "required": false,
-                "description": "Search type to run: keyword lexical search, semantic neural search, or all",
+                "description": "Search type to run: keyword lexical search, semantic neural search, or hybrid",
                 "schema": {
                     "type": "string",
-                    "enum": ["keyword", "semantic", "all"]
+                    "enum": ["keyword", "semantic", "hybrid"]
                 },
-                "example": "all"
+                "example": "hybrid"
             },
             "onBehalfOf": {
                 "name": "On-Behalf-Of",

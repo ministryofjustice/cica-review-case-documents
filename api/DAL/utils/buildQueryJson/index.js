@@ -2,12 +2,15 @@ import crypto from 'node:crypto';
 import extractDatesFromSearchString from '../extractDatesFromSearchString/index.js';
 import generateDateFormatVariants from '../generateDateFormatVariants/index.js';
 
-const SEMANTIC_MIN_SCORE = 0.6;
+const SEMANTIC_MIN_SCORE = 0;
 const DEFAULT_SEMANTIC_K = 50;
 const VARIANT_THRESHOLD = 50;
 const SHOULD_THRESHOLD = 50;
+const DEFAULT_LEXICAL_BOOST = 12;
+const DEFAULT_DATE_BOOST = 1;
+const DEFAULT_NEURAL_BOOST = 4;
 
-// the highlighting features need to use the same query as the search,
+// the highlighting features need to use the same query as the search (see bug:CICADS-655),
 // use this intent to set the scope of the query single page or all matching pages
 const QUERY_INTENTS = Object.freeze({
     SEARCH_RESULTS: 'searchResults',
@@ -122,8 +125,7 @@ function buildDateAwareShouldClauses({ keyword, enableDateExtraction = true }) {
         shouldClauses.push({
             match: {
                 chunk_text: {
-                    query: remainingText,
-                    operator: 'or'
+                    query: remainingText
                 }
             }
         });
@@ -225,10 +227,12 @@ function logQueryMetrics({
  * @param {number} params.pageNumber - The current page number (1-based).
  * @param {number} params.itemsPerPage - Number of results to return per page.
  * @param {Logger} [params.logger] - Optional structured logger instance.
- * @param {'keyword' | 'semantic' | 'all'} [params.searchType='keyword'] - Which search mode to use.
+ * @param {'keyword' | 'semantic' | 'hybrid'} [params.searchType='keyword'] - Which search mode to use.
  * @param {'searchResults' | 'pageChunkMatches'} [params.queryIntent='searchResults'] - Query purpose.
  * @param {boolean} [params.enableDateExtraction=true] - Enables date extraction and variant matching.
- * @param {number} [params.semanticK] - Optional semantic hit window (`k`) override.
+ * @param {number} [params.keywordBoost] - Boost multiplier for the lexical sub-query in hybrid mode.
+ * @param {number} [params.dateBoost] - Boost multiplier for date variant clauses in hybrid mode.
+ * @param {number} [params.semanticBoost] - Boost multiplier for the neural sub-query in hybrid mode.
  *
  * @returns {Object} OpenSearch query DSL JSON object.
  */
@@ -240,15 +244,26 @@ function buildQueryJson({
     logger,
     searchType = 'keyword',
     queryIntent = QUERY_INTENTS.SEARCH_RESULTS,
-    semanticK,
-    enableDateExtraction = true
+    enableDateExtraction = true,
+    keywordBoost = DEFAULT_LEXICAL_BOOST,
+    dateBoost = DEFAULT_DATE_BOOST,
+    semanticBoost = DEFAULT_NEURAL_BOOST
 }) {
     const startBuild = Date.now();
     const queryJson = {};
+    const applyPagination = shouldApplyPagination(queryIntent);
+    const normalizedPageNumber = Number.parseInt(pageNumber, 10);
+    const normalizedItemsPerPage = Number.parseInt(itemsPerPage, 10);
+    const safePageNumber = Number.isFinite(normalizedPageNumber) && normalizedPageNumber > 0
+        ? normalizedPageNumber
+        : 1;
+    const safeItemsPerPage = Number.isFinite(normalizedItemsPerPage) && normalizedItemsPerPage > 0
+        ? normalizedItemsPerPage
+        : 10;
 
-    if (shouldApplyPagination(queryIntent)) {
-        queryJson.from = itemsPerPage * (pageNumber - 1);
-        queryJson.size = itemsPerPage;
+    if (applyPagination) {
+        queryJson.from = safeItemsPerPage * (safePageNumber - 1);
+        queryJson.size = safeItemsPerPage;
     }
 
     const lexicalQuery = createLexicalQuery(caseReferenceNumber);
@@ -269,8 +284,8 @@ function buildQueryJson({
     }
 
     const hasKeyword = keyword.trim().length > 0;
-    const runKeywordSearch = searchType === 'keyword' || searchType === 'all';
-    const runSemanticSearch = (searchType === 'semantic' || searchType === 'all') && hasKeyword;
+    const runKeywordSearch = searchType === 'keyword' || searchType === 'hybrid';
+    const runSemanticSearch = (searchType === 'semantic' || searchType === 'hybrid') && hasKeyword;
 
     if (runSemanticSearch) {
         queryJson.min_score = SEMANTIC_MIN_SCORE;
@@ -281,20 +296,67 @@ function buildQueryJson({
         caseReferenceNumber
     });
 
-    // If both searches are enabled, we construct a hybrid query that allows documents to match
+    // If both searches are enabled, build top-level hybrid with one lexical branch
+    // and one semantic branch.
     if (runKeywordSearch && runSemanticSearch) {
-        const hybridQueries = [];
+        const lexicalBranchMustClauses = [{ term: { case_ref: caseReferenceNumber } }];
+        const dateShouldClauses = shouldClauses.filter((clause) =>
+            Object.hasOwn(clause, 'match_phrase')
+        );
+        const keywordMatchClause = shouldClauses.find((clause) => Object.hasOwn(clause, 'match'));
 
-        if (shouldClauses.length > 0) {
-            hybridQueries.push(lexicalQuery);
+        if (dateShouldClauses.length > 0) {
+            lexicalBranchMustClauses.push({
+                bool: {
+                    should: dateShouldClauses,
+                    minimum_should_match: 1,
+                    boost: dateBoost
+                }
+            });
         }
 
-        hybridQueries.push(neuralQuery);
+        if (keywordMatchClause?.match?.chunk_text) {
+            lexicalBranchMustClauses.push({
+                match: {
+                    chunk_text: {
+                        ...keywordMatchClause.match.chunk_text,
+                        boost: keywordBoost
+                    }
+                }
+            });
+        }
+
+        const hybridQuery = {
+            queries: [
+                {
+                    bool: {
+                        must: lexicalBranchMustClauses
+                    }
+                },
+                {
+                    bool: {
+                        must: [
+                            {
+                                neural: {
+                                    embedding: {
+                                        query_text: keyword,
+                                        k: DEFAULT_SEMANTIC_K,
+                                        boost: semanticBoost
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        };
+
+        if (applyPagination) {
+            hybridQuery.pagination_depth = DEFAULT_SEMANTIC_K // queryJson.from + queryJson.size;
+        }
 
         queryJson.query = {
-            hybrid: {
-                queries: hybridQueries
-            }
+            hybrid: hybridQuery
         };
     } else if (runSemanticSearch) {
         // just a semantic search

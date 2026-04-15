@@ -101,7 +101,7 @@ describe('document-dal', () => {
         assert.equal(results[0]._source.chunk_text, 'foo');
     });
 
-    it('Should include a hybrid query when search type is all', async () => {
+    it('Should include a hybrid query when search type is hybrid', async () => {
         let queryArgs;
         const mockDB = {
             query: async (args) => {
@@ -120,23 +120,31 @@ describe('document-dal', () => {
             caseReferenceNumber: '12-745678',
             createDBQuery: () => mockDB,
             logger: mockLogger,
-            searchType: 'all'
+            searchType: 'hybrid'
         });
 
         await dal.getDocumentsChunksByKeyword('keyword', 2, 10);
 
         assert.equal(queryArgs.body.min_score, 0.6);
+        assert.equal(queryArgs.body.query.hybrid.pagination_depth, 20);
         assert.deepStrictEqual(queryArgs.body.query.hybrid.queries[0], {
             bool: {
-                must: [{ term: { case_ref: '12-745678' } }],
-                should: [{ match: { chunk_text: { query: 'keyword', operator: 'or' } } }],
-                minimum_should_match: 1
+                must: [
+                    { term: { case_ref: '12-745678' } },
+                    {
+                        match: {
+                            chunk_text: {
+                                query: 'keyword',
+                                operator: 'or',
+                                boost: 12
+                            }
+                        }
+                    }
+                ]
             }
         });
-        assert.equal(queryArgs.body.query.hybrid.queries[1].neural.embedding.k, 20);
-        assert.deepStrictEqual(queryArgs.body.query.hybrid.queries[1].neural.embedding.filter, {
-            term: { case_ref: '12-745678' }
-        });
+        assert.equal(queryArgs.body.query.hybrid.queries[1].bool.must[0].neural.embedding.k, 50);
+        assert.equal(queryArgs.body.query.hybrid.queries[1].bool.must[0].neural.embedding.boost, 4);
     });
 
     it('Should rethrow if an error if db.query throws', async () => {

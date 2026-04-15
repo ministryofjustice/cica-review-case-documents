@@ -29,7 +29,7 @@ describe('featureFlags middleware', () => {
         assert.deepEqual(res.locals.featureFlags, FEATURE_FLAG_DEFAULTS);
     });
 
-    it('updates hybrid flag from query string', () => {
+    it('ignores unknown boolean flags from query string', () => {
         const req = {
             query: { hybrid: 'on' },
             session: {}
@@ -40,8 +40,9 @@ describe('featureFlags middleware', () => {
 
         featureFlags(req, res, () => {});
 
-        assert.equal(req.session.featureFlags.hybrid, true);
+        assert.equal(req.session.featureFlags.hybrid, undefined);
         assert.equal(req.session.featureFlags.align, true);
+        assert.equal(req.session.featureFlags.type, 'keyword');
     });
 
     it('updates align flag from query string', () => {
@@ -56,7 +57,7 @@ describe('featureFlags middleware', () => {
         featureFlags(req, res, () => {});
 
         assert.equal(req.session.featureFlags.align, false);
-        assert.equal(req.session.featureFlags.hybrid, false);
+        assert.equal(req.session.featureFlags.type, 'keyword');
     });
 
     it('updates type flag from query string', () => {
@@ -107,8 +108,7 @@ describe('featureFlags middleware', () => {
             session: {
                 featureFlags: {
                     align: false,
-                    hybrid: true,
-                    type: 'all'
+                    type: 'hybrid'
                 }
             }
         };
@@ -120,8 +120,7 @@ describe('featureFlags middleware', () => {
 
         assert.deepEqual(req.session.featureFlags, {
             align: false,
-            hybrid: true,
-            type: 'all'
+            type: 'hybrid'
         });
     });
 
@@ -144,7 +143,7 @@ describe('parseEnumFlagValue', () => {
     it('returns the value when it is in the allowed set', () => {
         assert.equal(parseEnumFlagValue('keyword', FEATURE_FLAG_ENUM_OPTIONS.type), 'keyword');
         assert.equal(parseEnumFlagValue('semantic', FEATURE_FLAG_ENUM_OPTIONS.type), 'semantic');
-        assert.equal(parseEnumFlagValue('all', FEATURE_FLAG_ENUM_OPTIONS.type), 'all');
+        assert.equal(parseEnumFlagValue('hybrid', FEATURE_FLAG_ENUM_OPTIONS.type), 'hybrid');
     });
 
     it('accepts the last element when given an array', () => {
@@ -155,7 +154,7 @@ describe('parseEnumFlagValue', () => {
     });
 
     it('returns undefined for values not in the allowed set', () => {
-        assert.equal(parseEnumFlagValue('hybrid', FEATURE_FLAG_ENUM_OPTIONS.type), undefined);
+        assert.equal(parseEnumFlagValue('all', FEATURE_FLAG_ENUM_OPTIONS.type), undefined);
         assert.equal(parseEnumFlagValue('', FEATURE_FLAG_ENUM_OPTIONS.type), undefined);
         assert.equal(parseEnumFlagValue(undefined, FEATURE_FLAG_ENUM_OPTIONS.type), undefined);
     });
@@ -176,12 +175,10 @@ describe('parseFeatureFlagValue', () => {
 
 describe('getFeatureFlagValue', () => {
     it('returns the session value when present', () => {
-        assert.equal(getFeatureFlagValue({ featureFlags: { hybrid: true } }, 'hybrid'), true);
         assert.equal(getFeatureFlagValue({ featureFlags: { align: false } }, 'align'), false);
     });
 
     it('falls back to defaults when the session value is missing', () => {
-        assert.equal(getFeatureFlagValue({}, 'hybrid'), false);
         assert.equal(getFeatureFlagValue({}, 'align'), true);
     });
 
@@ -190,7 +187,7 @@ describe('getFeatureFlagValue', () => {
             getFeatureFlagValue({ featureFlags: { type: 'semantic' } }, 'type'),
             'semantic'
         );
-        assert.equal(getFeatureFlagValue({ featureFlags: { type: 'all' } }, 'type'), 'all');
+        assert.equal(getFeatureFlagValue({ featureFlags: { type: 'hybrid' } }, 'type'), 'hybrid');
         assert.equal(getFeatureFlagValue({ featureFlags: { type: 'keyword' } }, 'type'), 'keyword');
     });
 

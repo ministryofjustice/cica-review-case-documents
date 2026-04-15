@@ -21,7 +21,7 @@ export function buildImageUrl(documentId, pageNumber, crn) {
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
- * @param {'keyword'|'semantic'|'all'} [searchType='keyword'] - Search type mode
+ * @param {'keyword'|'semantic'|'hybrid'} [searchType='keyword'] - Search type mode
  * @returns {string} The text view URL
  */
 export function buildTextPageLink(
@@ -41,7 +41,7 @@ export function buildTextPageLink(
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
- * @param {'keyword'|'semantic'|'all'} [searchType='keyword'] - Search type mode
+ * @param {'keyword'|'semantic'|'hybrid'} [searchType='keyword'] - Search type mode
  * @returns {string} The image view URL
  */
 export function buildImagePageLink(

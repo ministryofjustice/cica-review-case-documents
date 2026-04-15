@@ -25,7 +25,7 @@ function createSearchService({
      * @param {number} itemsPerPage - Number of items per page.
      * @param {string} token - The authentication token.
      * @param {Object} [options] - Additional request options.
-     * @param {'keyword' | 'semantic' | 'all'} [options.searchType='keyword'] - Which search mode to use.
+     * @param {'keyword' | 'semantic' | 'hybrid'} [options.searchType='keyword'] - Which search mode to use.
      * @returns {Promise<object>} A promise that resolves to the search results.
      */
     async function getSearchResults(

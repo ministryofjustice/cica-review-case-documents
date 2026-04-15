@@ -289,13 +289,13 @@ describe('buildQueryJson', () => {
         assert.deepStrictEqual(result, expected);
     });
 
-    it('Should build a hybrid query when search type is all', () => {
+    it('Should build a hybrid query when search type is hybrid', () => {
         const params = {
             keyword: 'Important meeting',
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            searchType: 'all'
+            searchType: 'hybrid'
         };
 
         const expected = {
@@ -304,34 +304,37 @@ describe('buildQueryJson', () => {
             min_score: 0.6,
             query: {
                 hybrid: {
+                    pagination_depth: 10,
                     queries: [
                         {
                             bool: {
-                                must: [{ term: { case_ref: '26-711111' } }],
-                                should: [
+                                must: [
+                                    { term: { case_ref: '26-711111' } },
                                     {
                                         match: {
                                             chunk_text: {
                                                 query: 'Important meeting',
-                                                operator: 'or'
+                                                operator: 'or',
+                                                boost: 12
                                             }
                                         }
                                     }
-                                ],
-                                minimum_should_match: 1
+                                ]
                             }
                         },
                         {
-                            neural: {
-                                embedding: {
-                                    query_text: 'Important meeting',
-                                    k: 10,
-                                    filter: {
-                                        term: {
-                                            case_ref: '26-711111'
+                            bool: {
+                                must: [
+                                    {
+                                        neural: {
+                                            embedding: {
+                                                query_text: 'Important meeting',
+                                                k: 50,
+                                                boost: 4
+                                            }
                                         }
                                     }
-                                }
+                                ]
                             }
                         }
                     ]
@@ -360,7 +363,7 @@ describe('buildQueryJson', () => {
                 neural: {
                     embedding: {
                         query_text: 'Important meeting',
-                        k: 10,
+                        k: 50,
                         filter: {
                             term: {
                                 case_ref: '26-711111'
@@ -373,6 +376,41 @@ describe('buildQueryJson', () => {
 
         const result = buildQueryJson(params);
         assert.deepStrictEqual(result, expected);
+    });
+
+    it('Should apply separate boosts for date and keyword clauses in hybrid mode', () => {
+        const params = {
+            keyword: 'brain injury september 2021',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 5,
+            searchType: 'hybrid'
+        };
+
+        const result = buildQueryJson(params);
+        const lexicalMust = result.query.hybrid.queries[0].bool.must;
+        const dateBoolClause = lexicalMust.find((clause) => clause.bool && Array.isArray(clause.bool.should));
+        const keywordClause = lexicalMust.find((clause) => clause.match?.chunk_text);
+
+        assert.strictEqual(result.query.hybrid.pagination_depth, 5);
+        assert.strictEqual(lexicalMust[0].term.case_ref, '26-711111');
+        assert.strictEqual(dateBoolClause.bool.boost, 1);
+        assert.strictEqual(dateBoolClause.bool.minimum_should_match, 1);
+        assert.strictEqual(keywordClause.match.chunk_text.boost, 12);
+    });
+
+    it('Should correctly compute hybrid pagination when page params are strings', () => {
+        const result = buildQueryJson({
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: '2',
+            itemsPerPage: '5',
+            searchType: 'hybrid'
+        });
+
+        assert.strictEqual(result.from, 5);
+        assert.strictEqual(result.size, 5);
+        assert.strictEqual(result.query.hybrid.pagination_depth, 10);
     });
 
     it('Should not build semantic or hybrid query for an empty keyword even when type is semantic', () => {
@@ -712,6 +750,6 @@ describe('buildQueryJson', () => {
 
         assert.strictEqual(Object.hasOwn(result, 'from'), false);
         assert.strictEqual(Object.hasOwn(result, 'size'), false);
-        assert.strictEqual(result.query.neural.embedding.k, 10);
+        assert.strictEqual(result.query.neural.embedding.k, 50);
     });
 });

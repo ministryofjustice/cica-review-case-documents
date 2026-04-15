@@ -42,7 +42,7 @@ describe('Search Service', () => {
 
         const caseReferenceNumber = '12-745678';
         const logger = { info: () => {} };
-        const searchType = 'all';
+        const searchType = 'hybrid';
 
         await searchService.getSearchResultsByKeyword('test', 1, 10, {
             caseReferenceNumber,

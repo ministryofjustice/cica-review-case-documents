@@ -1,11 +1,10 @@
 export const FEATURE_FLAG_DEFAULTS = Object.freeze({
     align: true, // toggle alignment of image highlighting to prevent or show overlapping
-    hybrid: false, // toggle hybrid search on and off
-    type: 'keyword' // search type: 'keyword', 'semantic', or 'all'
+    type: 'keyword' // search type: 'keyword', 'semantic', or 'hybrid'
 });
 
 export const FEATURE_FLAG_ENUM_OPTIONS = Object.freeze({
-    type: Object.freeze(['keyword', 'semantic', 'all'])
+    type: Object.freeze(['keyword', 'semantic', 'hybrid'])
 });
 
 /**
@@ -55,7 +54,7 @@ export function parseEnumFlagValue(value, allowedValues) {
  * Resolves a feature flag value from session state, with repo defaults.
  *
  * @param {import('express-session').Session | undefined} session - Request session object.
- * @param {'align' | 'hybrid' | 'type'} flagName - Supported feature flag name.
+ * @param {'align' | 'type'} flagName - Supported feature flag name.
  * @returns {boolean | string} The active feature flag value.
  */
 export function getFeatureFlagValue(session, flagName) {

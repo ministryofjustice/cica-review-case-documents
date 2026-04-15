@@ -9,7 +9,7 @@ import createRequestServiceDefault from '../../service/request/index.js';
  * @param {number|string} options.pageNumber - The page number to fetch chunks for.
  * @param {string} options.crn - The case reference number.
  * @param {string} [options.searchTerm] - Search term to filter chunks by content.
- * @param {'keyword'|'semantic'|'all'} [options.searchType='keyword'] - Search mode for chunk matching.
+ * @param {'keyword'|'semantic'|'hybrid'} [options.searchType='keyword'] - Search mode for chunk matching.
  * @param {string} [options.jwtToken] - Optional JWT token for authentication.
  * @param {Object} options.logger - Logger instance for logging actions.
  * @param {Function} [options.createRequestService=createRequestServiceDefault] - Factory function to create a request service.

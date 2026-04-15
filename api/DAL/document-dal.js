@@ -42,7 +42,7 @@ const SEMANTIC_MIN_SCORE = 0.6;
  *
  * @param {Logger} [params.logger]
  *   Optional structured logger instance.
- * @param {'keyword' | 'semantic' | 'all'} [params.searchType='keyword']
+ * @param {'keyword' | 'semantic' | 'hybrid'} [params.searchType='keyword']
  *   Which search mode should be used.
  *
  * @throws {VError} Throws a `ConfigurationError` if the environment variable
@@ -221,7 +221,7 @@ function createDocumentDAL({
      * @param {string} documentId - The UUID of the document (source_doc_id in OpenSearch).
      * @param {number|string} pageNumber - The page number.
      * @param {string} [searchTerm] - Search term to filter chunks by content.
-     * @param {'keyword'|'semantic'|'all'} [searchType='keyword'] - Search mode used to find chunks.
+     * @param {'keyword'|'semantic'|'hybrid'} [searchType='keyword'] - Search mode used to find chunks.
      * @returns {Promise<Array<Object>>} Array of chunk objects containing only bounding_box data.
      * @throws {VError} If the database query fails.
      */
@@ -251,8 +251,8 @@ function createDocumentDAL({
 
             const hasSearchTerm = typeof searchTerm === 'string' && searchTerm.trim().length > 0;
             const runSemanticSearch =
-                hasSearchTerm && (searchType === 'semantic' || searchType === 'all');
-            const runKeywordSearch = searchType === 'keyword' || searchType === 'all';
+                hasSearchTerm && (searchType === 'semantic' || searchType === 'hybrid');
+            const runKeywordSearch = searchType === 'keyword' || searchType === 'hybrid';
 
             const lexicalPageQuery = {
                 bool: {

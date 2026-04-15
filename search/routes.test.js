@@ -119,7 +119,7 @@ describe('Search Routes', () => {
                     caseReferenceNumber: '12345',
                     username: 'search.user@example.com',
                     featureFlags: {
-                        type: 'all'
+                        type: 'hybrid'
                     }
                 };
                 req.log = { info: () => {}, error: () => {} };
@@ -132,7 +132,7 @@ describe('Search Routes', () => {
             const res = await request(testApp).get('/search?query=test');
 
             assert.strictEqual(res.statusCode, 200);
-            assert.deepStrictEqual(serviceCallArgs[4], { searchType: 'all' });
+            assert.deepStrictEqual(serviceCallArgs[4], { searchType: 'hybrid' });
         });
 
         it('should handle errors from the search service', async () => {

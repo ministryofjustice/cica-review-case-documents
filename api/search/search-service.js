@@ -26,7 +26,7 @@ function createSearchService({ createDocumentDAL: dalFactory = createDocumentDAL
      * @param {Object} context - The context for the search operation.
      * @param {string} context.caseReferenceNumber - The case reference number.
      * @param {Object} context.logger - The logger instance.
-     * @param {'keyword' | 'semantic' | 'all'} [context.searchType='keyword'] - Which search mode to use.
+     * @param {'keyword' | 'semantic' | 'hybrid'} [context.searchType='keyword'] - Which search mode to use.
      * @returns {Promise<Object[]>} A promise that resolves to an array of document results.
      */
     async function getSearchResultsByKeyword(
