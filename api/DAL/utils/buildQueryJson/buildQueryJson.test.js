@@ -389,7 +389,9 @@ describe('buildQueryJson', () => {
 
         const result = buildQueryJson(params);
         const lexicalMust = result.query.hybrid.queries[0].bool.must;
-        const dateBoolClause = lexicalMust.find((clause) => clause.bool && Array.isArray(clause.bool.should));
+        const dateBoolClause = lexicalMust.find(
+            (clause) => clause.bool && Array.isArray(clause.bool.should)
+        );
         const keywordClause = lexicalMust.find((clause) => clause.match?.chunk_text);
 
         assert.strictEqual(result.query.hybrid.pagination_depth, 5);

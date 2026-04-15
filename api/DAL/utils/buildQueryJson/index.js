@@ -254,12 +254,14 @@ function buildQueryJson({
     const applyPagination = shouldApplyPagination(queryIntent);
     const normalizedPageNumber = Number.parseInt(pageNumber, 10);
     const normalizedItemsPerPage = Number.parseInt(itemsPerPage, 10);
-    const safePageNumber = Number.isFinite(normalizedPageNumber) && normalizedPageNumber > 0
-        ? normalizedPageNumber
-        : 1;
-    const safeItemsPerPage = Number.isFinite(normalizedItemsPerPage) && normalizedItemsPerPage > 0
-        ? normalizedItemsPerPage
-        : 10;
+    const safePageNumber =
+        Number.isFinite(normalizedPageNumber) && normalizedPageNumber > 0
+            ? normalizedPageNumber
+            : 1;
+    const safeItemsPerPage =
+        Number.isFinite(normalizedItemsPerPage) && normalizedItemsPerPage > 0
+            ? normalizedItemsPerPage
+            : 10;
 
     if (applyPagination) {
         queryJson.from = safeItemsPerPage * (safePageNumber - 1);
@@ -352,7 +354,7 @@ function buildQueryJson({
         };
 
         if (applyPagination) {
-            hybridQuery.pagination_depth = DEFAULT_SEMANTIC_K // queryJson.from + queryJson.size;
+            hybridQuery.pagination_depth = DEFAULT_SEMANTIC_K; // queryJson.from + queryJson.size;
         }
 
         queryJson.query = {
