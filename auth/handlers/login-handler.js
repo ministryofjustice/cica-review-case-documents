@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-
+import { getSessionValuesToPreserve, regenerateSession } from '../auth-flow-helpers.js';
 import {
     buildEntraAuthorizeUrl,
     isEntraConfigured,
@@ -11,7 +11,7 @@ import {
  *
  * @returns {import('express').RequestHandler} Express handler for `/auth/login`.
  */
-export const createLoginHandler = () => (req, res, next) => {
+export const createLoginHandler = () => async (req, res, next) => {
     if (!isEntraConfigured()) {
         return res.status(400).send('Entra authentication is not configured');
     }
@@ -19,6 +19,10 @@ export const createLoginHandler = () => (req, res, next) => {
     try {
         const interactiveRequested =
             isEntraInteractiveFallbackEnabled() && req.query?.interactive === '1';
+        const preservedSessionValues = getSessionValuesToPreserve(req.session);
+        await regenerateSession(req);
+        Object.assign(req.session, preservedSessionValues);
+
         const state = nanoid();
         const nonce = nanoid();
         req.session.entraAuth = {

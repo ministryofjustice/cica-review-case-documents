@@ -54,7 +54,7 @@ test('GET /auth/login with Entra configured should request silent sign-in', asyn
     assert.match(response.headers.location, /prompt=none/);
 });
 
-test('createLoginHandler should return 400 when Entra is not configured', () => {
+test('createLoginHandler should return 400 when Entra is not configured', async () => {
     const loginHandler = createLoginHandler();
     const req = {
         query: {},
@@ -76,17 +76,19 @@ test('createLoginHandler should return 400 when Entra is not configured', () => 
 
     delete process.env.ENTRA_CLIENT_ID;
 
-    loginHandler(req, res, () => {});
+    await loginHandler(req, res, () => {});
 
     assert.strictEqual(responsePayload.statusCode, 400);
     assert.strictEqual(responsePayload.body, 'Entra authentication is not configured');
 });
 
-test('createLoginHandler should pass unexpected errors to next', () => {
+test('createLoginHandler should pass unexpected errors to next', async () => {
     const loginHandler = createLoginHandler();
     const req = {
         query: {},
-        session: {}
+        session: {
+            regenerate: (callback) => callback()
+        }
     };
 
     const expectedError = new Error('redirect-failed');
@@ -97,11 +99,57 @@ test('createLoginHandler should pass unexpected errors to next', () => {
     };
 
     let nextError;
-    loginHandler(req, res, (err) => {
+    await loginHandler(req, res, (err) => {
         nextError = err;
     });
 
     assert.strictEqual(nextError, expectedError);
+});
+
+test('createLoginHandler should regenerate session before starting Entra auth flow', async () => {
+    const loginHandler = createLoginHandler();
+    let regenerateCalls = 0;
+
+    const req = {
+        query: {},
+        protocol: 'https',
+        get: () => 'example.test',
+        session: {
+            returnTo: '/search?query=abc',
+            caseSelected: true,
+            caseReferenceNumber: '12-123456',
+            regenerate: (callback) => {
+                regenerateCalls += 1;
+                req.session = {
+                    regenerate: req.session.regenerate
+                };
+                callback();
+            }
+        }
+    };
+
+    const responsePayload = {};
+    const res = {
+        redirect: (location) => {
+            responsePayload.location = location;
+            return location;
+        }
+    };
+
+    await loginHandler(req, res, () => {});
+
+    assert.strictEqual(regenerateCalls, 1);
+    assert.match(
+        responsePayload.location,
+        /^https:\/\/login\.microsoftonline\.com\/test-entra-tenant-id\/oauth2\/v2\.0\/authorize\?/
+    );
+    assert.strictEqual(req.session.returnTo, '/search?query=abc');
+    assert.strictEqual(req.session.caseSelected, true);
+    assert.strictEqual(req.session.caseReferenceNumber, '12-123456');
+    assert.ok(req.session.entraAuth);
+    assert.ok(req.session.entraAuth.state);
+    assert.ok(req.session.entraAuth.nonce);
+    assert.strictEqual(req.session.entraAuth.mode, 'silent');
 });
 
 test('GET /auth/callback with login_required should fallback to interactive by default', async () => {
