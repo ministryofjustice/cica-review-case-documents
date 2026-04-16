@@ -1,12 +1,15 @@
-version: v1.25.0
+# Snyk Project Configuration Ignore Vuln File
+# An example of a .snyk file to ignore vulnerabilities in a project. This file should be placed in the root of your project directory.
 
-ignore:
-    SNYK-JS-BRACEEXPANSION-15789759:
-        - "*":
-              reason: "Temporarily ignoring CVE-2026-33750 while awaiting dependency upgrade"
-              expires: "2026-07-01T00:00:00.000Z"
+# version: v1.25.0
 
-    SNYK-JS-PICOMATCH-15765511:
-        - "*":
-              reason: "Temporarily ignoring CVE-2026-33671 while awaiting dependency upgrade"
-              expires: "2026-07-01T00:00:00.000Z"
+# ignore:
+#     SNYK-JS-BRACEEXPANSION-15789759:
+#         - "*":
+#               reason: "Temporarily ignoring CVE-2026-33750 while awaiting dependency upgrade"
+#               expires: "2026-07-01T00:00:00.000Z"
+
+#     SNYK-JS-PICOMATCH-15765511:
+#         - "*":
+#               reason: "Temporarily ignoring CVE-2026-33671 while awaiting dependency upgrade"
+#               expires: "2026-07-01T00:00:00.000Z"
