@@ -127,9 +127,9 @@ describe('entra-auth config utilities', () => {
         assert.match(url, /domain_hint=organizations/);
     });
 
-    it('enables interactive fallback by default when env is unset', () => {
+    it('disables interactive fallback by default when env is unset', () => {
         delete process.env.ENTRA_INTERACTIVE_FALLBACK;
-        assert.equal(isEntraInteractiveFallbackEnabled(), true);
+        assert.equal(isEntraInteractiveFallbackEnabled(), false);
     });
 
     it('supports disabling interactive fallback using env flag', () => {
