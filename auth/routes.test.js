@@ -28,6 +28,9 @@ afterEach(() => {
 });
 
 beforeEach(async () => {
+    // Keep test callback/session flow on HTTP so supertest can persist session cookies.
+    process.env.APP_BASE_URL = 'http://localhost:5000';
+
     app = await createApp({
         createLogger: () => (req, res, next) => {
             req.log = {

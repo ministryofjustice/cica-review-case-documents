@@ -24,54 +24,22 @@ describe('App', () => {
     });
 
     describe('Cookie Configuration', () => {
-        it('should set secure: false in development environment', async () => {
+        it('should set secure: false when APP_BASE_URL uses http (e.g. local development)', async () => {
             process.env.NODE_ENV = 'development';
+            process.env.APP_BASE_URL = 'http://localhost:5000';
             process.env.APP_LOG_LEVEL = 'silent';
 
             const app = await createApp();
             assert.ok(app);
         });
 
-        it('should set secure: true in production when APP_ALLOW_INSECURE_COOKIE is not set', async () => {
+        it('should set secure: true when APP_BASE_URL uses https', async () => {
             process.env.NODE_ENV = 'production';
+            process.env.APP_BASE_URL = 'https://example.test';
             process.env.APP_LOG_LEVEL = 'silent';
-            delete process.env.APP_ALLOW_INSECURE_COOKIE;
 
             const app = await createApp();
             assert.ok(app);
-        });
-
-        it('should set secure: false in production when APP_ALLOW_INSECURE_COOKIE is true', async () => {
-            process.env.NODE_ENV = 'production';
-            process.env.APP_LOG_LEVEL = 'silent';
-            process.env.APP_ALLOW_INSECURE_COOKIE = 'true';
-
-            const app = await createApp();
-            assert.ok(app);
-        });
-
-        it('should set secure: true in production when APP_ALLOW_INSECURE_COOKIE is false', async () => {
-            process.env.NODE_ENV = 'production';
-            process.env.APP_LOG_LEVEL = 'silent';
-            process.env.APP_ALLOW_INSECURE_COOKIE = 'false';
-
-            const app = await createApp();
-            assert.ok(app);
-        });
-
-        it('should fail fast at boot when APP_ALLOW_INSECURE_COOKIE has an invalid value', async () => {
-            process.env.NODE_ENV = 'production';
-            process.env.APP_LOG_LEVEL = 'silent';
-            process.env.APP_ALLOW_INSECURE_COOKIE = 'yes';
-
-            await assert.rejects(
-                async () => createApp(),
-                (err) => {
-                    assert.equal(err.name, 'ConfigurationError');
-                    assert.match(err.message, /APP_ALLOW_INSECURE_COOKIE/);
-                    return true;
-                }
-            );
         });
     });
 

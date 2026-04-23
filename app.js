@@ -87,13 +87,10 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
             resave: false,
             saveUninitialized: true,
             cookie: {
-                // Secure cookies are enabled in production by default
-                // APP_ALLOW_INSECURE_COOKIE=true is only needed for local Docker/Kubernetes testing
-                // (where NODE_ENV=production but HTTPS is not available)
-                // Not needed for 'npm run start:dev' which runs with NODE_ENV=development
-                secure:
-                    process.env.NODE_ENV === 'production' &&
-                    process.env.APP_ALLOW_INSECURE_COOKIE !== 'true'
+                // Derive secure flag from APP_BASE_URL — if the app is served over https the
+                // cookie must be secure. This is the single source of truth: the validator
+                // already enforces https in production, so no separate override flag is needed.
+                secure: new URL(process.env.APP_BASE_URL).protocol === 'https:'
             }
         })
     );

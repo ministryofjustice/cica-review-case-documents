@@ -18,7 +18,7 @@ This local Kubernetes deployment should be used when you need to test changes th
 *   **Testing environment variable interactions:** See how the application behaves with production-like environment variables.
 *   **Debugging production-specific issues:** Replicate and diagnose problems that only appear when `NODE_ENV` is set to `production`.
 
-**Note:** This setup uses `APP_ALLOW_INSECURE_COOKIE=true` because it runs with `NODE_ENV=production` but without HTTPS. When using `npm run start:dev`, this variable is not needed as the app automatically uses insecure cookies in development mode.
+**Note:** Cookie security is derived from `APP_BASE_URL`. Because this local setup uses `APP_BASE_URL=http://localhost:5000`, cookies are automatically set to insecure — no override flag is required. In production, `APP_BASE_URL` must use `https://`, which enforces secure cookies automatically.
 
 ## Prerequisites
 
