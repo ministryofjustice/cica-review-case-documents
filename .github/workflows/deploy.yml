@@ -54,6 +54,9 @@ jobs:
               with:
                   node-version: "24.15.0"
 
+            - name: Set up npm # temp security fix, remove when base image is updated to one with fixed npm
+              run: npm install -g npm@11.13.0
+
             - name: Show deployment info
               run: |
                   echo "Building and scanning for environment ${{ inputs.environment }}"
