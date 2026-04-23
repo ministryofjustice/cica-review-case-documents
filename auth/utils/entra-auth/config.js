@@ -38,7 +38,7 @@ export function getEntraJwksUrl(tenantId) {
 /**
  * Determines if interactive fallback is enabled after silent SSO fails.
  *
- * Defaults to enabled when ENTRA_INTERACTIVE_FALLBACK is unset.
+ * Defaults to disabled when ENTRA_INTERACTIVE_FALLBACK is unset.
  *
  * @returns {boolean}
  */
@@ -46,7 +46,7 @@ export function isEntraInteractiveFallbackEnabled() {
     const rawValue = process.env.ENTRA_INTERACTIVE_FALLBACK;
 
     if (rawValue == null) {
-        return true;
+        return false;
     }
 
     return TRUE_VALUES.includes(String(rawValue).toLowerCase());

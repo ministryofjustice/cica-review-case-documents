@@ -69,6 +69,8 @@ spec:
                 secretKeyRef:
                   name: cica-case-review-documents-secrets
                   key: entra_tenant_id
+            - name: ENTRA_INTERACTIVE_FALLBACK
+              value: "false"
             - name: APP_SEARCH_PAGINATION_ITEMS_PER_PAGE
               value: "10"
             - name: APP_DOCUMENT_PAGINATION_ITEMS_PER_PAGE
