@@ -71,7 +71,7 @@ jobs:
                   audience: sts.amazonaws.com
 
             - name: Login to Amazon ECR
-              uses: aws-actions/amazon-ecr-login@376925c9d111252e87ae59691e5a442dd100ef6a # v2
+              uses: aws-actions/amazon-ecr-login@19d944daaa35f0fa1d3f7f8af1d3f2e5de25c5b7 # v2
 
               id: login-ecr
 
@@ -405,7 +405,7 @@ jobs:
                   audience: sts.amazonaws.com
 
             - name: Login to Amazon ECR
-              uses: aws-actions/amazon-ecr-login@376925c9d111252e87ae59691e5a442dd100ef6a # v2
+              uses: aws-actions/amazon-ecr-login@19d944daaa35f0fa1d3f7f8af1d3f2e5de25c5b7 # v2
               id: login-ecr
 
             - name: Template Kubernetes manifests
