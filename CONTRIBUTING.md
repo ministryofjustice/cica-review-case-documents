@@ -135,6 +135,17 @@ Deployments can be triggered manually via workflow dispatch:
 ##### Security Scanning
 Uses Trivy to scan for vulnerabilities. See `.trivyignore` for suppressed CVEs.
 
+Snyk scans in deployment CI use `.snyk` via `--policy-path=.snyk`.
+Keep `.snyk` as a valid YAML policy file at all times, even when no ignores are active:
+
+```yaml
+version: v1.25.0
+ignore: {}
+```
+
+When adding temporary ignores, include a clear reason and expiry date. For syntax and examples, see:
+https://docs.snyk.io/manage-risk/policies/the-.snyk-file
+
 Environment variables are substituted during CI/CD deployment.
 
 ## Technology Stack

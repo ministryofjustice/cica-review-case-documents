@@ -1,12 +1,5 @@
+# Snyk policy file used by CI with --policy-path=.snyk.
+# For rule syntax and examples, see CONTRIBUTING.md and:
+# https://docs.snyk.io/manage-risk/policies/the-.snyk-file
 version: v1.25.0
-
-ignore:
-    SNYK-JS-BRACEEXPANSION-15789759:
-        - "*":
-              reason: "Temporarily ignoring CVE-2026-33750 while awaiting dependency upgrade"
-              expires: "2026-07-01T00:00:00.000Z"
-
-    SNYK-JS-PICOMATCH-15765511:
-        - "*":
-              reason: "Temporarily ignoring CVE-2026-33671 while awaiting dependency upgrade"
-              expires: "2026-07-01T00:00:00.000Z"
+ignore: {}
