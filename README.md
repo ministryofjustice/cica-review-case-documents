@@ -4,7 +4,7 @@
 
 
 [![GitHub repo size](https://img.shields.io/github/repo-size/ministryofjustice/cica-review-case-documents)](https://github.com/ministryofjustice/cica-review-case-documents)
-[![GitHub repo npm version](https://img.shields.io/badge/npm_version->=11.13.0-blue)](https://github.com/ministryofjustice/cica-review-case-documents/blob/master/package.json#L5)
+[![GitHub repo npm version](https://img.shields.io/badge/npm_version->=11.12.1-blue)](https://github.com/ministryofjustice/cica-review-case-documents/blob/master/package.json#L5)
 [![GitHub repo node version](https://img.shields.io/badge/node_version->=24.15.0-blue)](https://github.com/ministryofjustice/cica-review-case-documents/blob/master/package.json#L6)
 [![GitHub repo contributors](https://img.shields.io/github/contributors/ministryofjustice/cica-review-case-documents)](https://github.com/ministryofjustice/cica-review-case-documents/graphs/contributors)
 [![GitHub repo license](https://img.shields.io/github/package-json/license/ministryofjustice/cica-review-case-documents)](https://github.com/ministryofjustice/cica-review-case-documents/blob/master/LICENSE)
