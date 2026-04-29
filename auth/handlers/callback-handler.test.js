@@ -79,7 +79,7 @@ test('createCallbackHandler returns 400 when Entra is not configured', async () 
     assert.strictEqual(responsePayload.body, 'Entra authentication is not configured');
 });
 
-test('createCallbackHandler retries interactive login after silent interaction error', async () => {
+test('createCallbackHandler does not retry interactive login for login_required without targeted error code', async () => {
     const handler = createCallbackHandler();
 
     const req = {
@@ -98,7 +98,35 @@ test('createCallbackHandler retries interactive login after silent interaction e
 
     await handler(req, res, () => {});
 
-    assert.strictEqual(responsePayload.redirectLocation, '/auth/login?interactive=1');
+    assert.strictEqual(responsePayload.statusCode, 401);
+    assert.strictEqual(responsePayload.body, 'Authentication failed');
+    assert.strictEqual(req.session.entraInteractiveRetry, undefined);
+});
+
+test('createCallbackHandler retries interactive login for AADSTS16000 callback errors', async () => {
+    const handler = createCallbackHandler();
+
+    const req = {
+        query: {
+            error: 'interaction_required',
+            error_description:
+                'AADSTS16000: Either multiple user identities are available or selected account is unsupported'
+        },
+        session: {
+            entraAuth: {
+                mode: 'silent'
+            }
+        },
+        log: { warn: () => {}, info: () => {}, error: () => {} }
+    };
+    const { responsePayload, res } = createResponseRecorder();
+
+    await handler(req, res, () => {});
+
+    assert.strictEqual(responsePayload.redirectLocation, '/auth/login');
+    assert.deepStrictEqual(req.session.entraInteractiveRetry, {
+        enabled: true
+    });
 });
 
 test('createCallbackHandler rejects invalid auth transaction when session is missing', async () => {

@@ -99,7 +99,32 @@ test('createLoginHandler starts silent auth by default', async () => {
     assert.match(responsePayload.redirectLocation, /prompt=none/);
 });
 
-test('createLoginHandler supports interactive mode when requested', async () => {
+test('createLoginHandler starts interactive mode when one-time retry flag is present', async () => {
+    const handler = createLoginHandler();
+
+    const req = {
+        query: {},
+        session: {
+            entraInteractiveRetry: {
+                enabled: true
+            },
+            regenerate: (callback) => {
+                req.session = {
+                    regenerate: req.session.regenerate
+                };
+                callback();
+            }
+        }
+    };
+    const { responsePayload, res } = createResponseRecorder();
+
+    await handler(req, res, () => {});
+
+    assert.strictEqual(req.session.entraAuth.mode, 'interactive');
+    assert.match(responsePayload.redirectLocation, /prompt=select_account/);
+});
+
+test('createLoginHandler ignores interactive query parameter without retry flag', async () => {
     const handler = createLoginHandler();
 
     const req = {
@@ -117,6 +142,27 @@ test('createLoginHandler supports interactive mode when requested', async () => 
 
     await handler(req, res, () => {});
 
-    assert.strictEqual(req.session.entraAuth.mode, 'interactive');
-    assert.doesNotMatch(responsePayload.redirectLocation, /prompt=none/);
+    assert.strictEqual(req.session.entraAuth.mode, 'silent');
+    assert.match(responsePayload.redirectLocation, /prompt=none/);
+});
+
+test('createLoginHandler forwards login_hint to authorize request', async () => {
+    const handler = createLoginHandler();
+
+    const req = {
+        query: { login_hint: 'Known.User@Example.COM' },
+        session: {
+            regenerate: (callback) => {
+                req.session = {
+                    regenerate: req.session.regenerate
+                };
+                callback();
+            }
+        }
+    };
+    const { responsePayload, res } = createResponseRecorder();
+
+    await handler(req, res, () => {});
+
+    assert.match(responsePayload.redirectLocation, /login_hint=Known.User%40Example.COM/);
 });

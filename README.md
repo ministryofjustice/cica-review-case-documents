@@ -141,10 +141,8 @@ When `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET`, and `ENTRA_TENANT_ID` are set, `/
 
 This avoids relying on request host/protocol values when generating authentication callback URIs.
 
-By default, login starts with silent SSO (`prompt=none`) and does not automatically fall back to interactive login when Entra returns `login_required`, `interaction_required`, or `consent_required`.
-
-When unset, interactive fallback is disabled by default.
-To explicitly enable fallback, set `ENTRA_INTERACTIVE_FALLBACK` to `true`, `1`, `yes`, or `on`.
+By default, login starts with silent SSO (`prompt=none`).
+When specific Entra callback errors are returned (`AADSTS65001`/`consent_required` and `AADSTS16000`), the app performs a controlled interactive retry to account selection.
 
 Auth callback transactions expire after 10 minutes by default.
 You can tune this with `ENTRA_AUTH_TRANSACTION_MAX_AGE_MS`.
