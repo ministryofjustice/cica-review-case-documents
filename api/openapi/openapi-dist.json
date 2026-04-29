@@ -80,6 +80,21 @@
                         "example": 2
                     },
                     {
+                        "name": "type",
+                        "in": "query",
+                        "required": false,
+                        "description": "Search type to run: keyword lexical search, semantic neural search, or hybrid",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "keyword",
+                                "semantic",
+                                "hybrid"
+                            ]
+                        },
+                        "example": "hybrid"
+                    },
+                    {
                         "name": "On-Behalf-Of",
                         "in": "header",
                         "required": true,
@@ -786,6 +801,21 @@
                             "type": "string"
                         },
                         "example": "acute"
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "required": false,
+                        "description": "Search type to run for chunk matching",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "keyword",
+                                "semantic",
+                                "hybrid"
+                            ]
+                        },
+                        "example": "semantic"
                     }
                 ],
                 "responses": {
@@ -1136,6 +1166,21 @@
                     "max": 100
                 },
                 "example": 2
+            },
+            "type": {
+                "name": "type",
+                "in": "query",
+                "required": false,
+                "description": "Search type to run: keyword lexical search, semantic neural search, or hybrid",
+                "schema": {
+                    "type": "string",
+                    "enum": [
+                        "keyword",
+                        "semantic",
+                        "hybrid"
+                    ]
+                },
+                "example": "hybrid"
             },
             "onBehalfOf": {
                 "name": "On-Behalf-Of",
