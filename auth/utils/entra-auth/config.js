@@ -1,5 +1,4 @@
 const DEFAULT_ENTRA_SCOPE = 'openid profile email';
-const TRUE_VALUES = ['1', 'true', 'yes', 'on'];
 
 /**
  * Returns Entra configuration from environment variables.
@@ -33,23 +32,6 @@ export function getEntraIssuer(tenantId) {
  */
 export function getEntraJwksUrl(tenantId) {
     return `https://login.microsoftonline.com/${tenantId}/discovery/v2.0/keys`;
-}
-
-/**
- * Determines if interactive fallback is enabled after silent SSO fails.
- *
- * Defaults to disabled when ENTRA_INTERACTIVE_FALLBACK is unset.
- *
- * @returns {boolean}
- */
-export function isEntraInteractiveFallbackEnabled() {
-    const rawValue = process.env.ENTRA_INTERACTIVE_FALLBACK;
-
-    if (rawValue == null) {
-        return false;
-    }
-
-    return TRUE_VALUES.includes(String(rawValue).toLowerCase());
 }
 
 /**

@@ -4,8 +4,7 @@ import {
     buildEntraAuthorizeUrl,
     getEntraConfig,
     getEntraRedirectUri,
-    isEntraConfigured,
-    isEntraInteractiveFallbackEnabled
+    isEntraConfigured
 } from './config.js';
 
 const originalEnv = { ...process.env };
@@ -125,15 +124,5 @@ describe('entra-auth config utilities', () => {
         assert.match(url, /prompt=none/);
         assert.match(url, /login_hint=user%40example\.com/);
         assert.match(url, /domain_hint=organizations/);
-    });
-
-    it('disables interactive fallback by default when env is unset', () => {
-        delete process.env.ENTRA_INTERACTIVE_FALLBACK;
-        assert.equal(isEntraInteractiveFallbackEnabled(), false);
-    });
-
-    it('supports disabling interactive fallback using env flag', () => {
-        process.env.ENTRA_INTERACTIVE_FALLBACK = 'false';
-        assert.equal(isEntraInteractiveFallbackEnabled(), false);
     });
 });

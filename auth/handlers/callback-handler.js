@@ -6,20 +6,14 @@ import {
     regenerateSession
 } from '../auth-flow-helpers.js';
 import { getUsernameFromEntraClaims } from '../utils/entra-auth/claims.js';
-import {
-    isEntraConfigured,
-    isEntraInteractiveFallbackEnabled
-} from '../utils/entra-auth/config.js';
+import { isEntraConfigured } from '../utils/entra-auth/config.js';
 import {
     decodeAndValidateEntraIdToken,
     exchangeEntraAuthorizationCode
 } from '../utils/entra-auth/token.js';
 
-const ENTRA_INTERACTION_ERRORS = new Set([
-    'interaction_required',
-    'login_required',
-    'consent_required'
-]);
+const ENTRA_INTERACTIVE_RETRY_ERRORS = new Set(['consent_required']);
+const ENTRA_INTERACTIVE_RETRY_ERROR_CODES = new Set(['AADSTS65001', 'AADSTS16000']);
 const ENTRA_AUTH_TRANSACTION_MAX_AGE_MS =
     Number(process.env.ENTRA_AUTH_TRANSACTION_MAX_AGE_MS) || 10 * 60 * 1000;
 
@@ -32,6 +26,21 @@ function clearPendingEntraAuth(req) {
     if (req.session) {
         delete req.session.entraAuth;
     }
+}
+
+/**
+ * Sets one-time interactive retry metadata for the next login request.
+ *
+ * @param {import('express').Request} req - Express request object.
+ */
+function setInteractiveRetry(req) {
+    if (!req.session) {
+        return;
+    }
+
+    req.session.entraInteractiveRetry = {
+        enabled: true
+    };
 }
 
 /**
@@ -53,8 +62,8 @@ function handleEntraCallbackError(req, res) {
 
     if (
         pendingAuth?.mode === 'silent' &&
-        isEntraInteractiveFallbackEnabled() &&
-        ENTRA_INTERACTION_ERRORS.has(entraError)
+        (ENTRA_INTERACTIVE_RETRY_ERRORS.has(entraError) ||
+            ENTRA_INTERACTIVE_RETRY_ERROR_CODES.has(entraErrorCode))
     ) {
         req.log?.info(
             {
@@ -64,7 +73,8 @@ function handleEntraCallbackError(req, res) {
             },
             'Entra silent sign-in requires interaction; retrying with interactive login'
         );
-        res.redirect('/auth/login?interactive=1');
+        setInteractiveRetry(req);
+        res.redirect('/auth/login');
         return true;
     }
 
@@ -134,6 +144,7 @@ function respondInvalidAuthTransaction(req, res, { state, hasNonce, isStaleAuthT
     res.status(401).send('Invalid authentication state');
 }
 
+/**
 /**
  * Regenerates session and stores authenticated user details.
  *
@@ -206,6 +217,7 @@ export const createCallbackHandler = () => async (req, res, next) => {
             tokenResponse.id_token,
             pendingAuth.nonce
         );
+
         await establishAuthenticatedSession(req, claims);
 
         req.log?.info(
