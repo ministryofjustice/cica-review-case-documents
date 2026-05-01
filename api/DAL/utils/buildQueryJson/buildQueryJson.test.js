@@ -731,7 +731,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            queryIntent: 'pageChunkMatches'
+            includePagination: false
         };
 
         const result = buildQueryJson(params);
@@ -748,7 +748,7 @@ describe('buildQueryJson', () => {
             pageNumber: 2,
             itemsPerPage: 5,
             searchType: 'semantic',
-            queryIntent: 'pageChunkMatches'
+            includePagination: false
         };
 
         const result = buildQueryJson(params);
