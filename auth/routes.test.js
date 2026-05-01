@@ -152,21 +152,7 @@ test('createLoginHandler should regenerate session before starting Entra auth fl
     assert.strictEqual(req.session.entraAuth.mode, 'silent');
 });
 
-test('GET /auth/callback with login_required should fallback to interactive by default', async () => {
-    await agent.get('/auth/login').expect(302);
-
-    const response = await agent.get('/auth/callback').query({
-        error: 'login_required',
-        error_description: 'Silent sign-in required interaction'
-    });
-
-    assert.strictEqual(response.status, 302);
-    assert.strictEqual(response.headers.location, '/auth/login?interactive=1');
-});
-
-test('GET /auth/callback with login_required should fail when interactive fallback is disabled', async () => {
-    process.env.ENTRA_INTERACTIVE_FALLBACK = 'false';
-
+test('GET /auth/callback with login_required should fail when targeted fallback conditions are not met', async () => {
     await agent.get('/auth/login').expect(302);
 
     const response = await agent.get('/auth/callback').query({
@@ -178,9 +164,23 @@ test('GET /auth/callback with login_required should fail when interactive fallba
     assert.match(response.text, /Authentication failed/);
 });
 
-test('GET /auth/callback should handle non-interactive Entra error with AADSTS code', async () => {
-    process.env.ENTRA_INTERACTIVE_FALLBACK = 'false';
+test('GET /auth/callback with consent_required should redirect to interactive even when fallback env flag is disabled', async () => {
+    await agent.get('/auth/login').expect(302);
 
+    const response = await agent.get('/auth/callback').query({
+        error: 'consent_required',
+        error_description: 'AADSTS65001: User or administrator has not consented'
+    });
+
+    assert.strictEqual(response.status, 302);
+    assert.strictEqual(response.headers.location, '/auth/login');
+
+    const interactiveLoginResponse = await agent.get('/auth/login').expect(302);
+    const authorizeUrl = new URL(interactiveLoginResponse.headers.location);
+    assert.strictEqual(authorizeUrl.searchParams.get('prompt'), 'select_account');
+});
+
+test('GET /auth/callback should handle non-interactive Entra error with AADSTS code', async () => {
     await agent.get('/auth/login').expect(302);
 
     const response = await agent.get('/auth/callback').query({
@@ -194,8 +194,6 @@ test('GET /auth/callback should handle non-interactive Entra error with AADSTS c
 });
 
 test('GET /auth/callback should handle Entra error when error_description is missing', async () => {
-    process.env.ENTRA_INTERACTIVE_FALLBACK = 'false';
-
     await agent.get('/auth/login').expect(302);
 
     const response = await agent.get('/auth/callback').query({
@@ -677,6 +675,80 @@ test('GET /auth/callback should complete sign-in when state and token are valid'
     }
 });
 
+test('GET /search returnTo is preserved across consent_required retry and interactive sign-in', async () => {
+    const originalGet = got.get;
+    const originalPost = got.post;
+
+    try {
+        const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+        const kid = 'test-kid-return-to-interactive-retry';
+        const issuer = 'https://login.microsoftonline.com/test-entra-tenant-id/v2.0';
+        const jwk = { ...publicKey.export({ format: 'jwk' }), kid, use: 'sig' };
+
+        let idToken = '';
+        got.get = () => ({
+            json: async () => ({ keys: [jwk] })
+        });
+        got.post = () => ({
+            json: async () => ({ id_token: idToken })
+        });
+
+        const protectedUrl = '/search?caseReferenceNumber=26-711111';
+        const initialResponse = await agent.get(protectedUrl);
+
+        assert.strictEqual(initialResponse.status, 302);
+        assert.strictEqual(initialResponse.headers.location, '/auth/login');
+
+        const firstLoginResponse = await agent.get('/auth/login').expect(302);
+        const firstAuthorizeUrl = new URL(firstLoginResponse.headers.location);
+        const firstState = firstAuthorizeUrl.searchParams.get('state');
+
+        const mismatchResponse = await agent.get('/auth/callback').query({
+            error: 'consent_required',
+            error_description: 'AADSTS65001: User or administrator has not consented',
+            state: firstState
+        });
+
+        assert.strictEqual(mismatchResponse.status, 302);
+        assert.strictEqual(mismatchResponse.headers.location, '/auth/login');
+
+        const secondLoginResponse = await agent.get('/auth/login').expect(302);
+        const secondAuthorizeUrl = new URL(secondLoginResponse.headers.location);
+        assert.strictEqual(secondAuthorizeUrl.searchParams.get('prompt'), 'select_account');
+        const secondState = secondAuthorizeUrl.searchParams.get('state');
+        const secondNonce = secondAuthorizeUrl.searchParams.get('nonce');
+
+        idToken = jwt.sign(
+            {
+                sub: 'entra-user-match',
+                nonce: secondNonce,
+                tid: 'tenant-1',
+                oid: 'oid-match',
+                name: 'Known User',
+                preferred_username: 'known.user@example.com'
+            },
+            privateKey,
+            {
+                algorithm: 'RS256',
+                keyid: kid,
+                issuer,
+                audience: 'test-entra-client-id',
+                expiresIn: '5m'
+            }
+        );
+
+        const successResponse = await agent
+            .get('/auth/callback')
+            .query({ code: 'auth-code-1', state: secondState });
+
+        assert.strictEqual(successResponse.status, 302);
+        assert.strictEqual(successResponse.headers.location, protectedUrl);
+    } finally {
+        got.get = originalGet;
+        got.post = originalPost;
+    }
+});
+
 test('GET /auth/callback should authenticate when oid is missing and fallback to sub', async () => {
     const originalGet = got.get;
     const originalPost = got.post;
@@ -813,13 +885,11 @@ test('callback handler should log a sanitized error when token exchange fails', 
     }
 });
 
-test('GET /auth/login?interactive=1 should skip prompt=none when fallback is enabled', async () => {
-    process.env.ENTRA_INTERACTIVE_FALLBACK = 'true';
-
+test('GET /auth/login ignores interactive query parameter without retry state', async () => {
     const response = await agent.get('/auth/login').query({ interactive: '1' });
 
     assert.strictEqual(response.status, 302);
-    assert.doesNotMatch(response.headers.location, /prompt=none/);
+    assert.match(response.headers.location, /prompt=none/);
 });
 
 test('GET /auth/sign-out displays sign out message without active session', async () => {
