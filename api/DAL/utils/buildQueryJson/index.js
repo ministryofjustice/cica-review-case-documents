@@ -10,22 +10,22 @@ const DEFAULT_LEXICAL_BOOST = 12; // lexical search results to appear most relev
 const DEFAULT_DATE_BOOST = 1; // weightings to be determined
 const DEFAULT_NEURAL_BOOST = 4; // weightings to be determined
 
-// the highlighting features need to use the same query as the search (see bug:CICADS-655),
-// use this intent to set the scope of the query single page or all matching pages
-const QUERY_INTENTS = Object.freeze({
-    SEARCH_RESULTS: 'searchResults',
-    PAGE_CHUNK_MATCHES: 'pageChunkMatches'
-});
+// // the highlighting features need to use the same query as the search (see bug:CICADS-655),
+// // use this intent to set the scope of the query single page or all matching pages
+// const QUERY_INTENTS = Object.freeze({
+//     SEARCH_RESULTS: 'searchResults',
+//     PAGE_CHUNK_MATCHES: 'pageChunkMatches'
+// });
 
-/**
- * Determines whether pagination fields should be emitted.
- *
- * @param {'searchResults' | 'pageChunkMatches'} queryIntent - Query purpose.
- * @returns {boolean}
- */
-function shouldApplyPagination(queryIntent) {
-    return queryIntent === QUERY_INTENTS.SEARCH_RESULTS;
-}
+// /**
+//  * Determines whether pagination fields should be emitted.
+//  *
+//  * @param {'searchResults' | 'pageChunkMatches'} queryIntent - Query purpose.
+//  * @returns {boolean}
+//  */
+// function shouldApplyPagination(queryIntent) {
+//     return queryIntent === QUERY_INTENTS.SEARCH_RESULTS;
+// }
 
 /**
  * Creates the lexical query shell scoped to the case reference.
@@ -35,8 +35,10 @@ function shouldApplyPagination(queryIntent) {
  */
 function createLexicalQuery(caseReferenceNumber) {
     return {
-        bool: {
-            must: [{ term: { case_ref: caseReferenceNumber } }]
+        query: {
+            bool: {
+                must: [{ term: { case_ref: caseReferenceNumber } }]
+            }
         }
     };
 }
@@ -51,15 +53,18 @@ function createLexicalQuery(caseReferenceNumber) {
  */
 function createNeuralQuery({ keyword, caseReferenceNumber }) {
     return {
-        neural: {
-            embedding: {
-                query_text: keyword,
-                k: DEFAULT_SEMANTIC_K,
-                filter: {
-                    term: { case_ref: caseReferenceNumber }
+        query: {
+            neural: {
+                embedding: {
+                    query_text: keyword,
+                    k: DEFAULT_SEMANTIC_K,
+                    filter: {
+                        term: { case_ref: caseReferenceNumber }
+                    }
                 }
             }
-        }
+        },
+        min_score: keyword.trim().length > 0 ? SEMANTIC_MIN_SCORE : undefined
     };
 }
 
@@ -135,10 +140,10 @@ function buildDateAwareShouldClauses({ keyword, enableDateExtraction = true }) {
         shouldClauses,
         phrases,
         phrasesVariants,
-        extractStart,
-        extractEnd,
-        variantStart,
-        variantEnd
+        timings: {
+            extractMs: extractEnd - extractStart,
+            variantMs: variantEnd - variantStart
+        }
     };
 }
 
@@ -151,7 +156,7 @@ function buildDateAwareShouldClauses({ keyword, enableDateExtraction = true }) {
  * @param {Array<string>} params.phrases - Extracted date phrases.
  * @param {Array<string>} params.phrasesVariants - Expanded phrase variants.
  * @param {Array<Object>} params.shouldClauses - Generated lexical clauses.
- * @param {number} params.startBuild - Build start timestamp.
+ * @param {number} params.buildStart - Build start timestamp.
  * @param {number} params.buildEnd - Build end timestamp.
  * @param {number} params.extractStart - Extraction start timestamp.
  * @param {number} params.extractEnd - Extraction end timestamp.
@@ -167,24 +172,21 @@ function logQueryMetrics({
     phrases,
     phrasesVariants,
     shouldClauses,
-    startBuild,
-    buildEnd,
-    extractStart,
-    extractEnd,
-    variantStart,
-    variantEnd,
+    buildMs,
+    extractMs,
+    variantMs,
     logger,
     caseReferenceNumber
 }) {
     const metrics = {
         queryHash: crypto.createHash('sha256').update(keyword).digest('hex').slice(0, 8),
         phraseCount: phrases.length,
-        variantCount: phrasesVariants.length,
+        phraseVariantCount: phrasesVariants.length,
         shouldClauseCount: shouldClauses.length,
         payloadSize: JSON.stringify(queryJson).length,
-        extractMs: extractEnd - extractStart,
-        variantMs: variantEnd - variantStart,
-        buildMs: buildEnd - startBuild
+        extractMs,
+        variantMs,
+        buildMs
     };
 
     if (!logger) {
@@ -228,7 +230,7 @@ function logQueryMetrics({
  * @param {number} params.itemsPerPage - Number of results to return per page.
  * @param {Logger} [params.logger] - Optional structured logger instance.
  * @param {'keyword' | 'semantic' | 'hybrid'} [params.searchType='keyword'] - Which search mode to use.
- * @param {'searchResults' | 'pageChunkMatches'} [params.queryIntent='searchResults'] - Query purpose.
+////////////////////////////////////////////////////////  * @param {'searchResults' | 'pageChunkMatches'} [params.queryIntent='searchResults'] - Query purpose.
  * @param {boolean} [params.enableDateExtraction=true] - Enables date extraction and variant matching.
  * @param {number} [params.keywordBoost] - Boost multiplier for the lexical sub-query in hybrid mode.
  * @param {number} [params.dateBoost] - Boost multiplier for date variant clauses in hybrid mode.
@@ -244,138 +246,225 @@ function buildQueryJson({
     itemsPerPage,
     logger,
     searchType = 'keyword',
-    queryIntent = QUERY_INTENTS.SEARCH_RESULTS,
+    // queryIntent = QUERY_INTENTS.SEARCH_RESULTS,
     enableDateExtraction = true,
     keywordBoost = DEFAULT_LEXICAL_BOOST,
     dateBoost = DEFAULT_DATE_BOOST,
     semanticBoost = DEFAULT_NEURAL_BOOST,
     documentId
 }) {
-    const startBuild = Date.now();
-    const queryJson = {};
-    const applyPagination = shouldApplyPagination(queryIntent);
-    const normalizedPageNumber = Number.parseInt(pageNumber, 10);
-    const normalizedItemsPerPage = Number.parseInt(itemsPerPage, 10);
-    const safePageNumber =
-        Number.isFinite(normalizedPageNumber) && normalizedPageNumber > 0
-            ? normalizedPageNumber
-            : 1;
-    const safeItemsPerPage =
-        Number.isFinite(normalizedItemsPerPage) && normalizedItemsPerPage > 0
-            ? normalizedItemsPerPage
-            : 10;
+    const buildStart = Date.now();
+    const queryJson = { query: {} };
+    const applyPagination = true; // shouldApplyPagination(queryIntent);
+
+    // base query structure.
+    if (searchType === 'keyword') {
+        Object.assign(queryJson, createLexicalQuery(caseReferenceNumber));
+    } else if (searchType === 'semantic') {
+        Object.assign(queryJson, createNeuralQuery({ keyword, caseReferenceNumber }));
+    } else if (searchType === 'hybrid') {
+        Object.assign(
+            queryJson,
+            createLexicalQuery(caseReferenceNumber),
+            createNeuralQuery({ keyword, caseReferenceNumber })
+        );
+    } else {
+        // TODO: throw ... or sane default of keyword search?
+        throw new Error(`Invalid search type: ${searchType}`);
+    }
+
+    const { shouldClauses, phrases, phrasesVariants, extractMs, variantMs } =
+        buildDateAwareShouldClauses({ keyword, enableDateExtraction });
 
     if (applyPagination) {
+        const normalizedPageNumber = Number.parseInt(pageNumber, 10);
+        const normalizedItemsPerPage = Number.parseInt(itemsPerPage, 10);
+        const safePageNumber =
+            Number.isFinite(normalizedPageNumber) && normalizedPageNumber > 0
+                ? normalizedPageNumber
+                : 1;
+        const safeItemsPerPage =
+            Number.isFinite(normalizedItemsPerPage) && normalizedItemsPerPage > 0
+                ? normalizedItemsPerPage
+                : 10;
+
         queryJson.from = safeItemsPerPage * (safePageNumber - 1);
         queryJson.size = safeItemsPerPage;
-    }
 
-    // When the intent is a single-page chunk lookup, scope the query to the specific
-    // document and page. These filters are injected into every query branch below.
-    const pageChunkScopeFilters =
-        queryIntent === QUERY_INTENTS.PAGE_CHUNK_MATCHES && documentId
-            ? [{ term: { source_doc_id: documentId } }, { term: { page_number: safePageNumber } }]
-            : [];
+        // single page chunk lookup scope - when the intent is to find matching chunks for a
+        // single page, we need to scope the query to the specific document and page number
+        // to avoid matching chunks from other pages.
+        if (searchType === 'keyword' || searchType === 'hybrid') {
+            console.log({ shouldClauses });
+            queryJson.query.bool ??= {};
+            queryJson.query.bool.should = shouldClauses;
+            queryJson.query.bool.minimum_should_match = 1;
 
-    const lexicalQuery = createLexicalQuery(caseReferenceNumber);
-    if (pageChunkScopeFilters.length > 0) {
-        lexicalQuery.bool.must.push(...pageChunkScopeFilters);
-    }
-
-    const {
-        shouldClauses,
-        phrases,
-        phrasesVariants,
-        extractStart,
-        extractEnd,
-        variantStart,
-        variantEnd
-    } = buildDateAwareShouldClauses({ keyword, enableDateExtraction });
-
-    if (shouldClauses.length > 0) {
-        lexicalQuery.bool.should = shouldClauses;
-        lexicalQuery.bool.minimum_should_match = 1;
-    }
-
-    const hasKeyword = keyword.trim().length > 0;
-    const runKeywordSearch = searchType === 'keyword' || searchType === 'hybrid';
-    const runSemanticSearch = (searchType === 'semantic' || searchType === 'hybrid') && hasKeyword;
-
-    if (runSemanticSearch) {
-        queryJson.min_score = SEMANTIC_MIN_SCORE;
-    }
-
-    const neuralQuery = createNeuralQuery({
-        keyword,
-        caseReferenceNumber
-    });
-
-    if (pageChunkScopeFilters.length > 0) {
-        neuralQuery.neural.embedding.filter = {
-            bool: {
-                must: [{ term: { case_ref: caseReferenceNumber } }, ...pageChunkScopeFilters]
+            if (documentId) {
+                // TODO: don't use truthy value here.
+                queryJson.query.bool.must.push([
+                    { term: { source_doc_id: documentId } },
+                    { term: { page_number: safePageNumber } }
+                ]);
             }
-        };
+        }
+
+        if ((searchType === 'semantic' || searchType === 'hybrid') && documentId) {
+            queryJson.query.neural.embedding.filter = {
+                bool: {
+                    must: [
+                        { term: { case_ref: caseReferenceNumber } },
+                        { term: { source_doc_id: documentId } },
+                        { term: { page_number: safePageNumber } }
+                    ]
+                }
+            };
+        }
+
+        if (searchType === 'hybrid') {
+            const keywordMatchClause = shouldClauses.find((clause) =>
+                Object.hasOwn(clause, 'match')
+            );
+            //TODO: DRY??
+            queryJson.query.bool ??= {};
+            queryJson.query.bool.should = [
+                {
+                    bool: {
+                        should: shouldClauses.filter((clause) =>
+                            Object.hasOwn(clause, 'match_phrase')
+                        ),
+                        minimum_should_match: 1,
+                        boost: dateBoost
+                    }
+                },
+                {
+                    match: {
+                        chunk_text: {
+                            ...keywordMatchClause?.match?.chunk_text,
+                            boost: keywordBoost
+                        }
+                    }
+                },
+                createNeuralQuery({ keyword, caseReferenceNumber }).query
+            ];
+            delete queryJson.query.neural;
+        }
     }
+
+    // // When the intent is a single-page chunk lookup, scope the query to the specific
+    // // document and page. These filters are injected into every query branch below.
+    // const pageChunkScopeFilters =
+    //     queryIntent === QUERY_INTENTS.PAGE_CHUNK_MATCHES && documentId
+    //         ? [{ term: { source_doc_id: documentId } }, { term: { page_number: safePageNumber } }]
+    //         : [];
+
+    // const lexicalQuery = createLexicalQuery(caseReferenceNumber);
+    // if (pageChunkScopeFilters.length > 0) {
+    //     lexicalQuery.bool.must.push(...pageChunkScopeFilters);
+    // }
+
+    // if (shouldClauses.length > 0) {
+    // }
+
+    // const hasKeyword = keyword.trim().length > 0;
+    // const runKeywordSearch = searchType === 'keyword' || searchType === 'hybrid';
+    // const runSemanticSearch = (searchType === 'semantic' || searchType === 'hybrid') && hasKeyword;
+
+    // if (runSemanticSearch) {
+    //     queryJson.min_score = SEMANTIC_MIN_SCORE;
+    // }
+
+    // const neuralQuery = createNeuralQuery({
+    //     keyword,
+    //     caseReferenceNumber
+    // });
+
+    // if (pageChunkScopeFilters.length > 0) {
+    //     neuralQuery.neural.embedding.filter = {
+    //         bool: {
+    //             must: [{ term: { case_ref: caseReferenceNumber } }, ...pageChunkScopeFilters]
+    //         }
+    //     };
+    // }
 
     // For hybrid mode we build a single bool query that combines lexical and
     // semantic clauses under should so the query is paginatable via from/size.
-    if (runKeywordSearch && runSemanticSearch) {
-        const lexicalMustClauses = [
-            { term: { case_ref: caseReferenceNumber } },
-            ...pageChunkScopeFilters
-        ];
-        const hybridShouldClauses = [];
-        const dateShouldClauses = shouldClauses.filter((clause) =>
-            Object.hasOwn(clause, 'match_phrase')
-        );
-        const keywordMatchClause = shouldClauses.find((clause) => Object.hasOwn(clause, 'match'));
+    // if (runKeywordSearch && runSemanticSearch) {
+    //     // const lexicalMustClauses = [
+    //     //     { term: { case_ref: caseReferenceNumber } },
+    //     //     ...pageChunkScopeFilters
+    //     // ];
+    //     const hybridShouldClauses = [];
+    //     // const dateShouldClauses = shouldClauses.filter((clause) =>
+    //     //     Object.hasOwn(clause, 'match_phrase')
+    //     // );
+    //     // const keywordMatchClause = shouldClauses.find((clause) => Object.hasOwn(clause, 'match'));
 
-        if (dateShouldClauses.length > 0) {
-            hybridShouldClauses.push({
-                bool: {
-                    should: dateShouldClauses,
-                    minimum_should_match: 1,
-                    boost: dateBoost
-                }
-            });
-        }
+    //     // const hsc = [
+    //     //     {
+    //     //         bool: {
+    //     //             should: shouldClauses.filter((clause) =>
+    //     //                 Object.hasOwn(clause, 'match_phrase')
+    //     //             ),
+    //     //             minimum_should_match: 1,
+    //     //             boost: dateBoost
+    //     //         }
+    //     //     },
+    //     //     {
+    //     //         match: {
+    //     //             chunk_text: {
+    //     //                 ...keywordMatchClause.match.chunk_text,
+    //     //                 boost: keywordBoost
+    //     //             }
+    //     //         }
+    //     //     }
+    //     // ];
 
-        if (keywordMatchClause?.match?.chunk_text) {
-            hybridShouldClauses.push({
-                match: {
-                    chunk_text: {
-                        ...keywordMatchClause.match.chunk_text,
-                        boost: keywordBoost
-                    }
-                }
-            });
-        }
+    //     // if (dateShouldClauses.length > 0) {
+    //     //     hybridShouldClauses.push({
+    //     //         bool: {
+    //     //             should: dateShouldClauses,
+    //     //             minimum_should_match: 1,
+    //     //             boost: dateBoost
+    //     //         }
+    //     //     });
+    //     // }
 
-        hybridShouldClauses.push({
-            neural: {
-                embedding: {
-                    query_text: keyword,
-                    k: DEFAULT_SEMANTIC_K,
-                    boost: semanticBoost
-                }
-            }
-        });
+    //     // if (keywordMatchClause?.match?.chunk_text) {
+    //     //     hybridShouldClauses.push({
+    //     //         match: {
+    //     //             chunk_text: {
+    //     //                 ...keywordMatchClause.match.chunk_text,
+    //     //                 boost: keywordBoost
+    //     //             }
+    //     //         }
+    //     //     });
+    //     // }
 
-        queryJson.query = {
-            bool: {
-                must: lexicalMustClauses,
-                should: hybridShouldClauses,
-                minimum_should_match: 1
-            }
-        };
-    } else if (runSemanticSearch) {
-        // just a semantic search
-        queryJson.query = neuralQuery;
-    } else {
-        // just a keyword search
-        queryJson.query = lexicalQuery;
-    }
+    //     // hybridShouldClauses.push({
+    //     //     neural: {
+    //     //         embedding: {
+    //     //             query_text: keyword,
+    //     //             k: DEFAULT_SEMANTIC_K,
+    //     //             boost: semanticBoost
+    //     //         }
+    //     //     }
+    //     // });
+
+    //     queryJson.query = {
+    //         bool: {
+    //             // must: lexicalMustClauses,
+    //             should: hybridShouldClauses
+    //             // minimum_should_match: 1
+    //         }
+    //     };
+    // } else if (runSemanticSearch) {
+    //     // just a semantic search
+    //     queryJson.query = neuralQuery;
+    // } else {
+    //     // just a keyword search
+    //     queryJson.query = lexicalQuery;
+    // }
 
     const buildEnd = Date.now();
     logQueryMetrics({
@@ -384,17 +473,13 @@ function buildQueryJson({
         phrases,
         phrasesVariants,
         shouldClauses,
-        startBuild,
-        buildEnd,
-        extractStart,
-        extractEnd,
-        variantStart,
-        variantEnd,
+        buildMs: buildEnd - buildStart,
+        extractMs,
+        variantMs,
         logger,
         caseReferenceNumber
     });
-
-    console.log(JSON.stringify(queryJson, null, 2));
+    console.log(JSON.stringify(queryJson));
     return queryJson;
 }
 
