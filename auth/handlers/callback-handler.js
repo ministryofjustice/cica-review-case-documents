@@ -57,16 +57,18 @@ function setInteractiveRetry(req) {
  * @returns {boolean} True when an Entra error was handled and response was sent.
  */
 function handleEntraCallbackError(req, res) {
-    if (!req.query.error) {
+    const entraError = getSingleNonEmptyQueryParam(req.query?.error);
+
+    if (!entraError) {
         return false;
     }
 
     const pendingAuth = req.session?.entraAuth;
     const state = getSingleNonEmptyQueryParam(req.query?.state);
     const hasMatchingState = Boolean(state) && state === pendingAuth?.state;
-    const entraError = String(req.query.error);
-    const entraErrorCode = getEntraErrorCode(req.query.error_description);
-    const entraErrorUri = req.query.error_uri;
+    const entraErrorDescription = getSingleNonEmptyQueryParam(req.query?.error_description);
+    const entraErrorCode = getEntraErrorCode(entraErrorDescription);
+    const entraErrorUri = getSingleNonEmptyQueryParam(req.query?.error_uri);
 
     const createdAtMs = Number(pendingAuth?.createdAt);
     const isStale =

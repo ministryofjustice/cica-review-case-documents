@@ -247,6 +247,60 @@ test('createCallbackHandler rejects interactive retry when pending auth transact
     assert.strictEqual(req.session.entraInteractiveRetry, undefined);
 });
 
+test('createCallbackHandler returns 401 when error is an array query parameter', async () => {
+    const handler = createCallbackHandler();
+
+    const req = {
+        query: {
+            error: ['interaction_required', 'login_required'],
+            state: 'state-1',
+            error_description: 'AADSTS16001: UserAccountSelectionInvalid'
+        },
+        session: {
+            entraAuth: {
+                mode: 'silent',
+                state: 'state-1',
+                createdAt: Date.now()
+            }
+        },
+        log: { warn: () => {}, info: () => {}, error: () => {} }
+    };
+    const { responsePayload, res } = createResponseRecorder();
+
+    await handler(req, res, () => {});
+
+    assert.strictEqual(responsePayload.statusCode, 401);
+    assert.strictEqual(responsePayload.body, 'Authentication failed');
+    assert.strictEqual(req.session.entraInteractiveRetry, undefined);
+});
+
+test('createCallbackHandler returns 401 when error_description is an array query parameter', async () => {
+    const handler = createCallbackHandler();
+
+    const req = {
+        query: {
+            error: 'interaction_required',
+            state: 'state-1',
+            error_description: ['AADSTS16001: first', 'AADSTS16001: second']
+        },
+        session: {
+            entraAuth: {
+                mode: 'silent',
+                state: 'state-1',
+                createdAt: Date.now()
+            }
+        },
+        log: { warn: () => {}, info: () => {}, error: () => {} }
+    };
+    const { responsePayload, res } = createResponseRecorder();
+
+    await handler(req, res, () => {});
+
+    assert.strictEqual(responsePayload.statusCode, 401);
+    assert.strictEqual(responsePayload.body, 'Authentication failed');
+    assert.strictEqual(req.session.entraInteractiveRetry, undefined);
+});
+
 test('createCallbackHandler rejects invalid auth transaction when session is missing', async () => {
     const handler = createCallbackHandler();
 
