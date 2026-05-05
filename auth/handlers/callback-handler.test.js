@@ -126,6 +126,7 @@ test('createCallbackHandler retries interactive login for AADSTS16000 callback e
     await handler(req, res, () => {});
 
     assert.strictEqual(responsePayload.redirectLocation, '/auth/login');
+    assert.strictEqual(req.session.entraAuth, undefined);
     assert.deepStrictEqual(req.session.entraInteractiveRetry, {
         enabled: true
     });
@@ -154,6 +155,7 @@ test('createCallbackHandler retries interactive login for AADSTS16001 callback e
     await handler(req, res, () => {});
 
     assert.strictEqual(responsePayload.redirectLocation, '/auth/login');
+    assert.strictEqual(req.session.entraAuth, undefined);
     assert.deepStrictEqual(req.session.entraInteractiveRetry, {
         enabled: true
     });

@@ -81,6 +81,7 @@ function handleEntraCallbackError(req, res) {
             },
             'Entra silent sign-in requires interaction; retrying with interactive login'
         );
+        clearPendingEntraAuth(req);
         setInteractiveRetry(req);
         res.redirect('/auth/login');
         return true;
