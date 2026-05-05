@@ -56,12 +56,15 @@ function handleEntraCallbackError(req, res) {
     }
 
     const pendingAuth = req.session?.entraAuth;
+    const state = getSingleNonEmptyQueryParam(req.query?.state);
+    const hasMatchingState = Boolean(state) && state === pendingAuth?.state;
     const entraError = String(req.query.error);
     const entraErrorCode = getEntraErrorCode(req.query.error_description);
     const entraErrorUri = req.query.error_uri;
 
     if (
         pendingAuth?.mode === 'silent' &&
+        hasMatchingState &&
         (ENTRA_INTERACTIVE_RETRY_ERRORS.has(entraError) ||
             ENTRA_INTERACTIVE_RETRY_ERROR_CODES.has(entraErrorCode))
     ) {
@@ -82,7 +85,9 @@ function handleEntraCallbackError(req, res) {
         {
             error: entraError,
             entraErrorCode,
-            errorUri: entraErrorUri
+            errorUri: entraErrorUri,
+            hasState: Boolean(state),
+            hasMatchingState
         },
         'Entra authorization failed'
     );

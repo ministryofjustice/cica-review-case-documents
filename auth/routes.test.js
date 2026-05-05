@@ -165,10 +165,15 @@ test('GET /auth/callback with login_required should fail when targeted fallback 
 });
 
 test('GET /auth/callback with consent_required should perform a controlled retry to interactive for AADSTS65001', async () => {
-    await agent.get('/auth/login').expect(302);
+    const loginResponse = await agent.get('/auth/login').expect(302);
+    const silentAuthorizeUrl = new URL(loginResponse.headers.location);
+    const state = silentAuthorizeUrl.searchParams.get('state');
+
+    assert.ok(state);
 
     const response = await agent.get('/auth/callback').query({
         error: 'consent_required',
+        state,
         error_description: 'AADSTS65001: User or administrator has not consented'
     });
 
@@ -178,6 +183,18 @@ test('GET /auth/callback with consent_required should perform a controlled retry
     const interactiveLoginResponse = await agent.get('/auth/login').expect(302);
     const authorizeUrl = new URL(interactiveLoginResponse.headers.location);
     assert.strictEqual(authorizeUrl.searchParams.get('prompt'), 'select_account');
+});
+
+test('GET /auth/callback with consent_required should reject retry when state is missing', async () => {
+    await agent.get('/auth/login').expect(302);
+
+    const response = await agent.get('/auth/callback').query({
+        error: 'consent_required',
+        error_description: 'AADSTS65001: User or administrator has not consented'
+    });
+
+    assert.strictEqual(response.status, 401);
+    assert.match(response.text, /Authentication failed/);
 });
 
 test('GET /auth/callback should handle non-interactive Entra error with AADSTS code', async () => {

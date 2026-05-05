@@ -109,12 +109,14 @@ test('createCallbackHandler retries interactive login for AADSTS16000 callback e
     const req = {
         query: {
             error: 'interaction_required',
+            state: 'state-16000',
             error_description:
                 'AADSTS16000: Either multiple user identities are available or selected account is unsupported'
         },
         session: {
             entraAuth: {
-                mode: 'silent'
+                mode: 'silent',
+                state: 'state-16000'
             }
         },
         log: { warn: () => {}, info: () => {}, error: () => {} }
@@ -127,6 +129,34 @@ test('createCallbackHandler retries interactive login for AADSTS16000 callback e
     assert.deepStrictEqual(req.session.entraInteractiveRetry, {
         enabled: true
     });
+});
+
+test('createCallbackHandler rejects interactive retry callback errors without matching state', async () => {
+    const handler = createCallbackHandler();
+
+    const req = {
+        query: {
+            error: 'interaction_required',
+            state: 'unexpected-state',
+            error_description:
+                'AADSTS16000: Either multiple user identities are available or selected account is unsupported'
+        },
+        session: {
+            entraAuth: {
+                mode: 'silent',
+                state: 'expected-state'
+            }
+        },
+        log: { warn: () => {}, info: () => {}, error: () => {} }
+    };
+    const { responsePayload, res } = createResponseRecorder();
+
+    await handler(req, res, () => {});
+
+    assert.strictEqual(responsePayload.statusCode, 401);
+    assert.strictEqual(responsePayload.body, 'Authentication failed');
+    assert.strictEqual(req.session.entraAuth, undefined);
+    assert.strictEqual(req.session.entraInteractiveRetry, undefined);
 });
 
 test('createCallbackHandler rejects invalid auth transaction when session is missing', async () => {
