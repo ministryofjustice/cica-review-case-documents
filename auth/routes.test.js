@@ -164,7 +164,7 @@ test('GET /auth/callback with login_required should fail when targeted fallback 
     assert.match(response.text, /Authentication failed/);
 });
 
-test('GET /auth/callback with consent_required should redirect to interactive even when fallback env flag is disabled', async () => {
+test('GET /auth/callback with consent_required should perform a controlled retry to interactive for AADSTS65001', async () => {
     await agent.get('/auth/login').expect(302);
 
     const response = await agent.get('/auth/callback').query({

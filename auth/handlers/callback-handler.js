@@ -145,7 +145,6 @@ function respondInvalidAuthTransaction(req, res, { state, hasNonce, isStaleAuthT
 }
 
 /**
-/**
  * Regenerates session and stores authenticated user details.
  *
  * @param {import('express').Request} req - Express request object.
