@@ -152,7 +152,7 @@ function respondInvalidAuthTransaction(req, res, { state, hasNonce, isStaleAuthT
         },
         'Invalid Entra callback state'
     );
-    res.status(401).send('Invalid authentication state');
+    res.status(401).send('Authentication failed');
 }
 
 /**

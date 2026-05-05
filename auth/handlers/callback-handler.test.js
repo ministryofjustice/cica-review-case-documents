@@ -235,7 +235,7 @@ test('createCallbackHandler rejects invalid auth transaction when session is mis
 
     assert.strictEqual(nextError, undefined);
     assert.strictEqual(responsePayload.statusCode, 401);
-    assert.strictEqual(responsePayload.body, 'Invalid authentication state');
+    assert.strictEqual(responsePayload.body, 'Authentication failed');
 });
 
 test('createCallbackHandler regenerates session and redirects to returnTo on successful sign-in', async () => {

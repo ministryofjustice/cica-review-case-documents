@@ -143,7 +143,9 @@ This avoids relying on request host/protocol values when generating authenticati
 
 By default, login starts with silent SSO (`prompt=none`).
 When specific Entra callback error codes are returned (`AADSTS65001`, `AADSTS16000`, `AADSTS16001`), the app performs a controlled interactive retry to account selection.
-All other callback errors return `401 Authentication failed`.
+Allowlisted interactive-retry callback errors return `302` to `/auth/login` for one controlled retry.
+Non-retriable callback failures return `401 Authentication failed`.
+Detailed failure reasons (for example Entra error codes or invalid/stale callback transaction state) are recorded in server logs.
 
 Auth callback transactions expire after 10 minutes by default.
 You can tune this with `ENTRA_AUTH_TRANSACTION_MAX_AGE_MS`.

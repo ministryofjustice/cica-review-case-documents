@@ -335,7 +335,7 @@ test('callback handler should reject stale auth transaction and clear pending st
     await callbackHandler(req, res, () => {});
 
     assert.strictEqual(responsePayload.statusCode, 401);
-    assert.strictEqual(responsePayload.body, 'Invalid authentication state');
+    assert.strictEqual(responsePayload.body, 'Authentication failed');
     assert.strictEqual(req.session.entraAuth, undefined);
 });
 
@@ -376,7 +376,7 @@ test('callback handler should reject callback when code is an array query parame
     await callbackHandler(req, res, () => {});
 
     assert.strictEqual(responsePayload.statusCode, 401);
-    assert.strictEqual(responsePayload.body, 'Invalid authentication state');
+    assert.strictEqual(responsePayload.body, 'Authentication failed');
     assert.strictEqual(req.session.entraAuth, undefined);
 });
 
@@ -417,7 +417,7 @@ test('callback handler should reject callback when state is an array query param
     await callbackHandler(req, res, () => {});
 
     assert.strictEqual(responsePayload.statusCode, 401);
-    assert.strictEqual(responsePayload.body, 'Invalid authentication state');
+    assert.strictEqual(responsePayload.body, 'Authentication failed');
     assert.strictEqual(req.session.entraAuth, undefined);
 });
 
@@ -492,7 +492,7 @@ test('callback handler should return 401 for invalid auth transaction when sessi
 
     assert.strictEqual(nextError, undefined);
     assert.strictEqual(responsePayload.statusCode, 401);
-    assert.strictEqual(responsePayload.body, 'Invalid authentication state');
+    assert.strictEqual(responsePayload.body, 'Authentication failed');
 });
 
 test('callback handler should regenerate session and preserve required values after sign-in', async () => {
