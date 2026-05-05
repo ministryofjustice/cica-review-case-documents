@@ -145,24 +145,3 @@ test('createLoginHandler ignores interactive query parameter without retry flag'
     assert.strictEqual(req.session.entraAuth.mode, 'silent');
     assert.match(responsePayload.redirectLocation, /prompt=none/);
 });
-
-test('createLoginHandler forwards login_hint to authorize request', async () => {
-    const handler = createLoginHandler();
-
-    const req = {
-        query: { login_hint: 'Known.User@Example.COM' },
-        session: {
-            regenerate: (callback) => {
-                req.session = {
-                    regenerate: req.session.regenerate
-                };
-                callback();
-            }
-        }
-    };
-    const { responsePayload, res } = createResponseRecorder();
-
-    await handler(req, res, () => {});
-
-    assert.match(responsePayload.redirectLocation, /login_hint=Known.User%40Example.COM/);
-});

@@ -1,9 +1,5 @@
 import { nanoid } from 'nanoid';
-import {
-    getSessionValuesToPreserve,
-    getSingleNonEmptyQueryParam,
-    regenerateSession
-} from '../auth-flow-helpers.js';
+import { getSessionValuesToPreserve, regenerateSession } from '../auth-flow-helpers.js';
 import { buildEntraAuthorizeUrl, isEntraConfigured } from '../utils/entra-auth/config.js';
 
 /**
@@ -19,8 +15,6 @@ export const createLoginHandler = () => async (req, res, next) => {
     try {
         const interactiveRetry = req.session?.entraInteractiveRetry;
         const interactiveRequested = interactiveRetry?.enabled === true;
-        const queryLoginHint = getSingleNonEmptyQueryParam(req.query?.login_hint);
-        const requestedLoginHint = queryLoginHint;
 
         if (req.session) {
             delete req.session.entraInteractiveRetry;
@@ -42,10 +36,6 @@ export const createLoginHandler = () => async (req, res, next) => {
         const authorizeOptions = {
             prompt: interactiveRequested ? 'select_account' : 'none'
         };
-
-        if (requestedLoginHint) {
-            authorizeOptions.loginHint = requestedLoginHint;
-        }
 
         return res.redirect(buildEntraAuthorizeUrl(req, state, nonce, authorizeOptions));
     } catch (error) {

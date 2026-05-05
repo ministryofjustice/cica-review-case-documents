@@ -117,12 +117,10 @@ describe('entra-auth config utilities', () => {
 
         const url = buildEntraAuthorizeUrl(req, 'state-1', 'nonce-1', {
             prompt: 'none',
-            loginHint: 'user@example.com',
             domainHint: 'organizations'
         });
 
         assert.match(url, /prompt=none/);
-        assert.match(url, /login_hint=user%40example\.com/);
         assert.match(url, /domain_hint=organizations/);
     });
 });

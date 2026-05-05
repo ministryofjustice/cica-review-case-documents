@@ -68,7 +68,7 @@ export function getEntraRedirectUri(req) {
  * @param {import('express').Request} req - Express request used to derive callback URI.
  * @param {string} state - OIDC state value bound to the current auth transaction.
  * @param {string} nonce - OIDC nonce value validated against the returned id token.
- * @param {{ prompt?: string, loginHint?: string, domainHint?: string }} [options] - Optional authorize request parameters.
+ * @param {{ prompt?: string, domainHint?: string }} [options] - Optional authorize request parameters.
  * @returns {string}
  */
 export function buildEntraAuthorizeUrl(req, state, nonce, options = {}) {
@@ -88,10 +88,6 @@ export function buildEntraAuthorizeUrl(req, state, nonce, options = {}) {
 
     if (options.prompt) {
         params.set('prompt', options.prompt);
-    }
-
-    if (options.loginHint) {
-        params.set('login_hint', options.loginHint);
     }
 
     if (options.domainHint) {
