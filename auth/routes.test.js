@@ -153,11 +153,16 @@ test('createLoginHandler should regenerate session before starting Entra auth fl
 });
 
 test('GET /auth/callback with login_required should fail when targeted fallback conditions are not met', async () => {
-    await agent.get('/auth/login').expect(302);
+    const loginResponse = await agent.get('/auth/login').expect(302);
+    const silentAuthorizeUrl = new URL(loginResponse.headers.location);
+    const state = silentAuthorizeUrl.searchParams.get('state');
+
+    assert.ok(state);
 
     const response = await agent.get('/auth/callback').query({
         error: 'login_required',
-        error_description: 'Silent sign-in required interaction'
+        state,
+        error_description: 'AADSTS50058: Silent sign-in required interaction'
     });
 
     assert.strictEqual(response.status, 401);
