@@ -121,6 +121,7 @@ test('createLoginHandler starts interactive mode when one-time retry flag is pre
     await handler(req, res, () => {});
 
     assert.strictEqual(req.session.entraAuth.mode, 'interactive');
+    assert.strictEqual(req.session.entraInteractiveRetry, undefined);
     assert.match(responsePayload.redirectLocation, /prompt=select_account/);
 });
 
