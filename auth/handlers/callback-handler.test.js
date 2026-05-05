@@ -131,6 +131,61 @@ test('createCallbackHandler retries interactive login for AADSTS16000 callback e
     });
 });
 
+test('createCallbackHandler retries interactive login for AADSTS16001 callback errors', async () => {
+    const handler = createCallbackHandler();
+
+    const req = {
+        query: {
+            error: 'interaction_required',
+            state: 'state-16001',
+            error_description:
+                'AADSTS16001: UserAccountSelectionInvalid - selected account is no longer valid for this session selection'
+        },
+        session: {
+            entraAuth: {
+                mode: 'silent',
+                state: 'state-16001'
+            }
+        },
+        log: { warn: () => {}, info: () => {}, error: () => {} }
+    };
+    const { responsePayload, res } = createResponseRecorder();
+
+    await handler(req, res, () => {});
+
+    assert.strictEqual(responsePayload.redirectLocation, '/auth/login');
+    assert.deepStrictEqual(req.session.entraInteractiveRetry, {
+        enabled: true
+    });
+});
+
+test('createCallbackHandler does not retry interactive login without an allowlisted AADSTS code', async () => {
+    const handler = createCallbackHandler();
+
+    const req = {
+        query: {
+            error: 'consent_required',
+            state: 'state-consent',
+            error_description: 'Consent is required but code is missing'
+        },
+        session: {
+            entraAuth: {
+                mode: 'silent',
+                state: 'state-consent'
+            }
+        },
+        log: { warn: () => {}, info: () => {}, error: () => {} }
+    };
+    const { responsePayload, res } = createResponseRecorder();
+
+    await handler(req, res, () => {});
+
+    assert.strictEqual(responsePayload.statusCode, 401);
+    assert.strictEqual(responsePayload.body, 'Authentication failed');
+    assert.strictEqual(req.session.entraAuth, undefined);
+    assert.strictEqual(req.session.entraInteractiveRetry, undefined);
+});
+
 test('createCallbackHandler rejects interactive retry callback errors without matching state', async () => {
     const handler = createCallbackHandler();
 

@@ -12,8 +12,14 @@ import {
     exchangeEntraAuthorizationCode
 } from '../utils/entra-auth/token.js';
 
-const ENTRA_INTERACTIVE_RETRY_ERRORS = new Set(['consent_required']);
-const ENTRA_INTERACTIVE_RETRY_ERROR_CODES = new Set(['AADSTS65001', 'AADSTS16000']);
+const ENTRA_INTERACTIVE_RETRY_ERROR_CODES = new Set([
+    // AADSTS65001: DelegationDoesNotExist - user/admin consent missing; requires interactive consent.
+    'AADSTS65001',
+    // AADSTS16000: multiple identities or unsupported selected account; allow account selection retry.
+    'AADSTS16000',
+    // AADSTS16001: UserAccountSelectionInvalid; allow recovery through updated account selection.
+    'AADSTS16001'
+]);
 const ENTRA_AUTH_TRANSACTION_MAX_AGE_MS =
     Number(process.env.ENTRA_AUTH_TRANSACTION_MAX_AGE_MS) || 10 * 60 * 1000;
 
@@ -65,8 +71,7 @@ function handleEntraCallbackError(req, res) {
     if (
         pendingAuth?.mode === 'silent' &&
         hasMatchingState &&
-        (ENTRA_INTERACTIVE_RETRY_ERRORS.has(entraError) ||
-            ENTRA_INTERACTIVE_RETRY_ERROR_CODES.has(entraErrorCode))
+        ENTRA_INTERACTIVE_RETRY_ERROR_CODES.has(entraErrorCode)
     ) {
         req.log?.info(
             {

@@ -164,7 +164,7 @@ test('GET /auth/callback with login_required should fail when targeted fallback 
     assert.match(response.text, /Authentication failed/);
 });
 
-test('GET /auth/callback with consent_required should perform a controlled retry to interactive for AADSTS65001', async () => {
+test('GET /auth/callback should perform a controlled retry to interactive for AADSTS65001', async () => {
     const loginResponse = await agent.get('/auth/login').expect(302);
     const silentAuthorizeUrl = new URL(loginResponse.headers.location);
     const state = silentAuthorizeUrl.searchParams.get('state');
@@ -185,12 +185,51 @@ test('GET /auth/callback with consent_required should perform a controlled retry
     assert.strictEqual(authorizeUrl.searchParams.get('prompt'), 'select_account');
 });
 
-test('GET /auth/callback with consent_required should reject retry when state is missing', async () => {
+test('GET /auth/callback should reject retry when state is missing', async () => {
     await agent.get('/auth/login').expect(302);
 
     const response = await agent.get('/auth/callback').query({
         error: 'consent_required',
         error_description: 'AADSTS65001: User or administrator has not consented'
+    });
+
+    assert.strictEqual(response.status, 401);
+    assert.match(response.text, /Authentication failed/);
+});
+
+test('GET /auth/callback should perform a controlled retry to interactive for AADSTS16001', async () => {
+    const loginResponse = await agent.get('/auth/login').expect(302);
+    const silentAuthorizeUrl = new URL(loginResponse.headers.location);
+    const state = silentAuthorizeUrl.searchParams.get('state');
+
+    assert.ok(state);
+
+    const response = await agent.get('/auth/callback').query({
+        error: 'interaction_required',
+        state,
+        error_description:
+            'AADSTS16001: UserAccountSelectionInvalid - selected account is no longer valid for this session selection'
+    });
+
+    assert.strictEqual(response.status, 302);
+    assert.strictEqual(response.headers.location, '/auth/login');
+
+    const interactiveLoginResponse = await agent.get('/auth/login').expect(302);
+    const authorizeUrl = new URL(interactiveLoginResponse.headers.location);
+    assert.strictEqual(authorizeUrl.searchParams.get('prompt'), 'select_account');
+});
+
+test('GET /auth/callback should not retry when consent_required has no allowlisted AADSTS code', async () => {
+    const loginResponse = await agent.get('/auth/login').expect(302);
+    const silentAuthorizeUrl = new URL(loginResponse.headers.location);
+    const state = silentAuthorizeUrl.searchParams.get('state');
+
+    assert.ok(state);
+
+    const response = await agent.get('/auth/callback').query({
+        error: 'consent_required',
+        state,
+        error_description: 'Consent is required but code is missing'
     });
 
     assert.strictEqual(response.status, 401);
