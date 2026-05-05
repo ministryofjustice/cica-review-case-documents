@@ -68,9 +68,15 @@ function handleEntraCallbackError(req, res) {
     const entraErrorCode = getEntraErrorCode(req.query.error_description);
     const entraErrorUri = req.query.error_uri;
 
+    const createdAtMs = Number(pendingAuth?.createdAt);
+    const isStale =
+        !Number.isFinite(createdAtMs) ||
+        Date.now() - createdAtMs > ENTRA_AUTH_TRANSACTION_MAX_AGE_MS;
+
     if (
         pendingAuth?.mode === 'silent' &&
         hasMatchingState &&
+        !isStale &&
         ENTRA_INTERACTIVE_RETRY_ERROR_CODES.has(entraErrorCode)
     ) {
         req.log?.info(

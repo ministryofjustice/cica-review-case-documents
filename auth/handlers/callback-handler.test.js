@@ -116,7 +116,8 @@ test('createCallbackHandler retries interactive login for AADSTS16000 callback e
         session: {
             entraAuth: {
                 mode: 'silent',
-                state: 'state-16000'
+                state: 'state-16000',
+                createdAt: Date.now()
             }
         },
         log: { warn: () => {}, info: () => {}, error: () => {} }
@@ -145,7 +146,8 @@ test('createCallbackHandler retries interactive login for AADSTS16001 callback e
         session: {
             entraAuth: {
                 mode: 'silent',
-                state: 'state-16001'
+                state: 'state-16001',
+                createdAt: Date.now()
             }
         },
         log: { warn: () => {}, info: () => {}, error: () => {} }
@@ -202,6 +204,35 @@ test('createCallbackHandler rejects interactive retry callback errors without ma
             entraAuth: {
                 mode: 'silent',
                 state: 'expected-state'
+            }
+        },
+        log: { warn: () => {}, info: () => {}, error: () => {} }
+    };
+    const { responsePayload, res } = createResponseRecorder();
+
+    await handler(req, res, () => {});
+
+    assert.strictEqual(responsePayload.statusCode, 401);
+    assert.strictEqual(responsePayload.body, 'Authentication failed');
+    assert.strictEqual(req.session.entraAuth, undefined);
+    assert.strictEqual(req.session.entraInteractiveRetry, undefined);
+});
+
+test('createCallbackHandler rejects interactive retry when pending auth transaction is stale', async () => {
+    const handler = createCallbackHandler();
+
+    const req = {
+        query: {
+            error: 'interaction_required',
+            state: 'state-stale',
+            error_description:
+                'AADSTS16001: UserAccountSelectionInvalid - selected account is no longer valid for this session selection'
+        },
+        session: {
+            entraAuth: {
+                mode: 'silent',
+                state: 'state-stale',
+                createdAt: Date.now() - 11 * 60 * 1000
             }
         },
         log: { warn: () => {}, info: () => {}, error: () => {} }
