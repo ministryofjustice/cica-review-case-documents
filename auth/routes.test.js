@@ -861,7 +861,7 @@ test('GET /auth/callback should authenticate when oid is missing and fallback to
     }
 });
 
-test('GET /auth/callback should pass token exchange errors to error handler', async () => {
+test('GET /auth/callback should return 401 when token exchange fails', async () => {
     const originalPost = got.post;
 
     try {
@@ -875,13 +875,14 @@ test('GET /auth/callback should pass token exchange errors to error handler', as
 
         const response = await agent.get('/auth/callback').query({ code: 'auth-code', state });
 
-        assert.strictEqual(response.status, 500);
+        assert.strictEqual(response.status, 401);
+        assert.match(response.text, /Authentication failed/);
     } finally {
         got.post = originalPost;
     }
 });
 
-test('callback handler should log a sanitized error when token exchange fails', async () => {
+test('callback handler should log a sanitized error and return 401 when token exchange fails', async () => {
     const callbackHandler = getRouteHandler('/callback');
     const originalPost = got.post;
     const tokenExchangeError = Object.assign(new Error('entra-token-exchange-failed'), {
@@ -926,28 +927,36 @@ test('callback handler should log a sanitized error when token exchange fails', 
             throw tokenExchangeError;
         };
 
-        let capturedError;
-        await callbackHandler(req, {}, (err) => {
-            capturedError = err;
+        let statusCode;
+        let responseBody;
+        const res = {
+            status(code) {
+                statusCode = code;
+                return this;
+            },
+            send(body) {
+                responseBody = body;
+                return this;
+            }
+        };
+
+        let nextCalled = false;
+        await callbackHandler(req, res, () => {
+            nextCalled = true;
         });
 
-        assert.strictEqual(capturedError.message, 'Token exchange failed');
-        assert.strictEqual(capturedError.cause, tokenExchangeError);
+        assert.strictEqual(nextCalled, false);
+        assert.strictEqual(statusCode, 401);
+        assert.strictEqual(responseBody, 'Authentication failed');
         assert.strictEqual(loggedErrors.length, 1);
-        assert.deepStrictEqual(loggedErrors[0].payload.name, 'Error');
-        assert.deepStrictEqual(loggedErrors[0].payload.message, 'Token exchange failed');
-        assert.deepStrictEqual(loggedErrors[0].payload.code, undefined);
-        assert.deepStrictEqual(loggedErrors[0].payload.statusCode, undefined);
-        assert.strictEqual(loggedErrors[0].message, 'Entra callback handling failed');
+        assert.deepStrictEqual(loggedErrors[0].payload.name, 'HTTPError');
+        assert.deepStrictEqual(loggedErrors[0].payload.message, 'entra-token-exchange-failed');
+        assert.deepStrictEqual(loggedErrors[0].payload.code, 'ERR_NON_2XX_3XX_RESPONSE');
+        assert.deepStrictEqual(loggedErrors[0].payload.statusCode, 401);
+        assert.strictEqual(loggedErrors[0].message, 'Entra token exchange failed');
         assert.equal(typeof loggedErrors[0].payload.stack, 'string');
         assert.equal('options' in loggedErrors[0].payload, false);
         assert.equal('response' in loggedErrors[0].payload, false);
-        // Verify cause error is preserved with safe fields only
-        assert.ok(loggedErrors[0].payload.cause);
-        assert.strictEqual(loggedErrors[0].payload.cause.name, 'HTTPError');
-        assert.strictEqual(loggedErrors[0].payload.cause.code, 'ERR_NON_2XX_3XX_RESPONSE');
-        assert.equal('options' in loggedErrors[0].payload.cause, false);
-        assert.equal('response' in loggedErrors[0].payload.cause, false);
     } finally {
         got.post = originalPost;
     }
