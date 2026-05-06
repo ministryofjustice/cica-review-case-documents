@@ -230,11 +230,15 @@ export const createCallbackHandler = () => async (req, res, next) => {
             return;
         }
 
-        const tokenResponse = await exchangeEntraAuthorizationCode(req, String(code));
-        const claims = await decodeAndValidateEntraIdToken(
-            tokenResponse.id_token,
-            pendingAuth.nonce
-        );
+        let tokenResponse;
+        let claims;
+        try {
+            tokenResponse = await exchangeEntraAuthorizationCode(req, String(code));
+            claims = await decodeAndValidateEntraIdToken(tokenResponse.id_token, pendingAuth.nonce);
+        } catch (err) {
+            // Re-throw with stack trace showing this callback handler location
+            throw new Error(`Token exchange failed: ${err.message}`, { cause: err });
+        }
 
         await establishAuthenticatedSession(req, claims);
 

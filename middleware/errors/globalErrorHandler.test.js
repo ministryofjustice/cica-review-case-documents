@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import safeErrorForLog from '../logger/utils/safeErrorForLog/index.js';
 import errorHandler from './globalErrorHandler.js';
 
 const mockHtml = '<h1>Error Page</h1>';
@@ -25,7 +26,7 @@ test('errorHandler logs error and sends error page', async () => {
         log: {
             error: ({ err: loggedErr, status }, msg) => {
                 logged = true;
-                assert.equal(loggedErr, err);
+                assert.deepEqual(loggedErr, safeErrorForLog(err));
                 assert.equal(status, 500);
                 assert.equal(msg, 'Application Error');
             }
