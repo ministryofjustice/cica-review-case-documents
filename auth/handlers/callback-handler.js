@@ -237,7 +237,7 @@ export const createCallbackHandler = () => async (req, res, next) => {
             claims = await decodeAndValidateEntraIdToken(tokenResponse.id_token, pendingAuth.nonce);
         } catch (err) {
             // Re-throw with stack trace showing this callback handler location
-            throw new Error(`Token exchange failed: ${err.message}`, { cause: err });
+            throw new Error('Token exchange failed', { cause: err });
         }
 
         await establishAuthenticatedSession(req, claims);

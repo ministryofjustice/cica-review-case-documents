@@ -931,17 +931,11 @@ test('callback handler should log a sanitized error when token exchange fails', 
             capturedError = err;
         });
 
-        assert.strictEqual(
-            capturedError.message,
-            'Token exchange failed: entra-token-exchange-failed'
-        );
+        assert.strictEqual(capturedError.message, 'Token exchange failed');
         assert.strictEqual(capturedError.cause, tokenExchangeError);
         assert.strictEqual(loggedErrors.length, 1);
         assert.deepStrictEqual(loggedErrors[0].payload.name, 'Error');
-        assert.deepStrictEqual(
-            loggedErrors[0].payload.message,
-            'Token exchange failed: entra-token-exchange-failed'
-        );
+        assert.deepStrictEqual(loggedErrors[0].payload.message, 'Token exchange failed');
         assert.deepStrictEqual(loggedErrors[0].payload.code, undefined);
         assert.deepStrictEqual(loggedErrors[0].payload.statusCode, undefined);
         assert.strictEqual(loggedErrors[0].message, 'Entra callback handling failed');
