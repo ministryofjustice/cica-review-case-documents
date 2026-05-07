@@ -4,13 +4,6 @@ import createDBQueryDefault from '../../db/index.js';
 import buildQueryJson from './utils/buildQueryJson/index.js';
 
 /**
- *  TODO: both chunk queries have a `preference` attribute set to work around the issue of non-deterministic results when paginating through chunks.
- *  When a better solution is found this can be removed or replaced
- */
-
-const PAGE_CHUNK_QUERY_INTENT = 'pageChunkMatches';
-
-/**
  * @typedef {object} Logger
  * @property {(info: object, message?: string) => void} info
  *   Logs informational messages, typically structured objects with metadata.
@@ -257,7 +250,7 @@ function createDocumentDAL({
                 caseReferenceNumber,
                 pageNumber,
                 searchType,
-                queryIntent: PAGE_CHUNK_QUERY_INTENT,
+                includePagination: false,
                 documentId,
                 logger
             });

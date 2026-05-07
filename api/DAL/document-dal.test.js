@@ -532,7 +532,6 @@ describe('document-dal', () => {
             });
 
             await dal.getPageChunksByDocumentIdAndPageNumber('doc-123', 1, 'search term');
-
             assert.ok(
                 queryArgs.body.query.bool.should.some(
                     (clause) => clause.match?.chunk_text?.query === 'search term'
