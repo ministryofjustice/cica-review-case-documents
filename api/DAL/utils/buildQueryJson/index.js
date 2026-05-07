@@ -269,7 +269,7 @@ function buildHybridQuery({
     dateBoost,
     semanticBoost
 }) {
-    const queryJson = createHybridQuery(caseReferenceNumber);
+    const queryJson = createHybridQuery({ caseReferenceNumber });
 
     const matchClause = shouldClauses.find((clause) => Object.hasOwn(clause, 'match'));
     const matchPhraseClauses = shouldClauses.filter((clause) =>
