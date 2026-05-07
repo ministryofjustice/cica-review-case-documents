@@ -236,7 +236,8 @@ export const createCallbackHandler = () => async (req, res, next) => {
             tokenResponse = await exchangeEntraAuthorizationCode(req, String(code));
             claims = await decodeAndValidateEntraIdToken(tokenResponse.id_token, pendingAuth.nonce);
         } catch (err) {
-            req.log?.error(safeErrorForLog(err), 'Entra token exchange failed');
+            const wrappedError = new Error('Token exchange failed', { cause: err });
+            req.log?.error(safeErrorForLog(wrappedError), 'Entra token exchange failed');
             clearPendingEntraAuth(req);
             res.status(401).send('Authentication failed');
             return;

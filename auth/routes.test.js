@@ -949,14 +949,23 @@ test('callback handler should log a sanitized error and return 401 when token ex
         assert.strictEqual(statusCode, 401);
         assert.strictEqual(responseBody, 'Authentication failed');
         assert.strictEqual(loggedErrors.length, 1);
-        assert.deepStrictEqual(loggedErrors[0].payload.name, 'HTTPError');
-        assert.deepStrictEqual(loggedErrors[0].payload.message, 'entra-token-exchange-failed');
-        assert.deepStrictEqual(loggedErrors[0].payload.code, 'ERR_NON_2XX_3XX_RESPONSE');
-        assert.deepStrictEqual(loggedErrors[0].payload.statusCode, 401);
+
+        // We log a wrapped Error so the top stack frame points to application code.
+        // The original HTTPError details are preserved in payload.cause.
+        assert.strictEqual(loggedErrors[0].payload.name, 'Error');
+        assert.strictEqual(loggedErrors[0].payload.message, 'Token exchange failed');
+        assert.strictEqual(loggedErrors[0].payload.code, undefined);
+        assert.strictEqual(loggedErrors[0].payload.statusCode, undefined);
+
         assert.strictEqual(loggedErrors[0].message, 'Entra token exchange failed');
         assert.equal(typeof loggedErrors[0].payload.stack, 'string');
         assert.equal('options' in loggedErrors[0].payload, false);
         assert.equal('response' in loggedErrors[0].payload, false);
+        assert.ok(loggedErrors[0].payload.cause);
+        assert.strictEqual(loggedErrors[0].payload.cause.name, 'HTTPError');
+        assert.strictEqual(loggedErrors[0].payload.cause.code, 'ERR_NON_2XX_3XX_RESPONSE');
+        assert.equal('options' in loggedErrors[0].payload.cause, false);
+        assert.equal('response' in loggedErrors[0].payload.cause, false);
     } finally {
         got.post = originalPost;
     }
