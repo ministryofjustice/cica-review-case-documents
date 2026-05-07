@@ -186,7 +186,7 @@ function normalisePagination(pageNumber, itemsPerPage) {
  * @returns {object} Assembled keyword query DSL object.
  */
 function buildKeywordQuery({ caseReferenceNumber, shouldClauses, safePageNumber, documentId }) {
-    const queryJson = createLexicalQuery(caseReferenceNumber);
+    const queryJson = createLexicalQuery({ caseReferenceNumber });
 
     queryJson.query.bool.should = shouldClauses;
     queryJson.query.bool.minimum_should_match = shouldClauses.length > 0 ? 1 : undefined;
