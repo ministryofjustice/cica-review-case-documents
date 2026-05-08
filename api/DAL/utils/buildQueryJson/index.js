@@ -79,6 +79,28 @@ function createHybridQuery({ caseReferenceNumber }) {
 }
 
 /**
+ * Builds the neural filter object that pre-scopes the ANN search to the correct case
+ * (and optionally document page) so OpenSearch does not retrieve k candidates from
+ * other cases before the outer bool.must filters them out.
+ *
+ * @param {object} params - Filter parameters.
+ * @param {string} params.caseReferenceNumber - Case reference filter value.
+ * @param {string} [params.documentId] - Optional document UUID for page-level scoping.
+ * @param {number} params.safePageNumber - Normalised page number for document scoping.
+ * @returns {object} A single term clause or a bool.must wrapper.
+ */
+function buildNeuralFilter({ caseReferenceNumber, documentId, safePageNumber }) {
+    const must = [{ term: { case_ref: caseReferenceNumber } }];
+    if (documentId) {
+        must.push(
+            { term: { source_doc_id: documentId } },
+            { term: { page_number: safePageNumber } }
+        );
+    }
+    return must.length === 1 ? must[0] : { bool: { must } };
+}
+
+/**
  * Builds lexical should clauses and date-processing metrics.
  *
  * @param {object} params - Date processing options.
@@ -206,17 +228,60 @@ function buildKeywordQuery({ caseReferenceNumber, shouldClauses, safePageNumber,
 }
 
 /**
- * Assembles the semantic (neural) query, applying optional document scoping and simplifying
- * the filter DSL where possible.
+ * Assembles the semantic (neural) query, applying optional document scoping.
+ * When date match_phrase clauses are supplied, wraps the neural clause in a bool
+ * query alongside the date should clauses (semantic + dates mode).
  *
  * @param {object} params - Semantic query options.
  * @param {string} params.keyword - Raw search text.
  * @param {string} params.caseReferenceNumber - Case reference filter value.
  * @param {number} params.safePageNumber - Normalised page number for document scoping.
  * @param {string} [params.documentId] - Optional document UUID to scope results to a single page.
- * @returns {object} Assembled semantic query DSL object.
+ * @param {Array<object>} [params.matchPhraseClauses=[]] - Date match_phrase clauses to include alongside the neural clause.
+ * @returns {object} Assembled semantic (or semantic + dates) query DSL object.
  */
-function buildSemanticQuery({ keyword, caseReferenceNumber, safePageNumber, documentId }) {
+function buildSemanticQuery({
+    keyword,
+    caseReferenceNumber,
+    safePageNumber,
+    documentId,
+    matchPhraseClauses = []
+}) {
+    // When date phrases are present, produce a bool query with the neural clause and
+    // date phrase clauses as sibling should branches. A non-empty keyword is implied
+    // since dates cannot be extracted from an empty string.
+    if (matchPhraseClauses.length > 0) {
+        const queryJson = createHybridQuery({ caseReferenceNumber });
+
+        if (documentId) {
+            queryJson.query.bool.must.push(
+                { term: { source_doc_id: documentId } },
+                { term: { page_number: safePageNumber } }
+            );
+        }
+
+        queryJson.query.bool.should.push({
+            bool: {
+                should: matchPhraseClauses,
+                minimum_should_match: 1
+            }
+        });
+
+        const neuralFilter = buildNeuralFilter({ caseReferenceNumber, documentId, safePageNumber });
+        queryJson.query.bool.should.push({
+            neural: {
+                embedding: {
+                    query_text: keyword,
+                    k: DEFAULT_SEMANTIC_K,
+                    filter: neuralFilter
+                }
+            }
+        });
+
+        return queryJson;
+    }
+
+    // Pure neural: no date phrases (or empty keyword fallback).
     const queryJson = createNeuralQuery({ keyword, caseReferenceNumber });
 
     if (documentId) {
@@ -249,12 +314,9 @@ function buildSemanticQuery({ keyword, caseReferenceNumber, safePageNumber, docu
 }
 
 /**
- * Assembles the hybrid query, combining any combination of boosted lexical, date, and neural
- * should clauses with optional document scoping.
- *
- * Covers three cases driven by the flags:
- *   - useKeyword + useSemantic  → full hybrid (lexical + dates + neural)
- *   - !useKeyword + useSemantic + dates → dates only + neural (no general text match)
+ * Assembles the hybrid query, combining boosted lexical, date, and neural should clauses
+ * with optional document scoping. Always includes both keyword (BM25) and semantic
+ * (neural) branches — date phrase clauses are added when present.
  *
  * @param {object} params - Hybrid query options.
  * @param {string} params.keyword - Raw search text.
@@ -262,7 +324,6 @@ function buildSemanticQuery({ keyword, caseReferenceNumber, safePageNumber, docu
  * @param {Array<object>} params.shouldClauses - Lexical should clauses from date/text extraction.
  * @param {number} params.safePageNumber - Normalised page number for document scoping.
  * @param {string} [params.documentId] - Optional document UUID to scope results to a single page.
- * @param {boolean} [params.useKeyword=true] - Whether to include the general lexical match clause.
  * @param {number} params.keywordBoost - Boost for the lexical match clause.
  * @param {number} params.dateBoost - Boost for the grouped date variant clauses.
  * @param {number} params.semanticBoost - Boost for the neural clause.
@@ -274,7 +335,6 @@ function buildHybridQuery({
     shouldClauses,
     safePageNumber,
     documentId,
-    useKeyword = true,
     keywordBoost,
     dateBoost,
     semanticBoost
@@ -293,8 +353,8 @@ function buildHybridQuery({
         );
     }
 
-    // Boosted lexical match clause — only included when useKeyword is true.
-    if (useKeyword && matchClause?.match?.chunk_text) {
+    // Boosted lexical match clause.
+    if (matchClause?.match?.chunk_text) {
         queryJson.query.bool.should.push({
             match: {
                 chunk_text: {
@@ -306,7 +366,6 @@ function buildHybridQuery({
     }
 
     // Boosted date variant clauses, grouped so they share a single boost weight.
-    // Included regardless of useKeyword when date phrases were extracted.
     if (matchPhraseClauses.length > 0) {
         queryJson.query.bool.should.push({
             bool: {
@@ -319,11 +378,13 @@ function buildHybridQuery({
 
     // Boosted neural clause — only when the keyword is non-empty.
     if (keyword.trim().length > 0) {
+        const neuralFilter = buildNeuralFilter({ caseReferenceNumber, documentId, safePageNumber });
         queryJson.query.bool.should.push({
             neural: {
                 embedding: {
                     query_text: keyword,
                     k: DEFAULT_SEMANTIC_K,
+                    filter: neuralFilter,
                     boost: semanticBoost
                 }
             }
@@ -417,7 +478,7 @@ function logQueryMetrics({
  * | true       | false       | false                | keyword only            |
  * | true       | false       | true                 | keyword + dates         |
  * | false      | true        | false                | semantic only           |
- * | false      | true        | true                 | semantic + dates        |
+ * | false      | true        | true                 | semantic + dates        | ← bool(neural + dates)
  * | true       | true        | false                | hybrid                  |
  * | true       | true        | true                 | hybrid + dates          |
  *
@@ -479,34 +540,34 @@ function buildQueryJson({
 
     const { safePageNumber, safeItemsPerPage } = normalisePagination(pageNumber, itemsPerPage);
 
+    const matchPhraseClauses = shouldClauses.filter((c) => Object.hasOwn(c, 'match_phrase'));
+
     let queryJson;
     if (useKeyword && !useSemantic) {
-        // Pure lexical: keyword (with or without date expansion).
+        // Pure lexical: keyword with or without date expansion.
         queryJson = buildKeywordQuery({
             caseReferenceNumber,
-            shouldClauses,
+            shouldClauses, // date match_phrase clauses will be included here when enableDateExtraction is on.
             safePageNumber,
             documentId
         });
-    } else if (!useKeyword && useSemantic && !enableDateExtraction) {
-        // Pure neural: no lexical matching, no date phrases.
+    } else if (!useKeyword && useSemantic) {
+        // Pure semantic: neural only, with date phrases added when enableDateExtraction is on.
         queryJson = buildSemanticQuery({
             keyword,
             caseReferenceNumber,
             safePageNumber,
-            documentId
+            documentId,
+            matchPhraseClauses
         });
     } else {
-        // Hybrid cases (bool query with neural + optional lexical + optional date phrases):
-        //   useKeyword && useSemantic               → full hybrid
-        //   !useKeyword && useSemantic && dates      → date phrases + neural only
+        // Hybrid: keyword + semantic, with date phrases when enableDateExtraction is on.
         queryJson = buildHybridQuery({
             keyword,
             caseReferenceNumber,
             shouldClauses,
             safePageNumber,
             documentId,
-            useKeyword,
             keywordBoost,
             dateBoost,
             semanticBoost
