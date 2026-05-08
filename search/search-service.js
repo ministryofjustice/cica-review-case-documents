@@ -25,7 +25,9 @@ function createSearchService({
      * @param {number} itemsPerPage - Number of items per page.
      * @param {string} token - The authentication token.
      * @param {Object} [options] - Additional request options.
-     * @param {'keyword' | 'semantic' | 'hybrid'} [options.searchType='keyword'] - Which search mode to use.
+     * @param {boolean} [options.useKeyword=true] - Enable lexical (BM25) keyword matching.
+     * @param {boolean} [options.useSemantic=false] - Enable neural (vector) semantic matching.
+     * @param {boolean} [options.useDates=true] - Enable date extraction and variant expansion.
      * @returns {Promise<object>} A promise that resolves to the search results.
      */
     async function getSearchResults(
@@ -33,14 +35,14 @@ function createSearchService({
         pageNumber,
         itemsPerPage,
         token,
-        { searchType = 'keyword' } = {}
+        { useKeyword = true, useSemantic = false, useDates = true } = {}
     ) {
         logger.info({ query, pageNumber, itemsPerPage }, 'Fetching search results');
         const opts = {
             url:
                 `${process.env.APP_API_URL}/search/?query=${query}` +
                 `&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}` +
-                `&type=${searchType}`,
+                `&keyword=${useKeyword}&semantic=${useSemantic}&dates=${useDates}`,
             headers: {
                 'On-Behalf-Of': caseReferenceNumber
             }
