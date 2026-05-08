@@ -22,7 +22,9 @@ function createPageChunksService({
      * @param {string} [searchTerm] - Optional search term to filter chunks.
      * @param {Object} [context] - Context for the call.
      * @param {Object} [context.logger] - Logger instance.
-     * @param {'keyword'|'semantic'|'hybrid'} [context.searchType='keyword'] - Search mode used for chunk matching.
+     * @param {boolean} [context.useKeyword=true] - Enable lexical keyword matching.
+     * @param {boolean} [context.useSemantic=false] - Enable neural semantic matching.
+     * @param {boolean} [context.enableDateExtraction=true] - Enable date extraction and variant expansion.
      * @returns {Promise<Array<Object>>} Array of chunks with bounding boxes.
      */
     async function getPageChunks(
@@ -30,7 +32,7 @@ function createPageChunksService({
         pageNumber,
         crn,
         searchTerm,
-        { logger, searchType = 'keyword' } = {}
+        { logger, useKeyword = true, useSemantic = false, enableDateExtraction = true } = {}
     ) {
         const dal = createDocumentDALFactory({
             caseReferenceNumber: crn,
@@ -43,11 +45,21 @@ function createPageChunksService({
                 documentId,
                 pageNumber,
                 searchTerm,
-                searchType
+                useKeyword,
+                useSemantic,
+                enableDateExtraction
             );
         } catch (error) {
             logger?.error(
-                { error: error.message, documentId, pageNumber, searchTerm, searchType },
+                {
+                    error: error.message,
+                    documentId,
+                    pageNumber,
+                    searchTerm,
+                    useKeyword,
+                    useSemantic,
+                    enableDateExtraction
+                },
                 'Failed to retrieve page chunks from OpenSearch'
             );
             const err = new Error(error.message);

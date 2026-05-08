@@ -84,7 +84,9 @@ describe('Search Routes', () => {
             assert.strictEqual(res.statusCode, 200);
             assert.match(res.text, /search\/page\/results.njk/);
             assert.strictEqual(lastRenderParams.userName, 'search.user@example.com');
-            assert.strictEqual(lastRenderParams.searchType, 'keyword');
+            assert.strictEqual(lastRenderParams.useKeyword, true);
+            assert.strictEqual(lastRenderParams.useSemantic, false);
+            assert.strictEqual(lastRenderParams.useDates, true);
         });
 
         it('should pass the search type to the search service when set in session', async () => {
@@ -121,7 +123,9 @@ describe('Search Routes', () => {
                     caseReferenceNumber: '12345',
                     username: 'search.user@example.com',
                     featureFlags: {
-                        type: 'hybrid'
+                        keyword: true,
+                        semantic: true,
+                        dates: true
                     }
                 };
                 req.log = { info: () => {}, error: () => {} };
@@ -134,7 +138,11 @@ describe('Search Routes', () => {
             const res = await request(testApp).get('/search?query=test');
 
             assert.strictEqual(res.statusCode, 200);
-            assert.deepStrictEqual(serviceCallArgs[4], { searchType: 'hybrid' });
+            assert.deepStrictEqual(serviceCallArgs[4], {
+                useKeyword: true,
+                useSemantic: true,
+                useDates: true
+            });
         });
 
         it('should handle errors from the search service', async () => {
@@ -354,7 +362,7 @@ describe('Search Routes', () => {
             assert.strictEqual(res.headers.location, '/search?query=search+term&pageNumber=1');
         });
 
-        it('should preserve pageNumber and type in the redirect when provided', async () => {
+        it('should preserve pageNumber in the redirect when provided', async () => {
             const res = await request(app).post('/search?pageNumber=5').send({ query: 'test' });
             assert.strictEqual(res.statusCode, 302);
             assert.strictEqual(
@@ -387,16 +395,14 @@ describe('Search Routes', () => {
             );
         });
 
-        it('should preserve the type value in the redirect when provided', async () => {
+        it('ignores type field in POST body (flags are session-based)', async () => {
             const res = await request(app)
                 .post('/search?pageNumber=2')
                 .send({ query: 'test', type: 'semantic' });
 
             assert.strictEqual(res.statusCode, 302);
-            assert.strictEqual(
-                res.headers.location,
-                '/search?query=test&pageNumber=2&type=semantic'
-            );
+            // type is no longer carried through the redirect URL
+            assert.strictEqual(res.headers.location, '/search?query=test&pageNumber=2');
         });
 
         it('handles errors in POST /search route', async () => {

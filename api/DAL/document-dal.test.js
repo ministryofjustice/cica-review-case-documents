@@ -120,7 +120,9 @@ describe('document-dal', () => {
             caseReferenceNumber: '12-745678',
             createDBQuery: () => mockDB,
             logger: mockLogger,
-            searchType: 'hybrid'
+            useKeyword: true,
+            useSemantic: true,
+            enableDateExtraction: false
         });
 
         await dal.getDocumentsChunksByKeyword('keyword', 2, 10);
@@ -677,7 +679,14 @@ describe('document-dal', () => {
                 logger: mockLogger
             });
 
-            await dal.getPageChunksByDocumentIdAndPageNumber('doc-123', 1, 'needle', 'semantic');
+            await dal.getPageChunksByDocumentIdAndPageNumber(
+                'doc-123',
+                1,
+                'needle',
+                false,
+                true,
+                false
+            );
 
             assert.equal(typeof queryArgs.body.min_score, 'number');
             assert.ok(queryArgs.body.min_score >= 0);

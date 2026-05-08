@@ -285,7 +285,9 @@ describe('Text Viewer Handler', () => {
                 pageNumber: 1,
                 crn: '26-745678',
                 searchTerm: '12/12/1995',
-                searchType: 'keyword',
+                useKeyword: true,
+                useSemantic: false,
+                useDates: true,
                 jwtToken: undefined,
                 logger: req.log
             }

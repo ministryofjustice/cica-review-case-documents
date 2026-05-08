@@ -517,13 +517,15 @@ describe('buildQueryJson', () => {
         assert.deepStrictEqual(result, expected);
     });
 
-    it('Should build a hybrid query when search type is hybrid', () => {
+    it('Should build a hybrid query when both useKeyword and useSemantic are true', () => {
         const params = {
             keyword: 'Important meeting',
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            searchType: 'hybrid'
+            useKeyword: true,
+            useSemantic: true,
+            enableDateExtraction: false
         };
 
         const expected = {
@@ -571,13 +573,15 @@ describe('buildQueryJson', () => {
         assert.deepStrictEqual(resultWithoutMinScore, expected);
     });
 
-    it('Should build a semantic query when search type is semantic', () => {
+    it('Should build a semantic query when only useSemantic is true', () => {
         const params = {
             keyword: 'Important meeting',
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            searchType: 'semantic'
+            useKeyword: false,
+            useSemantic: true,
+            enableDateExtraction: false
         };
 
         const expected = {
@@ -617,7 +621,8 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 5,
-            searchType: 'hybrid'
+            useKeyword: true,
+            useSemantic: true
         };
 
         const result = buildQueryJson(params);
@@ -643,7 +648,9 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: '2',
             itemsPerPage: '5',
-            searchType: 'hybrid'
+            useKeyword: true,
+            useSemantic: true,
+            enableDateExtraction: false
         });
 
         assert.strictEqual(result.from, 5);
@@ -652,13 +659,15 @@ describe('buildQueryJson', () => {
         assert.strictEqual(result.query.bool.minimum_should_match, 1);
     });
 
-    it('Should not build semantic or hybrid query for an empty keyword even when type is semantic', () => {
+    it('Should not build semantic or hybrid query for an empty keyword even when useSemantic is true', () => {
         const params = {
             keyword: '',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            searchType: 'semantic'
+            useKeyword: false,
+            useSemantic: true,
+            enableDateExtraction: false
         };
 
         const expected = {
@@ -986,7 +995,9 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            searchType: 'semantic',
+            useKeyword: false,
+            useSemantic: true,
+            enableDateExtraction: false,
             includePagination: false
         };
 

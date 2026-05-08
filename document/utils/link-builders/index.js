@@ -35,17 +35,10 @@ export function buildImageUrl(
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
- * @param {'keyword'|'semantic'|'hybrid'} [searchType='keyword'] - Search type mode
  * @returns {string} The text view URL
  */
-export function buildTextPageLink(
-    documentId,
-    pageNumber,
-    crn,
-    searchTerm = '',
-    searchType = 'keyword'
-) {
-    return `/document/${documentId}/view/text/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}&type=${encodeURIComponent(searchType)}`;
+export function buildTextPageLink(documentId, pageNumber, crn, searchTerm = '') {
+    return `/document/${documentId}/view/text/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
 }
 
 /**
@@ -55,15 +48,8 @@ export function buildTextPageLink(
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
- * @param {'keyword'|'semantic'|'hybrid'} [searchType='keyword'] - Search type mode
  * @returns {string} The image view URL
  */
-export function buildImagePageLink(
-    documentId,
-    pageNumber,
-    crn,
-    searchTerm = '',
-    searchType = 'keyword'
-) {
-    return `/document/${documentId}/view/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}&type=${encodeURIComponent(searchType)}`;
+export function buildImagePageLink(documentId, pageNumber, crn, searchTerm = '') {
+    return `/document/${documentId}/view/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
 }

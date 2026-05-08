@@ -32,7 +32,6 @@
     {% endif %}
 
     <form method="post" action="/search">
-        <input type="hidden" name="type" value="{{ searchType | default('keyword') }}">
         {% call govukFieldset({
             legend: {
                 text: "Search results",
@@ -72,12 +71,12 @@
     {% set paginationItems = [] %}
     {% set paginationPrevious = {
             text: "Previous",
-            href: ["/search/?query=", query | urlencode, "&pageNumber=", pagination.currentPageIndex - 1, "&crn=", caseReferenceNumber | urlencode, "&type=", searchType | default('keyword') | urlencode] | join
+            href: ["/search/?query=", query | urlencode, "&pageNumber=", pagination.currentPageIndex - 1, "&crn=", caseReferenceNumber | urlencode] | join
         }
     %}
     {% set paginationNext = {
             text: "Next",
-            href: ["/search/?query=", query | urlencode, "&pageNumber=", pagination.currentPageIndex + 1, "&crn=", caseReferenceNumber | urlencode, "&type=", searchType | default('keyword') | urlencode] | join
+            href: ["/search/?query=", query | urlencode, "&pageNumber=", pagination.currentPageIndex + 1, "&crn=", caseReferenceNumber | urlencode] | join
         }
     %}
     {# only show pagination item links if there is more than one page #}
@@ -86,7 +85,7 @@
             {%
                 set paginationItems = (paginationItems.push({
                     text: i,
-                    href: ["/search/?query=", query | urlencode, "&pageNumber=", i, "&crn=", caseReferenceNumber | urlencode, "&type=", searchType | default('keyword') | urlencode] | join,
+                    href: ["/search/?query=", query | urlencode, "&pageNumber=", i, "&crn=", caseReferenceNumber | urlencode] | join,
                     selected: i == pagination.currentPageIndex
                 }), paginationItems)
             %}

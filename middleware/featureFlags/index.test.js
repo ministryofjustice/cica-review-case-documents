@@ -3,9 +3,7 @@ import { describe, it } from 'node:test';
 import { DEFAULT_SEARCH_TYPE } from '../../api/search/constants/searchTypes.js';
 import featureFlags, {
     FEATURE_FLAG_DEFAULTS,
-    FEATURE_FLAG_ENUM_OPTIONS,
     getFeatureFlagValue,
-    parseEnumFlagValue,
     parseFeatureFlagValue
 } from './index.js';
 
@@ -29,20 +27,30 @@ describe('featureFlags middleware', () => {
         assert.deepEqual(res.locals.featureFlags, FEATURE_FLAG_DEFAULTS);
     });
 
-    it('ignores unknown boolean flags from query string', () => {
-        const req = {
-            query: { hybrid: 'on' },
-            session: {}
-        };
-        const res = {
-            locals: {}
-        };
+    it('defaults: align=true, keyword=true, semantic=false, dates=true', () => {
+        const req = { query: {}, session: {} };
+        const res = { locals: {} };
 
         featureFlags(req, res, () => {});
 
-        assert.equal(req.session.featureFlags.hybrid, undefined);
         assert.equal(req.session.featureFlags.align, true);
-        assert.equal(req.session.featureFlags.type, 'keyword');
+        assert.equal(req.session.featureFlags.keyword, true);
+        assert.equal(req.session.featureFlags.semantic, false);
+        assert.equal(req.session.featureFlags.dates, true);
+    });
+
+    it('ignores unknown flags from query string', () => {
+        const req = {
+            query: { type: 'hybrid', unknown: 'on' },
+            session: {}
+        };
+        const res = { locals: {} };
+
+        featureFlags(req, res, () => {});
+
+        assert.equal(req.session.featureFlags.type, undefined);
+        assert.equal(req.session.featureFlags.unknown, undefined);
+        assert.equal(req.session.featureFlags.keyword, true);
     });
 
     it('updates align flag from query string', () => {
@@ -52,49 +60,44 @@ describe('featureFlags middleware', () => {
         featureFlags(req, res, () => {});
 
         assert.equal(req.session.featureFlags.align, false);
-        assert.equal(req.session.featureFlags.type, 'keyword');
     });
 
-    it('updates type flag from query string', () => {
-        const req = {
-            query: { type: 'semantic' },
-            session: {}
-        };
-        const res = {
-            locals: {}
-        };
+    it('enables semantic flag from query string', () => {
+        const req = { query: { semantic: 'on' }, session: {} };
+        const res = { locals: {} };
 
         featureFlags(req, res, () => {});
 
-        assert.equal(req.session.featureFlags.type, 'semantic');
+        assert.equal(req.session.featureFlags.semantic, true);
     });
 
-    it('accepts all valid type enum values from query string', () => {
-        for (const typeValue of FEATURE_FLAG_ENUM_OPTIONS.type) {
-            const req = {
-                query: { type: typeValue },
-                session: {}
-            };
-            const res = { locals: {} };
-
-            featureFlags(req, res, () => {});
-
-            assert.equal(req.session.featureFlags.type, typeValue);
-        }
-    });
-
-    it('ignores invalid type flag values from query string', () => {
-        const req = {
-            query: { type: 'invalid' },
-            session: {}
-        };
-        const res = {
-            locals: {}
-        };
+    it('disables keyword flag from query string', () => {
+        const req = { query: { keyword: 'off' }, session: {} };
+        const res = { locals: {} };
 
         featureFlags(req, res, () => {});
 
-        assert.equal(req.session.featureFlags.type, 'keyword');
+        assert.equal(req.session.featureFlags.keyword, false);
+    });
+
+    it('disables dates flag from query string', () => {
+        const req = { query: { dates: 'off' }, session: {} };
+        const res = { locals: {} };
+
+        featureFlags(req, res, () => {});
+
+        assert.equal(req.session.featureFlags.dates, false);
+    });
+
+    it('enables all three search flags together (hybrid + dates)', () => {
+        const req = { query: { keyword: 'on', semantic: 'on', dates: 'on' }, session: {} };
+        const res = { locals: {} };
+
+        featureFlags(req, res, () => {});
+
+        assert.equal(req.session.featureFlags.keyword, true);
+        assert.equal(req.session.featureFlags.semantic, true);
+        assert.equal(req.session.featureFlags.dates, true);
     });
 
     it('preserves existing feature flag values when the query string is absent', () => {
@@ -103,7 +106,9 @@ describe('featureFlags middleware', () => {
             session: {
                 featureFlags: {
                     align: false,
-                    type: 'hybrid'
+                    keyword: true,
+                    semantic: true,
+                    dates: false
                 }
             }
         };
@@ -111,15 +116,15 @@ describe('featureFlags middleware', () => {
 
         featureFlags(req, res, () => {});
 
-        assert.deepEqual(req.session.featureFlags, {
-            align: false,
-            type: 'hybrid'
-        });
+        assert.equal(req.session.featureFlags.align, false);
+        assert.equal(req.session.featureFlags.keyword, true);
+        assert.equal(req.session.featureFlags.semantic, true);
+        assert.equal(req.session.featureFlags.dates, false);
     });
 
     it('ignores invalid query-string values', () => {
         const req = {
-            query: { keyword: 'maybe', align: 'not-a-valid-type' },
+            query: { keyword: 'maybe', semantic: 'sometimes' },
             session: {}
         };
         const res = { locals: {} };
@@ -307,27 +312,6 @@ describe('parseEnumFlagValue', () => {
     });
 });
 
-describe('parseEnumFlagValue', () => {
-    it('returns the value when it is in the allowed set', () => {
-        assert.equal(parseEnumFlagValue('keyword', FEATURE_FLAG_ENUM_OPTIONS.type), 'keyword');
-        assert.equal(parseEnumFlagValue('semantic', FEATURE_FLAG_ENUM_OPTIONS.type), 'semantic');
-        assert.equal(parseEnumFlagValue('hybrid', FEATURE_FLAG_ENUM_OPTIONS.type), 'hybrid');
-    });
-
-    it('accepts the last element when given an array', () => {
-        assert.equal(
-            parseEnumFlagValue(['keyword', 'semantic'], FEATURE_FLAG_ENUM_OPTIONS.type),
-            'semantic'
-        );
-    });
-
-    it('returns undefined for values not in the allowed set', () => {
-        assert.equal(parseEnumFlagValue('all', FEATURE_FLAG_ENUM_OPTIONS.type), undefined);
-        assert.equal(parseEnumFlagValue('', FEATURE_FLAG_ENUM_OPTIONS.type), undefined);
-        assert.equal(parseEnumFlagValue(undefined, FEATURE_FLAG_ENUM_OPTIONS.type), undefined);
-    });
-});
-
 describe('parseFeatureFlagValue', () => {
     it('parses supported on and off values', () => {
         assert.equal(parseFeatureFlagValue('on'), true);
@@ -344,64 +328,21 @@ describe('parseFeatureFlagValue', () => {
 describe('getFeatureFlagValue', () => {
     it('returns the session value when present', () => {
         assert.equal(getFeatureFlagValue({ featureFlags: { align: false } }, 'align'), false);
-        assert.equal(getFeatureFlagValue({ featureFlags: { type: 'hybrid' } }, 'type'), 'hybrid');
+        assert.equal(getFeatureFlagValue({ featureFlags: { keyword: false } }, 'keyword'), false);
+        assert.equal(getFeatureFlagValue({ featureFlags: { semantic: true } }, 'semantic'), true);
+        assert.equal(getFeatureFlagValue({ featureFlags: { dates: false } }, 'dates'), false);
     });
 
     it('falls back to defaults when the session value is missing', () => {
         assert.equal(getFeatureFlagValue({}, 'align'), true);
-        assert.equal(getFeatureFlagValue({}, 'type'), DEFAULT_SEARCH_TYPE);
+        assert.equal(getFeatureFlagValue({}, 'keyword'), true);
+        assert.equal(getFeatureFlagValue({}, 'semantic'), false);
+        assert.equal(getFeatureFlagValue({}, 'dates'), true);
     });
 
-    it('rejects mismatched types and falls back to defaults', () => {
-        // String value for boolean flag (align) should be rejected
-        assert.equal(
-            getFeatureFlagValue({ featureFlags: { align: 'false' } }, 'align'),
-            true,
-            'String value for align should fall back to default (true)'
-        );
-        assert.equal(
-            getFeatureFlagValue({ featureFlags: { align: 'off' } }, 'align'),
-            true,
-            'String "off" for align should fall back to default (true)'
-        );
-
-        // Boolean value for string flag (type) should be rejected
-        assert.equal(
-            getFeatureFlagValue({ featureFlags: { type: false } }, 'type'),
-            DEFAULT_SEARCH_TYPE,
-            'Boolean value for type should fall back to default'
-        );
-        assert.equal(
-            getFeatureFlagValue({ featureFlags: { type: true } }, 'type'),
-            DEFAULT_SEARCH_TYPE,
-            'Boolean true for type should fall back to default'
-        );
-
-        // Other invalid types should also be rejected
-        assert.equal(
-            getFeatureFlagValue({ featureFlags: { align: 42 } }, 'align'),
-            true,
-            'Number value for align should fall back to default'
-        );
-        assert.equal(
-            getFeatureFlagValue({ featureFlags: { type: 42 } }, 'type'),
-            DEFAULT_SEARCH_TYPE,
-            'Number value for type should fall back to default'
-        );
-    });
-
-    it('returns the session value for enum flags when valid', () => {
-        assert.equal(
-            getFeatureFlagValue({ featureFlags: { type: 'semantic' } }, 'type'),
-            'semantic'
-        );
-        assert.equal(getFeatureFlagValue({ featureFlags: { type: 'hybrid' } }, 'type'), 'hybrid');
-        assert.equal(getFeatureFlagValue({ featureFlags: { type: 'keyword' } }, 'type'), 'keyword');
-    });
-
-    it('falls back to the default for enum flags when the session value is missing or invalid', () => {
-        assert.equal(getFeatureFlagValue({}, 'type'), 'keyword');
-        assert.equal(getFeatureFlagValue({ featureFlags: { type: 'invalid' } }, 'type'), 'keyword');
-        assert.equal(getFeatureFlagValue({ featureFlags: { type: 123 } }, 'type'), 'keyword');
+    it('falls back to the default for flags when the session value is not a boolean', () => {
+        assert.equal(getFeatureFlagValue({ featureFlags: { keyword: 'hybrid' } }, 'keyword'), true);
+        assert.equal(getFeatureFlagValue({ featureFlags: { semantic: 123 } }, 'semantic'), false);
+        assert.equal(getFeatureFlagValue({ featureFlags: { dates: null } }, 'dates'), true);
     });
 });

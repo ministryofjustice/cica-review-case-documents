@@ -60,6 +60,7 @@ function createNeuralQuery({ keyword, caseReferenceNumber }) {
 
 /**
  * Creates the hybrid query shell scoped to the case reference.
+ * Used when at least one of useKeyword or useSemantic is true alongside the other.
  *
  * @param {string} caseReferenceNumber - Case reference filter value.
  * @returns {object} Hybrid query DSL object.
@@ -248,8 +249,12 @@ function buildSemanticQuery({ keyword, caseReferenceNumber, safePageNumber, docu
 }
 
 /**
- * Assembles the hybrid (bool + neural) query, combining boosted lexical, date, and neural
+ * Assembles the hybrid query, combining any combination of boosted lexical, date, and neural
  * should clauses with optional document scoping.
+ *
+ * Covers three cases driven by the flags:
+ *   - useKeyword + useSemantic  → full hybrid (lexical + dates + neural)
+ *   - !useKeyword + useSemantic + dates → dates only + neural (no general text match)
  *
  * @param {object} params - Hybrid query options.
  * @param {string} params.keyword - Raw search text.
@@ -257,6 +262,7 @@ function buildSemanticQuery({ keyword, caseReferenceNumber, safePageNumber, docu
  * @param {Array<object>} params.shouldClauses - Lexical should clauses from date/text extraction.
  * @param {number} params.safePageNumber - Normalised page number for document scoping.
  * @param {string} [params.documentId] - Optional document UUID to scope results to a single page.
+ * @param {boolean} [params.useKeyword=true] - Whether to include the general lexical match clause.
  * @param {number} params.keywordBoost - Boost for the lexical match clause.
  * @param {number} params.dateBoost - Boost for the grouped date variant clauses.
  * @param {number} params.semanticBoost - Boost for the neural clause.
@@ -268,6 +274,7 @@ function buildHybridQuery({
     shouldClauses,
     safePageNumber,
     documentId,
+    useKeyword = true,
     keywordBoost,
     dateBoost,
     semanticBoost
@@ -286,8 +293,8 @@ function buildHybridQuery({
         );
     }
 
-    // Boosted lexical match clause.
-    if (matchClause?.match?.chunk_text) {
+    // Boosted lexical match clause — only included when useKeyword is true.
+    if (useKeyword && matchClause?.match?.chunk_text) {
         queryJson.query.bool.should.push({
             match: {
                 chunk_text: {
@@ -299,6 +306,7 @@ function buildHybridQuery({
     }
 
     // Boosted date variant clauses, grouped so they share a single boost weight.
+    // Included regardless of useKeyword when date phrases were extracted.
     if (matchPhraseClauses.length > 0) {
         queryJson.query.bool.should.push({
             bool: {
@@ -397,10 +405,23 @@ function logQueryMetrics({
  *
  * The query:
  * - Filters by an exact `case_ref` using a `term` query.
- * - Extracts date phrases from the keyword and adds them as `match_phrase` queries.
- * - Adds remaining keyword text as a `match` query against `chunk_text`.
  * - Applies pagination using `from` and `size`.
- * - Supports keyword, semantic, and hybrid search types.
+ * - Composes results from up to four independently toggled capabilities:
+ *   - **keyword** (`useKeyword`)  — BM25 lexical matching against `chunk_text`.
+ *   - **semantic** (`useSemantic`) — neural vector matching via the `embedding` field.
+ *   - **dates** (`enableDateExtraction`) — date phrase extraction and format-variant expansion.
+ *
+ * Valid combinations:
+ * | useKeyword | useSemantic | enableDateExtraction | Effective mode          |
+ * |------------|-------------|----------------------|-------------------------|
+ * | true       | false       | false                | keyword only            |
+ * | true       | false       | true                 | keyword + dates         |
+ * | false      | true        | false                | semantic only           |
+ * | false      | true        | true                 | semantic + dates        |
+ * | true       | true        | false                | hybrid                  |
+ * | true       | true        | true                 | hybrid + dates          |
+ *
+ * At least one of `useKeyword` or `useSemantic` must be true.
  *
  * @param {object} params - Search parameters.
  * @param {string} params.keyword - Raw search string entered by the user. May contain date phrases and free text.
@@ -408,13 +429,14 @@ function logQueryMetrics({
  * @param {number} params.pageNumber - The current page number (1-based).
  * @param {number} params.itemsPerPage - Number of results to return per page.
  * @param {object} [params.logger] - Optional structured logger instance.
- * @param {'keyword' | 'semantic' | 'hybrid'} [params.searchType='keyword'] - Which search mode to use.
+ * @param {boolean} [params.useKeyword=true] - Enable lexical (BM25) keyword matching.
+ * @param {boolean} [params.useSemantic=false] - Enable neural (vector) semantic matching.
  * @param {boolean} [params.includePagination=true] - Whether to include pagination fields in the query.
- * @param {boolean} [params.enableDateExtraction=true] - Enables date extraction and variant matching.
+ * @param {boolean} [params.enableDateExtraction=true] - Enable date extraction and variant expansion.
  * @param {number} [params.keywordBoost] - Boost multiplier for the lexical sub-query in hybrid mode.
  * @param {number} [params.dateBoost] - Boost multiplier for date variant clauses in hybrid mode.
  * @param {number} [params.semanticBoost] - Boost multiplier for the neural sub-query in hybrid mode.
- * @param {string} [params.documentId] - Document UUID to scope results to a single document and page. When provided, the query is restricted to the matching page within that document.
+ * @param {string} [params.documentId] - Document UUID to scope results to a single document and page.
  * @returns {object} OpenSearch query DSL JSON object.
  */
 function buildQueryJson({
@@ -423,7 +445,8 @@ function buildQueryJson({
     pageNumber,
     itemsPerPage,
     logger,
-    searchType = 'keyword',
+    useKeyword = true,
+    useSemantic = false,
     includePagination = true,
     enableDateExtraction = true,
     keywordBoost = DEFAULT_LEXICAL_BOOST,
@@ -431,45 +454,63 @@ function buildQueryJson({
     semanticBoost = DEFAULT_NEURAL_BOOST,
     documentId
 }) {
+    if (!useKeyword && !useSemantic) {
+        throw new Error('At least one of useKeyword or useSemantic must be enabled');
+    }
+
     const buildStart = Date.now();
 
+    // Build lexical clauses when keyword matching is active, or when semantic + date
+    // extraction is active (date match_phrase clauses are added to the hybrid bool query).
+    const needsLexicalClauses = useKeyword || (useSemantic && enableDateExtraction);
     const {
         shouldClauses,
         phrases,
         phrasesVariants,
         timings: { extractMs, variantMs }
-    } = buildDateAwareShouldClauses({ keyword, enableDateExtraction });
+    } = needsLexicalClauses
+        ? buildDateAwareShouldClauses({ keyword, enableDateExtraction })
+        : {
+              shouldClauses: [],
+              phrases: [],
+              phrasesVariants: [],
+              timings: { extractMs: 0, variantMs: 0 }
+          };
 
     const { safePageNumber, safeItemsPerPage } = normalisePagination(pageNumber, itemsPerPage);
 
     let queryJson;
-    if (searchType === 'keyword') {
+    if (useKeyword && !useSemantic) {
+        // Pure lexical: keyword (with or without date expansion).
         queryJson = buildKeywordQuery({
             caseReferenceNumber,
             shouldClauses,
             safePageNumber,
             documentId
         });
-    } else if (searchType === 'semantic') {
+    } else if (!useKeyword && useSemantic && !enableDateExtraction) {
+        // Pure neural: no lexical matching, no date phrases.
         queryJson = buildSemanticQuery({
             keyword,
             caseReferenceNumber,
             safePageNumber,
             documentId
         });
-    } else if (searchType === 'hybrid') {
+    } else {
+        // Hybrid cases (bool query with neural + optional lexical + optional date phrases):
+        //   useKeyword && useSemantic               → full hybrid
+        //   !useKeyword && useSemantic && dates      → date phrases + neural only
         queryJson = buildHybridQuery({
             keyword,
             caseReferenceNumber,
             shouldClauses,
             safePageNumber,
             documentId,
+            useKeyword,
             keywordBoost,
             dateBoost,
             semanticBoost
         });
-    } else {
-        throw new Error(`Invalid search type: ${searchType}`);
     }
 
     if (includePagination === true) {

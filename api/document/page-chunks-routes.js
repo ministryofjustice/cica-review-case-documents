@@ -1,8 +1,5 @@
 import express from 'express';
-import {
-    FEATURE_FLAG_ENUM_OPTIONS,
-    parseEnumFlagValue
-} from '../../middleware/featureFlags/index.js';
+import { parseFeatureFlagValue } from '../../middleware/featureFlags/index.js';
 import createPageChunksService from './services/page-chunks-service.js';
 
 const CRN_REGEX = /^\d{2}-[78]\d{5}$/;
@@ -57,8 +54,9 @@ function createPageChunksRouter(options = {}) {
         try {
             const { documentId, pageNumber } = req.params;
             const { crn, searchTerm } = req.query;
-            const searchType =
-                parseEnumFlagValue(req.query.type, FEATURE_FLAG_ENUM_OPTIONS.type) || 'keyword';
+            const useKeyword = parseFeatureFlagValue(req.query.keyword) ?? true;
+            const useSemantic = parseFeatureFlagValue(req.query.semantic) ?? false;
+            const enableDateExtraction = parseFeatureFlagValue(req.query.dates) ?? true;
 
             if (!crn) {
                 const err = new Error('Case reference number (crn) is required');
@@ -77,7 +75,7 @@ function createPageChunksRouter(options = {}) {
                 pageNumber,
                 crn,
                 searchTerm,
-                { logger: req.log, searchType }
+                { logger: req.log, useKeyword, useSemantic, enableDateExtraction }
             );
 
             return res.json({
