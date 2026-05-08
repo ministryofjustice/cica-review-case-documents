@@ -1,9 +1,6 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import {
-    FEATURE_FLAG_ENUM_OPTIONS,
-    parseEnumFlagValue
-} from '../../middleware/featureFlags/index.js';
+import { parseFeatureFlagValue } from '../../middleware/featureFlags/index.js';
 
 /**
  * @module routes/searchRouter
@@ -60,8 +57,9 @@ export default function searchRouter({ searchService }) {
     router.get('/', async (req, res, next) => {
         try {
             const { query, pageNumber, itemsPerPage } = req.query;
-            const searchType =
-                parseEnumFlagValue(req.query.type, FEATURE_FLAG_ENUM_OPTIONS.type) || 'keyword';
+            const useKeyword = parseFeatureFlagValue(req.query.keyword) ?? true;
+            const useSemantic = parseFeatureFlagValue(req.query.semantic) ?? false;
+            const enableDateExtraction = parseFeatureFlagValue(req.query.dates) ?? true;
             const searchResults = await searchService.getSearchResultsByKeyword(
                 query,
                 pageNumber,
@@ -69,7 +67,9 @@ export default function searchRouter({ searchService }) {
                 {
                     caseReferenceNumber: req.get('On-Behalf-Of'),
                     logger: req.log,
-                    searchType
+                    useKeyword,
+                    useSemantic,
+                    enableDateExtraction
                 }
             );
 
