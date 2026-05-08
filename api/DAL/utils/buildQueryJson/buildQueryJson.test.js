@@ -285,6 +285,59 @@ describe('buildQueryJson', () => {
         assert.deepStrictEqual(result, expected);
     });
 
+    it('Should suppress date extraction when enableDateExtraction is false (keyword only mode)', () => {
+        // Keyword contains a date but enableDateExtraction: false — should produce a plain
+        // match clause with no match_phrase clauses, confirming the flag is respected.
+        const params = {
+            keyword: 'Meeting on 12/05/2024 at office',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 10,
+            useKeyword: true,
+            useSemantic: false,
+            enableDateExtraction: false
+        };
+
+        const expected = {
+            from: 0,
+            size: 10,
+            query: {
+                bool: {
+                    must: [{ term: { case_ref: '26-711111' } }],
+                    should: [
+                        { match: { chunk_text: { query: 'Meeting on 12/05/2024 at office' } } }
+                    ],
+                    minimum_should_match: 1
+                }
+            }
+        };
+
+        const result = buildQueryJson(params);
+        assert.deepStrictEqual(result, expected);
+        assert.ok(
+            !result.query.bool.should.some((c) => c.match_phrase),
+            'No match_phrase clauses should be present when enableDateExtraction is false'
+        );
+    });
+
+    it('Should throw when all of useKeyword, useSemantic, and enableDateExtraction are false', () => {
+        assert.throws(
+            () =>
+                buildQueryJson({
+                    keyword: 'test',
+                    caseReferenceNumber: '26-711111',
+                    pageNumber: 1,
+                    itemsPerPage: 10,
+                    useKeyword: false,
+                    useSemantic: false,
+                    enableDateExtraction: false
+                }),
+            {
+                message: 'At least one of useKeyword or useSemantic must be enabled'
+            }
+        );
+    });
+
     it('Should build a hybrid query when both useKeyword and useSemantic are true', () => {
         const params = {
             keyword: 'Important meeting',
@@ -315,6 +368,7 @@ describe('buildQueryJson', () => {
                             neural: {
                                 embedding: {
                                     query_text: 'Important meeting',
+                                    filter: { term: { case_ref: '26-711111' } },
                                     boost: 4
                                 }
                             }
@@ -339,6 +393,45 @@ describe('buildQueryJson', () => {
         assert.ok(hybridK > 0);
         hybridNeuralClause.neural.embedding = hybridEmbeddingWithoutK;
         assert.deepStrictEqual(resultWithoutMinScore, expected);
+    });
+
+    it('Should build a semantic+dates query when useSemantic is true and enableDateExtraction is true', () => {
+        const params = {
+            keyword: 'Meeting on 12/05/2024',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 5,
+            useKeyword: false,
+            useSemantic: true,
+            enableDateExtraction: true
+        };
+
+        const result = buildQueryJson(params);
+
+        assert.equal(typeof result.min_score, 'number');
+        assert.ok(result.min_score >= 0 && result.min_score <= 1);
+
+        // Should be a bool query (not a raw neural query) when dates are present
+        assert.ok(result.query.bool, 'Expected a bool query wrapping neural + date clauses');
+        assert.deepStrictEqual(result.query.bool.must, [{ term: { case_ref: '26-711111' } }]);
+        assert.strictEqual(result.query.bool.minimum_should_match, 1);
+
+        const should = result.query.bool.should;
+        const dateClause = should.find((c) => c.bool?.should?.some((s) => s.match_phrase));
+        const neuralClause = should.find((c) => c.neural?.embedding);
+
+        assert.ok(dateClause, 'Expected a date bool should clause');
+        assert.ok(
+            dateClause.bool.should.every((c) => c.match_phrase),
+            'All date clauses should be match_phrase'
+        );
+
+        assert.ok(neuralClause, 'Expected a neural clause');
+        assert.strictEqual(neuralClause.neural.embedding.query_text, 'Meeting on 12/05/2024');
+        assert.ok(neuralClause.neural.embedding.filter, 'Neural clause should have a filter');
+        assert.deepStrictEqual(neuralClause.neural.embedding.filter, {
+            term: { case_ref: '26-711111' }
+        });
     });
 
     it('Should build a semantic query when only useSemantic is true', () => {

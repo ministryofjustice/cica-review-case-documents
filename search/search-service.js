@@ -38,11 +38,12 @@ function createSearchService({
         { useKeyword = true, useSemantic = false, useDates = true } = {}
     ) {
         logger.info({ query, pageNumber, itemsPerPage }, 'Fetching search results');
+        const flag = (val) => (val ? 'on' : 'off');
         const opts = {
             url:
                 `${process.env.APP_API_URL}/search/?query=${query}` +
                 `&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}` +
-                `&keyword=${useKeyword}&semantic=${useSemantic}&dates=${useDates}`,
+                `&keyword=${flag(useKeyword)}&semantic=${flag(useSemantic)}&dates=${flag(useDates)}`,
             headers: {
                 'On-Behalf-Of': caseReferenceNumber
             }
