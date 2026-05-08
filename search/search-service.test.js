@@ -35,8 +35,7 @@ describe('search-service', () => {
         const itemsPerPage = 5;
         const searchType = 'semantic';
 
-        const req = { headers: { cookie: 'session=abc123' } };
-        const result = await service.getSearchResults(query, pageNumber, itemsPerPage, req, {
+        const result = await service.getSearchResults(query, pageNumber, itemsPerPage, undefined, {
             searchType
         });
 
