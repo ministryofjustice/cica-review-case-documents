@@ -365,7 +365,7 @@ function logQueryMetrics({
         return;
     }
 
-    logger.info(
+    logger?.info(
         {
             caseReferenceNumber,
             ...metrics
