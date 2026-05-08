@@ -9,7 +9,9 @@ import createRequestServiceDefault from '../../service/request/index.js';
  * @param {number|string} options.pageNumber - The page number to fetch chunks for.
  * @param {string} options.crn - The case reference number.
  * @param {string} [options.searchTerm] - Search term to filter chunks by content.
- * @param {'keyword'|'semantic'|'hybrid'} [options.searchType='keyword'] - Search mode for chunk matching.
+ * @param {boolean} [options.useKeyword=true] - Enable lexical (BM25) keyword matching.
+ * @param {boolean} [options.useSemantic=false] - Enable neural (vector) semantic matching.
+ * @param {boolean} [options.useDates=true] - Enable date extraction and variant expansion.
  * @param {string} [options.jwtToken] - Optional JWT token for authentication.
  * @param {Object} options.logger - Logger instance for logging actions.
  * @param {Function} [options.createRequestService=createRequestServiceDefault] - Factory function to create a request service.
@@ -20,7 +22,9 @@ function createPageChunksService({
     pageNumber,
     crn,
     searchTerm,
-    searchType = 'keyword',
+    useKeyword = true,
+    useSemantic = false,
+    useDates = true,
     jwtToken,
     logger,
     createRequestService = createRequestServiceDefault
@@ -38,13 +42,13 @@ function createPageChunksService({
     async function getPageChunks() {
         if (logger && typeof logger.info === 'function') {
             logger.info(
-                { documentId, pageNumber, crn, searchTerm, searchType },
+                { documentId, pageNumber, crn, searchTerm, useKeyword, useSemantic, useDates },
                 'Fetching document page chunks with bounding boxes'
             );
         }
 
         // there's an issue with URLSearchParams encoding spaces to '+' which is breaking the api call. When encoded as %20 it works fine.
-        const baseUrl = `${process.env.APP_API_URL}/document/${documentId}/page/${pageNumber}/chunks?crn=${encodeURIComponent(crn)}&type=${encodeURIComponent(searchType)}`;
+        const baseUrl = `${process.env.APP_API_URL}/document/${documentId}/page/${pageNumber}/chunks?crn=${encodeURIComponent(crn)}&keyword=${useKeyword}&semantic=${useSemantic}&dates=${useDates}`;
         const url = searchTerm
             ? `${baseUrl}&searchTerm=${encodeURIComponent(searchTerm)}`
             : baseUrl;

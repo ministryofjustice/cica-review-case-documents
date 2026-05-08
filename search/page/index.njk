@@ -22,7 +22,6 @@
     {% endif %}
 
     <form method="post" action="/search">
-        <input type="hidden" name="type" value="{{ searchType | default('keyword') }}">
         {% call govukFieldset({
             legend: {
                 text: "Find",

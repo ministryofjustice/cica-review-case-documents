@@ -1,10 +1,8 @@
 export const FEATURE_FLAG_DEFAULTS = Object.freeze({
     align: true, // toggle alignment of image highlighting to prevent or show overlapping
-    type: 'keyword' // search type: 'keyword', 'semantic', or 'hybrid'
-});
-
-export const FEATURE_FLAG_ENUM_OPTIONS = Object.freeze({
-    type: Object.freeze(['keyword', 'semantic', 'hybrid'])
+    keyword: true, // enable lexical (BM25) keyword matching
+    semantic: false, // enable neural (vector) semantic matching
+    dates: true // enable date extraction and variant expansion in lexical matching
 });
 
 /**
@@ -35,6 +33,7 @@ export function parseFeatureFlagValue(value) {
 /**
  * Parses a query-string enum feature flag value against a set of allowed values.
  *
+ * @deprecated No longer used — all flags are booleans. Retained for potential external use.
  * @param {unknown} value - Raw query-string value.
  * @param {readonly string[]} allowedValues - Valid values for this flag.
  * @returns {string | undefined} Matched value when valid, otherwise undefined.
@@ -54,18 +53,11 @@ export function parseEnumFlagValue(value, allowedValues) {
  * Resolves a feature flag value from session state, with repo defaults.
  *
  * @param {import('express-session').Session | undefined} session - Request session object.
- * @param {'align' | 'type'} flagName - Supported feature flag name.
- * @returns {boolean | string} The active feature flag value.
+ * @param {'align' | 'keyword' | 'semantic' | 'dates'} flagName - Supported feature flag name.
+ * @returns {boolean} The active feature flag value.
  */
 export function getFeatureFlagValue(session, flagName) {
     const sessionFlagValue = session?.featureFlags?.[flagName];
-
-    if (flagName in FEATURE_FLAG_ENUM_OPTIONS) {
-        if (FEATURE_FLAG_ENUM_OPTIONS[flagName].includes(sessionFlagValue)) {
-            return sessionFlagValue;
-        }
-        return FEATURE_FLAG_DEFAULTS[flagName];
-    }
 
     if (typeof sessionFlagValue === 'boolean') {
         return sessionFlagValue;
@@ -76,6 +68,9 @@ export function getFeatureFlagValue(session, flagName) {
 
 /**
  * Persists supported feature flags from query-string params into the session.
+ *
+ * Recognised query-string values: `on` (true) and `off` (false).
+ * Flags: `keyword`, `semantic`, `dates`, `align`.
  *
  * @param {import('express').Request} req - Express request object.
  * @param {import('express').Response} res - Express response object.
@@ -88,19 +83,9 @@ export default function featureFlags(req, res, next) {
         for (const flagName of Object.keys(FEATURE_FLAG_DEFAULTS)) {
             flags[flagName] = getFeatureFlagValue(req.session, flagName);
 
-            if (flagName in FEATURE_FLAG_ENUM_OPTIONS) {
-                const queryFlagValue = parseEnumFlagValue(
-                    req.query?.[flagName],
-                    FEATURE_FLAG_ENUM_OPTIONS[flagName]
-                );
-                if (queryFlagValue !== undefined) {
-                    flags[flagName] = queryFlagValue;
-                }
-            } else {
-                const queryFlagValue = parseFeatureFlagValue(req.query?.[flagName]);
-                if (typeof queryFlagValue === 'boolean') {
-                    flags[flagName] = queryFlagValue;
-                }
+            const queryFlagValue = parseFeatureFlagValue(req.query?.[flagName]);
+            if (typeof queryFlagValue === 'boolean') {
+                flags[flagName] = queryFlagValue;
             }
         }
         req.session.featureFlags = flags;
