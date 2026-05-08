@@ -42,19 +42,25 @@ describe('Search Service', () => {
 
         const caseReferenceNumber = '12-745678';
         const logger = { info: () => {} };
-        const searchType = 'hybrid';
+        const useKeyword = false;
+        const useSemantic = true;
+        const enableDateExtraction = false;
 
         await searchService.getSearchResultsByKeyword('test', 1, 10, {
             caseReferenceNumber,
             logger,
-            searchType
+            useKeyword,
+            useSemantic,
+            enableDateExtraction
         });
 
         assert.equal(mockDALFactory.mock.callCount(), 1);
         const [dalOptions] = mockDALFactory.mock.calls[0].arguments;
         assert.equal(dalOptions.caseReferenceNumber, caseReferenceNumber);
         assert.deepEqual(dalOptions.logger, logger);
-        assert.equal(dalOptions.searchType, searchType);
+        assert.equal(dalOptions.useKeyword, useKeyword);
+        assert.equal(dalOptions.useSemantic, useSemantic);
+        assert.equal(dalOptions.enableDateExtraction, enableDateExtraction);
     });
 
     it('should call getDocumentsChunksByKeyword with correct parameters', async () => {
