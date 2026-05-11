@@ -115,8 +115,10 @@ function createDocumentDAL({
                 caseReferenceNumber,
                 pageNumber,
                 itemsPerPage,
-                logger,
-                searchType
+                options: {
+                    logger,
+                    searchType
+                }
             });
             const buildEnd = Date.now();
 
@@ -249,10 +251,12 @@ function createDocumentDAL({
                 keyword,
                 caseReferenceNumber,
                 pageNumber,
-                searchType,
-                includePagination: false,
-                documentId,
-                logger
+                options: {
+                    searchType,
+                    includePagination: false,
+                    documentId,
+                    logger
+                }
             });
 
             queryBody._source = [

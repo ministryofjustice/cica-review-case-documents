@@ -4,14 +4,13 @@
  * @property {string} caseReferenceNumber - Exact case reference number to filter results by.
  * @property {number} pageNumber - The current page number (1-based).
  * @property {number} itemsPerPage - Number of results to return per page.
- * @property {object} [logger] - Optional structured logger instance.
- * @property {'keyword' | 'semantic' | 'hybrid'} [searchType='keyword'] - Which search mode to use.
- * @property {boolean} [includePagination=true] - Whether to include pagination fields in the query.
- * @property {boolean} [enableDateExtraction=true] - Enables date extraction and variant matching.
- * @property {number} [keywordBoost] - Boost multiplier for the lexical sub-query in hybrid mode.
- * @property {number} [dateBoost] - Boost multiplier for date variant clauses in hybrid mode.
- * @property {number} [semanticBoost] - Boost multiplier for the neural sub-query in hybrid mode.
- * @property {string} [documentId] - Document UUID to scope results to a single document and page.
+ * @property {object} [options] - Optional query behavior settings.
+ * @property {object} [options.logger] - Optional structured logger instance.
+ * @property {'keyword' | 'semantic' | 'hybrid'} [options.searchType='keyword'] - Which search mode to use.
+ * @property {boolean} [options.includePagination=true] - Whether to include pagination fields in the query.
+ * @property {boolean} [options.enableDateExtraction=true] - Enables date extraction and variant matching (keyword/hybrid only).
+ * @property {HybridBoostConfig} [options.boostConfig] - Boost multipliers for hybrid mode only.
+ * @property {string} [options.documentId] - Document UUID to scope results to a single document and page.
  */
 
 /**

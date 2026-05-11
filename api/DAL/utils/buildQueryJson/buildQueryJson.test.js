@@ -296,7 +296,9 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            searchType: 'hybrid'
+            options: {
+                searchType: 'hybrid'
+            }
         };
 
         const expected = {
@@ -350,7 +352,9 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            searchType: 'semantic'
+            options: {
+                searchType: 'semantic'
+            }
         };
 
         const expected = {
@@ -390,7 +394,9 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 5,
-            searchType: 'hybrid'
+            options: {
+                searchType: 'hybrid'
+            }
         };
 
         const result = buildQueryJson(params);
@@ -416,7 +422,9 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: '2',
             itemsPerPage: '5',
-            searchType: 'hybrid'
+            options: {
+                searchType: 'hybrid'
+            }
         });
 
         assert.strictEqual(result.from, 5);
@@ -431,7 +439,9 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            searchType: 'semantic'
+            options: {
+                searchType: 'semantic'
+            }
         };
 
         const expected = {
@@ -736,7 +746,9 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            includePagination: false
+            options: {
+                includePagination: false
+            }
         };
 
         const result = buildQueryJson(params);
@@ -752,8 +764,10 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            searchType: 'semantic',
-            includePagination: false
+            options: {
+                searchType: 'semantic',
+                includePagination: false
+            }
         };
 
         const result = buildQueryJson(params);

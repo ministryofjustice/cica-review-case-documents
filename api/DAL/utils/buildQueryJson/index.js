@@ -51,27 +51,26 @@ function normalisePagination(pageNumber, itemsPerPage) {
  * @param {string} params.caseReferenceNumber - Exact case reference number to filter results by.
  * @param {number} params.pageNumber - The current page number (1-based).
  * @param {number} params.itemsPerPage - Number of results to return per page.
- * @param {object} [params.logger] - Optional structured logger instance.
- * @param {'keyword' | 'semantic' | 'hybrid'} [params.searchType='keyword'] - Which search mode to use.
- * @param {boolean} [params.includePagination=true] - Whether to include pagination fields in the query.
- * @param {boolean} [params.enableDateExtraction=true] - Enables date extraction and variant matching (keyword/hybrid only).
- * @param {string} [params.documentId] - Document UUID to scope results to a single document and page.
- * @param {HybridBoostConfig} [params.boostConfig] - Boost multipliers for hybrid mode only. Ignored for keyword/semantic modes.
+ * @param {object} [params.options={}] - Optional query behavior configuration.
+ * @param {object} [params.options.logger] - Optional structured logger instance.
+ * @param {'keyword' | 'semantic' | 'hybrid'} [params.options.searchType='keyword'] - Which search mode to use.
+ * @param {boolean} [params.options.includePagination=true] - Whether to include pagination fields in the query.
+ * @param {boolean} [params.options.enableDateExtraction=true] - Enables date extraction and variant matching (keyword/hybrid only).
+ * @param {string} [params.options.documentId] - Document UUID to scope results to a single document and page.
+ * @param {HybridBoostConfig} [params.options.boostConfig] - Boost multipliers for hybrid mode only. Ignored for keyword/semantic modes.
  * @returns {object} OpenSearch query DSL JSON object.
  * @throws {Error} If the search type is not in the supported modes (keyword, semantic, hybrid).
  */
-function buildQueryJson({
-    keyword,
-    caseReferenceNumber,
-    pageNumber,
-    itemsPerPage,
-    logger,
-    searchType = SEARCH_TYPES.KEYWORD,
-    includePagination = true,
-    enableDateExtraction = true,
-    documentId,
-    boostConfig = {}
-}) {
+function buildQueryJson({ keyword, caseReferenceNumber, pageNumber, itemsPerPage, options = {} }) {
+    const {
+        logger,
+        searchType = SEARCH_TYPES.KEYWORD,
+        includePagination = true,
+        enableDateExtraction = true,
+        documentId,
+        boostConfig = {}
+    } = options;
+
     const buildStart = Date.now();
 
     // Normalize pagination parameters to safe integers.
