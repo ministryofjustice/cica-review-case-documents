@@ -3,6 +3,11 @@ import { describe, it } from 'node:test';
 import buildQueryJson from './index.js';
 
 describe('buildQueryJson', () => {
+    /**
+     * Helper to extract queryJson from buildQueryJson result (which includes metrics).
+     * In the refactored architecture, builders return { queryJson, metrics... }
+     * but buildQueryJson orchestrator returns just the queryJson for backward compatibility.
+     */
     it('Should build query with match_phrase for a single valid numeric date', () => {
         const params = {
             keyword: 'Meeting on 12/05/2024 at office',
