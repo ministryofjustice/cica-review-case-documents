@@ -152,26 +152,89 @@ test('createLoginHandler should regenerate session before starting Entra auth fl
     assert.strictEqual(req.session.entraAuth.mode, 'silent');
 });
 
-test('GET /auth/callback with login_required should fallback to interactive by default', async () => {
-    await agent.get('/auth/login').expect(302);
+test('GET /auth/callback with login_required should fail when targeted fallback conditions are not met', async () => {
+    const loginResponse = await agent.get('/auth/login').expect(302);
+    const silentAuthorizeUrl = new URL(loginResponse.headers.location);
+    const state = silentAuthorizeUrl.searchParams.get('state');
+
+    assert.ok(state);
 
     const response = await agent.get('/auth/callback').query({
         error: 'login_required',
-        error_description: 'Silent sign-in required interaction'
+        state,
+        error_description: 'AADSTS50058: Silent sign-in required interaction'
+    });
+
+    assert.strictEqual(response.status, 401);
+    assert.match(response.text, /Authentication failed/);
+});
+
+test('GET /auth/callback should perform a controlled retry to interactive for AADSTS65001', async () => {
+    const loginResponse = await agent.get('/auth/login').expect(302);
+    const silentAuthorizeUrl = new URL(loginResponse.headers.location);
+    const state = silentAuthorizeUrl.searchParams.get('state');
+
+    assert.ok(state);
+
+    const response = await agent.get('/auth/callback').query({
+        error: 'consent_required',
+        state,
+        error_description: 'AADSTS65001: User or administrator has not consented'
     });
 
     assert.strictEqual(response.status, 302);
-    assert.strictEqual(response.headers.location, '/auth/login?interactive=1');
+    assert.strictEqual(response.headers.location, '/auth/login');
+
+    const interactiveLoginResponse = await agent.get('/auth/login').expect(302);
+    const authorizeUrl = new URL(interactiveLoginResponse.headers.location);
+    assert.strictEqual(authorizeUrl.searchParams.get('prompt'), 'select_account');
 });
 
-test('GET /auth/callback with login_required should fail when interactive fallback is disabled', async () => {
-    process.env.ENTRA_INTERACTIVE_FALLBACK = 'false';
-
+test('GET /auth/callback should reject retry when state is missing', async () => {
     await agent.get('/auth/login').expect(302);
 
     const response = await agent.get('/auth/callback').query({
-        error: 'login_required',
-        error_description: 'Silent sign-in required interaction'
+        error: 'consent_required',
+        error_description: 'AADSTS65001: User or administrator has not consented'
+    });
+
+    assert.strictEqual(response.status, 401);
+    assert.match(response.text, /Authentication failed/);
+});
+
+test('GET /auth/callback should perform a controlled retry to interactive for AADSTS16001', async () => {
+    const loginResponse = await agent.get('/auth/login').expect(302);
+    const silentAuthorizeUrl = new URL(loginResponse.headers.location);
+    const state = silentAuthorizeUrl.searchParams.get('state');
+
+    assert.ok(state);
+
+    const response = await agent.get('/auth/callback').query({
+        error: 'interaction_required',
+        state,
+        error_description:
+            'AADSTS16001: UserAccountSelectionInvalid - selected account is no longer valid for this session selection'
+    });
+
+    assert.strictEqual(response.status, 302);
+    assert.strictEqual(response.headers.location, '/auth/login');
+
+    const interactiveLoginResponse = await agent.get('/auth/login').expect(302);
+    const authorizeUrl = new URL(interactiveLoginResponse.headers.location);
+    assert.strictEqual(authorizeUrl.searchParams.get('prompt'), 'select_account');
+});
+
+test('GET /auth/callback should not retry when consent_required has no allowlisted AADSTS code', async () => {
+    const loginResponse = await agent.get('/auth/login').expect(302);
+    const silentAuthorizeUrl = new URL(loginResponse.headers.location);
+    const state = silentAuthorizeUrl.searchParams.get('state');
+
+    assert.ok(state);
+
+    const response = await agent.get('/auth/callback').query({
+        error: 'consent_required',
+        state,
+        error_description: 'Consent is required but code is missing'
     });
 
     assert.strictEqual(response.status, 401);
@@ -179,8 +242,6 @@ test('GET /auth/callback with login_required should fail when interactive fallba
 });
 
 test('GET /auth/callback should handle non-interactive Entra error with AADSTS code', async () => {
-    process.env.ENTRA_INTERACTIVE_FALLBACK = 'false';
-
     await agent.get('/auth/login').expect(302);
 
     const response = await agent.get('/auth/callback').query({
@@ -194,8 +255,6 @@ test('GET /auth/callback should handle non-interactive Entra error with AADSTS c
 });
 
 test('GET /auth/callback should handle Entra error when error_description is missing', async () => {
-    process.env.ENTRA_INTERACTIVE_FALLBACK = 'false';
-
     await agent.get('/auth/login').expect(302);
 
     const response = await agent.get('/auth/callback').query({
@@ -276,7 +335,7 @@ test('callback handler should reject stale auth transaction and clear pending st
     await callbackHandler(req, res, () => {});
 
     assert.strictEqual(responsePayload.statusCode, 401);
-    assert.strictEqual(responsePayload.body, 'Invalid authentication state');
+    assert.strictEqual(responsePayload.body, 'Authentication failed');
     assert.strictEqual(req.session.entraAuth, undefined);
 });
 
@@ -317,7 +376,7 @@ test('callback handler should reject callback when code is an array query parame
     await callbackHandler(req, res, () => {});
 
     assert.strictEqual(responsePayload.statusCode, 401);
-    assert.strictEqual(responsePayload.body, 'Invalid authentication state');
+    assert.strictEqual(responsePayload.body, 'Authentication failed');
     assert.strictEqual(req.session.entraAuth, undefined);
 });
 
@@ -358,7 +417,7 @@ test('callback handler should reject callback when state is an array query param
     await callbackHandler(req, res, () => {});
 
     assert.strictEqual(responsePayload.statusCode, 401);
-    assert.strictEqual(responsePayload.body, 'Invalid authentication state');
+    assert.strictEqual(responsePayload.body, 'Authentication failed');
     assert.strictEqual(req.session.entraAuth, undefined);
 });
 
@@ -433,7 +492,7 @@ test('callback handler should return 401 for invalid auth transaction when sessi
 
     assert.strictEqual(nextError, undefined);
     assert.strictEqual(responsePayload.statusCode, 401);
-    assert.strictEqual(responsePayload.body, 'Invalid authentication state');
+    assert.strictEqual(responsePayload.body, 'Authentication failed');
 });
 
 test('callback handler should regenerate session and preserve required values after sign-in', async () => {
@@ -677,6 +736,80 @@ test('GET /auth/callback should complete sign-in when state and token are valid'
     }
 });
 
+test('GET /search returnTo is preserved across consent_required retry and interactive sign-in', async () => {
+    const originalGet = got.get;
+    const originalPost = got.post;
+
+    try {
+        const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+        const kid = 'test-kid-return-to-interactive-retry';
+        const issuer = 'https://login.microsoftonline.com/test-entra-tenant-id/v2.0';
+        const jwk = { ...publicKey.export({ format: 'jwk' }), kid, use: 'sig' };
+
+        let idToken = '';
+        got.get = () => ({
+            json: async () => ({ keys: [jwk] })
+        });
+        got.post = () => ({
+            json: async () => ({ id_token: idToken })
+        });
+
+        const protectedUrl = '/search?caseReferenceNumber=26-711111';
+        const initialResponse = await agent.get(protectedUrl);
+
+        assert.strictEqual(initialResponse.status, 302);
+        assert.strictEqual(initialResponse.headers.location, '/auth/login');
+
+        const firstLoginResponse = await agent.get('/auth/login').expect(302);
+        const firstAuthorizeUrl = new URL(firstLoginResponse.headers.location);
+        const firstState = firstAuthorizeUrl.searchParams.get('state');
+
+        const mismatchResponse = await agent.get('/auth/callback').query({
+            error: 'consent_required',
+            error_description: 'AADSTS65001: User or administrator has not consented',
+            state: firstState
+        });
+
+        assert.strictEqual(mismatchResponse.status, 302);
+        assert.strictEqual(mismatchResponse.headers.location, '/auth/login');
+
+        const secondLoginResponse = await agent.get('/auth/login').expect(302);
+        const secondAuthorizeUrl = new URL(secondLoginResponse.headers.location);
+        assert.strictEqual(secondAuthorizeUrl.searchParams.get('prompt'), 'select_account');
+        const secondState = secondAuthorizeUrl.searchParams.get('state');
+        const secondNonce = secondAuthorizeUrl.searchParams.get('nonce');
+
+        idToken = jwt.sign(
+            {
+                sub: 'entra-user-match',
+                nonce: secondNonce,
+                tid: 'tenant-1',
+                oid: 'oid-match',
+                name: 'Known User',
+                preferred_username: 'known.user@example.com'
+            },
+            privateKey,
+            {
+                algorithm: 'RS256',
+                keyid: kid,
+                issuer,
+                audience: 'test-entra-client-id',
+                expiresIn: '5m'
+            }
+        );
+
+        const successResponse = await agent
+            .get('/auth/callback')
+            .query({ code: 'auth-code-1', state: secondState });
+
+        assert.strictEqual(successResponse.status, 302);
+        assert.strictEqual(successResponse.headers.location, protectedUrl);
+    } finally {
+        got.get = originalGet;
+        got.post = originalPost;
+    }
+});
+
 test('GET /auth/callback should authenticate when oid is missing and fallback to sub', async () => {
     const originalGet = got.get;
     const originalPost = got.post;
@@ -728,7 +861,7 @@ test('GET /auth/callback should authenticate when oid is missing and fallback to
     }
 });
 
-test('GET /auth/callback should pass token exchange errors to error handler', async () => {
+test('GET /auth/callback should return 401 when token exchange fails', async () => {
     const originalPost = got.post;
 
     try {
@@ -742,13 +875,14 @@ test('GET /auth/callback should pass token exchange errors to error handler', as
 
         const response = await agent.get('/auth/callback').query({ code: 'auth-code', state });
 
-        assert.strictEqual(response.status, 500);
+        assert.strictEqual(response.status, 401);
+        assert.match(response.text, /Authentication failed/);
     } finally {
         got.post = originalPost;
     }
 });
 
-test('callback handler should log a sanitized error when token exchange fails', async () => {
+test('callback handler should log a sanitized error and return 401 when token exchange fails', async () => {
     const callbackHandler = getRouteHandler('/callback');
     const originalPost = got.post;
     const tokenExchangeError = Object.assign(new Error('entra-token-exchange-failed'), {
@@ -793,33 +927,55 @@ test('callback handler should log a sanitized error when token exchange fails', 
             throw tokenExchangeError;
         };
 
-        let capturedError;
-        await callbackHandler(req, {}, (err) => {
-            capturedError = err;
+        let statusCode;
+        let responseBody;
+        const res = {
+            status(code) {
+                statusCode = code;
+                return this;
+            },
+            send(body) {
+                responseBody = body;
+                return this;
+            }
+        };
+
+        let nextCalled = false;
+        await callbackHandler(req, res, () => {
+            nextCalled = true;
         });
 
-        assert.strictEqual(capturedError, tokenExchangeError);
+        assert.strictEqual(nextCalled, false);
+        assert.strictEqual(statusCode, 401);
+        assert.strictEqual(responseBody, 'Authentication failed');
         assert.strictEqual(loggedErrors.length, 1);
-        assert.deepStrictEqual(loggedErrors[0].payload.name, 'HTTPError');
-        assert.deepStrictEqual(loggedErrors[0].payload.message, 'entra-token-exchange-failed');
-        assert.deepStrictEqual(loggedErrors[0].payload.code, 'ERR_NON_2XX_3XX_RESPONSE');
-        assert.deepStrictEqual(loggedErrors[0].payload.statusCode, 401);
-        assert.strictEqual(loggedErrors[0].message, 'Entra callback handling failed');
+
+        // We log a wrapped Error so the top stack frame points to application code.
+        // The original HTTPError details are preserved in payload.cause.
+        assert.strictEqual(loggedErrors[0].payload.name, 'Error');
+        assert.strictEqual(loggedErrors[0].payload.message, 'Token exchange failed');
+        assert.strictEqual(loggedErrors[0].payload.code, undefined);
+        assert.strictEqual(loggedErrors[0].payload.statusCode, undefined);
+
+        assert.strictEqual(loggedErrors[0].message, 'Entra token exchange failed');
         assert.equal(typeof loggedErrors[0].payload.stack, 'string');
         assert.equal('options' in loggedErrors[0].payload, false);
         assert.equal('response' in loggedErrors[0].payload, false);
+        assert.ok(loggedErrors[0].payload.cause);
+        assert.strictEqual(loggedErrors[0].payload.cause.name, 'HTTPError');
+        assert.strictEqual(loggedErrors[0].payload.cause.code, 'ERR_NON_2XX_3XX_RESPONSE');
+        assert.equal('options' in loggedErrors[0].payload.cause, false);
+        assert.equal('response' in loggedErrors[0].payload.cause, false);
     } finally {
         got.post = originalPost;
     }
 });
 
-test('GET /auth/login?interactive=1 should skip prompt=none when fallback is enabled', async () => {
-    process.env.ENTRA_INTERACTIVE_FALLBACK = 'true';
-
+test('GET /auth/login ignores interactive query parameter without retry state', async () => {
     const response = await agent.get('/auth/login').query({ interactive: '1' });
 
     assert.strictEqual(response.status, 302);
-    assert.doesNotMatch(response.headers.location, /prompt=none/);
+    assert.match(response.headers.location, /prompt=none/);
 });
 
 test('GET /auth/sign-out displays sign out message without active session', async () => {

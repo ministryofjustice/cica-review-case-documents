@@ -1,5 +1,4 @@
 const DEFAULT_ENTRA_SCOPE = 'openid profile email';
-const TRUE_VALUES = ['1', 'true', 'yes', 'on'];
 
 /**
  * Returns Entra configuration from environment variables.
@@ -36,23 +35,6 @@ export function getEntraJwksUrl(tenantId) {
 }
 
 /**
- * Determines if interactive fallback is enabled after silent SSO fails.
- *
- * Defaults to disabled when ENTRA_INTERACTIVE_FALLBACK is unset.
- *
- * @returns {boolean}
- */
-export function isEntraInteractiveFallbackEnabled() {
-    const rawValue = process.env.ENTRA_INTERACTIVE_FALLBACK;
-
-    if (rawValue == null) {
-        return false;
-    }
-
-    return TRUE_VALUES.includes(String(rawValue).toLowerCase());
-}
-
-/**
  * Determines whether all required Entra settings are present.
  *
  * @returns {boolean}
@@ -86,7 +68,7 @@ export function getEntraRedirectUri(req) {
  * @param {import('express').Request} req - Express request used to derive callback URI.
  * @param {string} state - OIDC state value bound to the current auth transaction.
  * @param {string} nonce - OIDC nonce value validated against the returned id token.
- * @param {{ prompt?: string, loginHint?: string, domainHint?: string }} [options] - Optional authorize request parameters.
+ * @param {{ prompt?: string, domainHint?: string }} [options] - Optional authorize request parameters.
  * @returns {string}
  */
 export function buildEntraAuthorizeUrl(req, state, nonce, options = {}) {
@@ -106,10 +88,6 @@ export function buildEntraAuthorizeUrl(req, state, nonce, options = {}) {
 
     if (options.prompt) {
         params.set('prompt', options.prompt);
-    }
-
-    if (options.loginHint) {
-        params.set('login_hint', options.loginHint);
     }
 
     if (options.domainHint) {

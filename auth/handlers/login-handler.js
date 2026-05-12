@@ -1,10 +1,6 @@
 import { nanoid } from 'nanoid';
 import { getSessionValuesToPreserve, regenerateSession } from '../auth-flow-helpers.js';
-import {
-    buildEntraAuthorizeUrl,
-    isEntraConfigured,
-    isEntraInteractiveFallbackEnabled
-} from '../utils/entra-auth/config.js';
+import { buildEntraAuthorizeUrl, isEntraConfigured } from '../utils/entra-auth/config.js';
 
 /**
  * Creates an auth login handler that starts the Entra authorization flow.
@@ -17,8 +13,13 @@ export const createLoginHandler = () => async (req, res, next) => {
     }
 
     try {
-        const interactiveRequested =
-            isEntraInteractiveFallbackEnabled() && req.query?.interactive === '1';
+        const interactiveRetry = req.session?.entraInteractiveRetry;
+        const interactiveRequested = interactiveRetry?.enabled === true;
+
+        if (req.session) {
+            delete req.session.entraInteractiveRetry;
+        }
+
         const preservedSessionValues = getSessionValuesToPreserve(req.session);
         await regenerateSession(req);
         Object.assign(req.session, preservedSessionValues);
@@ -32,7 +33,10 @@ export const createLoginHandler = () => async (req, res, next) => {
             mode: interactiveRequested ? 'interactive' : 'silent'
         };
 
-        const authorizeOptions = interactiveRequested ? {} : { prompt: 'none' };
+        const authorizeOptions = {
+            prompt: interactiveRequested ? 'select_account' : 'none'
+        };
+
         return res.redirect(buildEntraAuthorizeUrl(req, state, nonce, authorizeOptions));
     } catch (error) {
         return next(error);

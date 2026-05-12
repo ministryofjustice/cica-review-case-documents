@@ -1,4 +1,5 @@
 import createTemplateEngineService from '../../templateEngine/index.js';
+import safeErrorForLog from '../logger/utils/safeErrorForLog/index.js';
 
 /**
  * Express middleware for handling global errors.
@@ -23,7 +24,7 @@ export default function errorHandler(
     const log = req.log || console;
     const status = err.status || err.statusCode || 500;
 
-    log.error({ err, status }, 'Application Error');
+    log.error({ err: safeErrorForLog(err), status }, 'Application Error');
 
     if (res.headersSent) {
         return next(err);

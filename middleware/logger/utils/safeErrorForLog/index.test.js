@@ -20,4 +20,22 @@ describe('safeErrorForLog', () => {
         });
         assert.strictEqual(result.statusCode, 401);
     });
+
+    it('preserves cause error details for error chain tracking', () => {
+        const causeErr = new Error('Original error');
+        causeErr.name = 'HTTPError';
+        causeErr.code = 'ERR_NETWORK';
+        causeErr.stack = 'HTTPError: Network failed\n    at ...';
+
+        const err = new Error('Wrapped error');
+        err.cause = causeErr;
+
+        const result = safeErrorForLog(err);
+        assert.deepStrictEqual(result.cause, {
+            name: 'HTTPError',
+            message: 'Original error',
+            code: 'ERR_NETWORK',
+            stack: 'HTTPError: Network failed\n    at ...'
+        });
+    });
 });

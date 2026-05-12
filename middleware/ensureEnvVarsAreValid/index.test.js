@@ -217,7 +217,6 @@ describe('ensureEnvVarsAreValid', () => {
                 'APP_ENTRA_RATE_LIMIT_MAX_LOGIN',
                 'APP_ENTRA_RATE_LIMIT_MAX_CALLBACK',
                 'ENTRA_SCOPE',
-                'ENTRA_INTERACTIVE_FALLBACK',
                 'ENTRA_AUTH_TRANSACTION_MAX_AGE_MS',
                 'ENTRA_JWKS_CACHE_TTL_MS',
                 'APP_LOG_LEVEL',
