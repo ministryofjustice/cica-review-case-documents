@@ -6,19 +6,19 @@ import {
     regenerateSession
 } from '../auth-flow-helpers.js';
 import { getUsernameFromEntraClaims } from '../utils/entra-auth/claims.js';
-import {
-    isEntraConfigured,
-    isEntraInteractiveFallbackEnabled
-} from '../utils/entra-auth/config.js';
+import { isEntraConfigured } from '../utils/entra-auth/config.js';
 import {
     decodeAndValidateEntraIdToken,
     exchangeEntraAuthorizationCode
 } from '../utils/entra-auth/token.js';
 
-const ENTRA_INTERACTION_ERRORS = new Set([
-    'interaction_required',
-    'login_required',
-    'consent_required'
+const ENTRA_INTERACTIVE_RETRY_ERROR_CODES = new Set([
+    // AADSTS65001: DelegationDoesNotExist - user/admin consent missing; requires interactive consent.
+    'AADSTS65001',
+    // AADSTS16000: multiple identities or unsupported selected account; allow account selection retry.
+    'AADSTS16000',
+    // AADSTS16001: UserAccountSelectionInvalid; allow recovery through updated account selection.
+    'AADSTS16001'
 ]);
 const ENTRA_AUTH_TRANSACTION_MAX_AGE_MS =
     Number(process.env.ENTRA_AUTH_TRANSACTION_MAX_AGE_MS) || 10 * 60 * 1000;
@@ -35,6 +35,21 @@ function clearPendingEntraAuth(req) {
 }
 
 /**
+ * Sets one-time interactive retry metadata for the next login request.
+ *
+ * @param {import('express').Request} req - Express request object.
+ */
+function setInteractiveRetry(req) {
+    if (!req.session) {
+        return;
+    }
+
+    req.session.entraInteractiveRetry = {
+        enabled: true
+    };
+}
+
+/**
  * Handles callback errors returned by Entra and writes the HTTP response.
  *
  * @param {import('express').Request} req - Express request object.
@@ -42,19 +57,29 @@ function clearPendingEntraAuth(req) {
  * @returns {boolean} True when an Entra error was handled and response was sent.
  */
 function handleEntraCallbackError(req, res) {
-    if (!req.query.error) {
+    const entraError = getSingleNonEmptyQueryParam(req.query?.error);
+
+    if (!entraError) {
         return false;
     }
 
     const pendingAuth = req.session?.entraAuth;
-    const entraError = String(req.query.error);
-    const entraErrorCode = getEntraErrorCode(req.query.error_description);
-    const entraErrorUri = req.query.error_uri;
+    const state = getSingleNonEmptyQueryParam(req.query?.state);
+    const hasMatchingState = Boolean(state) && state === pendingAuth?.state;
+    const entraErrorDescription = getSingleNonEmptyQueryParam(req.query?.error_description);
+    const entraErrorCode = getEntraErrorCode(entraErrorDescription);
+    const entraErrorUri = getSingleNonEmptyQueryParam(req.query?.error_uri);
+
+    const createdAtMs = Number(pendingAuth?.createdAt);
+    const isStale =
+        !Number.isFinite(createdAtMs) ||
+        Date.now() - createdAtMs > ENTRA_AUTH_TRANSACTION_MAX_AGE_MS;
 
     if (
         pendingAuth?.mode === 'silent' &&
-        isEntraInteractiveFallbackEnabled() &&
-        ENTRA_INTERACTION_ERRORS.has(entraError)
+        hasMatchingState &&
+        !isStale &&
+        ENTRA_INTERACTIVE_RETRY_ERROR_CODES.has(entraErrorCode)
     ) {
         req.log?.info(
             {
@@ -64,7 +89,9 @@ function handleEntraCallbackError(req, res) {
             },
             'Entra silent sign-in requires interaction; retrying with interactive login'
         );
-        res.redirect('/auth/login?interactive=1');
+        clearPendingEntraAuth(req);
+        setInteractiveRetry(req);
+        res.redirect('/auth/login');
         return true;
     }
 
@@ -72,7 +99,9 @@ function handleEntraCallbackError(req, res) {
         {
             error: entraError,
             entraErrorCode,
-            errorUri: entraErrorUri
+            errorUri: entraErrorUri,
+            hasState: Boolean(state),
+            hasMatchingState
         },
         'Entra authorization failed'
     );
@@ -131,7 +160,7 @@ function respondInvalidAuthTransaction(req, res, { state, hasNonce, isStaleAuthT
         },
         'Invalid Entra callback state'
     );
-    res.status(401).send('Invalid authentication state');
+    res.status(401).send('Authentication failed');
 }
 
 /**
@@ -201,11 +230,19 @@ export const createCallbackHandler = () => async (req, res, next) => {
             return;
         }
 
-        const tokenResponse = await exchangeEntraAuthorizationCode(req, String(code));
-        const claims = await decodeAndValidateEntraIdToken(
-            tokenResponse.id_token,
-            pendingAuth.nonce
-        );
+        let tokenResponse;
+        let claims;
+        try {
+            tokenResponse = await exchangeEntraAuthorizationCode(req, String(code));
+            claims = await decodeAndValidateEntraIdToken(tokenResponse.id_token, pendingAuth.nonce);
+        } catch (err) {
+            const wrappedError = new Error('Token exchange failed', { cause: err });
+            req.log?.error(safeErrorForLog(wrappedError), 'Entra token exchange failed');
+            clearPendingEntraAuth(req);
+            res.status(401).send('Authentication failed');
+            return;
+        }
+
         await establishAuthenticatedSession(req, claims);
 
         req.log?.info(
