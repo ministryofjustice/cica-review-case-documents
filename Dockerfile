@@ -1,7 +1,7 @@
 # If making any changes to this file, please ensure you test building and running 
 # kube deployment local
 # see deployment/local/README.md for instructions
-FROM node:24.15.0-trixie-slim@sha256:735dd688da64d22ebd9dd374b3e7e5a874635668fd2a6ec20ca1f99264294086
+FROM node:26.1.0-trixie-slim@sha256:424cafd2a035ed2b2d74acc3142b68b426fb62a47742c80a75e7117db02d6b30
 
 # Security: Update base image packages
 RUN apt-get update && \
