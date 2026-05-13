@@ -95,31 +95,18 @@ describe('page-chunks-service', () => {
         });
 
         it('should pass search flags to DAL method', async () => {
-            let capturedUseKeyword, capturedUseSemantic, capturedEnableDateExtraction;
-            mockDAL.getPageChunksByDocumentIdAndPageNumber = async (
-                _,
-                __,
-                ___,
-                useKeyword,
-                useSemantic,
-                enableDateExtraction
-            ) => {
-                capturedUseKeyword = useKeyword;
-                capturedUseSemantic = useSemantic;
-                capturedEnableDateExtraction = enableDateExtraction;
+            let capturedSearchType;
+            mockDAL.getPageChunksByDocumentIdAndPageNumber = async (_, __, ___, searchType) => {
+                capturedSearchType = searchType;
                 return [];
             };
 
             await pageChunksService.getPageChunks('doc-123', 1, '12-745678', 'keyword', {
                 logger: mockLogger,
-                useKeyword: false,
-                useSemantic: true,
-                enableDateExtraction: false
+                searchType: 'semantic'
             });
 
-            assert.strictEqual(capturedUseKeyword, false);
-            assert.strictEqual(capturedUseSemantic, true);
-            assert.strictEqual(capturedEnableDateExtraction, false);
+            assert.strictEqual(capturedSearchType, 'semantic');
         });
 
         it('should handle DAL errors and throw with status code', async () => {

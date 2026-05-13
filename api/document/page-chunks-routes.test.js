@@ -218,8 +218,7 @@ describe('page-chunks-routes', () => {
 
         it('should pass search flags to service context', async () => {
             let capturedContext;
-            mockRequest.query.keyword = 'off';
-            mockRequest.query.semantic = 'on';
+            mockRequest.query.searchType = 'semantic';
             mockRequest.query.dates = 'off';
             mockPageChunksService.getPageChunks = async (_, __, ___, ____, context) => {
                 capturedContext = context;
@@ -229,9 +228,7 @@ describe('page-chunks-routes', () => {
             const handler = router.stack[0].route.stack[0].handle;
             await handler(mockRequest, mockResponse, () => {});
 
-            assert.strictEqual(capturedContext.useKeyword, false);
-            assert.strictEqual(capturedContext.useSemantic, true);
-            assert.strictEqual(capturedContext.enableDateExtraction, false);
+            assert.strictEqual(capturedContext.searchType, 'semantic');
         });
 
         it('should handle service errors via next middleware', async () => {

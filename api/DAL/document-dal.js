@@ -40,12 +40,8 @@ import buildQueryJson from './utils/buildQueryJson/index.js';
  *
  * @param {Logger} [params.logger]
  *   Optional structured logger instance.
- * @param {boolean} [params.useKeyword=true]
- *   Enable lexical (BM25) keyword matching.
- * @param {boolean} [params.useSemantic=false]
- *   Enable neural (vector) semantic matching.
- * @param {boolean} [params.enableDateExtraction=true]
- *   Enable date phrase extraction and format-variant expansion.
+ * @param {string} [params.searchType='keyword']
+ *   Search mode. One of `'keyword'`, `'semantic'`, or `'hybrid'`.
  *
  * @throws {VError} Throws a `ConfigurationError` if the environment variable
  *   `OPENSEARCH_INDEX_CHUNKS_NAME` is not defined.
@@ -53,7 +49,9 @@ import buildQueryJson from './utils/buildQueryJson/index.js';
  * @returns {{
  *   getDocuments: () => Promise<object[]>,
  *   getDocument: (documentId: string) => Promise<object>,
- *   getDocumentsChunksByKeyword: (keyword: string, pageNumber: number, itemsPerPage: number) => Promise<object[]>
+ *   getDocumentsChunksByKeyword: (keyword: string, pageNumber: number, itemsPerPage: number) => Promise<object[]>,
+ *   getPageMetadataByDocumentIdAndPageNumber: (documentId: string, pageNumber: number|string) => Promise<object|null>,
+ *   getPageChunksByDocumentIdAndPageNumber: (documentId: string, pageNumber: number|string, keyword?: string, searchType?: string) => Promise<object[]>
  * }}
  *   A frozen object exposing document and chunk retrieval methods.
  */
@@ -61,9 +59,7 @@ function createDocumentDAL({
     caseReferenceNumber,
     createDBQuery = createDBQueryDefault,
     logger,
-    useKeyword = true,
-    useSemantic = false,
-    enableDateExtraction = true
+    searchType = 'keyword-dates'
 }) {
     if (process.env.OPENSEARCH_INDEX_CHUNKS_NAME === undefined) {
         throw new VError(
@@ -121,10 +117,10 @@ function createDocumentDAL({
                 caseReferenceNumber,
                 pageNumber,
                 itemsPerPage,
-                logger,
-                useKeyword,
-                useSemantic,
-                enableDateExtraction
+                options: {
+                    logger,
+                    searchType
+                }
             });
             const buildEnd = Date.now();
 
@@ -237,9 +233,7 @@ function createDocumentDAL({
      * @param {string} documentId - The UUID of the document (source_doc_id in OpenSearch).
      * @param {number|string} pageNumber - The page number.
      * @param {string} [keyword] - Search term to filter chunks by content.
-     * @param {boolean} [useKeyword=true] - Enable lexical keyword matching.
-     * @param {boolean} [useSemantic=false] - Enable neural semantic matching.
-     * @param {boolean} [enableDateExtraction=true] - Enable date extraction.
+     * @param {string} [searchType='keyword-dates'] - Search mode (one of SEARCH_TYPES).
      * @returns {Promise<Array<Object>>} Array of chunk objects containing only bounding_box data.
      * @throws {VError} If the database query fails.
      */
@@ -247,13 +241,11 @@ function createDocumentDAL({
         documentId,
         pageNumber,
         keyword = '',
-        useKeyword = true,
-        useSemantic = false,
-        enableDateExtraction = true
+        searchType = 'keyword-dates'
     ) {
         try {
             logger?.info?.(
-                { documentId, pageNumber, useKeyword, useSemantic, enableDateExtraction },
+                { documentId, pageNumber, searchType },
                 'Querying OpenSearch for page chunks with bounding boxes'
             );
 
@@ -261,12 +253,12 @@ function createDocumentDAL({
                 keyword,
                 caseReferenceNumber,
                 pageNumber,
-                useKeyword,
-                useSemantic,
-                enableDateExtraction,
-                includePagination: false,
-                documentId,
-                logger
+                options: {
+                    searchType,
+                    includePagination: false,
+                    documentId,
+                    logger
+                }
             });
 
             queryBody._source = [

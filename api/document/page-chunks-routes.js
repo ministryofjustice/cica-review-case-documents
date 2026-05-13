@@ -1,5 +1,4 @@
 import express from 'express';
-import { parseFeatureFlagValue } from '../../middleware/featureFlags/index.js';
 import createPageChunksService from './services/page-chunks-service.js';
 
 const CRN_REGEX = /^\d{2}-[78]\d{5}$/;
@@ -36,7 +35,9 @@ function createPageChunksRouter(options = {}) {
      * @param {string} req.params.documentId - The UUID of the document.
      * @param {string} req.params.pageNumber - The page number to retrieve chunks for.
      * @param {string} req.query.crn - The case reference number (required).
-     * @param {string} req.query.searchTerm - Search term to filter chunks by content.
+     * @param {string} [req.query.searchTerm] - Search term to filter chunks by content.
+     * @param {string} [req.query.searchType='keyword-dates'] - Search mode: `keyword`, `keyword-dates`, `semantic`, `hybrid`, or `hybrid-dates`.
+     * @param {string} [req.query.dates='on'] - Whether date extraction is enabled (`on` or `off`).
      * @param {express.Response} res - The Express response object.
      *
      * @returns {Object} JSON response with page chunks:
@@ -53,9 +54,7 @@ function createPageChunksRouter(options = {}) {
         try {
             const { documentId, pageNumber } = req.params;
             const { crn, searchTerm } = req.query;
-            const useKeyword = parseFeatureFlagValue(req.query.keyword) ?? true;
-            const useSemantic = parseFeatureFlagValue(req.query.semantic) ?? false;
-            const enableDateExtraction = parseFeatureFlagValue(req.query.dates) ?? true;
+            const searchType = req.query.searchType ?? 'keyword-dates';
 
             if (!crn) {
                 const err = new Error('Case reference number (crn) is required');
@@ -74,7 +73,7 @@ function createPageChunksRouter(options = {}) {
                 pageNumber,
                 crn,
                 searchTerm,
-                { logger: req.log, useKeyword, useSemantic, enableDateExtraction }
+                { logger: req.log, searchType }
             );
 
             return res.json({

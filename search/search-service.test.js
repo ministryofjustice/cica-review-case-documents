@@ -35,9 +35,7 @@ describe('search-service', () => {
         const itemsPerPage = 5;
 
         const result = await service.getSearchResults(query, pageNumber, itemsPerPage, undefined, {
-            useKeyword: false,
-            useSemantic: true,
-            useDates: false
+            searchType: 'semantic'
         });
 
         assert.deepEqual(result, { body: { data: 'fake results' } });
@@ -45,7 +43,7 @@ describe('search-service', () => {
         const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
         assert.equal(
             mockGetCallArguments.url,
-            `${process.env.APP_API_URL}/search/?query=${query}&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}&keyword=off&semantic=on&dates=off`
+            `${process.env.APP_API_URL}/search/?query=${query}&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}&type=semantic`
         );
         assert.equal(mockGetCallArguments.headers['On-Behalf-Of'], '12-745678');
     });
