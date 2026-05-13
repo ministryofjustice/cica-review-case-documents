@@ -132,7 +132,9 @@ describe('Search Routes', () => {
             const res = await request(testApp).get('/search?query=test');
 
             assert.strictEqual(res.statusCode, 200);
-            assert.deepStrictEqual(serviceCallArgs[4], 'semantic');
+            assert.deepStrictEqual(serviceCallArgs[4], {
+                type: 'semantic'
+            });
         });
 
         it('should handle errors from the search service', async () => {
