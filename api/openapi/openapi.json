@@ -136,37 +136,13 @@
                 "operationId": "getPageMetadata",
                 "parameters": [
                     {
-                        "name": "documentId",
-                        "in": "path",
-                        "required": true,
-                        "description": "The UUID of the document",
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid"
-                        },
-                        "example": "55b2ea3c-3eae-54f7-b81d-292db7c84be7"
+                        "$ref": "#/components/parameters/documentId"
                     },
                     {
-                        "name": "pageNumber",
-                        "in": "path",
-                        "required": true,
-                        "description": "The page number to retrieve metadata for",
-                        "schema": {
-                            "type": "integer",
-                            "minimum": 1
-                        },
-                        "example": 6
+                        "$ref": "#/components/parameters/documentPageNumber"
                     },
                     {
-                        "name": "crn",
-                        "in": "query",
-                        "required": true,
-                        "description": "Case reference number",
-                        "schema": {
-                            "type": "string",
-                            "pattern": "^\\d{2}-[78]\\d{5}$"
-                        },
-                        "example": "26-711111"
+                        "$ref": "#/components/parameters/crn"
                     }
                 ],
                 "responses": {
@@ -239,37 +215,13 @@
                 "operationId": "getPageChunks",
                 "parameters": [
                     {
-                        "name": "documentId",
-                        "in": "path",
-                        "required": true,
-                        "description": "The UUID of the document",
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid"
-                        },
-                        "example": "55b2ea3c-3eae-54f7-b81d-292db7c84be7"
+                        "$ref": "#/components/parameters/documentId"
                     },
                     {
-                        "name": "pageNumber",
-                        "in": "path",
-                        "required": true,
-                        "description": "The page number to retrieve chunks for",
-                        "schema": {
-                            "type": "integer",
-                            "minimum": 1
-                        },
-                        "example": 6
+                        "$ref": "#/components/parameters/documentPageNumber"
                     },
                     {
-                        "name": "crn",
-                        "in": "query",
-                        "required": true,
-                        "description": "Case reference number",
-                        "schema": {
-                            "type": "string",
-                            "pattern": "^\\d{2}-[78]\\d{5}$"
-                        },
-                        "example": "26-711111"
+                        "$ref": "#/components/parameters/crn"
                     },
                     {
                         "name": "searchTerm",
@@ -282,15 +234,7 @@
                         "example": "acute"
                     },
                     {
-                        "name": "type",
-                        "in": "query",
-                        "required": false,
-                        "description": "Search type to run for chunk matching",
-                        "schema": {
-                            "type": "string",
-                            "enum": ["keyword", "semantic", "hybrid"]
-                        },
-                        "example": "semantic"
+                        "$ref": "#/components/parameters/type"
                     }
                 ],
                 "responses": {
@@ -428,6 +372,39 @@
             }
         },
         "parameters": {
+            "documentId": {
+                "name": "documentId",
+                "in": "path",
+                "required": true,
+                "description": "The UUID of the document",
+                "schema": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "example": "55b2ea3c-3eae-54f7-b81d-292db7c84be7"
+            },
+            "documentPageNumber": {
+                "name": "pageNumber",
+                "in": "path",
+                "required": true,
+                "description": "The page number within the document",
+                "schema": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "example": 6
+            },
+            "crn": {
+                "name": "crn",
+                "in": "query",
+                "required": true,
+                "description": "Case reference number",
+                "schema": {
+                    "type": "string",
+                    "pattern": "^\\d{2}-[78]\\d{5}$"
+                },
+                "example": "26-711111"
+            },
             "query": {
                 "name": "query",
                 "in": "query",
@@ -471,10 +448,10 @@
                 "name": "type",
                 "in": "query",
                 "required": false,
-                "description": "Search type to run: keyword lexical search, semantic neural search, or hybrid",
+                "description": "Search mode. Controls whether lexical (BM25), neural (semantic), or combined (hybrid) search is used, and whether date phrase extraction is applied.",
                 "schema": {
                     "type": "string",
-                    "enum": ["keyword", "semantic", "hybrid"]
+                    "enum": ["keyword", "keyword-dates", "semantic", "hybrid", "hybrid-dates"]
                 },
                 "example": "hybrid"
             },

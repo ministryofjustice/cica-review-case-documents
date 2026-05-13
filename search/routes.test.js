@@ -82,9 +82,7 @@ describe('Search Routes', () => {
             assert.strictEqual(res.statusCode, 200);
             assert.match(res.text, /search\/page\/results.njk/);
             assert.strictEqual(lastRenderParams.userName, 'search.user@example.com');
-            assert.strictEqual(lastRenderParams.useKeyword, true);
-            assert.strictEqual(lastRenderParams.useSemantic, false);
-            assert.strictEqual(lastRenderParams.useDates, true);
+            assert.strictEqual(lastRenderParams.searchType, 'keyword-dates');
         });
 
         it('should pass the search type to the search service when set in session', async () => {
@@ -121,9 +119,7 @@ describe('Search Routes', () => {
                     caseReferenceNumber: '12345',
                     username: 'search.user@example.com',
                     featureFlags: {
-                        keyword: true,
-                        semantic: true,
-                        dates: true
+                        type: 'semantic'
                     }
                 };
                 req.log = { info: () => {}, error: () => {} };
@@ -137,9 +133,7 @@ describe('Search Routes', () => {
 
             assert.strictEqual(res.statusCode, 200);
             assert.deepStrictEqual(serviceCallArgs[4], {
-                useKeyword: true,
-                useSemantic: true,
-                useDates: true
+                searchType: 'semantic'
             });
         });
 

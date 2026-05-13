@@ -26,29 +26,19 @@ function createSearchService({ createDocumentDAL: dalFactory = createDocumentDAL
      * @param {Object} context - The context for the search operation.
      * @param {string} context.caseReferenceNumber - The case reference number.
      * @param {Object} context.logger - The logger instance.
-     * @param {boolean} [context.useKeyword=true] - Enable lexical (BM25) keyword matching.
-     * @param {boolean} [context.useSemantic=false] - Enable neural (vector) semantic matching.
-     * @param {boolean} [context.enableDateExtraction=true] - Enable date extraction and variant expansion.
+     * @param {string} [context.searchType='keyword-dates'] - Search mode. One of SEARCH_TYPES.KEYWORD, SEARCH_TYPES.KEYWORD_DATES, SEARCH_TYPES.SEMANTIC, SEARCH_TYPES.HYBRID, or SEARCH_TYPES.HYBRID_DATES.
      * @returns {Promise<Object[]>} A promise that resolves to an array of document results.
      */
     async function getSearchResultsByKeyword(
         keyword,
         pageNumber,
         itemsPerPage,
-        {
-            caseReferenceNumber,
-            logger,
-            useKeyword = true,
-            useSemantic = false,
-            enableDateExtraction = true
-        }
+        { caseReferenceNumber, logger, searchType = 'keyword-dates' }
     ) {
         const db = dalFactory({
             caseReferenceNumber,
             logger,
-            useKeyword,
-            useSemantic,
-            enableDateExtraction
+            searchType
         });
         return db.getDocumentsChunksByKeyword(keyword, pageNumber, itemsPerPage);
     }
