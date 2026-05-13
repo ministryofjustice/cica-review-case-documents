@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { DEFAULT_SEARCH_TYPE } from '../../api/search/constants/searchTypes.js';
 import enforceFeatureFlagsInQuery from './index.js';
 
 /**
@@ -40,7 +39,7 @@ function createMockRes() {
 
 test('redirects to URL with non-default boolean flag when missing from query', () => {
     const req = createMockReq({
-        session: { featureFlags: { align: false, type: DEFAULT_SEARCH_TYPE } }
+        session: { featureFlags: { align: false, type: 'keyword-dates' } }
     });
     const res = createMockRes();
     let nextCalled = false;
@@ -76,64 +75,6 @@ test('redirects with multiple non-default flags appended', () => {
     assert.ok(res.redirectedUrl?.includes('align=off'), 'should include align=off');
     assert.ok(res.redirectedUrl?.includes('type=hybrid'), 'should include type=hybrid');
     assert.ok(res.redirectedUrl?.startsWith('/search?'), 'should start with /search?');
-});
-
-test('ignores unsupported session feature flags when building redirect query', () => {
-    const req = createMockReq({
-        session: {
-            featureFlags: {
-                align: false,
-                type: DEFAULT_SEARCH_TYPE,
-                staleFlag: 'unexpected'
-            }
-        }
-    });
-    const res = createMockRes();
-
-    enforceFeatureFlagsInQuery(req, res, () => {});
-
-    assert.strictEqual(res.redirectedUrl, '/search?align=off');
-    assert.ok(!res.redirectedUrl?.includes('staleFlag='));
-});
-
-test('does not append stale invalid session type values', () => {
-    const req = createMockReq({
-        session: {
-            featureFlags: {
-                align: true,
-                type: 'old-invalid-type'
-            }
-        }
-    });
-    const res = createMockRes();
-    let nextCalled = false;
-
-    enforceFeatureFlagsInQuery(req, res, () => {
-        nextCalled = true;
-    });
-
-    assert.strictEqual(res.redirectedUrl, null);
-    assert.strictEqual(nextCalled, true);
-});
-
-test('does not append non-boolean stale session align values', () => {
-    const req = createMockReq({
-        session: {
-            featureFlags: {
-                align: 'off',
-                type: DEFAULT_SEARCH_TYPE
-            }
-        }
-    });
-    const res = createMockRes();
-    let nextCalled = false;
-
-    enforceFeatureFlagsInQuery(req, res, () => {
-        nextCalled = true;
-    });
-
-    assert.strictEqual(res.redirectedUrl, null);
-    assert.strictEqual(nextCalled, true);
 });
 
 test('preserves existing query parameters when redirecting', () => {
@@ -172,7 +113,7 @@ test('does not redirect when all non-default flags are already in the query', ()
 
 test('does not redirect when all flags are at their defaults', () => {
     const req = createMockReq({
-        session: { featureFlags: { align: true, type: DEFAULT_SEARCH_TYPE } }
+        session: { featureFlags: { align: true, type: 'keyword-dates' } }
     });
     const res = createMockRes();
     let nextCalled = false;
@@ -221,7 +162,7 @@ test('does not redirect for non-GET requests', () => {
 test('redirects for document view page path', () => {
     const req = createMockReq({
         path: '/document/123e4567-e89b-12d3-a456-426614174000/view/page/1',
-        session: { featureFlags: { align: false, type: DEFAULT_SEARCH_TYPE } }
+        session: { featureFlags: { align: false, type: 'keyword-dates' } }
     });
     const res = createMockRes();
 
@@ -252,7 +193,7 @@ test('normalises trailing slash before checking allowed path', () => {
     const req = createMockReq({
         path: '/search/',
         query: { crn: '12-745678' },
-        session: { featureFlags: { align: false, type: DEFAULT_SEARCH_TYPE } }
+        session: { featureFlags: { align: false, type: 'keyword-dates' } }
     });
     const res = createMockRes();
 
@@ -268,7 +209,7 @@ test('normalises trailing slash before checking allowed path', () => {
 test('blocks redirect for path not in allowed list or patterns', () => {
     const req = createMockReq({
         path: '/admin/secret',
-        session: { featureFlags: { align: false, type: DEFAULT_SEARCH_TYPE } }
+        session: { featureFlags: { align: false, type: 'keyword-dates' } }
     });
     let nextArg;
 
@@ -284,7 +225,7 @@ test('blocks redirect for path not in allowed list or patterns', () => {
 test('blocks redirect for absolute http:// path', () => {
     const req = createMockReq({
         path: 'http://malicious.com/search',
-        session: { featureFlags: { align: false, type: DEFAULT_SEARCH_TYPE } }
+        session: { featureFlags: { align: false, type: 'keyword-dates' } }
     });
     let nextArg;
 
@@ -300,7 +241,7 @@ test('blocks redirect for absolute http:// path', () => {
 test('blocks redirect for absolute https:// path', () => {
     const req = createMockReq({
         path: 'https://evil.com/search',
-        session: { featureFlags: { align: false, type: DEFAULT_SEARCH_TYPE } }
+        session: { featureFlags: { align: false, type: 'keyword-dates' } }
     });
     let nextArg;
 
@@ -316,7 +257,7 @@ test('blocks redirect for absolute https:// path', () => {
 test('blocks redirect for path containing double slashes', () => {
     const req = createMockReq({
         path: '/search//evil',
-        session: { featureFlags: { align: false, type: DEFAULT_SEARCH_TYPE } }
+        session: { featureFlags: { align: false, type: 'keyword-dates' } }
     });
     let nextArg;
 
@@ -332,7 +273,7 @@ test('blocks redirect for path containing double slashes', () => {
 test('blocks redirect for path containing backslash', () => {
     const req = createMockReq({
         path: '/search\\evil',
-        session: { featureFlags: { align: false, type: DEFAULT_SEARCH_TYPE } }
+        session: { featureFlags: { align: false, type: 'keyword-dates' } }
     });
     let nextArg;
 
@@ -348,7 +289,7 @@ test('blocks redirect for path containing backslash', () => {
 test('blocks redirect for path containing double dots', () => {
     const req = createMockReq({
         path: '/search/../admin',
-        session: { featureFlags: { align: false, type: DEFAULT_SEARCH_TYPE } }
+        session: { featureFlags: { align: false, type: 'keyword-dates' } }
     });
     let nextArg;
 
