@@ -93,7 +93,8 @@ function buildQueryJson({
         caseReferenceNumber,
         safePageNumber,
         documentId,
-        boostConfig: { keywordBoost, dateBoost, semanticBoost }
+        boostConfig: { keywordBoost, dateBoost, semanticBoost },
+        logger
     };
 
     const { queryJson, phrases, phrasesVariants, shouldClauses, extractMs, variantMs } =
@@ -125,7 +126,7 @@ function buildQueryJson({
         searchType
     });
 
-    console.log(JSON.stringify(queryJson, null, 4)); // TEMP logging for verification during development.
+    logger?.debug({ queryJson }, 'Built query JSON');
 
     return queryJson;
 }
