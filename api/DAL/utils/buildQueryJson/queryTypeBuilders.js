@@ -406,13 +406,17 @@ function buildHybridQuery({
 }
 
 export const queryTypeBuilders = {
-    [SEARCH_TYPES.KEYWORD]: ({ keyword, caseReferenceNumber, safePageNumber, documentId }) => {
-        console.log('Building keyword query with input:', {
-            keyword,
-            caseReferenceNumber,
-            safePageNumber,
-            documentId
-        }); // TEMP logging for verification during development.
+    [SEARCH_TYPES.KEYWORD]: ({
+        keyword,
+        caseReferenceNumber,
+        safePageNumber,
+        documentId,
+        logger
+    }) => {
+        logger?.debug?.(
+            { keyword, caseReferenceNumber, safePageNumber, documentId },
+            '[QueryTypeBuilder] Building keyword query'
+        );
         const { shouldClauses, phrases, phrasesVariants, timings } = buildDateAwareShouldClauses({
             keyword,
             enableDateExtraction: false
@@ -423,6 +427,8 @@ export const queryTypeBuilders = {
             safePageNumber,
             documentId
         });
+        logger?.debug?.({ queryJson }, '[QueryTypeBuilder] keyword query built');
+
         return {
             queryJson,
             phrases,
@@ -436,14 +442,13 @@ export const queryTypeBuilders = {
         keyword,
         caseReferenceNumber,
         safePageNumber,
-        documentId
+        documentId,
+        logger
     }) => {
-        console.log('Building keyword-dates query with input:', {
-            keyword,
-            caseReferenceNumber,
-            safePageNumber,
-            documentId
-        }); // TEMP logging for verification during development.
+        logger?.debug?.(
+            { keyword, caseReferenceNumber, safePageNumber, documentId },
+            '[QueryTypeBuilder] Building keyword-dates query'
+        );
         const { shouldClauses, phrases, phrasesVariants, timings } = buildDateAwareShouldClauses({
             keyword,
             enableDateExtraction: true
@@ -454,6 +459,8 @@ export const queryTypeBuilders = {
             safePageNumber,
             documentId
         });
+        logger?.debug?.({ queryJson }, '[QueryTypeBuilder] keyword-dates query built');
+
         return {
             queryJson,
             phrases,
@@ -468,15 +475,10 @@ export const queryTypeBuilders = {
         keyword,
         caseReferenceNumber,
         safePageNumber,
-        documentId // ,
+        documentId, // ,
         // enableDateExtraction
+        logger
     }) => {
-        console.log('Building semantic query with input:', {
-            keyword,
-            caseReferenceNumber,
-            safePageNumber,
-            documentId
-        }); // TEMP logging for verification during development.
         const phrases = [];
         const phrasesVariants = [];
         const matchPhraseClauses = [];
@@ -497,6 +499,10 @@ export const queryTypeBuilders = {
         //     variantMs = timings.variantMs;
         // }
 
+        logger?.debug?.(
+            { keyword, caseReferenceNumber, safePageNumber, documentId },
+            '[QueryTypeBuilder] Building semantic query'
+        );
         const queryJson = buildSemanticQuery({
             keyword,
             caseReferenceNumber,
@@ -504,6 +510,8 @@ export const queryTypeBuilders = {
             documentId,
             matchPhraseClauses
         });
+        logger?.debug?.({ queryJson }, '[QueryTypeBuilder] semantic query built');
+
         return {
             queryJson,
             phrases,
@@ -523,15 +531,19 @@ export const queryTypeBuilders = {
             keywordBoost = DEFAULT_LEXICAL_BOOST,
             dateBoost = DEFAULT_DATE_BOOST,
             semanticBoost = DEFAULT_NEURAL_BOOST
-        } = {}
+        } = {},
+        logger
     }) => {
-        console.log('Building hybrid query with input:', {
-            keyword,
-            caseReferenceNumber,
-            safePageNumber,
-            documentId,
-            boostConfig: { keywordBoost, dateBoost, semanticBoost }
-        }); // TEMP logging for verification during development.
+        logger?.debug?.(
+            {
+                keyword,
+                caseReferenceNumber,
+                safePageNumber,
+                documentId,
+                boostConfig: { keywordBoost, dateBoost, semanticBoost }
+            },
+            '[QueryTypeBuilder] Building hybrid query'
+        );
         const { shouldClauses, phrases, phrasesVariants, timings } = buildDateAwareShouldClauses({
             keyword,
             enableDateExtraction: false
@@ -546,6 +558,8 @@ export const queryTypeBuilders = {
             dateBoost,
             semanticBoost
         });
+        logger?.debug?.({ queryJson }, '[QueryTypeBuilder] hybrid query built');
+
         return {
             queryJson,
             phrases,
@@ -565,15 +579,19 @@ export const queryTypeBuilders = {
             keywordBoost = DEFAULT_LEXICAL_BOOST,
             dateBoost = DEFAULT_DATE_BOOST,
             semanticBoost = DEFAULT_NEURAL_BOOST
-        } = {}
+        } = {},
+        logger
     }) => {
-        console.log('Building hybrid-dates query with input:', {
-            keyword,
-            caseReferenceNumber,
-            safePageNumber,
-            documentId,
-            boostConfig: { keywordBoost, dateBoost, semanticBoost }
-        }); // TEMP logging for verification during development.
+        logger?.debug?.(
+            {
+                keyword,
+                caseReferenceNumber,
+                safePageNumber,
+                documentId,
+                boostConfig: { keywordBoost, dateBoost, semanticBoost }
+            },
+            '[QueryTypeBuilder] Building hybrid-dates query'
+        );
         const { shouldClauses, phrases, phrasesVariants, timings } = buildDateAwareShouldClauses({
             keyword,
             enableDateExtraction: true
@@ -588,6 +606,8 @@ export const queryTypeBuilders = {
             dateBoost,
             semanticBoost
         });
+        logger?.debug?.({ queryJson }, '[QueryTypeBuilder] hybrid-dates query built');
+
         return {
             queryJson,
             phrases,
