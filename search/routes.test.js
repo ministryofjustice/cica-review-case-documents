@@ -133,7 +133,7 @@ describe('Search Routes', () => {
 
             assert.strictEqual(res.statusCode, 200);
             assert.deepStrictEqual(serviceCallArgs[4], {
-                type: 'semantic'
+                searchType: 'semantic'
             });
         });
 
