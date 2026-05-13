@@ -7,15 +7,15 @@ import { FEATURE_FLAG_DEFAULTS } from '../featureFlags/index.js';
  */
 const ALLOWED_PATHS = ['/search'];
 
-// /**
-//  * An array of allowed URL patterns for which feature-flag enforcement applies.
-//  * @type {RegExp[]}
-//  * @constant
-//  */
-// const ALLOWED_PATH_PATTERNS = [
-//     /^\/document\/[0-9a-fA-F-]{36}\/view\/page\/\d+$/,
-//     /^\/document\/[0-9a-fA-F-]{36}\/page\/\d+$/ // Image streaming endpoint
-// ];
+/**
+ * An array of allowed URL patterns for which feature-flag enforcement applies.
+ * @type {RegExp[]}
+ * @constant
+ */
+const ALLOWED_PATH_PATTERNS = [
+    /^\/document\/[0-9a-fA-F-]{36}\/view\/page\/\d+$/,
+    /^\/document\/[0-9a-fA-F-]{36}\/page\/\d+$/ // Image streaming endpoint
+];
 
 /**
  * Paths that should be excluded from feature-flag enforcement (static assets, etc.)
@@ -95,15 +95,14 @@ const enforceFeatureFlagsInQuery = (req, res, next) => {
     let safePath;
     if (ALLOWED_PATHS.includes(normalizedPath)) {
         safePath = normalizedPath;
+    } else {
+        for (const pattern of ALLOWED_PATH_PATTERNS) {
+            if (pattern.test(normalizedPath)) {
+                safePath = normalizedPath;
+                break;
+            }
+        }
     }
-    // else {
-    //     for (const pattern of ALLOWED_PATH_PATTERNS) {
-    //         if (pattern.test(normalizedPath)) {
-    //             safePath = normalizedPath;
-    //             break;
-    //         }
-    //     }
-    // }
 
     if (!safePath) {
         const err = new Error('Redirect not allowed for this path');
@@ -120,5 +119,5 @@ const enforceFeatureFlagsInQuery = (req, res, next) => {
     return res.redirect(`${safePath}?${queryString}`);
 };
 
-export { /* ALLOWED_PATH_PATTERNS, */ ALLOWED_PATHS, EXCLUDED_PATHS };
+export { ALLOWED_PATH_PATTERNS, ALLOWED_PATHS, EXCLUDED_PATHS };
 export default enforceFeatureFlagsInQuery;
