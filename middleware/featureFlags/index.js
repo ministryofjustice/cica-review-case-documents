@@ -2,9 +2,7 @@ import { DEFAULT_SEARCH_TYPE, resolveSearchType } from '../../api/search/constan
 
 export const FEATURE_FLAG_DEFAULTS = Object.freeze({
     align: true, // toggle alignment of image highlighting to prevent or show overlapping
-    keyword: true, // enable lexical (BM25) keyword matching
-    semantic: false, // enable neural (vector) semantic matching
-    dates: true // enable date extraction and variant expansion in lexical matching
+    type: 'keyword-dates' // search mode: keyword, keyword-dates, semantic, hybrid, or hybrid-dates
 });
 
 /**
@@ -33,11 +31,12 @@ export function parseFeatureFlagValue(value) {
 }
 
 /**
- * Parses a query-string enum feature flag value against a set of allowed values.
+ * Parses a query-string string feature flag value.
  *
- * @deprecated No longer used — all flags are booleans. Retained for potential external use.
+ * Returns the trimmed string value when provided, otherwise undefined.
+ *
  * @param {unknown} value - Raw query-string value.
- * @param {readonly string[]} allowedValues - Valid values for this flag.
+ * @param {readonly string[] | undefined} allowedValues - Optional allowlist; if omitted any non-empty string is accepted.
  * @returns {string | undefined} Matched value when valid, otherwise undefined.
  */
 export function parseEnumFlagValue(value, allowedValues) {
@@ -48,21 +47,24 @@ export function parseEnumFlagValue(value, allowedValues) {
     }
 
     const normalized = flagValue.trim().toLowerCase();
-    return allowedValues.includes(normalized) ? normalized : undefined;
+    if (!normalized) return undefined;
+    return allowedValues === undefined || allowedValues.includes(normalized)
+        ? normalized
+        : undefined;
 }
 
 /**
  * Resolves a feature flag value from session state, with repo defaults.
  *
  * @param {import('express-session').Session | undefined} session - Request session object.
- * @param {'align' | 'keyword' | 'semantic' | 'dates'} flagName - Supported feature flag name.
- * @returns {boolean} The active feature flag value.
+ * @param {'align' | 'type'} flagName - Supported feature flag name.
+ * @returns {boolean | string} The active feature flag value.
  */
 export function getFeatureFlagValue(session, flagName) {
     const sessionFlagValue = session?.featureFlags?.[flagName];
     const defaultValue = FEATURE_FLAG_DEFAULTS[flagName];
 
-    if (typeof sessionFlagValue === 'boolean') {
+    if (typeof sessionFlagValue === 'boolean' || typeof sessionFlagValue === 'string') {
         return sessionFlagValue;
     }
 
@@ -72,8 +74,8 @@ export function getFeatureFlagValue(session, flagName) {
 /**
  * Persists supported feature flags from query-string params into the session.
  *
- * Recognised query-string values: `on` (true) and `off` (false).
- * Flags: `keyword`, `semantic`, `dates`, `align`.
+ * Boolean flags (`align`) accept `on` / `off` query-string values.
+ * String flags (`type`) accept any non-empty string query-string value.
  *
  * @param {import('express').Request} req - Express request object.
  * @param {import('express').Response} res - Express response object.
@@ -93,9 +95,16 @@ export default function featureFlags(req, res, next) {
                 flags[flagName] = getFeatureFlagValue(req.session, flagName);
             }
 
-            const queryFlagValue = parseFeatureFlagValue(req.query?.[flagName]);
-            if (typeof queryFlagValue === 'boolean') {
-                flags[flagName] = queryFlagValue;
+            if (typeof FEATURE_FLAG_DEFAULTS[flagName] === 'boolean') {
+                const queryFlagValue = parseFeatureFlagValue(req.query?.[flagName]);
+                if (typeof queryFlagValue === 'boolean') {
+                    flags[flagName] = queryFlagValue;
+                }
+            } else {
+                const queryFlagValue = parseEnumFlagValue(req.query?.[flagName]);
+                if (typeof queryFlagValue === 'string') {
+                    flags[flagName] = queryFlagValue;
+                }
             }
         }
         req.session.featureFlags = flags;

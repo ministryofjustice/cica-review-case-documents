@@ -234,15 +234,7 @@
                         "example": "acute"
                     },
                     {
-                        "name": "type",
-                        "in": "query",
-                        "required": false,
-                        "description": "Search type to run for chunk matching",
-                        "schema": {
-                            "type": "string",
-                            "enum": ["keyword", "semantic", "hybrid"]
-                        },
-                        "example": "semantic"
+                        "$ref": "#/components/parameters/type"
                     }
                 ],
                 "responses": {
@@ -456,10 +448,10 @@
                 "name": "type",
                 "in": "query",
                 "required": false,
-                "description": "Search type to run: keyword lexical search, semantic neural search, or hybrid",
+                "description": "Search mode. Controls whether lexical (BM25), neural (semantic), or combined (hybrid) search is used, and whether date phrase extraction is applied.",
                 "schema": {
                     "type": "string",
-                    "enum": ["keyword", "semantic", "hybrid"]
+                    "enum": ["keyword", "keyword-dates", "semantic", "hybrid", "hybrid-dates"]
                 },
                 "example": "hybrid"
             },

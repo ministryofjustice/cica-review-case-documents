@@ -1,31 +1,30 @@
 # buildQueryJson
 
-Builds an OpenSearch query DSL object from three independently toggled search capabilities.
+Builds an OpenSearch query DSL object for a given `searchType`.
 
-## Search flags
+## `searchType` values
 
-| Flag | Type | Default | Description |
-|---|---|---|---|
-| `useKeyword` | `boolean` | `true` | Enable lexical (BM25) matching against `chunk_text` |
-| `useSemantic` | `boolean` | `false` | Enable neural vector matching via the `embedding` field |
-| `enableDateExtraction` | `boolean` | `true` | Extract date phrases from the query and expand them into format variants (e.g. `12 Jan 2020`, `12/01/2020`) for `match_phrase` clauses |
+| `searchType` | Default | Description |
+|---|:---:|---|
+| `keyword` | | Lexical (BM25) match against `chunk_text`. No date extraction. |
+| `keyword-dates` | ✅ | Lexical match with date phrase extraction and format-variant expansion. |
+| `semantic` | | Neural vector match via the `embedding` field. No date extraction. |
+| `hybrid` | | Combined BM25 + neural with configurable per-clause boost factors. No date extraction. |
+| `hybrid-dates` | | Combined BM25 + neural with date phrase extraction and format-variant expansion. |
 
-At least one of `useKeyword` or `useSemantic` must be `true`.
+## Valid `searchType` modes
 
-## Valid combinations
-
-| `useKeyword` | `useSemantic` | `enableDateExtraction` | Effective mode | OpenSearch query type |
-|:---:|:---:|:---:|---|---|
-| ✅ | ❌ | ❌ | Keyword only | `bool` with `match` |
-| ✅ | ❌ | ✅ | Keyword + dates | `bool` with `match` + `match_phrase` date variants |
-| ❌ | ✅ | ❌ | Semantic only | standalone `neural` with scoped `filter` |
-| ❌ | ✅ | ✅ | Semantic + dates | `bool` with `match_phrase` date variants + `neural` |
-| ✅ | ✅ | ❌ | Hybrid | `bool` with boosted `match` + boosted `neural` |
-| ✅ | ✅ | ✅ | Hybrid + dates | `bool` with boosted `match` + boosted `match_phrase` date variants + boosted `neural` |
+| `searchType` | Effective mode | OpenSearch query type |
+|---|---|---|
+| `keyword` | Keyword only | `bool` with `match` |
+| `keyword-dates` | Keyword + dates | `bool` with `match` + `match_phrase` date variants |
+| `semantic` | Semantic only | standalone `neural` with scoped `filter` |
+| `hybrid` | Hybrid | `bool` with boosted `match` + boosted `neural` |
+| `hybrid-dates` | Hybrid + dates | `bool` with boosted `match` + boosted `match_phrase` date variants + boosted `neural` |
 
 ## Boost constants
 
-Boosts are only applied in hybrid mode (`useKeyword: true, useSemantic: true`). They have no effect in keyword-only or semantic-only modes. In semantic + dates mode (`useKeyword: false, useSemantic: true, enableDateExtraction: true`) the date clause is included but is not boosted.
+Boosts are only applied in hybrid modes (`searchType: 'hybrid'` or `'hybrid-dates'`). They have no effect in keyword-only or semantic-only modes.
 
 | Constant | Default | Controls |
 |---|---|---|
@@ -49,46 +48,46 @@ When there is only a single filter clause and the keyword is non-empty (pure sem
 ```js
 import buildQueryJson from './index.js';
 
-// Hybrid + dates (all capabilities on)
-const query = buildQueryJson({
+// Hybrid + dates (BM25 + neural + date phrase expansion)
+const hybridDatesQuery = buildQueryJson({
     keyword: 'knee injury 12 January 2020',
     caseReferenceNumber: '26-711111',
     pageNumber: 1,
     itemsPerPage: 10,
-    useKeyword: true,
-    useSemantic: true,
-    enableDateExtraction: true,
-    logger
+    options: { searchType: 'hybrid-dates', logger }
 });
 
-// Semantic + dates (neural + date phrases, no general keyword match)
-const semanticDatesQuery = buildQueryJson({
+// Keyword + dates (BM25 match + date phrase expansion)
+const keywordDatesQuery = buildQueryJson({
     keyword: 'hospital visit 12/01/2020',
     caseReferenceNumber: '26-711111',
     pageNumber: 1,
     itemsPerPage: 10,
-    useKeyword: false,
-    useSemantic: true,
-    enableDateExtraction: true,
-    logger
+    options: { searchType: 'keyword-dates', logger }
 });
 
-// Pure semantic (no lexical, no date expansion)
+// Pure semantic (neural only, no date expansion)
 const semanticQuery = buildQueryJson({
     keyword: 'what injuries did the applicant suffer?',
     caseReferenceNumber: '26-711111',
     pageNumber: 1,
     itemsPerPage: 10,
-    useKeyword: false,
-    useSemantic: true,
-    enableDateExtraction: false,
-    logger
+    options: { searchType: 'semantic', logger }
+});
+
+// Keyword only (BM25, no date expansion)
+const keywordQuery = buildQueryJson({
+    keyword: 'physiotherapy report',
+    caseReferenceNumber: '26-711111',
+    pageNumber: 1,
+    itemsPerPage: 10,
+    options: { searchType: 'keyword', logger }
 });
 ```
 
 ## How dates work
 
-When `enableDateExtraction` is `true`:
+When `searchType` is `keyword-dates` or `hybrid-dates`:
 
 1. `extractDatesFromSearchString` scans the keyword for date-like phrases (e.g. `12th January 2020`, `12/01/20`).
 2. Matched phrases are removed from the remaining text.

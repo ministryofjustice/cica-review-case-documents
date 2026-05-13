@@ -120,9 +120,7 @@ describe('document-dal', () => {
             caseReferenceNumber: '12-745678',
             createDBQuery: () => mockDB,
             logger: mockLogger,
-            useKeyword: true,
-            useSemantic: true,
-            enableDateExtraction: false
+            searchType: 'hybrid'
         });
 
         await dal.getDocumentsChunksByKeyword('keyword', 2, 10);
@@ -683,9 +681,8 @@ describe('document-dal', () => {
                 'doc-123',
                 1,
                 'needle',
-                false,
-                true,
-                false
+                'semantic',
+                true
             );
 
             assert.equal(typeof queryArgs.body.min_score, 'number');

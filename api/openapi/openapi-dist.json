@@ -83,13 +83,15 @@
                         "name": "type",
                         "in": "query",
                         "required": false,
-                        "description": "Search type to run: keyword lexical search, semantic neural search, or hybrid",
+                        "description": "Search mode. Controls whether lexical (BM25), neural (semantic), or combined (hybrid) search is used, and whether date phrase extraction is applied.",
                         "schema": {
                             "type": "string",
                             "enum": [
                                 "keyword",
+                                "keyword-dates",
                                 "semantic",
-                                "hybrid"
+                                "hybrid",
+                                "hybrid-dates"
                             ]
                         },
                         "example": "hybrid"
@@ -806,16 +808,18 @@
                         "name": "type",
                         "in": "query",
                         "required": false,
-                        "description": "Search type to run for chunk matching",
+                        "description": "Search mode. Controls whether lexical (BM25), neural (semantic), or combined (hybrid) search is used, and whether date phrase extraction is applied.",
                         "schema": {
                             "type": "string",
                             "enum": [
                                 "keyword",
+                                "keyword-dates",
                                 "semantic",
-                                "hybrid"
+                                "hybrid",
+                                "hybrid-dates"
                             ]
                         },
-                        "example": "semantic"
+                        "example": "hybrid"
                     }
                 ],
                 "responses": {
@@ -1204,13 +1208,15 @@
                 "name": "type",
                 "in": "query",
                 "required": false,
-                "description": "Search type to run: keyword lexical search, semantic neural search, or hybrid",
+                "description": "Search mode. Controls whether lexical (BM25), neural (semantic), or combined (hybrid) search is used, and whether date phrase extraction is applied.",
                 "schema": {
                     "type": "string",
                     "enum": [
                         "keyword",
+                        "keyword-dates",
                         "semantic",
-                        "hybrid"
+                        "hybrid",
+                        "hybrid-dates"
                     ]
                 },
                 "example": "hybrid"
