@@ -27,16 +27,14 @@ describe('featureFlags middleware', () => {
         assert.deepEqual(res.locals.featureFlags, FEATURE_FLAG_DEFAULTS);
     });
 
-    it('defaults: align=true, keyword=true, semantic=false, dates=true', () => {
+    it('defaults: align=true, type=keyword-dates', () => {
         const req = { query: {}, session: {} };
         const res = { locals: {} };
 
         featureFlags(req, res, () => {});
 
         assert.equal(req.session.featureFlags.align, true);
-        assert.equal(req.session.featureFlags.keyword, true);
-        assert.equal(req.session.featureFlags.semantic, false);
-        assert.equal(req.session.featureFlags.dates, true);
+        assert.equal(req.session.featureFlags.type, 'keyword-dates');
     });
 
     it('ignores unknown flags from query string', () => {
@@ -48,9 +46,9 @@ describe('featureFlags middleware', () => {
 
         featureFlags(req, res, () => {});
 
-        assert.equal(req.session.featureFlags.type, undefined);
+        assert.equal(req.session.featureFlags.type, 'hybrid');
         assert.equal(req.session.featureFlags.unknown, undefined);
-        assert.equal(req.session.featureFlags.keyword, true);
+        assert.equal(req.session.featureFlags.align, true);
     });
 
     it('updates align flag from query string', () => {
@@ -62,53 +60,13 @@ describe('featureFlags middleware', () => {
         assert.equal(req.session.featureFlags.align, false);
     });
 
-    it('enables semantic flag from query string', () => {
-        const req = { query: { semantic: 'on' }, session: {} };
-        const res = { locals: {} };
-
-        featureFlags(req, res, () => {});
-
-        assert.equal(req.session.featureFlags.semantic, true);
-    });
-
-    it('disables keyword flag from query string', () => {
-        const req = { query: { keyword: 'off' }, session: {} };
-        const res = { locals: {} };
-
-        featureFlags(req, res, () => {});
-
-        assert.equal(req.session.featureFlags.keyword, false);
-    });
-
-    it('disables dates flag from query string', () => {
-        const req = { query: { dates: 'off' }, session: {} };
-        const res = { locals: {} };
-
-        featureFlags(req, res, () => {});
-
-        assert.equal(req.session.featureFlags.dates, false);
-    });
-
-    it('enables all three search flags together (hybrid + dates)', () => {
-        const req = { query: { keyword: 'on', semantic: 'on', dates: 'on' }, session: {} };
-        const res = { locals: {} };
-
-        featureFlags(req, res, () => {});
-
-        assert.equal(req.session.featureFlags.keyword, true);
-        assert.equal(req.session.featureFlags.semantic, true);
-        assert.equal(req.session.featureFlags.dates, true);
-    });
-
     it('preserves existing feature flag values when the query string is absent', () => {
         const req = {
             query: {},
             session: {
                 featureFlags: {
                     align: false,
-                    keyword: true,
-                    semantic: true,
-                    dates: false
+                    type: 'hybrid'
                 }
             }
         };
@@ -117,14 +75,12 @@ describe('featureFlags middleware', () => {
         featureFlags(req, res, () => {});
 
         assert.equal(req.session.featureFlags.align, false);
-        assert.equal(req.session.featureFlags.keyword, true);
-        assert.equal(req.session.featureFlags.semantic, true);
-        assert.equal(req.session.featureFlags.dates, false);
+        assert.equal(req.session.featureFlags.type, 'hybrid');
     });
 
     it('ignores invalid query-string values', () => {
         const req = {
-            query: { keyword: 'maybe', semantic: 'sometimes' },
+            query: { keyword: 'maybe', align: 'not-a-valid-type' },
             session: {}
         };
         const res = { locals: {} };
@@ -151,21 +107,11 @@ describe('parseFeatureFlagValue', () => {
 describe('getFeatureFlagValue', () => {
     it('returns the session value when present', () => {
         assert.equal(getFeatureFlagValue({ featureFlags: { align: false } }, 'align'), false);
-        assert.equal(getFeatureFlagValue({ featureFlags: { keyword: false } }, 'keyword'), false);
-        assert.equal(getFeatureFlagValue({ featureFlags: { semantic: true } }, 'semantic'), true);
-        assert.equal(getFeatureFlagValue({ featureFlags: { dates: false } }, 'dates'), false);
+        assert.equal(getFeatureFlagValue({ featureFlags: { type: 'hybrid' } }, 'type'), 'hybrid');
     });
 
     it('falls back to defaults when the session value is missing', () => {
         assert.equal(getFeatureFlagValue({}, 'align'), true);
-        assert.equal(getFeatureFlagValue({}, 'keyword'), true);
-        assert.equal(getFeatureFlagValue({}, 'semantic'), false);
-        assert.equal(getFeatureFlagValue({}, 'dates'), true);
-    });
-
-    it('falls back to the default for flags when the session value is not a boolean', () => {
-        assert.equal(getFeatureFlagValue({ featureFlags: { keyword: 'hybrid' } }, 'keyword'), true);
-        assert.equal(getFeatureFlagValue({ featureFlags: { semantic: 123 } }, 'semantic'), false);
-        assert.equal(getFeatureFlagValue({ featureFlags: { dates: null } }, 'dates'), true);
+        assert.equal(getFeatureFlagValue({}, 'type'), 'keyword-dates');
     });
 });

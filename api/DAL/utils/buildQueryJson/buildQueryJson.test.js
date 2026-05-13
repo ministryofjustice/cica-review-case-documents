@@ -285,17 +285,15 @@ describe('buildQueryJson', () => {
         assert.deepStrictEqual(result, expected);
     });
 
-    it('Should suppress date extraction when enableDateExtraction is false (keyword only mode)', () => {
-        // Keyword contains a date but enableDateExtraction: false — should produce a plain
-        // match clause with no match_phrase clauses, confirming the flag is respected.
+    it('Should suppress date extraction when using keyword only mode', () => {
+        // Keyword contains a date but should produce a plain match clause
+        // with no match_phrase clauses, confirming the flag is respected.
         const params = {
             keyword: 'Meeting on 12/05/2024 at office',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            useKeyword: true,
-            useSemantic: false,
-            enableDateExtraction: false
+            options: { searchType: 'keyword' }
         };
 
         const expected = {
@@ -316,11 +314,11 @@ describe('buildQueryJson', () => {
         assert.deepStrictEqual(result, expected);
         assert.ok(
             !result.query.bool.should.some((c) => c.match_phrase),
-            'No match_phrase clauses should be present when enableDateExtraction is false'
+            'No match_phrase clauses should be present when date extraction is disabled'
         );
     });
 
-    it('Should throw when all of useKeyword, useSemantic, and enableDateExtraction are false', () => {
+    it('Should throw when an invalid searchType is provided', () => {
         assert.throws(
             () =>
                 buildQueryJson({
@@ -328,25 +326,22 @@ describe('buildQueryJson', () => {
                     caseReferenceNumber: '26-711111',
                     pageNumber: 1,
                     itemsPerPage: 10,
-                    useKeyword: false,
-                    useSemantic: false,
-                    enableDateExtraction: false
+                    options: { searchType: 'invalid' }
                 }),
             {
-                message: 'At least one of useKeyword or useSemantic must be enabled'
+                message:
+                    'Invalid searchType "invalid". Must be one of: keyword, keyword-dates, semantic, hybrid, hybrid-dates'
             }
         );
     });
 
-    it('Should build a hybrid query when both useKeyword and useSemantic are true', () => {
+    it('Should build a hybrid query when searchType is hybrid', () => {
         const params = {
             keyword: 'Important meeting',
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            useKeyword: true,
-            useSemantic: true,
-            enableDateExtraction: false
+            options: { searchType: 'hybrid' }
         };
 
         const expected = {
@@ -395,54 +390,13 @@ describe('buildQueryJson', () => {
         assert.deepStrictEqual(resultWithoutMinScore, expected);
     });
 
-    it('Should build a semantic+dates query when useSemantic is true and enableDateExtraction is true', () => {
-        const params = {
-            keyword: 'Meeting on 12/05/2024',
-            caseReferenceNumber: '26-711111',
-            pageNumber: 1,
-            itemsPerPage: 5,
-            useKeyword: false,
-            useSemantic: true,
-            enableDateExtraction: true
-        };
-
-        const result = buildQueryJson(params);
-
-        assert.equal(typeof result.min_score, 'number');
-        assert.ok(result.min_score >= 0 && result.min_score <= 1);
-
-        // Should be a bool query (not a raw neural query) when dates are present
-        assert.ok(result.query.bool, 'Expected a bool query wrapping neural + date clauses');
-        assert.deepStrictEqual(result.query.bool.must, [{ term: { case_ref: '26-711111' } }]);
-        assert.strictEqual(result.query.bool.minimum_should_match, 1);
-
-        const should = result.query.bool.should;
-        const dateClause = should.find((c) => c.bool?.should?.some((s) => s.match_phrase));
-        const neuralClause = should.find((c) => c.neural?.embedding);
-
-        assert.ok(dateClause, 'Expected a date bool should clause');
-        assert.ok(
-            dateClause.bool.should.every((c) => c.match_phrase),
-            'All date clauses should be match_phrase'
-        );
-
-        assert.ok(neuralClause, 'Expected a neural clause');
-        assert.strictEqual(neuralClause.neural.embedding.query_text, 'Meeting on 12/05/2024');
-        assert.ok(neuralClause.neural.embedding.filter, 'Neural clause should have a filter');
-        assert.deepStrictEqual(neuralClause.neural.embedding.filter, {
-            term: { case_ref: '26-711111' }
-        });
-    });
-
-    it('Should build a semantic query when only useSemantic is true', () => {
+    it('Should build a semantic query when searchType is semantic', () => {
         const params = {
             keyword: 'Important meeting',
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            useKeyword: false,
-            useSemantic: true,
-            enableDateExtraction: false
+            options: { searchType: 'semantic' }
         };
 
         const expected = {
@@ -482,8 +436,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 5,
-            useKeyword: true,
-            useSemantic: true
+            options: { searchType: 'hybrid-dates' }
         };
 
         const result = buildQueryJson(params);
@@ -509,9 +462,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: '2',
             itemsPerPage: '5',
-            useKeyword: true,
-            useSemantic: true,
-            enableDateExtraction: false
+            options: { searchType: 'hybrid' }
         });
 
         assert.strictEqual(result.from, 5);
@@ -520,15 +471,13 @@ describe('buildQueryJson', () => {
         assert.strictEqual(result.query.bool.minimum_should_match, 1);
     });
 
-    it('Should not build semantic or hybrid query for an empty keyword even when useSemantic is true', () => {
+    it('Should not build semantic or hybrid query for an empty keyword', () => {
         const params = {
             keyword: '',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            useKeyword: false,
-            useSemantic: true,
-            enableDateExtraction: false
+            options: { searchType: 'semantic' }
         };
 
         const expected = {
@@ -550,7 +499,8 @@ describe('buildQueryJson', () => {
             keyword: 'Dates: 01/02/2024 03-04-24 07 / 08 / 2024 09 – 10 – 2024',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
-            itemsPerPage: 10
+            itemsPerPage: 10,
+            options: { searchType: 'keyword-dates' }
         };
 
         const expected = {
@@ -667,7 +617,8 @@ describe('buildQueryJson', () => {
                 'Dates: 20/04/2022, through to the end of June 2022, with a review on 2022-07-15',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
-            itemsPerPage: 10
+            itemsPerPage: 10,
+            options: { searchType: 'keyword-dates' }
         };
 
         const expected = {
@@ -759,7 +710,8 @@ describe('buildQueryJson', () => {
             keyword: 'Meeting on 5 January 2024 at office',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
-            itemsPerPage: 10
+            itemsPerPage: 10,
+            options: { searchType: 'keyword-dates' }
         };
         const result = buildQueryJson(params);
         assert.strictEqual(result.from, 0);
@@ -833,7 +785,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            includePagination: false
+            options: { includePagination: false }
         };
 
         const result = buildQueryJson(params);
@@ -849,10 +801,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            useKeyword: false,
-            useSemantic: true,
-            enableDateExtraction: false,
-            includePagination: false
+            options: { searchType: 'semantic', includePagination: false }
         };
 
         const result = buildQueryJson(params);

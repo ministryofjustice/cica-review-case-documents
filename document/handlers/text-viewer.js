@@ -1,3 +1,4 @@
+import SEARCH_TYPES from '../../api/search/constants/searchTypes.js';
 import { getFeatureFlagValue } from '../../middleware/featureFlags/index.js';
 import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
@@ -30,9 +31,8 @@ export function createTextViewerHandler(
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
             const { searchTerm = '' } = req.query;
-            const useKeyword = getFeatureFlagValue(req.session, 'keyword');
-            const useSemantic = getFeatureFlagValue(req.session, 'semantic');
-            const useDates = getFeatureFlagValue(req.session, 'dates');
+            const searchType =
+                getFeatureFlagValue(req.session, 'type') || SEARCH_TYPES.KEYWORD_DATES;
             const apiJwtToken = createApiJwtToken(req.session?.username);
 
             // Fetch document page metadata from OpenSearch via API
@@ -52,7 +52,8 @@ export function createTextViewerHandler(
 
             const viewMode = VIEW_MODES.TEXT;
 
-            // work out the pagination data from the metadata and values needed to construct the URLs for the pagination links
+            // work out the pagination data from the metadata and values needed to
+            // construct the URLs for the pagination links.
             const paginationData = paginationDataFromMetadata(
                 pageMetadata,
                 req.query,
@@ -80,9 +81,7 @@ export function createTextViewerHandler(
                         pageNumber,
                         crn,
                         searchTerm: safeSearchTerm,
-                        useKeyword,
-                        useSemantic,
-                        useDates,
+                        searchType,
                         jwtToken: apiJwtToken,
                         logger: req.log
                     });
