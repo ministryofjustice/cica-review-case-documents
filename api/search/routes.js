@@ -1,6 +1,5 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { parseFeatureFlagValue } from '../../middleware/featureFlags/index.js';
 
 /**
  * @module routes/searchRouter
@@ -56,10 +55,12 @@ export default function searchRouter({ searchService }) {
 
     router.get('/', async (req, res, next) => {
         try {
-            const { query, pageNumber, itemsPerPage } = req.query;
-            const useKeyword = parseFeatureFlagValue(req.query.keyword) ?? true;
-            const useSemantic = parseFeatureFlagValue(req.query.semantic) ?? false;
-            const enableDateExtraction = parseFeatureFlagValue(req.query.dates) ?? true;
+            const {
+                query,
+                pageNumber,
+                itemsPerPage,
+                type: searchType = 'keyword-dates'
+            } = req.query;
             const searchResults = await searchService.getSearchResultsByKeyword(
                 query,
                 pageNumber,
@@ -67,9 +68,7 @@ export default function searchRouter({ searchService }) {
                 {
                     caseReferenceNumber: req.get('On-Behalf-Of'),
                     logger: req.log,
-                    useKeyword,
-                    useSemantic,
-                    enableDateExtraction
+                    searchType
                 }
             );
 
