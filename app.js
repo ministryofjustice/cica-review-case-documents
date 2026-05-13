@@ -12,6 +12,7 @@ import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
 import enforceCrnInQuery from './middleware/enforceCrnInQuery/index.js';
+import enforceFeatureFlagsInQuery from './middleware/enforceFeatureFlagsInQuery/index.js';
 import {
     checkEnvVars,
     getMandatoryEnvVars,
@@ -172,6 +173,9 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     // Security: enforceCrnInQuery uses an explicit allowlist of redirect-eligible paths (see middleware).
     // If you add a new route that should support internal redirects, update the allowlist and its test.
     app.use(enforceCrnInQuery);
+    // Reinstates non-default feature flags into the URL so they persist across navigation
+    // and can be bookmarked. Mirrors the pattern of enforceCrnInQuery.
+    app.use(enforceFeatureFlagsInQuery);
     app.use(
         '/document',
         isAuthenticated,
