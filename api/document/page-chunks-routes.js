@@ -1,5 +1,6 @@
 import express from 'express';
 import createPageChunksService from './services/page-chunks-service.js';
+import { DEFAULT_SEARCH_TYPE } from '../search/constants/searchTypes.js';
 
 const CRN_REGEX = /^\d{2}-[78]\d{5}$/;
 
@@ -36,7 +37,7 @@ function createPageChunksRouter(options = {}) {
      * @param {string} req.params.pageNumber - The page number to retrieve chunks for.
      * @param {string} req.query.crn - The case reference number (required).
      * @param {string} [req.query.searchTerm] - Search term to filter chunks by content.
-     * @param {string} [req.query.searchType='keyword-dates'] - Search mode: `keyword`, `keyword-dates`, `semantic`, `hybrid`, or `hybrid-dates`.
+     * @param {string} [req.query.type=DEFAULT_SEARCH_TYPE] - Search mode: `keyword`, `keyword-dates`, `semantic`, `hybrid`, or `hybrid-dates`.
      * @param {string} [req.query.dates='on'] - Whether date extraction is enabled (`on` or `off`).
      * @param {express.Response} res - The Express response object.
      *
@@ -54,7 +55,7 @@ function createPageChunksRouter(options = {}) {
         try {
             const { documentId, pageNumber } = req.params;
             const { crn, searchTerm } = req.query;
-            const searchType = req.query.searchType ?? 'keyword-dates';
+            const searchType = req.query.type ?? DEFAULT_SEARCH_TYPE;
 
             if (!crn) {
                 const err = new Error('Case reference number (crn) is required');

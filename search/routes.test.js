@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 import express from 'express';
 import request from 'supertest';
+import { DEFAULT_SEARCH_TYPE } from '../api/search/constants/searchTypes.js';
 import createSearchRouter from './routes.js';
 
 describe('Search Routes', () => {
@@ -82,7 +83,7 @@ describe('Search Routes', () => {
             assert.strictEqual(res.statusCode, 200);
             assert.match(res.text, /search\/page\/results.njk/);
             assert.strictEqual(lastRenderParams.userName, 'search.user@example.com');
-            assert.strictEqual(lastRenderParams.searchType, 'keyword-dates');
+            assert.strictEqual(lastRenderParams.searchType, DEFAULT_SEARCH_TYPE);
         });
 
         it('should pass the search type to the search service when set in session', async () => {
