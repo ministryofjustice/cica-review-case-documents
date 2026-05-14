@@ -413,7 +413,7 @@ export const queryTypeBuilders = {
         documentId,
         logger
     }) => {
-        logger?.debug(
+        logger?.debug?.(
             { keyword, caseReferenceNumber, safePageNumber, documentId },
             '[QueryTypeBuilder] Building keyword query'
         );
@@ -427,7 +427,7 @@ export const queryTypeBuilders = {
             safePageNumber,
             documentId
         });
-        logger?.debug({ queryJson }, '[QueryTypeBuilder] keyword query built');
+        logger?.debug?.({ queryJson }, '[QueryTypeBuilder] keyword query built');
 
         return {
             queryJson,
@@ -445,7 +445,7 @@ export const queryTypeBuilders = {
         documentId,
         logger
     }) => {
-        logger?.debug(
+        logger?.debug?.(
             { keyword, caseReferenceNumber, safePageNumber, documentId },
             '[QueryTypeBuilder] Building keyword-dates query'
         );
@@ -459,7 +459,7 @@ export const queryTypeBuilders = {
             safePageNumber,
             documentId
         });
-        logger?.debug({ queryJson }, '[QueryTypeBuilder] keyword-dates query built');
+        logger?.debug?.({ queryJson }, '[QueryTypeBuilder] keyword-dates query built');
 
         return {
             queryJson,
@@ -499,7 +499,7 @@ export const queryTypeBuilders = {
         //     variantMs = timings.variantMs;
         // }
 
-        logger?.debug(
+        logger?.debug?.(
             { keyword, caseReferenceNumber, safePageNumber, documentId },
             '[QueryTypeBuilder] Building semantic query'
         );
@@ -510,7 +510,7 @@ export const queryTypeBuilders = {
             documentId,
             matchPhraseClauses
         });
-        logger?.debug({ queryJson }, '[QueryTypeBuilder] semantic query built');
+        logger?.debug?.({ queryJson }, '[QueryTypeBuilder] semantic query built');
 
         return {
             queryJson,
@@ -534,7 +534,7 @@ export const queryTypeBuilders = {
         } = {},
         logger
     }) => {
-        logger?.debug(
+        logger?.debug?.(
             {
                 keyword,
                 caseReferenceNumber,
@@ -558,7 +558,7 @@ export const queryTypeBuilders = {
             dateBoost,
             semanticBoost
         });
-        logger?.debug({ queryJson }, '[QueryTypeBuilder] hybrid query built');
+        logger?.debug?.({ queryJson }, '[QueryTypeBuilder] hybrid query built');
 
         return {
             queryJson,
@@ -582,7 +582,7 @@ export const queryTypeBuilders = {
         } = {},
         logger
     }) => {
-        logger?.debug(
+        logger?.debug?.(
             {
                 keyword,
                 caseReferenceNumber,
@@ -606,7 +606,7 @@ export const queryTypeBuilders = {
             dateBoost,
             semanticBoost
         });
-        logger?.debug({ queryJson }, '[QueryTypeBuilder] hybrid-dates query built');
+        logger?.debug?.({ queryJson }, '[QueryTypeBuilder] hybrid-dates query built');
 
         return {
             queryJson,
