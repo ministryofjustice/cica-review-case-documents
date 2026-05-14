@@ -218,7 +218,7 @@ describe('page-chunks-routes', () => {
 
         it('should pass search flags to service context', async () => {
             let capturedContext;
-            mockRequest.query.searchType = 'semantic';
+            mockRequest.query.type = 'semantic';
             mockRequest.query.dates = 'off';
             mockPageChunksService.getPageChunks = async (_, __, ___, ____, context) => {
                 capturedContext = context;

@@ -1,5 +1,6 @@
 import { DEFAULT_SEARCH_TYPE } from '../../api/search/constants/searchTypes.js';
 import createRequestServiceDefault from '../../service/request/index.js';
+import { DEFAULT_SEARCH_TYPE } from '../../api/search/constants/searchTypes.js';
 
 /**
  * Creates a document chunks service for fetching bounding box data for document pages.
@@ -10,7 +11,7 @@ import createRequestServiceDefault from '../../service/request/index.js';
  * @param {number|string} options.pageNumber - The page number to fetch chunks for.
  * @param {string} options.crn - The case reference number.
  * @param {string} [options.searchTerm] - Search term to filter chunks by content.
- * @param {string} [options.searchType='keyword-dates'] - Search mode (one of SEARCH_TYPES: keyword, keyword-dates, semantic, hybrid, hybrid-dates).
+ * @param {string} [options.searchType=DEFAULT_SEARCH_TYPE] - Search mode (one of SEARCH_TYPES: keyword, keyword-dates, semantic, hybrid, hybrid-dates).
  * @param {string} [options.jwtToken] - Optional JWT token for authentication.
  * @param {Object} options.logger - Logger instance for logging actions.
  * @param {Function} [options.createRequestService=createRequestServiceDefault] - Factory function to create a request service.
@@ -21,7 +22,7 @@ function createPageChunksService({
     pageNumber,
     crn,
     searchTerm,
-    searchType = 'keyword-dates',
+    searchType = DEFAULT_SEARCH_TYPE,
     jwtToken,
     logger,
     createRequestService = createRequestServiceDefault

@@ -1,5 +1,5 @@
 import express from 'express';
-import SEARCH_TYPES from '../api/search/constants/searchTypes.js';
+import { DEFAULT_SEARCH_TYPE } from '../api/search/constants/searchTypes.js';
 import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 
@@ -40,8 +40,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
 
             const { query, pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.query;
             const userName = req.session?.username;
-            const searchType =
-                getFeatureFlagValue(req.session, 'type') || SEARCH_TYPES.KEYWORD_DATES;
+            const searchType = getFeatureFlagValue(req.session, 'type') || DEFAULT_SEARCH_TYPE;
 
             if (!query) {
                 const html = render('search/page/index.njk', {

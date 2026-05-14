@@ -60,7 +60,7 @@ function createDocumentDAL({
     caseReferenceNumber,
     createDBQuery = createDBQueryDefault,
     logger,
-    searchType = 'keyword-dates'
+    searchType = DEFAULT_SEARCH_TYPE
 }) {
     if (process.env.OPENSEARCH_INDEX_CHUNKS_NAME === undefined) {
         throw new VError(
@@ -234,7 +234,7 @@ function createDocumentDAL({
      * @param {string} documentId - The UUID of the document (source_doc_id in OpenSearch).
      * @param {number|string} pageNumber - The page number.
      * @param {string} [keyword] - Search term to filter chunks by content.
-     * @param {string} [searchType='keyword-dates'] - Search mode (one of SEARCH_TYPES).
+     * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - Search mode (one of SEARCH_TYPES).
      * @returns {Promise<Array<Object>>} Array of chunk objects containing only bounding_box data.
      * @throws {VError} If the database query fails.
      */
@@ -242,7 +242,7 @@ function createDocumentDAL({
         documentId,
         pageNumber,
         keyword = '',
-        searchType = 'keyword-dates'
+        searchType = DEFAULT_SEARCH_TYPE
     ) {
         try {
             logger?.info?.(

@@ -7,10 +7,10 @@ Builds an OpenSearch query DSL object for a given `searchType`.
 | `searchType` | Default | Description |
 |---|:---:|---|
 | `keyword` | | Lexical (BM25) match against `chunk_text`. No date extraction. |
-| `keyword-dates` | ✅ | Lexical match with date phrase extraction and format-variant expansion. |
+| `keyword-dates` | | Lexical match with date phrase extraction and format-variant expansion. |
 | `semantic` | | Neural vector match via the `embedding` field. No date extraction. |
 | `hybrid` | | Combined BM25 + neural with configurable per-clause boost factors. No date extraction. |
-| `hybrid-dates` | | Combined BM25 + neural with date phrase extraction and format-variant expansion. |
+| `hybrid-dates` | ✅ | Combined BM25 + neural with date phrase extraction and format-variant expansion. |
 
 ## Valid `searchType` modes
 

@@ -1,7 +1,7 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
-import { resolveSearchType } from './constants/searchTypes.js';
+import DEFAULT_SEARCH_TYPE from './constants/searchTypes.js';
 
 /**
  * @module routes/searchRouter
@@ -61,7 +61,7 @@ export default function searchRouter({ searchService }) {
                 query,
                 pageNumber,
                 itemsPerPage,
-                type: searchType = 'keyword-dates'
+                type: searchType = DEFAULT_SEARCH_TYPE
             } = req.query;
             const searchResults = await searchService.getSearchResultsByKeyword(
                 query,
