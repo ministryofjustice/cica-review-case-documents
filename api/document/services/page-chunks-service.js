@@ -1,4 +1,5 @@
 import createDocumentDALDefault from '../../DAL/document-dal.js';
+import { DEFAULT_SEARCH_TYPE } from '../../search/constants/searchTypes.js';
 
 /**
  * Creates a Page Chunks Service for retrieving document page chunks with bounding boxes.
@@ -21,7 +22,7 @@ function createPageChunksService({
      * @param {string} [searchTerm] - Optional search term to filter chunks.
      * @param {Object} [context] - Context for the call.
      * @param {Object} [context.logger] - Logger instance.
-     * @param {string} [context.searchType='keyword-dates'] - Search mode (one of SEARCH_TYPES).
+     * @param {string} [context.searchType='hybrid-dates'] - Search mode (one of SEARCH_TYPES).
      * @returns {Promise<Array<Object>>} Array of chunks with bounding boxes.
      */
     async function getPageChunks(
@@ -29,7 +30,7 @@ function createPageChunksService({
         pageNumber,
         crn,
         searchTerm,
-        { logger, searchType = 'keyword-dates' } = {}
+        { logger, searchType = DEFAULT_SEARCH_TYPE } = {}
     ) {
         const dal = createDocumentDALFactory({
             caseReferenceNumber: crn,
