@@ -1,4 +1,5 @@
 import createRequestServiceDefault from '../service/request/index.js';
+import { DEFAULT_SEARCH_TYPE } from '../api/search/constants/searchTypes.js';
 
 /**
  * Creates a search service for fetching search results from the API.
@@ -25,7 +26,7 @@ function createSearchService({
      * @param {number} itemsPerPage - Number of items per page.
      * @param {string} token - The authentication token.
      * @param {Object} [options] - Additional request options.
-     * @param {string} [options.searchType='keyword-dates'] - Search mode (one of SEARCH_TYPES: keyword, keyword-dates, semantic, hybrid, hybrid-dates).
+     * @param {string} [options.searchType=DEFAULT_SEARCH_TYPE] - Search mode (one of SEARCH_TYPES: keyword, keyword-dates, semantic, hybrid, hybrid-dates).
      * @returns {Promise<object>} A promise that resolves to the search results.
      */
     async function getSearchResults(
@@ -33,7 +34,7 @@ function createSearchService({
         pageNumber,
         itemsPerPage,
         token,
-        { searchType = 'keyword-dates' } = {}
+        { searchType = DEFAULT_SEARCH_TYPE } = {}
     ) {
         logger.info({ query, pageNumber, itemsPerPage }, 'Fetching search results');
         const opts = {
