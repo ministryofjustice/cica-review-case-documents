@@ -11,9 +11,9 @@
  * 3. Import and wire it up in `index.js`.
  */
 
+import SEARCH_TYPES from '../../../search/constants/searchTypes.js';
 import extractDatesFromSearchString from '../extractDatesFromSearchString/index.js';
 import generateDateFormatVariants from '../generateDateFormatVariants/index.js';
-import SEARCH_TYPES from '../../../search/constants/searchTypes.js';
 
 /** @type {number} Minimum neural score — needs tuning or replaced with a low K value. */
 const SEMANTIC_MIN_SCORE = 0.1;
@@ -559,6 +559,7 @@ export const queryTypeBuilders = {
             semanticBoost
         });
         logger?.debug({ queryJson }, '[QueryTypeBuilder] hybrid query built');
+
         return {
             queryJson,
             phrases,
