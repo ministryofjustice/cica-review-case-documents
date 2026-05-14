@@ -330,7 +330,7 @@ describe('buildQueryJson', () => {
                 }),
             {
                 message:
-                    'Invalid searchType "invalid". Must be one of: keyword, keyword-dates, semantic, hybrid, hybrid-dates'
+                    'Invalid searchType "invalid". Must be one of: hybrid-dates, keyword-dates, hybrid, keyword, semantic'
             }
         );
     });
