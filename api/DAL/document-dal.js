@@ -1,8 +1,8 @@
 import crypto from 'node:crypto';
 import VError from 'verror';
 import createDBQueryDefault from '../../db/index.js';
-import buildQueryJson from './utils/buildQueryJson/index.js';
 import { DEFAULT_SEARCH_TYPE } from '../search/constants/searchTypes.js';
+import buildQueryJson from './utils/buildQueryJson/index.js';
 
 /**
  * @typedef {object} Logger

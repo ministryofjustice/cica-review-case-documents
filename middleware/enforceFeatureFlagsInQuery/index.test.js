@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import enforceFeatureFlagsInQuery from './index.js';
 import { DEFAULT_SEARCH_TYPE } from '../../api/search/constants/searchTypes.js';
+import enforceFeatureFlagsInQuery from './index.js';
 
 /**
  * Creates a mock Express request object for testing purposes.
