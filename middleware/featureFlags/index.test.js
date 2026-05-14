@@ -1,15 +1,14 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-
+import {
+    DEFAULT_SEARCH_TYPE,
+    parseSearchTypeTokens
+} from '../../api/search/constants/searchTypes.js';
 import featureFlags, {
     FEATURE_FLAG_DEFAULTS,
     getFeatureFlagValue,
     parseFeatureFlagValue
 } from './index.js';
-import {
-    parseSearchTypeTokens,
-    DEFAULT_SEARCH_TYPE
-} from '../../api/search/constants/searchTypes.js';
 
 describe('featureFlags middleware', () => {
     it('sets default feature flags in session and res.locals', () => {

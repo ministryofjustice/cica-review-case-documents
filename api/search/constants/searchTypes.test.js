@@ -1,10 +1,10 @@
 import assert from 'node:assert';
 import { describe, it } from 'node:test';
 import SEARCH_TYPES, {
-    SEARCH_TYPE_TOKENS,
-    SEARCH_TYPE_RESOLUTIONS,
     DEFAULT_SEARCH_TYPE,
-    parseSearchTypeTokens
+    parseSearchTypeTokens,
+    SEARCH_TYPE_RESOLUTIONS,
+    SEARCH_TYPE_TOKENS
 } from './searchTypes.js';
 
 describe('SEARCH_TYPE_TOKENS', () => {

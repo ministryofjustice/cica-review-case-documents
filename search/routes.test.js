@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 import express from 'express';
 import request from 'supertest';
-import createSearchRouter from './routes.js';
 import { DEFAULT_SEARCH_TYPE } from '../api/search/constants/searchTypes.js';
+import createSearchRouter from './routes.js';
 
 describe('Search Routes', () => {
     let app;

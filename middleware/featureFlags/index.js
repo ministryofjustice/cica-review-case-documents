@@ -1,6 +1,6 @@
 import {
-    parseSearchTypeTokens,
-    DEFAULT_SEARCH_TYPE
+    DEFAULT_SEARCH_TYPE,
+    parseSearchTypeTokens
 } from '../../api/search/constants/searchTypes.js';
 
 export const FEATURE_FLAG_DEFAULTS = Object.freeze({

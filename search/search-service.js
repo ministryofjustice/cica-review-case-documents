@@ -1,5 +1,5 @@
-import createRequestServiceDefault from '../service/request/index.js';
 import { DEFAULT_SEARCH_TYPE } from '../api/search/constants/searchTypes.js';
+import createRequestServiceDefault from '../service/request/index.js';
 
 /**
  * Creates a search service for fetching search results from the API.
