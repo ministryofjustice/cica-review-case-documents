@@ -1,6 +1,11 @@
+import {
+    parseSearchTypeTokens,
+    DEFAULT_SEARCH_TYPE
+} from '../../api/search/constants/searchTypes.js';
+
 export const FEATURE_FLAG_DEFAULTS = Object.freeze({
     align: true, // toggle alignment of image highlighting to prevent or show overlapping
-    type: 'keyword-dates' // search mode: keyword, keyword-dates, semantic, hybrid, or hybrid-dates
+    type: DEFAULT_SEARCH_TYPE // search mode: keyword, keyword-dates, semantic, hybrid, or hybrid-dates
 });
 
 /**
@@ -72,7 +77,8 @@ export function getFeatureFlagValue(session, flagName) {
  * Persists supported feature flags from query-string params into the session.
  *
  * Boolean flags (`align`) accept `on` / `off` query-string values.
- * String flags (`type`) accept any non-empty string query-string value.
+ * The `type` flag accepts a comma-delimited string of SEARCH_TYPE_TOKENS. If the value
+ * is present but contains unrecognised tokens, the request is rejected with a 400 error.
  *
  * @param {import('express').Request} req - Express request object.
  * @param {import('express').Response} res - Express response object.
@@ -89,6 +95,18 @@ export default function featureFlags(req, res, next) {
                 const queryFlagValue = parseFeatureFlagValue(req.query?.[flagName]);
                 if (typeof queryFlagValue === 'boolean') {
                     flags[flagName] = queryFlagValue;
+                }
+            } else if (flagName === 'type' && req.query?.type !== undefined) {
+                const { slug, unknownTokens } = parseSearchTypeTokens(req.query.type);
+                if (unknownTokens.length > 0) {
+                    const error = new Error(
+                        `Invalid search type token(s): ${unknownTokens.join(', ')}`
+                    );
+                    error.status = 400;
+                    return next(error);
+                }
+                if (typeof slug === 'string') {
+                    flags[flagName] = slug;
                 }
             } else {
                 const queryFlagValue = parseEnumFlagValue(req.query?.[flagName]);
