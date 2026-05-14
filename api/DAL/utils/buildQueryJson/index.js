@@ -126,7 +126,7 @@ function buildQueryJson({
         searchType
     });
 
-    logger?.debug({ queryJson }, 'Built query JSON');
+    logger?.debug?.({ queryJson }, 'Built query JSON');
 
     // TEMP logging for verification during development. Remove or replace with appropriate structured logging as needed.
     console.log(`[BuildQueryJson] Temp log - ${searchType} queryTypeBuilder parameters`, {

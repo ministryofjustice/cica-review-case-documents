@@ -6,8 +6,7 @@ import createDocumentDAL from './document-dal.js';
 const mockLogger = {
     info: () => {},
     error: () => {},
-    warn: () => {},
-    debug: () => {}
+    warn: () => {}
 };
 
 describe('document-dal', () => {
