@@ -2,7 +2,7 @@
  * The primitive capability tokens accepted in the `type` URL query parameter.
  *
  * These are the building blocks that callers combine in a comma-delimited string
- * (e.g. `?type=hybrid,dates`) to select a search mode. Tokens are order-insensitive
+ * (e.g. `?type=keyword,semantic,dates`) to select a search mode. Tokens are order-insensitive
  * and any unrecognised values in the string are silently ignored.
  *
  * @readonly
@@ -15,7 +15,7 @@ export const SEARCH_TYPE_TOKENS = Object.freeze({
     HYBRID: 'hybrid'
 });
 
-const { KEYWORD, DATES, SEMANTIC, HYBRID } = SEARCH_TYPE_TOKENS;
+const { KEYWORD, DATES, SEMANTIC } = SEARCH_TYPE_TOKENS;
 const VALID_TOKEN_VALUES = new Set(Object.values(SEARCH_TYPE_TOKENS));
 
 /**
@@ -30,38 +30,39 @@ const VALID_TOKEN_VALUES = new Set(Object.values(SEARCH_TYPE_TOKENS));
  * @type {Readonly<Record<string, string[]>>}
  */
 export const SEARCH_TYPE_RESOLUTIONS = Object.freeze({
-    HYBRID_DATES: [HYBRID, DATES],
+    HYBRID_DATES: [KEYWORD, SEMANTIC, DATES],
     KEYWORD_DATES: [KEYWORD, DATES],
-    HYBRID: [HYBRID],
+    HYBRID: [KEYWORD, SEMANTIC],
     KEYWORD: [KEYWORD],
     SEMANTIC: [SEMANTIC]
 });
 
 /**
- * Enumeration of supported search mode slugs, automatically derived from SEARCH_TYPE_RESOLUTIONS.
+ * Enumeration of supported search mode slugs.
  *
- * Each slug is the hyphen-joined form of its resolution's token array, so the values
- * stay in sync with SEARCH_TYPE_RESOLUTIONS without needing to be maintained separately.
+ * Defined explicitly rather than auto-derived from SEARCH_TYPE_RESOLUTIONS because
+ * the resolution token arrays use the primitive capability tokens (`keyword`, `semantic`)
+ * while the slugs use the semantic shorthand (`hybrid`). Keeping them separate avoids
+ * a join producing `keyword-semantic-dates` instead of `hybrid-dates`.
  *
- * | Key             | Tokens                  | Slug             |
- * |-----------------|-------------------------|------------------|
- * | `HYBRID_DATES`  | `hybrid` + `dates`      | `hybrid-dates`   |
- * | `KEYWORD_DATES` | `keyword` + `dates`     | `keyword-dates`  |
- * | `HYBRID`        | `hybrid`                | `hybrid`         |
- * | `KEYWORD`       | `keyword`               | `keyword`        |
- * | `SEMANTIC`      | `semantic`              | `semantic`       |
+ * | Key             | Resolving tokens                    | Slug             |
+ * |-----------------|-------------------------------------|------------------|
+ * | `HYBRID_DATES`  | `keyword` + `semantic` + `dates`    | `hybrid-dates`   |
+ * | `KEYWORD_DATES` | `keyword` + `dates`                 | `keyword-dates`  |
+ * | `HYBRID`        | `keyword` + `semantic`              | `hybrid`         |
+ * | `KEYWORD`       | `keyword`                           | `keyword`        |
+ * | `SEMANTIC`      | `semantic`                          | `semantic`       |
  *
  * @readonly
  * @enum {string}
  */
-const SEARCH_TYPES = Object.freeze(
-    Object.fromEntries(
-        Object.entries(SEARCH_TYPE_RESOLUTIONS).map(([searchType, searchTypeComponents]) => [
-            searchType,
-            searchTypeComponents.join('-')
-        ])
-    )
-);
+const SEARCH_TYPES = Object.freeze({
+    HYBRID_DATES: 'hybrid-dates',
+    KEYWORD_DATES: 'keyword-dates',
+    HYBRID: 'hybrid',
+    KEYWORD: 'keyword',
+    SEMANTIC: 'semantic'
+});
 
 export default SEARCH_TYPES;
 
@@ -124,9 +125,12 @@ export function parseSearchTypeTokens(value) {
         return { slug: undefined, unknownTokens };
     }
 
-    // find the first resolution whose required tokens are all present in the input set.
+    // find the resolution whose token set exactly matches the valid input tokens.
     for (const [searchType, searchTypeComponents] of Object.entries(SEARCH_TYPE_RESOLUTIONS)) {
-        if (searchTypeComponents.every((token) => tokens.has(token))) {
+        if (
+            searchTypeComponents.length === tokens.size &&
+            searchTypeComponents.every((token) => tokens.has(token))
+        ) {
             return { slug: SEARCH_TYPES[searchType], unknownTokens };
         }
     }

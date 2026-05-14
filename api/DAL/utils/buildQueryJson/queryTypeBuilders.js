@@ -25,10 +25,6 @@ const DEFAULT_LEXICAL_BOOST = 12;
 const DEFAULT_DATE_BOOST = 1;
 const DEFAULT_NEURAL_BOOST = 4;
 
-// ---------------------------------------------------------------------------
-// Low-level DSL shell factories
-// ---------------------------------------------------------------------------
-
 /**
  * Creates the lexical (BM25) query shell scoped to the case reference.
  * The caller is expected to populate `query.bool.should` with match/match_phrase clauses.

@@ -78,7 +78,8 @@ export function getFeatureFlagValue(session, flagName) {
  *
  * Boolean flags (`align`) accept `on` / `off` query-string values.
  * The `type` flag accepts a comma-delimited string of SEARCH_TYPE_TOKENS. If the value
- * is present but contains unrecognised tokens, the request is rejected with a 400 error.
+ * contains unrecognised tokens, or the combination of valid tokens does not map to a
+ * known search mode, the request is rejected with a 400 error.
  *
  * @param {import('express').Request} req - Express request object.
  * @param {import('express').Response} res - Express response object.
@@ -107,6 +108,12 @@ export default function featureFlags(req, res, next) {
                 }
                 if (typeof slug === 'string') {
                     flags[flagName] = slug;
+                } else {
+                    const error = new Error(
+                        `Invalid search type: tokens do not resolve to a known search mode`
+                    );
+                    error.status = 400;
+                    return next(error);
                 }
             } else {
                 const queryFlagValue = parseEnumFlagValue(req.query?.[flagName]);
