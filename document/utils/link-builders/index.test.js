@@ -68,6 +68,16 @@ describe('Link Builders', () => {
             const result = buildImageUrl(docId, 1, crn, 'invalid-type', {});
             assert.ok(result.includes(`&type=${DEFAULT_SEARCH_TYPE}`));
         });
+
+        it('appends type when searchType is provided', () => {
+            const result = buildImageUrl(docId, 1, crn, 'keyword');
+            assert.strictEqual(result, `/document/${docId}/page/1?crn=${crn}&type=keyword`);
+        });
+
+        it('omits type when searchType is empty', () => {
+            const result = buildImageUrl(docId, 1, crn, '');
+            assert.strictEqual(result, `/document/${docId}/page/1?crn=${crn}`);
+        });
     });
 
     describe('buildTextPageLink', () => {
@@ -89,38 +99,14 @@ describe('Link Builders', () => {
             assert.ok(result.includes(encodeURIComponent('test & special')));
         });
 
-        it('defaults to DEFAULT_SEARCH_TYPE when searchType is not provided', () => {
-            const result = buildTextPageLink(docId, 1, crn);
-            assert.ok(result.includes(`&type=${DEFAULT_SEARCH_TYPE}`));
+        it('appends type when searchType is provided', () => {
+            const result = buildTextPageLink(docId, 1, crn, 'foo', 'hybrid-dates');
+            assert.ok(result.includes('&type=hybrid-dates'));
         });
 
-        it('defaults to DEFAULT_SEARCH_TYPE when searchType is undefined', () => {
-            const result = buildTextPageLink(docId, 1, crn, '', undefined);
-            assert.ok(result.includes(`/document/${docId}/view/text/page/1`));
-            assert.ok(result.includes(`&type=${DEFAULT_SEARCH_TYPE}`));
-        });
-
-        it('defaults to DEFAULT_SEARCH_TYPE when searchType is invalid', () => {
-            const result = buildTextPageLink(docId, 1, crn, '', 'invalid-type');
-            assert.ok(result.includes(`/document/${docId}/view/text/page/1`));
-            assert.ok(result.includes(`&type=${DEFAULT_SEARCH_TYPE}`));
-        });
-
-        it('defaults to DEFAULT_SEARCH_TYPE when searchType is empty string', () => {
-            const result = buildTextPageLink(docId, 1, crn, '', '');
-            assert.ok(result.includes(`/document/${docId}/view/text/page/1`));
-            assert.ok(result.includes(`&type=${DEFAULT_SEARCH_TYPE}`));
-        });
-
-        it('uses session feature-flag type when searchType is invalid and session override is set', () => {
-            const session = { featureFlags: { type: 'semantic' } };
-            const result = buildTextPageLink(docId, 1, crn, '', 'invalid-type', session);
-            assert.ok(result.includes('&type=semantic'));
-        });
-
-        it('falls back to DEFAULT_SEARCH_TYPE when searchType is invalid and session has no type flag', () => {
-            const result = buildTextPageLink(docId, 1, crn, '', 'invalid-type', {});
-            assert.ok(result.includes(`&type=${DEFAULT_SEARCH_TYPE}`));
+        it('omits type when searchType is empty', () => {
+            const result = buildTextPageLink(docId, 1, crn, 'foo');
+            assert.ok(!result.includes('type='));
         });
     });
 
@@ -138,38 +124,14 @@ describe('Link Builders', () => {
             assert.ok(result.includes('searchTerm='));
         });
 
-        it('defaults to DEFAULT_SEARCH_TYPE when searchType is not provided', () => {
-            const result = buildImagePageLink(docId, 1, crn);
-            assert.ok(result.includes(`&type=${DEFAULT_SEARCH_TYPE}`));
+        it('appends type when searchType is provided', () => {
+            const result = buildImagePageLink(docId, 1, crn, 'foo', 'hybrid-dates');
+            assert.ok(result.includes('&type=hybrid-dates'));
         });
 
-        it('defaults to DEFAULT_SEARCH_TYPE when searchType is undefined', () => {
-            const result = buildImagePageLink(docId, 1, crn, '', undefined);
-            assert.ok(result.includes(`/document/${docId}/view/page/1`));
-            assert.ok(result.includes(`&type=${DEFAULT_SEARCH_TYPE}`));
-        });
-
-        it('defaults to DEFAULT_SEARCH_TYPE when searchType is invalid', () => {
-            const result = buildImagePageLink(docId, 1, crn, '', 'invalid-type');
-            assert.ok(result.includes(`/document/${docId}/view/page/1`));
-            assert.ok(result.includes(`&type=${DEFAULT_SEARCH_TYPE}`));
-        });
-
-        it('defaults to DEFAULT_SEARCH_TYPE when searchType is empty string', () => {
-            const result = buildImagePageLink(docId, 1, crn, '', '');
-            assert.ok(result.includes(`/document/${docId}/view/page/1`));
-            assert.ok(result.includes(`&type=${DEFAULT_SEARCH_TYPE}`));
-        });
-
-        it('uses session feature-flag type when searchType is invalid and session override is set', () => {
-            const session = { featureFlags: { type: 'semantic' } };
-            const result = buildImagePageLink(docId, 1, crn, '', 'invalid-type', session);
-            assert.ok(result.includes('&type=semantic'));
-        });
-
-        it('falls back to DEFAULT_SEARCH_TYPE when searchType is invalid and session has no type flag', () => {
-            const result = buildImagePageLink(docId, 1, crn, '', 'invalid-type', {});
-            assert.ok(result.includes(`&type=${DEFAULT_SEARCH_TYPE}`));
+        it('omits type when searchType is empty', () => {
+            const result = buildImagePageLink(docId, 1, crn, 'foo');
+            assert.ok(!result.includes('type='));
         });
     });
 });

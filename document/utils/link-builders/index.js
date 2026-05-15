@@ -13,19 +13,12 @@ import {
  * @param {string} documentId - The document UUID
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
- * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - The active search type value
- * @param {Object} [session={}] - The session object
- * @returns {string} The image streaming URL
+ * @param {string} [searchType=''] - The active search type slug
+ * @returns {string} The image URL path
  */
-export function buildImageUrl(
-    documentId,
-    pageNumber,
-    crn,
-    searchType = DEFAULT_SEARCH_TYPE,
-    session = {}
-) {
+export function buildImageUrl(documentId, pageNumber, crn, searchType = '') {
     const base = `/document/${documentId}/page/${pageNumber}?crn=${crn}`;
-    return `${base}&type=${encodeURIComponent(resolveSearchType(searchType, session))}`;
+    return searchType ? `${base}&type=${encodeURIComponent(searchType)}` : base;
 }
 
 /**
@@ -35,10 +28,12 @@ export function buildImageUrl(
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
+ * @param {string} [searchType=''] - The active search type slug
  * @returns {string} The text view URL
  */
-export function buildTextPageLink(documentId, pageNumber, crn, searchTerm = '') {
-    return `/document/${documentId}/view/text/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
+export function buildTextPageLink(documentId, pageNumber, crn, searchTerm = '', searchType = '') {
+    const base = `/document/${documentId}/view/text/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
+    return searchType ? `${base}&type=${encodeURIComponent(searchType)}` : base;
 }
 
 /**
@@ -48,8 +43,10 @@ export function buildTextPageLink(documentId, pageNumber, crn, searchTerm = '') 
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
+ * @param {string} [searchType=''] - The active search type slug
  * @returns {string} The image view URL
  */
-export function buildImagePageLink(documentId, pageNumber, crn, searchTerm = '') {
-    return `/document/${documentId}/view/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
+export function buildImagePageLink(documentId, pageNumber, crn, searchTerm = '', searchType = '') {
+    const base = `/document/${documentId}/view/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
+    return searchType ? `${base}&type=${encodeURIComponent(searchType)}` : base;
 }
