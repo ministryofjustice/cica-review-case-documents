@@ -8,10 +8,12 @@
  * @param {string} documentId - The document UUID
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
+ * @param {string} [searchType=''] - The active search type slug
  * @returns {string} The image URL path
  */
-export function buildImageUrl(documentId, pageNumber, crn) {
-    return `/document/${documentId}/page/${pageNumber}?crn=${crn}`;
+export function buildImageUrl(documentId, pageNumber, crn, searchType = '') {
+    const base = `/document/${documentId}/page/${pageNumber}?crn=${crn}`;
+    return searchType ? `${base}&type=${encodeURIComponent(searchType)}` : base;
 }
 
 /**
@@ -21,10 +23,12 @@ export function buildImageUrl(documentId, pageNumber, crn) {
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
+ * @param {string} [searchType=''] - The active search type slug
  * @returns {string} The text view URL
  */
-export function buildTextPageLink(documentId, pageNumber, crn, searchTerm = '') {
-    return `/document/${documentId}/view/text/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
+export function buildTextPageLink(documentId, pageNumber, crn, searchTerm = '', searchType = '') {
+    const base = `/document/${documentId}/view/text/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
+    return searchType ? `${base}&type=${encodeURIComponent(searchType)}` : base;
 }
 
 /**
@@ -34,8 +38,10 @@ export function buildTextPageLink(documentId, pageNumber, crn, searchTerm = '') 
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
+ * @param {string} [searchType=''] - The active search type slug
  * @returns {string} The image view URL
  */
-export function buildImagePageLink(documentId, pageNumber, crn, searchTerm = '') {
-    return `/document/${documentId}/view/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
+export function buildImagePageLink(documentId, pageNumber, crn, searchTerm = '', searchType = '') {
+    const base = `/document/${documentId}/view/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
+    return searchType ? `${base}&type=${encodeURIComponent(searchType)}` : base;
 }

@@ -1,5 +1,5 @@
 import express from 'express';
-import { DEFAULT_SEARCH_TYPE } from '../api/search/constants/searchTypes.js';
+import { DEFAULT_SEARCH_TYPE, parseSearchType } from '../api/search/constants/searchTypes.js';
 import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 
@@ -21,10 +21,14 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
         try {
             const { query } = req.body;
             const { pageNumber = 1 } = req.query;
+            const { slug: postedSearchType } = parseSearchType(req.body?.type);
+            const searchType =
+                postedSearchType || getFeatureFlagValue(req.session, 'type') || DEFAULT_SEARCH_TYPE;
 
             const redirectParams = new URLSearchParams({
                 query: query.trim(),
-                pageNumber: String(pageNumber)
+                pageNumber: String(pageNumber),
+                type: searchType
             });
 
             return res.redirect(`/search?${redirectParams.toString()}`);
@@ -41,6 +45,16 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             const { query, pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.query;
             const userName = req.session?.username;
             const searchType = getFeatureFlagValue(req.session, 'type') || DEFAULT_SEARCH_TYPE;
+
+            // Ensure the URL is canonical: when no `type` is supplied (e.g. the
+            // sub-nav "Search" tab links to plain /search), redirect with the
+            // resolved search type appended so the URL is bookmarkable and
+            // visible to the user.
+            if (req.query.type === undefined) {
+                const redirectQuery = new URLSearchParams(req.query);
+                redirectQuery.set('type', searchType);
+                return res.redirect(`/search?${redirectQuery.toString()}`);
+            }
 
             if (!query) {
                 const html = render('search/page/index.njk', {
