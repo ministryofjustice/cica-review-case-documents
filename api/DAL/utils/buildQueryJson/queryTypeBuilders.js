@@ -16,12 +16,12 @@ import extractDatesFromSearchString from '../extractDatesFromSearchString/index.
 import generateDateFormatVariants from '../generateDateFormatVariants/index.js';
 
 /** @type {number} Minimum neural score — needs tuning or replaced with a low K value. */
-const SEMANTIC_MIN_SCORE = 0.1;
+const SEMANTIC_MIN_SCORE = 0.55;
 
 /** @type {number} Default number of nearest-neighbour candidates for neural queries. */
-const DEFAULT_SEMANTIC_K = 5;
+const DEFAULT_SEMANTIC_K = 15;
 
-const DEFAULT_LEXICAL_BOOST = 12;
+const DEFAULT_LEXICAL_BOOST = 20;
 const DEFAULT_DATE_BOOST = 1;
 const DEFAULT_NEURAL_BOOST = 4;
 
