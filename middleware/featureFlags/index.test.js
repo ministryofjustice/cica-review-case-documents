@@ -1,9 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import {
-    DEFAULT_SEARCH_TYPE,
-    parseSearchTypeTokens
-} from '../../api/search/constants/searchTypes.js';
+import { DEFAULT_SEARCH_TYPE, parseSearchType } from '../../api/search/constants/searchTypes.js';
 import featureFlags, {
     FEATURE_FLAG_DEFAULTS,
     getFeatureFlagValue,
@@ -42,7 +39,7 @@ describe('featureFlags middleware', () => {
 
     it('ignores unknown flags from query string', () => {
         const req = {
-            query: { type: 'keyword,semantic', unknown: 'on' },
+            query: { type: 'hybrid', unknown: 'on' },
             session: {}
         };
         const res = { locals: {} };
@@ -93,8 +90,8 @@ describe('featureFlags middleware', () => {
         assert.deepEqual(req.session.featureFlags, FEATURE_FLAG_DEFAULTS);
     });
 
-    it('resolves type from comma-delimited tokens (keyword,semantic,dates)', () => {
-        const req = { query: { type: 'keyword,semantic,dates' }, session: {} };
+    it('accepts supported search type slugs directly', () => {
+        const req = { query: { type: 'hybrid-dates' }, session: {} };
         const res = { locals: {} };
 
         featureFlags(req, res, () => {});
@@ -102,8 +99,8 @@ describe('featureFlags middleware', () => {
         assert.equal(req.session.featureFlags.type, 'hybrid-dates');
     });
 
-    it('resolves type from comma-delimited tokens in any order (dates,keyword)', () => {
-        const req = { query: { type: 'dates,keyword' }, session: {} };
+    it('normalises supported search type slugs', () => {
+        const req = { query: { type: ' KEYWORD-DATES ' }, session: {} };
         const res = { locals: {} };
 
         featureFlags(req, res, () => {});
@@ -111,9 +108,9 @@ describe('featureFlags middleware', () => {
         assert.equal(req.session.featureFlags.type, 'keyword-dates');
     });
 
-    it('calls next with a 400 error when type contains unrecognised tokens', () => {
+    it('calls next with a 400 error when type is not recognised', () => {
         const req = {
-            query: { type: 'unknown,foo' },
+            query: { type: 'unknown' },
             session: { featureFlags: { align: true, type: DEFAULT_SEARCH_TYPE } }
         };
         const res = { locals: {} };
@@ -125,12 +122,12 @@ describe('featureFlags middleware', () => {
 
         assert.ok(errorPassed instanceof Error);
         assert.equal(errorPassed.status, 400);
-        assert.match(errorPassed.message, /unknown, foo/);
+        assert.match(errorPassed.message, /unknown/);
     });
 
-    it('calls next with a 400 when type mixes valid and invalid tokens', () => {
+    it('calls next with a 400 when type uses the old token-combination format', () => {
         const req = {
-            query: { type: 'hybrid,badtoken' },
+            query: { type: 'keyword,semantic,dates' },
             session: {}
         };
         const res = { locals: {} };
@@ -142,12 +139,12 @@ describe('featureFlags middleware', () => {
 
         assert.ok(errorPassed instanceof Error);
         assert.equal(errorPassed.status, 400);
-        assert.match(errorPassed.message, /badtoken/);
+        assert.match(errorPassed.message, /keyword,semantic,dates/);
     });
 
-    it('calls next with a 400 when type tokens are all valid but do not resolve to a known search mode', () => {
+    it('calls next with a 400 when type is empty', () => {
         const req = {
-            query: { type: 'semantic,dates' },
+            query: { type: '   ' },
             session: { featureFlags: { align: true, type: 'hybrid-dates' } }
         };
         const res = { locals: {} };
@@ -159,10 +156,10 @@ describe('featureFlags middleware', () => {
 
         assert.ok(errorPassed instanceof Error);
         assert.equal(errorPassed.status, 400);
-        assert.match(errorPassed.message, /do not resolve to a known search mode/);
+        assert.match(errorPassed.message, /\(empty\)/);
     });
 
-    it('does not fall through to the previous session value when type is an unresolvable combination', () => {
+    it('does not fall through to the previous session value when type is invalid', () => {
         const req = {
             query: { type: 'semantic,dates' },
             session: { featureFlags: { align: true, type: 'hybrid-dates' } }
@@ -180,111 +177,57 @@ describe('featureFlags middleware', () => {
     });
 });
 
-describe('parseSearchTypeTokens', () => {
-    it('resolves single tokens', () => {
-        assert.deepEqual(parseSearchTypeTokens('keyword'), { slug: 'keyword', unknownTokens: [] });
-        assert.deepEqual(parseSearchTypeTokens('semantic'), {
+describe('parseSearchType', () => {
+    it('resolves supported slugs directly', () => {
+        assert.deepEqual(parseSearchType('keyword'), {
+            slug: 'keyword',
+            invalidValue: undefined
+        });
+        assert.deepEqual(parseSearchType('semantic'), {
             slug: 'semantic',
-            unknownTokens: []
+            invalidValue: undefined
         });
-        assert.deepEqual(parseSearchTypeTokens('hybrid'), { slug: undefined, unknownTokens: [] });
-    });
-
-    it('resolves two-token combinations regardless of order', () => {
-        assert.deepEqual(parseSearchTypeTokens('keyword,dates'), {
-            slug: 'keyword-dates',
-            unknownTokens: []
-        });
-        assert.deepEqual(parseSearchTypeTokens('dates,keyword'), {
-            slug: 'keyword-dates',
-            unknownTokens: []
-        });
-        assert.deepEqual(parseSearchTypeTokens('keyword,semantic'), {
+        assert.deepEqual(parseSearchType('hybrid'), {
             slug: 'hybrid',
-            unknownTokens: []
-        });
-        assert.deepEqual(parseSearchTypeTokens('semantic,keyword'), {
-            slug: 'hybrid',
-            unknownTokens: []
-        });
-    });
-
-    it('keyword+semantic+dates resolves to hybrid-dates', () => {
-        assert.deepEqual(parseSearchTypeTokens('keyword,semantic,dates'), {
-            slug: 'hybrid-dates',
-            unknownTokens: []
-        });
-        assert.deepEqual(parseSearchTypeTokens('keyword,semantic,dates'), {
-            slug: 'hybrid-dates',
-            unknownTokens: []
-        });
-    });
-
-    it('dates paired with semantic alone does not resolve (keyword required for hybrid)', () => {
-        assert.deepEqual(parseSearchTypeTokens('semantic,dates'), {
-            slug: undefined,
-            unknownTokens: []
-        });
-    });
-
-    it('collects unrecognised tokens and still resolves from valid remainder', () => {
-        assert.deepEqual(parseSearchTypeTokens('keyword,unknown,dates'), {
-            slug: 'keyword-dates',
-            unknownTokens: ['unknown']
-        });
-        assert.deepEqual(parseSearchTypeTokens('unknown,keyword,semantic'), {
-            slug: 'hybrid',
-            unknownTokens: ['unknown']
+            invalidValue: undefined
         });
     });
 
     it('is case-insensitive and trims whitespace', () => {
-        assert.deepEqual(parseSearchTypeTokens('Keyword, Semantic, Dates'), {
-            slug: 'hybrid-dates',
-            unknownTokens: []
-        });
-        assert.deepEqual(parseSearchTypeTokens('  KEYWORD , DATES  '), {
+        assert.deepEqual(parseSearchType('  KEYWORD-DATES  '), {
             slug: 'keyword-dates',
-            unknownTokens: []
+            invalidValue: undefined
+        });
+        assert.deepEqual(parseSearchType('HyBrId-DaTeS'), {
+            slug: 'hybrid-dates',
+            invalidValue: undefined
         });
     });
 
     it('accepts array input and uses the last value', () => {
-        assert.deepEqual(parseSearchTypeTokens(['keyword', 'keyword,semantic,dates']), {
-            slug: 'hybrid-dates',
-            unknownTokens: []
+        assert.deepEqual(parseSearchType(['keyword', 'semantic']), {
+            slug: 'semantic',
+            invalidValue: undefined
         });
     });
 
-    it('returns undefined slug with unknownTokens for direct hyphenated slugs', () => {
-        assert.deepEqual(parseSearchTypeTokens('hybrid-dates'), {
+    it('returns invalid values for unsupported slugs', () => {
+        assert.deepEqual(parseSearchType('unknown'), {
             slug: undefined,
-            unknownTokens: ['hybrid-dates']
+            invalidValue: 'unknown'
         });
-        assert.deepEqual(parseSearchTypeTokens('keyword-dates'), {
+        assert.deepEqual(parseSearchType('keyword,semantic'), {
             slug: undefined,
-            unknownTokens: ['keyword-dates']
-        });
-    });
-
-    it('returns undefined slug with unknownTokens when all tokens are unrecognised', () => {
-        assert.deepEqual(parseSearchTypeTokens('unknown'), {
-            slug: undefined,
-            unknownTokens: ['unknown']
-        });
-        assert.deepEqual(parseSearchTypeTokens('unknown,foo'), {
-            slug: undefined,
-            unknownTokens: ['unknown', 'foo']
+            invalidValue: 'keyword,semantic'
         });
     });
 
-    it('returns undefined slug with empty unknownTokens for absent or empty input', () => {
-        assert.deepEqual(parseSearchTypeTokens(''), { slug: undefined, unknownTokens: [] });
-        assert.deepEqual(parseSearchTypeTokens(undefined), { slug: undefined, unknownTokens: [] });
-    });
-
-    it('returns undefined slug with empty unknownTokens for dates alone', () => {
-        assert.deepEqual(parseSearchTypeTokens('dates'), { slug: undefined, unknownTokens: [] });
+    it('returns empty output for absent or empty input', () => {
+        assert.deepEqual(parseSearchType(''), { slug: undefined, invalidValue: undefined });
+        assert.deepEqual(parseSearchType(undefined), {
+            slug: undefined,
+            invalidValue: undefined
+        });
     });
 });
 

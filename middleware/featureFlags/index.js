@@ -1,6 +1,7 @@
 import {
     DEFAULT_SEARCH_TYPE,
-    parseSearchTypeTokens
+    parseSearchType,
+    VALID_SEARCH_TYPE_VALUES
 } from '../../api/search/constants/searchTypes.js';
 
 export const FEATURE_FLAG_DEFAULTS = Object.freeze({
@@ -77,9 +78,8 @@ export function getFeatureFlagValue(session, flagName) {
  * Persists supported feature flags from query-string params into the session.
  *
  * Boolean flags (`align`) accept `on` / `off` query-string values.
- * The `type` flag accepts a comma-delimited string of SEARCH_TYPE_TOKENS. If the value
- * contains unrecognised tokens, or the combination of valid tokens does not map to a
- * known search mode, the request is rejected with a 400 error.
+ * The `type` flag accepts a direct search mode slug. Invalid values are rejected with
+ * a 400 error.
  *
  * @param {import('express').Request} req - Express request object.
  * @param {import('express').Response} res - Express response object.
@@ -98,19 +98,12 @@ export default function featureFlags(req, res, next) {
                     flags[flagName] = queryFlagValue;
                 }
             } else if (flagName === 'type' && req.query?.type !== undefined) {
-                const { slug, unknownTokens } = parseSearchTypeTokens(req.query.type);
-                if (unknownTokens.length > 0) {
-                    const error = new Error(
-                        `Invalid search type token(s): ${unknownTokens.join(', ')}`
-                    );
-                    error.status = 400;
-                    return next(error);
-                }
+                const { slug, invalidValue } = parseSearchType(req.query.type);
                 if (typeof slug === 'string') {
                     flags[flagName] = slug;
                 } else {
                     const error = new Error(
-                        `Invalid search type: tokens do not resolve to a known search mode`
+                        `Invalid search type: ${invalidValue || '(empty)'}. Allowed values: ${VALID_SEARCH_TYPE_VALUES.join(', ')}`
                     );
                     error.status = 400;
                     return next(error);
