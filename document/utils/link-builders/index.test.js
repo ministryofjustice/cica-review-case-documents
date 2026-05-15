@@ -16,6 +16,16 @@ describe('Link Builders', () => {
             const result = buildImageUrl(docId, 42, crn);
             assert.strictEqual(result, `/document/${docId}/page/42?crn=${crn}`);
         });
+
+        it('appends type when searchType is provided', () => {
+            const result = buildImageUrl(docId, 1, crn, 'keyword');
+            assert.strictEqual(result, `/document/${docId}/page/1?crn=${crn}&type=keyword`);
+        });
+
+        it('omits type when searchType is empty', () => {
+            const result = buildImageUrl(docId, 1, crn, '');
+            assert.strictEqual(result, `/document/${docId}/page/1?crn=${crn}`);
+        });
     });
 
     describe('buildTextPageLink', () => {
@@ -36,6 +46,16 @@ describe('Link Builders', () => {
             const result = buildTextPageLink(docId, 1, crn, 'test & special');
             assert.ok(result.includes(encodeURIComponent('test & special')));
         });
+
+        it('appends type when searchType is provided', () => {
+            const result = buildTextPageLink(docId, 1, crn, 'foo', 'hybrid-dates');
+            assert.ok(result.includes('&type=hybrid-dates'));
+        });
+
+        it('omits type when searchType is empty', () => {
+            const result = buildTextPageLink(docId, 1, crn, 'foo');
+            assert.ok(!result.includes('type='));
+        });
     });
 
     describe('buildImagePageLink', () => {
@@ -50,6 +70,16 @@ describe('Link Builders', () => {
             const result = buildImagePageLink(docId, 1, crn);
             assert.ok(result.includes(`/document/${docId}/view/page/1`));
             assert.ok(result.includes('searchTerm='));
+        });
+
+        it('appends type when searchType is provided', () => {
+            const result = buildImagePageLink(docId, 1, crn, 'foo', 'hybrid-dates');
+            assert.ok(result.includes('&type=hybrid-dates'));
+        });
+
+        it('omits type when searchType is empty', () => {
+            const result = buildImagePageLink(docId, 1, crn, 'foo');
+            assert.ok(!result.includes('type='));
         });
     });
 });

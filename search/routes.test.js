@@ -71,15 +71,25 @@ describe('Search Routes', () => {
     });
 
     describe('GET /', () => {
+        it('should redirect to include the resolved search type when type is missing', async () => {
+            const res = await request(app).get('/search?crn=12345');
+            assert.strictEqual(res.statusCode, 302);
+            assert.strictEqual(
+                res.headers.location,
+                `/search?crn=12345&type=${DEFAULT_SEARCH_TYPE}`
+            );
+        });
+
         it('should render the search index page if no query is provided', async () => {
-            const res = await request(app).get('/search');
+            const res = await request(app).get(`/search?type=${DEFAULT_SEARCH_TYPE}`);
             assert.strictEqual(res.statusCode, 200);
             assert.match(res.text, /search\/page\/index.njk/);
             assert.strictEqual(lastRenderParams.userName, 'search.user@example.com');
+            assert.strictEqual(lastRenderParams.searchType, DEFAULT_SEARCH_TYPE);
         });
 
         it('should call search service and render results when a query is provided', async () => {
-            const res = await request(app).get('/search?query=test');
+            const res = await request(app).get(`/search?query=test&type=${DEFAULT_SEARCH_TYPE}`);
             assert.strictEqual(res.statusCode, 200);
             assert.match(res.text, /search\/page\/results.njk/);
             assert.strictEqual(lastRenderParams.userName, 'search.user@example.com');
@@ -130,7 +140,7 @@ describe('Search Routes', () => {
             });
             testApp.use('/search', searchRouter);
 
-            const res = await request(testApp).get('/search?query=test');
+            const res = await request(testApp).get('/search?query=test&type=semantic');
 
             assert.strictEqual(res.statusCode, 200);
             assert.deepStrictEqual(serviceCallArgs[4], {
@@ -343,26 +353,46 @@ describe('Search Routes', () => {
     });
 
     describe('POST /', () => {
-        it('should redirect to the GET route with the query parameter', async () => {
+        it('should redirect to the GET route with the query parameter and default type', async () => {
             const res = await request(app).post('/search').send({ query: ' search term ' });
             assert.strictEqual(res.statusCode, 302);
-            assert.strictEqual(res.headers.location, '/search?query=search+term&pageNumber=1');
+            assert.strictEqual(
+                res.headers.location,
+                `/search?query=search+term&pageNumber=1&type=${DEFAULT_SEARCH_TYPE}`
+            );
         });
 
-        it('should preserve pageNumber in the redirect when provided', async () => {
+        it('should preserve pageNumber and type in the redirect when provided', async () => {
             const res = await request(app).post('/search?pageNumber=5').send({ query: 'test' });
             assert.strictEqual(res.statusCode, 302);
-            assert.strictEqual(res.headers.location, '/search?query=test&pageNumber=5');
+            assert.strictEqual(
+                res.headers.location,
+                `/search?query=test&pageNumber=5&type=${DEFAULT_SEARCH_TYPE}`
+            );
         });
 
-        it('ignores type field in POST body (flags are session-based)', async () => {
+        it('uses a valid type field in POST body so subsequent requests keep the current search mode', async () => {
             const res = await request(app)
                 .post('/search?pageNumber=2')
                 .send({ query: 'test', type: 'semantic' });
 
             assert.strictEqual(res.statusCode, 302);
-            // type is no longer carried through the redirect URL
-            assert.strictEqual(res.headers.location, '/search?query=test&pageNumber=2');
+            assert.strictEqual(
+                res.headers.location,
+                '/search?query=test&pageNumber=2&type=semantic'
+            );
+        });
+
+        it('falls back to the session/default type when the POST body type is invalid', async () => {
+            const res = await request(app)
+                .post('/search?pageNumber=2')
+                .send({ query: 'test', type: 'keyword,semantic' });
+
+            assert.strictEqual(res.statusCode, 302);
+            assert.strictEqual(
+                res.headers.location,
+                `/search?query=test&pageNumber=2&type=${DEFAULT_SEARCH_TYPE}`
+            );
         });
 
         it('handles errors in POST /search route', async () => {
