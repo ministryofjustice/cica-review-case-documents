@@ -14,6 +14,7 @@ const ALLOWED_PATHS = ['/search'];
  */
 const ALLOWED_PATH_PATTERNS = [
     /^\/document\/[0-9a-fA-F-]{36}\/view\/page\/\d+$/,
+    /^\/document\/[0-9a-fA-F-]{36}\/view\/text\/page\/\d+$/,
     /^\/document\/[0-9a-fA-F-]{36}\/page\/\d+$/ // Image streaming endpoint
 ];
 

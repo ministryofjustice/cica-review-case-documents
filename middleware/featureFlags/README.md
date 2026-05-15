@@ -7,22 +7,22 @@ Runtime feature flags are stored in the Express session (`req.session.featureFla
 | Flag | Type | Default | Purpose |
 |---|---|---|---|
 | `align` | `boolean` | `true` | Enable alignment of image highlight bounding boxes to prevent overlaps |
-| `type` | `string` | `hybrid,dates` | Search mode - controls which OpenSearch query strategy is used |
+| `type` | `string` | `hybrid-dates` | Search mode - controls which OpenSearch query strategy is used |
 
 ## Toggling flags via URL
 
 Boolean flags (`align`) are toggled with `on` / `off`.
 
-The `type` flag accepts a comma-delimited string of capability tokens (`keyword`, `dates`, `semantic`, `hybrid`). The tokens are resolved order-independently to a search mode slug:
+The `type` flag accepts a direct search mode slug:
 
 ```
-/search?type=hybrid,dates          → hybrid-dates  (default)
+/search?type=hybrid-dates          → hybrid-dates  (default)
 /search?type=hybrid                → hybrid
-/search?type=keyword,dates         → keyword-dates
+/search?type=keyword-dates         → keyword-dates
 /search?type=keyword               → keyword
 /search?type=semantic              → semantic
 /search?align=off                  → disable bounding-box alignment
-/search?type=hybrid,dates&align=off → hybrid-dates + alignment off
+/search?type=hybrid-dates&align=off → hybrid-dates + alignment off
 ```
 
 The middleware persists the resolved slug to the session, so subsequent requests within the same session retain the setting without repeating the query parameter.

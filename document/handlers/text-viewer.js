@@ -64,7 +64,13 @@ export function createTextViewerHandler(
             const pageTitle = formatPageTitle(pageMetadata.correspondence_type);
 
             // Provide a link for sub-navigation back to the image page
-            const imagePageLink = buildImagePageLink(documentId, pageNumber, crn, searchTerm);
+            const imagePageLink = buildImagePageLink(
+                documentId,
+                pageNumber,
+                crn,
+                searchTerm,
+                searchType
+            );
 
             const { text } = pageMetadata;
 

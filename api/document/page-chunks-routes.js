@@ -1,6 +1,6 @@
 import express from 'express';
-import createPageChunksService from './services/page-chunks-service.js';
 import { DEFAULT_SEARCH_TYPE } from '../search/constants/searchTypes.js';
+import createPageChunksService from './services/page-chunks-service.js';
 
 const CRN_REGEX = /^\d{2}-[78]\d{5}$/;
 

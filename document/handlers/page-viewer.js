@@ -62,10 +62,16 @@ export function createPageViewerHandler(
                 viewMode
             );
 
-            const imageUrl = buildImageUrl(documentId, pageNumber, crn);
+            const imageUrl = buildImageUrl(documentId, pageNumber, crn, searchType);
 
             // Provide a link for sub-navigation to the text view page for this document page
-            const textPageLink = buildTextPageLink(documentId, pageNumber, crn, searchTerm);
+            const textPageLink = buildTextPageLink(
+                documentId,
+                pageNumber,
+                crn,
+                searchTerm,
+                searchType
+            );
 
             const pageTitle = formatPageTitle(pageMetadata.correspondence_type);
 
