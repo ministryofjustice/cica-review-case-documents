@@ -152,7 +152,8 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     app.use(
         '/assets',
         express.static(path.join(__dirname, '/node_modules/govuk-frontend/dist/govuk/assets'), {
-            maxAge: '1h'
+            maxAge: '1y',
+            immutable: true
         })
     );
 
@@ -168,10 +169,8 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
         next();
     });
 
-    app.use('/api', await createApi());
-
-    // Apply General Rate Limiter to web app routes.
-    // API routes are mounted before this and use their own API-specific limiter.
+    // Apply General Rate Limiter GLOBALLY (Fixes CodeQL)
+    // Note: auth login exclusion is handled within the limiter configuration
     app.use(generalRateLimiter);
 
     app.use('/', indexRouter);

@@ -110,7 +110,7 @@ describe('App', () => {
             );
         });
 
-        it('should set short-lived cache headers for /assets responses', async () => {
+        it('should set long-lived immutable cache headers for /assets responses', async () => {
             process.env.NODE_ENV = 'development';
             process.env.APP_LOG_LEVEL = 'silent';
 
@@ -118,7 +118,7 @@ describe('App', () => {
             const response = await request(app).get('/assets/images/govuk-crest.svg');
 
             assert.equal(response.status, 200);
-            assert.equal(response.headers['cache-control'], 'public, max-age=3600');
+            assert.equal(response.headers['cache-control'], 'public, max-age=31536000, immutable');
         });
     });
 });
