@@ -1,5 +1,6 @@
 import express from 'express';
 import { DEFAULT_SEARCH_TYPE, parseSearchType } from '../api/search/constants/searchTypes.js';
+import enforceSearchTypeInQuery from '../middleware/enforceSearchTypeInQuery/index.js';
 import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 
@@ -37,7 +38,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
         }
     });
 
-    router.get('/', async (req, res, next) => {
+    router.get('/', enforceSearchTypeInQuery, async (req, res, next) => {
         try {
             const templateEngineService = createTemplateEngineService();
             const { render } = templateEngineService;
@@ -45,16 +46,6 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             const { query, pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.query;
             const userName = req.session?.username;
             const searchType = getFeatureFlagValue(req.session, 'type') || DEFAULT_SEARCH_TYPE;
-
-            // Ensure the URL is canonical: when no `type` is supplied (e.g. the
-            // sub-nav "Search" tab links to plain /search), redirect with the
-            // resolved search type appended so the URL is bookmarkable and
-            // visible to the user.
-            if (req.query.type === undefined) {
-                const redirectQuery = new URLSearchParams(req.query);
-                redirectQuery.set('type', searchType);
-                return res.redirect(`/search?${redirectQuery.toString()}`);
-            }
 
             if (!query) {
                 const html = render('search/page/index.njk', {

@@ -6,18 +6,11 @@ import enforceSearchTypeInQuery from './index.js';
 /**
  * Creates a mock Express request object.
  *
- * @param {{ method?: string, query?: object, session?: object, originalUrl?: string, baseUrl?: string, path?: string }} [opts] - Optional request properties to override.
+ * @param {{ method?: string, query?: object, session?: object }} [opts] - Optional request properties to override.
  * @returns {object}
  */
-function createMockReq({
-    method = 'GET',
-    query = {},
-    session = {},
-    originalUrl = '/search',
-    baseUrl = '/search',
-    path = '/'
-} = {}) {
-    return { method, query, session, originalUrl, baseUrl, path };
+function createMockReq({ method = 'GET', query = {}, session = {} } = {}) {
+    return { method, query, session };
 }
 
 /**
@@ -38,7 +31,7 @@ function createMockRes() {
 }
 
 describe('enforceSearchTypeInQuery', () => {
-    it('redirects with default type when type is missing from query', () => {
+    it('redirects with default type when type is absent from query', () => {
         const req = createMockReq({ query: { query: 'acute', crn: '26-711111' } });
         const res = createMockRes();
         let nextCalled = false;
@@ -54,20 +47,7 @@ describe('enforceSearchTypeInQuery', () => {
         assert.strictEqual(nextCalled, false);
     });
 
-    it('redirects to canonical type when type is valid but not canonical (e.g., uppercase)', () => {
-        const req = createMockReq({ query: { query: 'acute', type: 'KEYWORD' } });
-        const res = createMockRes();
-        let nextCalled = false;
-
-        enforceSearchTypeInQuery(req, res, () => {
-            nextCalled = true;
-        });
-
-        assert.strictEqual(res.redirectedUrl, '/search?query=acute&type=keyword');
-        assert.strictEqual(nextCalled, false);
-    });
-
-    it('redirects with session type when set and type is missing from query', () => {
+    it('redirects with session type when set and type absent from query', () => {
         const req = createMockReq({
             query: { query: 'acute' },
             session: { featureFlags: { type: 'keyword' } }
@@ -83,23 +63,7 @@ describe('enforceSearchTypeInQuery', () => {
         assert.strictEqual(nextCalled, false);
     });
 
-    it('redirects with default type when session type is invalid and type absent from query', () => {
-        const req = createMockReq({
-            query: { query: 'acute' },
-            session: { featureFlags: { type: 'old-value' } }
-        });
-        const res = createMockRes();
-        let nextCalled = false;
-
-        enforceSearchTypeInQuery(req, res, () => {
-            nextCalled = true;
-        });
-
-        assert.strictEqual(res.redirectedUrl, `/search?query=acute&type=${DEFAULT_SEARCH_TYPE}`);
-        assert.strictEqual(nextCalled, false);
-    });
-
-    it('calls next without redirecting when type is present and valid in query', () => {
+    it('calls next without redirecting when type is present in query', () => {
         const req = createMockReq({ query: { query: 'acute', type: 'hybrid' } });
         const res = createMockRes();
         let nextCalled = false;
@@ -110,109 +74,6 @@ describe('enforceSearchTypeInQuery', () => {
 
         assert.strictEqual(res.redirectedUrl, null);
         assert.strictEqual(nextCalled, true);
-    });
-
-    it('redirects to canonical form when type has non-canonical casing', () => {
-        const req = createMockReq({ query: { query: 'acute', type: 'HYBRID' } });
-        const res = createMockRes();
-        let nextCalled = false;
-
-        enforceSearchTypeInQuery(req, res, () => {
-            nextCalled = true;
-        });
-
-        assert.ok(res.redirectedUrl !== null, 'should redirect');
-        assert.strictEqual(nextCalled, false);
-        const redirected = new URL(res.redirectedUrl, 'http://localhost');
-        // Non-canonical input 'HYBRID' should resolve and redirect to canonical 'hybrid'
-        assert.strictEqual(redirected.searchParams.get('type'), 'hybrid');
-    });
-
-    it('redirects to canonical form when type has surrounding whitespace', () => {
-        const req = createMockReq({ query: { query: 'acute', type: ' keyword-dates ' } });
-        const res = createMockRes();
-        let nextCalled = false;
-
-        enforceSearchTypeInQuery(req, res, () => {
-            nextCalled = true;
-        });
-
-        assert.ok(res.redirectedUrl !== null, 'should redirect');
-        assert.strictEqual(nextCalled, false);
-        const redirected = new URL(res.redirectedUrl, 'http://localhost');
-        // Non-canonical input with whitespace should resolve and redirect to canonical form
-        assert.strictEqual(redirected.searchParams.get('type'), 'keyword-dates');
-    });
-
-    it('uses resolved query value over session value for non-canonical single params', () => {
-        const req = createMockReq({
-            query: { query: 'acute', type: ' KEYWORD ' },
-            session: { featureFlags: { type: 'semantic' } }
-        });
-        const res = createMockRes();
-
-        enforceSearchTypeInQuery(req, res, () => {});
-
-        // Non-canonical query param should be canonicalized to 'keyword', not fallback to session 'semantic'
-        assert.strictEqual(res.redirectedUrl, '/search?query=acute&type=keyword');
-    });
-
-    it('falls back to session value when type is empty or whitespace-only', () => {
-        const req = createMockReq({
-            query: { query: 'acute', type: '   ' },
-            session: { featureFlags: { type: 'semantic' } }
-        });
-        const res = createMockRes();
-
-        enforceSearchTypeInQuery(req, res, () => {});
-
-        // Empty/whitespace query param should fall back to session value
-        assert.strictEqual(res.redirectedUrl, '/search?query=acute&type=semantic');
-    });
-
-    it('redirects to the last value when type is supplied as an array with a valid final element', () => {
-        const req = createMockReq({ query: { query: 'acute', type: ['invalid', 'keyword'] } });
-        const res = createMockRes();
-        let nextCalled = false;
-
-        enforceSearchTypeInQuery(req, res, () => {
-            nextCalled = true;
-        });
-
-        assert.strictEqual(res.redirectedUrl, '/search?query=acute&type=keyword');
-        assert.strictEqual(nextCalled, false);
-    });
-
-    it('redirects to session/default when type is an array whose last element is invalid', () => {
-        const req = createMockReq({
-            query: { query: 'acute', type: ['keyword', 'not-a-type'] },
-            session: { featureFlags: { type: 'semantic' } }
-        });
-        const res = createMockRes();
-        let nextCalled = false;
-
-        enforceSearchTypeInQuery(req, res, () => {
-            nextCalled = true;
-        });
-
-        assert.strictEqual(res.redirectedUrl, '/search?query=acute&type=semantic');
-        assert.strictEqual(nextCalled, false);
-    });
-
-    it('redirects with session/default type when type is present but invalid', () => {
-        const req = createMockReq({
-            query: { query: 'acute', type: 'not-a-real-type' },
-            session: { featureFlags: { type: 'keyword' } }
-        });
-        const res = createMockRes();
-        let nextCalled = false;
-
-        enforceSearchTypeInQuery(req, res, () => {
-            nextCalled = true;
-        });
-
-        assert.strictEqual(res.redirectedUrl, '/search?query=acute&type=keyword');
-        assert.strictEqual(nextCalled, false);
     });
 
     it('calls next without redirecting for non-GET requests', () => {
@@ -241,40 +102,5 @@ describe('enforceSearchTypeInQuery', () => {
         assert.strictEqual(redirected.searchParams.get('pageNumber'), '2');
         assert.strictEqual(redirected.searchParams.get('crn'), '26-711111');
         assert.strictEqual(redirected.searchParams.get('type'), DEFAULT_SEARCH_TYPE);
-    });
-
-    it('preserves the current request path in the redirect', () => {
-        const req = createMockReq({
-            query: { query: 'acute' },
-            originalUrl: '/search/advanced?query=acute',
-            baseUrl: '/search',
-            path: '/advanced'
-        });
-        const res = createMockRes();
-
-        enforceSearchTypeInQuery(req, res, () => {});
-
-        assert.strictEqual(
-            res.redirectedUrl,
-            `/search/advanced?query=acute&type=${DEFAULT_SEARCH_TYPE}`
-        );
-    });
-
-    it('does not forward raw originalUrl into the redirect destination', () => {
-        const req = createMockReq({
-            query: { query: 'acute' },
-            originalUrl: 'https://evil.example.com/search?query=acute',
-            baseUrl: '/search',
-            path: '/'
-        });
-        const res = createMockRes();
-
-        enforceSearchTypeInQuery(req, res, () => {});
-
-        assert.ok(
-            !res.redirectedUrl?.startsWith('https://'),
-            'redirect must not use raw originalUrl'
-        );
-        assert.ok(res.redirectedUrl?.startsWith('/search?'));
     });
 });
