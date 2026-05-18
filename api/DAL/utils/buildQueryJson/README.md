@@ -32,7 +32,7 @@ Boosts are only applied in hybrid modes (`searchType: 'hybrid'` or `'hybrid-date
 | `DEFAULT_DATE_BOOST` | `1` | Weight of the grouped `match_phrase` date clauses |
 | `DEFAULT_NEURAL_BOOST` | `4` | Weight of the `neural` clause |
 
-These can be overridden per-call via `keywordBoost`, `dateBoost`, and `semanticBoost` parameters.
+These defaults can be overridden through `queryDslConfig`.
 
 ## Neural filter
 
