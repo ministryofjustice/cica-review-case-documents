@@ -58,16 +58,6 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     // Use the middleware for request logging
     app.use(loggerMiddleware);
 
-    app.use((req, res, next) => {
-        res.set({
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-            Pragma: 'no-cache',
-            Expires: '0',
-            'Surrogate-Control': 'no-store'
-        });
-        next();
-    });
-
     // https://expressjs.com/en/api.html#express.json
     app.use(express.json());
     // https://expressjs.com/en/api.html#express.urlencoded
@@ -153,12 +143,31 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     const templateEngineService = createTemplateEngineService(app);
     templateEngineService.init();
 
-    app.use(express.static(path.join(__dirname, 'public')));
+    app.use(
+        express.static(path.join(__dirname, 'public'), {
+            maxAge: '1h'
+        })
+    );
 
     app.use(
         '/assets',
-        express.static(path.join(__dirname, '/node_modules/govuk-frontend/dist/govuk/assets'))
+        express.static(path.join(__dirname, '/node_modules/govuk-frontend/dist/govuk/assets'), {
+            maxAge: '1y',
+            immutable: true
+        })
     );
+
+    // Prevent caching of dynamic responses while allowing static handlers above
+    // to set long-lived cache headers for fingerprinted assets.
+    app.use((req, res, next) => {
+        res.set({
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            Pragma: 'no-cache',
+            Expires: '0',
+            'Surrogate-Control': 'no-store'
+        });
+        next();
+    });
 
     // Apply General Rate Limiter GLOBALLY (Fixes CodeQL)
     // Note: auth login exclusion is handled within the limiter configuration

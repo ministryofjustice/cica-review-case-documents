@@ -16,7 +16,7 @@ describe('buildQueryJson', () => {
             size: 10,
             query: {
                 bool: {
-                    must: [{ term: { case_ref: '26-711111' } }],
+                    filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
                         { match_phrase: { chunk_text: '12 5 24' } },
                         { match_phrase: { chunk_text: '12 5 2024' } },
@@ -55,7 +55,7 @@ describe('buildQueryJson', () => {
             size: 5,
             query: {
                 bool: {
-                    must: [{ term: { case_ref: '26-711111' } }],
+                    filter: [{ term: { case_ref: '26-711111' } }],
                     should: [{ match: { chunk_text: { query: 'Important meeting' } } }],
                     minimum_should_match: 1
                 }
@@ -79,7 +79,7 @@ describe('buildQueryJson', () => {
             size: 10,
             query: {
                 bool: {
-                    must: [{ term: { case_ref: '26-711111' } }],
+                    filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
                         { match_phrase: { chunk_text: '12 1 24' } },
                         { match_phrase: { chunk_text: '12 1 2024' } },
@@ -135,7 +135,7 @@ describe('buildQueryJson', () => {
             size: 10,
             query: {
                 bool: {
-                    must: [{ term: { case_ref: '26-711111' } }],
+                    filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
                         { match_phrase: { chunk_text: '12 5 24' } },
                         { match_phrase: { chunk_text: '12 5 2024' } },
@@ -176,7 +176,7 @@ describe('buildQueryJson', () => {
             size: 10,
             query: {
                 bool: {
-                    must: [{ term: { case_ref: '26-711111' } }],
+                    filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
                         { match_phrase: { chunk_text: '12 5 24' } },
                         { match_phrase: { chunk_text: '12 5 2024' } },
@@ -229,7 +229,7 @@ describe('buildQueryJson', () => {
             size: 10,
             query: {
                 bool: {
-                    must: [{ term: { case_ref: '26-711111' } }],
+                    filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
                         { match_phrase: { chunk_text: '12 5 24' } },
                         { match_phrase: { chunk_text: '12 5 2024' } },
@@ -276,7 +276,7 @@ describe('buildQueryJson', () => {
             size: 10,
             query: {
                 bool: {
-                    must: [{ term: { case_ref: '26-711111' } }]
+                    filter: [{ term: { case_ref: '26-711111' } }]
                 }
             }
         };
@@ -301,7 +301,7 @@ describe('buildQueryJson', () => {
             size: 10,
             query: {
                 bool: {
-                    must: [{ term: { case_ref: '26-711111' } }],
+                    filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
                         { match: { chunk_text: { query: 'Meeting on 12/05/2024 at office' } } }
                     ],
@@ -349,7 +349,7 @@ describe('buildQueryJson', () => {
             size: 5,
             query: {
                 bool: {
-                    must: [{ term: { case_ref: '26-711111' } }],
+                    filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
                         {
                             match: {
@@ -387,6 +387,8 @@ describe('buildQueryJson', () => {
         assert.equal(typeof hybridK, 'number');
         assert.ok(hybridK > 0);
         hybridNeuralClause.neural.embedding = hybridEmbeddingWithoutK;
+        // Update expected filter to match what code now produces
+        expected.query.bool.filter = [{ term: { case_ref: '26-711111' } }];
         assert.deepStrictEqual(resultWithoutMinScore, expected);
     });
 
@@ -440,7 +442,6 @@ describe('buildQueryJson', () => {
         };
 
         const result = buildQueryJson(params);
-        const lexicalMust = result.query.bool.must;
         const hybridShould = result.query.bool.should;
         const dateBoolClause = hybridShould.find(
             (clause) => clause.bool && Array.isArray(clause.bool.should)
@@ -448,7 +449,8 @@ describe('buildQueryJson', () => {
         const keywordClause = hybridShould.find((clause) => clause.match?.chunk_text);
         const neuralClause = hybridShould.find((clause) => clause.neural?.embedding);
 
-        assert.strictEqual(lexicalMust[0].term.case_ref, '26-711111');
+        const lexicalFilter = result.query.bool.filter;
+        assert.ok(Array.isArray(lexicalFilter) && lexicalFilter[0]?.term?.case_ref === '26-711111');
         assert.strictEqual(result.query.bool.minimum_should_match, 1);
         assert.strictEqual(dateBoolClause.bool.boost, 1);
         assert.strictEqual(dateBoolClause.bool.minimum_should_match, 1);
@@ -467,7 +469,7 @@ describe('buildQueryJson', () => {
 
         assert.strictEqual(result.from, 5);
         assert.strictEqual(result.size, 5);
-        assert.strictEqual(result.query.bool.must[0].term.case_ref, '26-711111');
+        assert.strictEqual(result.query.bool.filter[0].term.case_ref, '26-711111');
         assert.strictEqual(result.query.bool.minimum_should_match, 1);
     });
 
@@ -484,8 +486,8 @@ describe('buildQueryJson', () => {
             from: 0,
             size: 10,
             query: {
-                bool: {
-                    must: [{ term: { case_ref: '26-711111' } }]
+                term: {
+                    case_ref: '26-711111'
                 }
             }
         };
@@ -508,7 +510,7 @@ describe('buildQueryJson', () => {
             size: 10,
             query: {
                 bool: {
-                    must: [{ term: { case_ref: '26-711111' } }],
+                    filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
                         { match_phrase: { chunk_text: '1 2 24' } },
                         { match_phrase: { chunk_text: '1 2 2024' } },
@@ -626,7 +628,7 @@ describe('buildQueryJson', () => {
             size: 10,
             query: {
                 bool: {
-                    must: [{ term: { case_ref: '26-711111' } }],
+                    filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
                         { match_phrase: { chunk_text: '20 4 22' } },
                         { match_phrase: { chunk_text: '20 4 2022' } },
@@ -686,7 +688,7 @@ describe('buildQueryJson', () => {
             size: 10,
             query: {
                 bool: {
-                    must: [{ term: { case_ref: '26-711111' } }],
+                    filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
                         {
                             match: {
@@ -716,7 +718,7 @@ describe('buildQueryJson', () => {
         const result = buildQueryJson(params);
         assert.strictEqual(result.from, 0);
         assert.strictEqual(result.size, 10);
-        assert.strictEqual(result.query.bool.must[0].term.case_ref, '26-711111');
+        assert.strictEqual(result.query.bool.filter[0].term.case_ref, '26-711111');
         assert.ok(
             Array.isArray(result.query.bool.should) &&
                 result.query.bool.should.some((condition) =>
@@ -734,7 +736,7 @@ describe('buildQueryJson', () => {
         const result = buildQueryJson(params);
         assert.strictEqual(result.from, 0);
         assert.strictEqual(result.size, 10);
-        assert.strictEqual(result.query.bool.must[0].term.case_ref, '26-711111');
+        assert.strictEqual(result.query.bool.filter[0].term.case_ref, '26-711111');
         assert.ok(
             Array.isArray(result.query.bool.should) &&
                 result.query.bool.should.some((condition) =>
@@ -752,7 +754,7 @@ describe('buildQueryJson', () => {
         const result = buildQueryJson(params);
         assert.strictEqual(result.from, 0);
         assert.strictEqual(result.size, 10);
-        assert.strictEqual(result.query.bool.must[0].term.case_ref, '26-711111');
+        assert.strictEqual(result.query.bool.filter[0].term.case_ref, '26-711111');
         assert.ok(
             Array.isArray(result.query.bool.should) &&
                 result.query.bool.should.some((condition) =>
@@ -770,7 +772,7 @@ describe('buildQueryJson', () => {
         const result = buildQueryJson(params);
         assert.strictEqual(result.from, 0);
         assert.strictEqual(result.size, 10);
-        assert.strictEqual(result.query.bool.must[0].term.case_ref, '26-711111');
+        assert.strictEqual(result.query.bool.filter[0].term.case_ref, '26-711111');
         assert.ok(
             Array.isArray(result.query.bool.should) &&
                 result.query.bool.should.some((condition) =>
@@ -792,7 +794,7 @@ describe('buildQueryJson', () => {
 
         assert.strictEqual(Object.hasOwn(result, 'from'), false);
         assert.strictEqual(Object.hasOwn(result, 'size'), false);
-        assert.deepStrictEqual(result.query.bool.must, [{ term: { case_ref: '26-711111' } }]);
+        assert.deepStrictEqual(result.query.bool.filter, [{ term: { case_ref: '26-711111' } }]);
     });
 
     it('Should omit from and size for semantic page chunk matches intent', () => {

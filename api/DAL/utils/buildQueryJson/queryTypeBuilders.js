@@ -56,7 +56,7 @@ export function createLexicalQuery({ caseReferenceNumber }) {
     return {
         query: {
             bool: {
-                must: [{ term: { case_ref: caseReferenceNumber } }],
+                filter: [{ term: { case_ref: caseReferenceNumber } }],
                 should: [],
                 minimum_should_match: 1
             }
@@ -85,11 +85,7 @@ export function createNeuralQuery({
                 embedding: {
                     query_text: keyword,
                     k: semanticK,
-                    filter: {
-                        bool: {
-                            must: [{ term: { case_ref: caseReferenceNumber } }]
-                        }
-                    }
+                    filter: { term: { case_ref: caseReferenceNumber } }
                 }
             }
         },
@@ -113,7 +109,7 @@ export function createHybridQuery({
     return {
         query: {
             bool: {
-                must: [{ term: { case_ref: caseReferenceNumber } }],
+                filter: [{ term: { case_ref: caseReferenceNumber } }],
                 should: [],
                 minimum_should_match: 1
             }
@@ -252,7 +248,7 @@ function buildKeywordQuery({ caseReferenceNumber, shouldClauses, safePageNumber,
     queryJson.query.bool.minimum_should_match = shouldClauses.length > 0 ? 1 : undefined;
 
     if (documentId) {
-        queryJson.query.bool.must.push(
+        queryJson.query.bool.filter.push(
             { term: { source_doc_id: documentId } },
             { term: { page_number: safePageNumber } }
         );
@@ -291,7 +287,7 @@ function buildSemanticQuery({
         const queryJson = createHybridQuery({ caseReferenceNumber, semanticMinScore });
 
         if (documentId) {
-            queryJson.query.bool.must.push(
+            queryJson.query.bool.filter.push(
                 { term: { source_doc_id: documentId } },
                 { term: { page_number: safePageNumber } }
             );
@@ -327,6 +323,14 @@ function buildSemanticQuery({
     });
 
     if (documentId) {
+        // Convert filter from single term to bool.must array for document scoping
+        if (!Array.isArray(queryJson.query.neural.embedding.filter)) {
+            queryJson.query.neural.embedding.filter = {
+                bool: {
+                    must: [queryJson.query.neural.embedding.filter]
+                }
+            };
+        }
         queryJson.query.neural.embedding.filter.bool.must.push(
             { term: { source_doc_id: documentId } },
             { term: { page_number: safePageNumber } }
@@ -336,7 +340,7 @@ function buildSemanticQuery({
     // When there is only a single filter must clause and the keyword is non-empty,
     // simplify the DSL by unwrapping the bool wrapper.
     if (
-        queryJson.query.neural.embedding.filter.bool.must.length === 1 &&
+        queryJson.query.neural.embedding.filter?.bool?.must?.length === 1 &&
         keyword.trim().length !== 0
     ) {
         queryJson.query.neural.embedding.filter =
@@ -395,7 +399,7 @@ function buildHybridQuery({
     );
 
     if (documentId) {
-        queryJson.query.bool.must.push(
+        queryJson.query.bool.filter.push(
             { term: { source_doc_id: documentId } },
             { term: { page_number: safePageNumber } }
         );
@@ -442,6 +446,15 @@ function buildHybridQuery({
     return queryJson;
 }
 
+/**
+ * Creates a map of search-type keys to query-builder functions.
+ *
+ * Each builder accepts a params object and returns a `{ queryJson, phrases, phrasesVariants, shouldClauses, extractMs, variantMs }` result.
+ *
+ * @param {object} [params={}] - Options.
+ * @param {Partial<typeof DEFAULT_QUERY_DSL_CONFIG>} [params.queryDslConfig={}] - Optional tuning overrides merged with defaults.
+ * @returns {Record<string, Function>} Map of SEARCH_TYPES values to builder functions.
+ */
 export function createQueryTypeBuilders({ queryDslConfig = {} } = {}) {
     const resolvedQueryDslConfig = resolveQueryDslConfig(queryDslConfig);
 
