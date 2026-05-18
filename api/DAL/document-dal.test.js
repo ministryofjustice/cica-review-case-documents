@@ -128,7 +128,7 @@ describe('document-dal', () => {
         assert.equal(typeof queryArgs.body.min_score, 'number');
         assert.ok(queryArgs.body.min_score >= 0);
         assert.ok(queryArgs.body.min_score <= 1);
-        assert.deepStrictEqual(queryArgs.body.query.bool.must, [
+        assert.deepStrictEqual(queryArgs.body.query.bool.filter, [
             { term: { case_ref: '12-745678' } }
         ]);
         assert.equal(queryArgs.body.query.bool.minimum_should_match, 1);
@@ -562,9 +562,9 @@ describe('document-dal', () => {
 
             await dal.getPageChunksByDocumentIdAndPageNumber('doc-123', 1, '');
 
-            const mustClauses = queryArgs.body.query.bool.must;
+            const filterClauses = queryArgs.body.query.bool.filter;
             assert.strictEqual(
-                mustClauses.some((clause) => clause.match?.chunk_text),
+                filterClauses.some((clause) => clause.match?.chunk_text),
                 false
             );
         });
@@ -586,7 +586,7 @@ describe('document-dal', () => {
 
             await dal.getPageChunksByDocumentIdAndPageNumber('doc-456', 1);
             assert.ok(
-                queryArgs.body.query.bool.must.some(
+                queryArgs.body.query.bool.filter.some(
                     (clause) => clause.term?.source_doc_id === 'doc-456'
                 )
             );
@@ -610,7 +610,7 @@ describe('document-dal', () => {
             await dal.getPageChunksByDocumentIdAndPageNumber('doc-123', '5');
 
             assert.ok(
-                queryArgs.body.query.bool.must.some((clause) => clause.term?.page_number === 5)
+                queryArgs.body.query.bool.filter.some((clause) => clause.term?.page_number === 5)
             );
         });
 
@@ -632,7 +632,7 @@ describe('document-dal', () => {
             await dal.getPageChunksByDocumentIdAndPageNumber('doc-123', 1);
 
             assert.ok(
-                queryArgs.body.query.bool.must.some(
+                queryArgs.body.query.bool.filter.some(
                     (clause) => clause.term?.case_ref === '12-745678'
                 )
             );
