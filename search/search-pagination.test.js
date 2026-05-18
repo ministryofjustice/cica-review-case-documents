@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { beforeEach, describe, it, mock } from 'node:test';
 import express from 'express';
 import request from 'supertest';
+import { DEFAULT_SEARCH_TYPE } from '../api/search/constants/searchTypes.js';
 import createSearchRouter from './routes.js';
 
 describe('Search Pagination Persistence', () => {
@@ -75,7 +76,9 @@ describe('Search Pagination Persistence', () => {
 
     describe('Search results enrichment', () => {
         it('should pass document search context to result items', async () => {
-            const res = await request(app).get('/search?query=test&pageNumber=3');
+            const res = await request(app).get(
+                `/search?query=test&pageNumber=3&type=${DEFAULT_SEARCH_TYPE}`
+            );
 
             assert.strictEqual(res.statusCode, 200);
             assert.ok(mockRender.lastParams);
@@ -88,7 +91,7 @@ describe('Search Pagination Persistence', () => {
         });
 
         it('should omit legacy back-link pagination context from result items', async () => {
-            const res = await request(app).get('/search?query=test');
+            const res = await request(app).get(`/search?query=test&type=${DEFAULT_SEARCH_TYPE}`);
 
             assert.strictEqual(res.statusCode, 200);
             const firstResult = mockRender.lastParams.searchResults[0];
@@ -108,7 +111,9 @@ describe('Search Pagination Persistence', () => {
 
     describe('Pagination metadata', () => {
         it('should calculate pagination correctly for page 1', async () => {
-            const res = await request(app).get('/search?query=test&pageNumber=1');
+            const res = await request(app).get(
+                `/search?query=test&pageNumber=1&type=${DEFAULT_SEARCH_TYPE}`
+            );
 
             assert.strictEqual(res.statusCode, 200);
             const pagination = mockRender.lastParams.pagination;
