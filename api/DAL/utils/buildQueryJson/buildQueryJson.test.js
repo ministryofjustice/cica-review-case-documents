@@ -362,7 +362,7 @@ describe('buildQueryJson', () => {
                             match: {
                                 chunk_text: {
                                     query: 'Important meeting',
-                                    boost: 12
+                                    boost: 20
                                 }
                             }
                         },
@@ -459,7 +459,7 @@ describe('buildQueryJson', () => {
         assert.strictEqual(result.query.bool.minimum_should_match, 1);
         assert.strictEqual(dateBoolClause.bool.boost, 1);
         assert.strictEqual(dateBoolClause.bool.minimum_should_match, 1);
-        assert.strictEqual(keywordClause.match.chunk_text.boost, 12);
+        assert.strictEqual(keywordClause.match.chunk_text.boost, 20);
         assert.strictEqual(neuralClause.neural.embedding.boost, 4);
     });
 
