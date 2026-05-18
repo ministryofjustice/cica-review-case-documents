@@ -174,7 +174,9 @@ describe('Search Routes', () => {
                 res.status(500).send('Internal Server Error');
             });
 
-            const res = await request(testApp).get('/search?query=error');
+            const res = await request(testApp).get(
+                `/search?query=error&type=${DEFAULT_SEARCH_TYPE}`
+            );
             assert.strictEqual(res.statusCode, 500);
             assert.strictEqual(res.text, 'Internal Server Error');
         });
@@ -205,7 +207,7 @@ describe('Search Routes', () => {
             });
             testApp.use('/search', routerWithErrorService);
 
-            const res = await request(testApp).get('/search?query=bad');
+            const res = await request(testApp).get(`/search?query=bad&type=${DEFAULT_SEARCH_TYPE}`);
             assert.strictEqual(res.statusCode, 400);
         });
 
@@ -235,7 +237,7 @@ describe('Search Routes', () => {
             });
             testApp.use('/search', routerWithErrorService);
 
-            const res = await request(testApp).get('/search?query=bad');
+            const res = await request(testApp).get(`/search?query=bad&type=${DEFAULT_SEARCH_TYPE}`);
             assert.strictEqual(res.statusCode, 400);
         });
 
@@ -265,7 +267,7 @@ describe('Search Routes', () => {
             });
             testApp.use('/search', routerWithErrorService);
 
-            const res = await request(testApp).get('/search?query=a');
+            const res = await request(testApp).get(`/search?query=a&type=${DEFAULT_SEARCH_TYPE}`);
             assert.strictEqual(res.statusCode, 400);
             // Should use default anchor #error
             assert.ok(res.text.includes('error') || res.statusCode === 400);
@@ -300,7 +302,9 @@ describe('Search Routes', () => {
             });
             testApp.use('/search', routerWithErrorService);
 
-            const res = await request(testApp).get('/search?query=test');
+            const res = await request(testApp).get(
+                `/search?query=test&type=${DEFAULT_SEARCH_TYPE}`
+            );
             assert.strictEqual(res.statusCode, 400);
         });
 
@@ -346,7 +350,9 @@ describe('Search Routes', () => {
             });
             testApp.use('/search', routerWithResults);
 
-            const res = await request(testApp).get('/search?query=test');
+            const res = await request(testApp).get(
+                `/search?query=test&type=${DEFAULT_SEARCH_TYPE}`
+            );
             assert.strictEqual(res.statusCode, 200);
             assert.match(res.text, /search\/page\/results.njk/);
         });

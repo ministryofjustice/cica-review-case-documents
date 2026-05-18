@@ -1,0 +1,106 @@
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { DEFAULT_SEARCH_TYPE } from '../../api/search/constants/searchTypes.js';
+import enforceSearchTypeInQuery from './index.js';
+
+/**
+ * Creates a mock Express request object.
+ *
+ * @param {{ method?: string, query?: object, session?: object }} [opts] - Optional request properties to override.
+ * @returns {object}
+ */
+function createMockReq({ method = 'GET', query = {}, session = {} } = {}) {
+    return { method, query, session };
+}
+
+/**
+ * Creates a mock Express response object with redirect tracking.
+ *
+ * @returns {object}
+ */
+function createMockRes() {
+    let redirectedUrl = null;
+    return {
+        redirect(url) {
+            redirectedUrl = url;
+        },
+        get redirectedUrl() {
+            return redirectedUrl;
+        }
+    };
+}
+
+describe('enforceSearchTypeInQuery', () => {
+    it('redirects with default type when type is absent from query', () => {
+        const req = createMockReq({ query: { query: 'acute', crn: '26-711111' } });
+        const res = createMockRes();
+        let nextCalled = false;
+
+        enforceSearchTypeInQuery(req, res, () => {
+            nextCalled = true;
+        });
+
+        assert.strictEqual(
+            res.redirectedUrl,
+            `/search?query=acute&crn=26-711111&type=${DEFAULT_SEARCH_TYPE}`
+        );
+        assert.strictEqual(nextCalled, false);
+    });
+
+    it('redirects with session type when set and type absent from query', () => {
+        const req = createMockReq({
+            query: { query: 'acute' },
+            session: { featureFlags: { type: 'keyword' } }
+        });
+        const res = createMockRes();
+        let nextCalled = false;
+
+        enforceSearchTypeInQuery(req, res, () => {
+            nextCalled = true;
+        });
+
+        assert.strictEqual(res.redirectedUrl, '/search?query=acute&type=keyword');
+        assert.strictEqual(nextCalled, false);
+    });
+
+    it('calls next without redirecting when type is present in query', () => {
+        const req = createMockReq({ query: { query: 'acute', type: 'hybrid' } });
+        const res = createMockRes();
+        let nextCalled = false;
+
+        enforceSearchTypeInQuery(req, res, () => {
+            nextCalled = true;
+        });
+
+        assert.strictEqual(res.redirectedUrl, null);
+        assert.strictEqual(nextCalled, true);
+    });
+
+    it('calls next without redirecting for non-GET requests', () => {
+        const req = createMockReq({ method: 'POST', query: {} });
+        const res = createMockRes();
+        let nextCalled = false;
+
+        enforceSearchTypeInQuery(req, res, () => {
+            nextCalled = true;
+        });
+
+        assert.strictEqual(res.redirectedUrl, null);
+        assert.strictEqual(nextCalled, true);
+    });
+
+    it('preserves all existing query params in the redirect', () => {
+        const req = createMockReq({
+            query: { query: 'brain injury', pageNumber: '2', crn: '26-711111' }
+        });
+        const res = createMockRes();
+
+        enforceSearchTypeInQuery(req, res, () => {});
+
+        const redirected = new URL(res.redirectedUrl, 'http://localhost');
+        assert.strictEqual(redirected.searchParams.get('query'), 'brain injury');
+        assert.strictEqual(redirected.searchParams.get('pageNumber'), '2');
+        assert.strictEqual(redirected.searchParams.get('crn'), '26-711111');
+        assert.strictEqual(redirected.searchParams.get('type'), DEFAULT_SEARCH_TYPE);
+    });
+});
