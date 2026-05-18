@@ -1,6 +1,6 @@
 import SEARCH_TYPES from '../../../search/constants/searchTypes.js';
 import logQueryMetrics from '../logQueryMetrics/index.js';
-import { queryTypeBuilders } from './queryTypeBuilders.js';
+import { createQueryTypeBuilders, resolveQueryDslConfig } from './queryTypeBuilders.js';
 
 /**
  * Normalises raw pageNumber and itemsPerPage inputs to safe integer values.
@@ -53,9 +53,7 @@ function normalisePagination(pageNumber, itemsPerPage) {
  * @param {object} [params.logger] - Optional structured logger instance.
  * @param {string} [params.searchType='hybrid-dates'] - Search mode. One of SEARCH_TYPES.KEYWORD, SEARCH_TYPES.KEYWORD_DATES, SEARCH_TYPES.SEMANTIC, SEARCH_TYPES.HYBRID, or SEARCH_TYPES.HYBRID_DATES.
  * @param {boolean} [params.includePagination=true] - Whether to include pagination fields in the query.
- * @param {number} [params.keywordBoost] - Boost multiplier for the lexical sub-query in hybrid mode.
- * @param {number} [params.dateBoost] - Boost multiplier for date variant clauses in hybrid mode.
- * @param {number} [params.semanticBoost] - Boost multiplier for the neural sub-query in hybrid mode.
+ * @param {object} [params.queryDslConfig] - Optional tuning overrides for semantic thresholds, ANN k, and default boosts.
  * @param {string} [params.documentId] - Document UUID to scope results to a single document and page.
  * @returns {object} OpenSearch query DSL JSON object.
  */
@@ -69,12 +67,13 @@ function buildQueryJson({
         searchType = SEARCH_TYPES.KEYWORD_DATES,
         includePagination = true,
         documentId,
-        keywordBoost,
-        dateBoost,
-        semanticBoost
+        queryDslConfig
     } = {}
 }) {
     const buildStart = Date.now();
+
+    const effectiveQueryDslConfig = resolveQueryDslConfig(queryDslConfig);
+    const queryTypeBuilders = createQueryTypeBuilders({ queryDslConfig: effectiveQueryDslConfig });
 
     // dispatch to the appropriate mode-specific builder. Each builder handles
     // its own date preprocessing (keyword and hybrid extract dates, semantic
@@ -93,7 +92,6 @@ function buildQueryJson({
         caseReferenceNumber,
         safePageNumber,
         documentId,
-        boostConfig: { keywordBoost, dateBoost, semanticBoost },
         logger
     };
 
@@ -126,20 +124,28 @@ function buildQueryJson({
         searchType
     });
 
-    logger?.debug?.({ queryJson }, 'Built query JSON');
-
-    // TEMP logging for verification during development. Remove or replace with appropriate structured logging as needed.
-    console.log(`[BuildQueryJson] Temp log - ${searchType} queryTypeBuilder parameters`, {
+    const queryTypeBuilderParamsLog = {
         keyword,
         caseReferenceNumber,
         safePageNumber,
         documentId,
-        boostConfig: { keywordBoost, dateBoost, semanticBoost }
-    });
-    // TEMP logging for verification during development. Remove or replace with appropriate structured logging as needed.
-    console.log(
-        `[BuildQueryJson] Temp log - ${searchType} queryTypeBuilder output`,
-        JSON.stringify(queryJson, null, 4)
+        effectiveQueryDslConfig
+    };
+    const prettyJsonEnabled = process.env.APP_LOG_PRETTY_JSON === 'true';
+    const paramsPrettyJson = prettyJsonEnabled
+        ? `\n${JSON.stringify(queryTypeBuilderParamsLog, null, 2)}`
+        : '';
+    const outputPrettyJson = prettyJsonEnabled ? `\n${JSON.stringify(queryJson, null, 2)}` : '';
+
+    logger?.debug?.({ queryJson }, 'Built query JSON');
+
+    logger?.debug?.(
+        queryTypeBuilderParamsLog,
+        `[BuildQueryJson] ${searchType} queryTypeBuilder parameters${paramsPrettyJson}`
+    );
+    logger?.debug?.(
+        { queryJson },
+        `[BuildQueryJson] ${searchType} queryTypeBuilder output${outputPrettyJson}`
     );
 
     return queryJson;

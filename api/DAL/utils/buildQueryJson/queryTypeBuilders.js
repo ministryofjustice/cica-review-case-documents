@@ -15,15 +15,34 @@ import SEARCH_TYPES from '../../../search/constants/searchTypes.js';
 import extractDatesFromSearchString from '../extractDatesFromSearchString/index.js';
 import generateDateFormatVariants from '../generateDateFormatVariants/index.js';
 
-/** @type {number} Minimum neural score — needs tuning or replaced with a low K value. */
-const SEMANTIC_MIN_SCORE = 0.55;
+/**
+ * Default tuning values for hybrid/semantic query construction.
+ *
+ * Tests can override these through buildQueryJson options to avoid coupling
+ * behavioural tests to production tuning constants.
+ */
+export const DEFAULT_QUERY_DSL_CONFIG = Object.freeze({
+    /** @type {number} Minimum neural score — needs tuning or replaced with a low K value. */
+    semanticMinScore: 0.55,
+    /** @type {number} Default number of nearest-neighbour candidates for neural queries. */
+    semanticK: 15,
+    lexicalBoost: 20,
+    dateBoost: 1,
+    neuralBoost: 4
+});
 
-/** @type {number} Default number of nearest-neighbour candidates for neural queries. */
-const DEFAULT_SEMANTIC_K = 15;
-
-const DEFAULT_LEXICAL_BOOST = 20;
-const DEFAULT_DATE_BOOST = 1;
-const DEFAULT_NEURAL_BOOST = 4;
+/**
+ * Resolves an effective query DSL configuration by merging user overrides with defaults.
+ *
+ * @param {Partial<typeof DEFAULT_QUERY_DSL_CONFIG>} [overrides={}] - Optional tuning overrides.
+ * @returns {typeof DEFAULT_QUERY_DSL_CONFIG} Effective query DSL configuration.
+ */
+export function resolveQueryDslConfig(overrides = {}) {
+    return {
+        ...DEFAULT_QUERY_DSL_CONFIG,
+        ...overrides
+    };
+}
 
 /**
  * Creates the lexical (BM25) query shell scoped to the case reference.
@@ -54,13 +73,18 @@ export function createLexicalQuery({ caseReferenceNumber }) {
  * @param {string} params.caseReferenceNumber - Case reference filter value.
  * @returns {object} Neural query DSL shell.
  */
-export function createNeuralQuery({ keyword, caseReferenceNumber }) {
+export function createNeuralQuery({
+    keyword,
+    caseReferenceNumber,
+    semanticK = DEFAULT_QUERY_DSL_CONFIG.semanticK,
+    semanticMinScore = DEFAULT_QUERY_DSL_CONFIG.semanticMinScore
+}) {
     return {
         query: {
             neural: {
                 embedding: {
                     query_text: keyword,
-                    k: DEFAULT_SEMANTIC_K,
+                    k: semanticK,
                     filter: {
                         bool: {
                             must: [{ term: { case_ref: caseReferenceNumber } }]
@@ -69,7 +93,7 @@ export function createNeuralQuery({ keyword, caseReferenceNumber }) {
                 }
             }
         },
-        min_score: keyword.trim().length > 0 ? SEMANTIC_MIN_SCORE : undefined
+        min_score: keyword.trim().length > 0 ? semanticMinScore : undefined
     };
 }
 
@@ -82,7 +106,10 @@ export function createNeuralQuery({ keyword, caseReferenceNumber }) {
  * @param {string} params.caseReferenceNumber - Case reference filter value.
  * @returns {object} Hybrid query DSL shell.
  */
-export function createHybridQuery({ caseReferenceNumber }) {
+export function createHybridQuery({
+    caseReferenceNumber,
+    semanticMinScore = DEFAULT_QUERY_DSL_CONFIG.semanticMinScore
+}) {
     return {
         query: {
             bool: {
@@ -91,7 +118,7 @@ export function createHybridQuery({ caseReferenceNumber }) {
                 minimum_should_match: 1
             }
         },
-        min_score: SEMANTIC_MIN_SCORE
+        min_score: semanticMinScore
     };
 }
 
@@ -252,13 +279,16 @@ function buildSemanticQuery({
     caseReferenceNumber,
     safePageNumber,
     documentId,
-    matchPhraseClauses = []
+    matchPhraseClauses = [],
+    queryDslConfig
 }) {
+    const { semanticK, semanticMinScore } = queryDslConfig;
+
     // When date phrases are present, produce a bool query with the neural clause and
     // date phrase clauses as sibling should branches. A non-empty keyword is implied
     // since dates cannot be extracted from an empty string.
     if (matchPhraseClauses.length > 0) {
-        const queryJson = createHybridQuery({ caseReferenceNumber });
+        const queryJson = createHybridQuery({ caseReferenceNumber, semanticMinScore });
 
         if (documentId) {
             queryJson.query.bool.must.push(
@@ -279,7 +309,7 @@ function buildSemanticQuery({
             neural: {
                 embedding: {
                     query_text: keyword,
-                    k: DEFAULT_SEMANTIC_K,
+                    k: semanticK,
                     filter: neuralFilter
                 }
             }
@@ -289,7 +319,12 @@ function buildSemanticQuery({
     }
 
     // Pure neural: no date phrases (or empty keyword fallback).
-    const queryJson = createNeuralQuery({ keyword, caseReferenceNumber });
+    const queryJson = createNeuralQuery({
+        keyword,
+        caseReferenceNumber,
+        semanticK,
+        semanticMinScore
+    });
 
     if (documentId) {
         queryJson.query.neural.embedding.filter.bool.must.push(
@@ -342,11 +377,17 @@ function buildHybridQuery({
     shouldClauses,
     safePageNumber,
     documentId,
-    keywordBoost,
-    dateBoost,
-    semanticBoost
+    queryDslConfig
 }) {
-    const queryJson = createHybridQuery({ caseReferenceNumber });
+    const {
+        semanticK,
+        semanticMinScore,
+        lexicalBoost: keywordBoost,
+        dateBoost,
+        neuralBoost: semanticBoost
+    } = queryDslConfig;
+
+    const queryJson = createHybridQuery({ caseReferenceNumber, semanticMinScore });
 
     const matchClause = shouldClauses.find((clause) => Object.hasOwn(clause, 'match'));
     const matchPhraseClauses = shouldClauses.filter((clause) =>
@@ -390,7 +431,7 @@ function buildHybridQuery({
             neural: {
                 embedding: {
                     query_text: keyword,
-                    k: DEFAULT_SEMANTIC_K,
+                    k: semanticK,
                     filter: neuralFilter,
                     boost: semanticBoost
                 }
@@ -401,216 +442,211 @@ function buildHybridQuery({
     return queryJson;
 }
 
-export const queryTypeBuilders = {
-    [SEARCH_TYPES.KEYWORD]: ({
-        keyword,
-        caseReferenceNumber,
-        safePageNumber,
-        documentId,
-        logger
-    }) => {
-        logger?.debug?.(
-            { keyword, caseReferenceNumber, safePageNumber, documentId },
-            '[QueryTypeBuilder] Building keyword query'
-        );
-        const { shouldClauses, phrases, phrasesVariants, timings } = buildDateAwareShouldClauses({
-            keyword,
-            enableDateExtraction: false
-        });
-        const queryJson = buildKeywordQuery({
-            caseReferenceNumber,
-            shouldClauses,
-            safePageNumber,
-            documentId
-        });
-        logger?.debug?.({ queryJson }, '[QueryTypeBuilder] keyword query built');
+export function createQueryTypeBuilders({ queryDslConfig = {} } = {}) {
+    const resolvedQueryDslConfig = resolveQueryDslConfig(queryDslConfig);
 
-        return {
-            queryJson,
-            phrases,
-            phrasesVariants,
-            shouldClauses,
-            extractMs: timings.extractMs,
-            variantMs: timings.variantMs
-        };
-    },
-    [SEARCH_TYPES.KEYWORD_DATES]: ({
-        keyword,
-        caseReferenceNumber,
-        safePageNumber,
-        documentId,
-        logger
-    }) => {
-        logger?.debug?.(
-            { keyword, caseReferenceNumber, safePageNumber, documentId },
-            '[QueryTypeBuilder] Building keyword-dates query'
-        );
-        const { shouldClauses, phrases, phrasesVariants, timings } = buildDateAwareShouldClauses({
-            keyword,
-            enableDateExtraction: true
-        });
-        const queryJson = buildKeywordQuery({
-            caseReferenceNumber,
-            shouldClauses,
-            safePageNumber,
-            documentId
-        });
-        logger?.debug?.({ queryJson }, '[QueryTypeBuilder] keyword-dates query built');
-
-        return {
-            queryJson,
-            phrases,
-            phrasesVariants,
-            shouldClauses,
-            extractMs: timings.extractMs,
-            variantMs: timings.variantMs
-        };
-    },
-
-    [SEARCH_TYPES.SEMANTIC]: ({
-        keyword,
-        caseReferenceNumber,
-        safePageNumber,
-        documentId, // ,
-        // enableDateExtraction
-        logger
-    }) => {
-        const phrases = [];
-        const phrasesVariants = [];
-        const matchPhraseClauses = [];
-        const extractMs = 0;
-        const variantMs = 0;
-
-        // if (enableDateExtraction) {
-        //     const {
-        //         shouldClauses,
-        //         phrases: p,
-        //         phrasesVariants: pv,
-        //         timings
-        //     } = buildDateAwareShouldClauses({ keyword, enableDateExtraction });
-        //     phrases = p;
-        //     phrasesVariants = pv;
-        //     matchPhraseClauses = shouldClauses.filter((c) => Object.hasOwn(c, 'match_phrase'));
-        //     extractMs = timings.extractMs;
-        //     variantMs = timings.variantMs;
-        // }
-
-        logger?.debug?.(
-            { keyword, caseReferenceNumber, safePageNumber, documentId },
-            '[QueryTypeBuilder] Building semantic query'
-        );
-        const queryJson = buildSemanticQuery({
+    return {
+        [SEARCH_TYPES.KEYWORD]: ({
             keyword,
             caseReferenceNumber,
             safePageNumber,
             documentId,
-            matchPhraseClauses
-        });
-        logger?.debug?.({ queryJson }, '[QueryTypeBuilder] semantic query built');
+            logger
+        }) => {
+            logger?.debug?.(
+                { keyword, caseReferenceNumber, safePageNumber, documentId },
+                '[QueryTypeBuilder] Building keyword query'
+            );
+            const { shouldClauses, phrases, phrasesVariants, timings } =
+                buildDateAwareShouldClauses({
+                    keyword,
+                    enableDateExtraction: false
+                });
+            const queryJson = buildKeywordQuery({
+                caseReferenceNumber,
+                shouldClauses,
+                safePageNumber,
+                documentId
+            });
+            logger?.debug?.({ queryJson }, '[QueryTypeBuilder] keyword query built');
 
-        return {
-            queryJson,
-            phrases,
-            phrasesVariants,
-            shouldClauses: matchPhraseClauses,
-            extractMs,
-            variantMs
-        };
-    },
+            return {
+                queryJson,
+                phrases,
+                phrasesVariants,
+                shouldClauses,
+                extractMs: timings.extractMs,
+                variantMs: timings.variantMs
+            };
+        },
+        [SEARCH_TYPES.KEYWORD_DATES]: ({
+            keyword,
+            caseReferenceNumber,
+            safePageNumber,
+            documentId,
+            logger
+        }) => {
+            logger?.debug?.(
+                { keyword, caseReferenceNumber, safePageNumber, documentId },
+                '[QueryTypeBuilder] Building keyword-dates query'
+            );
+            const { shouldClauses, phrases, phrasesVariants, timings } =
+                buildDateAwareShouldClauses({
+                    keyword,
+                    enableDateExtraction: true
+                });
+            const queryJson = buildKeywordQuery({
+                caseReferenceNumber,
+                shouldClauses,
+                safePageNumber,
+                documentId
+            });
+            logger?.debug?.({ queryJson }, '[QueryTypeBuilder] keyword-dates query built');
 
-    [SEARCH_TYPES.HYBRID]: ({
-        keyword,
-        caseReferenceNumber,
-        safePageNumber,
-        documentId,
-        boostConfig: {
-            keywordBoost = DEFAULT_LEXICAL_BOOST,
-            dateBoost = DEFAULT_DATE_BOOST,
-            semanticBoost = DEFAULT_NEURAL_BOOST
-        } = {},
-        logger
-    }) => {
-        logger?.debug?.(
-            {
+            return {
+                queryJson,
+                phrases,
+                phrasesVariants,
+                shouldClauses,
+                extractMs: timings.extractMs,
+                variantMs: timings.variantMs
+            };
+        },
+
+        [SEARCH_TYPES.SEMANTIC]: ({
+            keyword,
+            caseReferenceNumber,
+            safePageNumber,
+            documentId, // ,
+            // enableDateExtraction
+            logger
+        }) => {
+            const phrases = [];
+            const phrasesVariants = [];
+            const matchPhraseClauses = [];
+            const extractMs = 0;
+            const variantMs = 0;
+
+            // if (enableDateExtraction) {
+            //     const {
+            //         shouldClauses,
+            //         phrases: p,
+            //         phrasesVariants: pv,
+            //         timings
+            //     } = buildDateAwareShouldClauses({ keyword, enableDateExtraction });
+            //     phrases = p;
+            //     phrasesVariants = pv;
+            //     matchPhraseClauses = shouldClauses.filter((c) => Object.hasOwn(c, 'match_phrase'));
+            //     extractMs = timings.extractMs;
+            //     variantMs = timings.variantMs;
+            // }
+
+            logger?.debug?.(
+                { keyword, caseReferenceNumber, safePageNumber, documentId },
+                '[QueryTypeBuilder] Building semantic query'
+            );
+            const queryJson = buildSemanticQuery({
                 keyword,
                 caseReferenceNumber,
                 safePageNumber,
                 documentId,
-                boostConfig: { keywordBoost, dateBoost, semanticBoost }
-            },
-            '[QueryTypeBuilder] Building hybrid query'
-        );
-        const { shouldClauses, phrases, phrasesVariants, timings } = buildDateAwareShouldClauses({
-            keyword,
-            enableDateExtraction: false
-        });
-        const queryJson = buildHybridQuery({
+                matchPhraseClauses,
+                queryDslConfig: resolvedQueryDslConfig
+            });
+            logger?.debug?.({ queryJson }, '[QueryTypeBuilder] semantic query built');
+
+            return {
+                queryJson,
+                phrases,
+                phrasesVariants,
+                shouldClauses: matchPhraseClauses,
+                extractMs,
+                variantMs
+            };
+        },
+
+        [SEARCH_TYPES.HYBRID]: ({
             keyword,
             caseReferenceNumber,
-            shouldClauses,
             safePageNumber,
             documentId,
-            keywordBoost,
-            dateBoost,
-            semanticBoost
-        });
-        logger?.debug?.({ queryJson }, '[QueryTypeBuilder] hybrid query built');
-
-        return {
-            queryJson,
-            phrases,
-            phrasesVariants,
-            shouldClauses,
-            extractMs: timings.extractMs,
-            variantMs: timings.variantMs
-        };
-    },
-
-    [SEARCH_TYPES.HYBRID_DATES]: ({
-        keyword,
-        caseReferenceNumber,
-        safePageNumber,
-        documentId,
-        boostConfig: {
-            keywordBoost = DEFAULT_LEXICAL_BOOST,
-            dateBoost = DEFAULT_DATE_BOOST,
-            semanticBoost = DEFAULT_NEURAL_BOOST
-        } = {},
-        logger
-    }) => {
-        logger?.debug?.(
-            {
+            logger
+        }) => {
+            logger?.debug?.(
+                {
+                    keyword,
+                    caseReferenceNumber,
+                    safePageNumber,
+                    documentId
+                },
+                '[QueryTypeBuilder] Building hybrid query'
+            );
+            const { shouldClauses, phrases, phrasesVariants, timings } =
+                buildDateAwareShouldClauses({
+                    keyword,
+                    enableDateExtraction: false
+                });
+            const queryJson = buildHybridQuery({
                 keyword,
                 caseReferenceNumber,
+                shouldClauses,
                 safePageNumber,
                 documentId,
-                boostConfig: { keywordBoost, dateBoost, semanticBoost }
-            },
-            '[QueryTypeBuilder] Building hybrid-dates query'
-        );
-        const { shouldClauses, phrases, phrasesVariants, timings } = buildDateAwareShouldClauses({
-            keyword,
-            enableDateExtraction: true
-        });
-        const queryJson = buildHybridQuery({
+                queryDslConfig: resolvedQueryDslConfig
+            });
+            logger?.debug?.({ queryJson }, '[QueryTypeBuilder] hybrid query built');
+
+            return {
+                queryJson,
+                phrases,
+                phrasesVariants,
+                shouldClauses,
+                extractMs: timings.extractMs,
+                variantMs: timings.variantMs
+            };
+        },
+
+        [SEARCH_TYPES.HYBRID_DATES]: ({
             keyword,
             caseReferenceNumber,
-            shouldClauses,
             safePageNumber,
             documentId,
-            keywordBoost,
-            dateBoost,
-            semanticBoost
-        });
-        logger?.debug?.({ queryJson }, '[QueryTypeBuilder] hybrid-dates query built');
+            logger
+        }) => {
+            logger?.debug?.(
+                {
+                    keyword,
+                    caseReferenceNumber,
+                    safePageNumber,
+                    documentId
+                },
+                '[QueryTypeBuilder] Building hybrid-dates query'
+            );
+            const { shouldClauses, phrases, phrasesVariants, timings } =
+                buildDateAwareShouldClauses({
+                    keyword,
+                    enableDateExtraction: true
+                });
+            const queryJson = buildHybridQuery({
+                keyword,
+                caseReferenceNumber,
+                shouldClauses,
+                safePageNumber,
+                documentId,
+                queryDslConfig: resolvedQueryDslConfig
+            });
+            logger?.debug?.({ queryJson }, '[QueryTypeBuilder] hybrid-dates query built');
 
-        return {
-            queryJson,
-            phrases,
-            phrasesVariants,
-            shouldClauses,
-            extractMs: timings.extractMs,
-            variantMs: timings.variantMs
-        };
-    }
-};
+            return {
+                queryJson,
+                phrases,
+                phrasesVariants,
+                shouldClauses,
+                extractMs: timings.extractMs,
+                variantMs: timings.variantMs
+            };
+        }
+    };
+}
+
+export const queryTypeBuilders = createQueryTypeBuilders();

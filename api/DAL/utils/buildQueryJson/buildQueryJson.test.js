@@ -811,4 +811,34 @@ describe('buildQueryJson', () => {
         assert.strictEqual(typeof result.query.neural.embedding.k, 'number');
         assert.ok(result.query.neural.embedding.k > 0);
     });
+
+    it('Should apply queryDslConfig overrides for min score, k and default boosts', () => {
+        const result = buildQueryJson({
+            keyword: 'acute 28/11/2022',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 10,
+            options: {
+                searchType: 'hybrid-dates',
+                queryDslConfig: {
+                    semanticMinScore: 0.91,
+                    semanticK: 7,
+                    lexicalBoost: 31,
+                    dateBoost: 2,
+                    neuralBoost: 9
+                }
+            }
+        });
+
+        const shouldClauses = result.query.bool.should;
+        const keywordClause = shouldClauses.find((clause) => clause.match?.chunk_text);
+        const dateClause = shouldClauses.find((clause) => clause.bool?.should);
+        const neuralClause = shouldClauses.find((clause) => clause.neural?.embedding);
+
+        assert.strictEqual(result.min_score, 0.91);
+        assert.strictEqual(keywordClause.match.chunk_text.boost, 31);
+        assert.strictEqual(dateClause.bool.boost, 2);
+        assert.strictEqual(neuralClause.neural.embedding.boost, 9);
+        assert.strictEqual(neuralClause.neural.embedding.k, 7);
+    });
 });
