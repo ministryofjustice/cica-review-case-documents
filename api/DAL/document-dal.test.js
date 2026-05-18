@@ -139,7 +139,7 @@ describe('document-dal', () => {
             (clause) => clause.neural?.embedding
         );
         assert.equal(keywordClause.match.chunk_text.query, 'keyword');
-        assert.equal(keywordClause.match.chunk_text.boost, 12);
+        assert.equal(keywordClause.match.chunk_text.boost, 20);
         assert.equal(typeof neuralClause.neural.embedding.k, 'number');
         assert.ok(neuralClause.neural.embedding.k > 0);
         assert.equal(neuralClause.neural.embedding.boost, 4);
