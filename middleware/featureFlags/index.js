@@ -77,8 +77,8 @@ export function getFeatureFlagValue(session, flagName) {
  * Persists supported feature flags from query-string params into the session.
  *
  * Boolean flags (`align`) accept `on` / `off` query-string values.
- * The `type` flag accepts a direct search mode value. Invalid values are ignored,
- * leaving the existing session/default value unchanged.
+ * The `type` flag accepts a recognised search type value. Invalid values are rejected with
+ * a 400 error.
  *
  * @param {import('express').Request} req - Express request object.
  * @param {import('express').Response} res - Express response object.
@@ -99,7 +99,7 @@ export default function featureFlags(req, res, next) {
             } else if (flagName === 'type' && req.query?.type !== undefined) {
                 const { value, invalidValue } = parseSearchType(req.query.type);
                 if (typeof value === 'string') {
-                    flags[flagName] = slug;
+                    flags[flagName] = value;
                 } else {
                     const error = new Error(
                         `Invalid search type: ${invalidValue || '(empty)'}. Allowed values: ${Object.values(SEARCH_TYPES).join(', ')}`
