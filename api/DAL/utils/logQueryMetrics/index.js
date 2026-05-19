@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import SEARCH_TYPES from '../../../search/constants/searchTypes.js';
+import { DEFAULT_SEARCH_TYPE } from '../../../search/constants/searchTypes.js';
 
 const VARIANT_THRESHOLD = 50;
 const SHOULD_THRESHOLD = 50;
@@ -32,7 +32,7 @@ function logQueryMetrics({
     variantMs,
     logger,
     caseReferenceNumber,
-    searchType = SEARCH_TYPES.KEYWORD_DATES
+    searchType = DEFAULT_SEARCH_TYPE
 }) {
     const metrics = {
         queryHash: crypto.createHash('sha256').update(keyword).digest('hex').slice(0, 8),

@@ -1,6 +1,5 @@
 import { DEFAULT_SEARCH_TYPE } from '../../api/search/constants/searchTypes.js';
 import createRequestServiceDefault from '../../service/request/index.js';
-import { DEFAULT_SEARCH_TYPE } from '../../api/search/constants/searchTypes.js';
 
 /**
  * Creates a document chunks service for fetching bounding box data for document pages.

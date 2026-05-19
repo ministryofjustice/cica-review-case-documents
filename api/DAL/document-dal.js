@@ -41,7 +41,7 @@ import buildQueryJson from './utils/buildQueryJson/index.js';
  *
  * @param {Logger} [params.logger]
  *   Optional structured logger instance.
- * @param {string} [params.searchType='keyword']
+ * @param {string} [params.searchType=DEFAULT_SEARCH_TYPE]
  *   Search mode. One of `'keyword'`, `'semantic'`, or `'hybrid'`.
  *
  * @throws {VError} Throws a `ConfigurationError` if the environment variable
