@@ -1,4 +1,7 @@
-import { DEFAULT_SEARCH_TYPE, parseSearchType } from '../../api/search/constants/searchTypes.js';
+import SEARCH_TYPES, {
+    DEFAULT_SEARCH_TYPE,
+    parseSearchType
+} from '../../api/search/constants/searchTypes.js';
 
 export const FEATURE_FLAG_DEFAULTS = Object.freeze({
     align: true, // toggle alignment of image highlighting to prevent or show overlapping
@@ -102,9 +105,15 @@ export default function featureFlags(req, res, next) {
                     flags[flagName] = queryFlagValue;
                 }
             } else if (flagName === 'type' && req.query?.type !== undefined) {
-                const { searchType } = parseSearchType(req.query.type);
-                if (typeof searchType === 'string') {
-                    flags[flagName] = searchType;
+                const { value, invalidValue } = parseSearchType(req.query.type);
+                if (typeof value === 'string') {
+                    flags[flagName] = slug;
+                } else {
+                    const error = new Error(
+                        `Invalid search type: ${invalidValue || '(empty)'}. Allowed values: ${Object.values(SEARCH_TYPES).join(', ')}`
+                    );
+                    error.status = 400;
+                    return next(error);
                 }
             } else {
                 const queryFlagValue = parseEnumFlagValue(req.query?.[flagName]);
