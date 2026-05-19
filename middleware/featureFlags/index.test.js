@@ -174,54 +174,54 @@ describe('featureFlags middleware', () => {
 });
 
 describe('parseSearchType', () => {
-    it('resolves supported values directly', () => {
+    it('resolves supported type values directly', () => {
         assert.deepEqual(parseSearchType('keyword'), {
-            searchType: 'keyword',
+            value: 'keyword',
             invalidValue: undefined
         });
         assert.deepEqual(parseSearchType('semantic'), {
-            searchType: 'semantic',
+            value: 'semantic',
             invalidValue: undefined
         });
         assert.deepEqual(parseSearchType('hybrid'), {
-            searchType: 'hybrid',
+            value: 'hybrid',
             invalidValue: undefined
         });
     });
 
     it('is case-insensitive and trims whitespace', () => {
         assert.deepEqual(parseSearchType('  KEYWORD-DATES  '), {
-            searchType: 'keyword-dates',
+            value: 'keyword-dates',
             invalidValue: undefined
         });
         assert.deepEqual(parseSearchType('HyBrId-DaTeS'), {
-            searchType: 'hybrid-dates',
+            value: 'hybrid-dates',
             invalidValue: undefined
         });
     });
 
     it('accepts array input and uses the last value', () => {
         assert.deepEqual(parseSearchType(['keyword', 'semantic']), {
-            searchType: 'semantic',
+            value: 'semantic',
             invalidValue: undefined
         });
     });
 
-    it('returns invalid values for unsupported values', () => {
+    it('returns invalid value for unrecognised type values', () => {
         assert.deepEqual(parseSearchType('unknown'), {
-            searchType: undefined,
+            value: undefined,
             invalidValue: 'unknown'
         });
         assert.deepEqual(parseSearchType('keyword,semantic'), {
-            searchType: undefined,
+            value: undefined,
             invalidValue: 'keyword,semantic'
         });
     });
 
     it('returns empty output for absent or empty input', () => {
-        assert.deepEqual(parseSearchType(''), { searchType: undefined, invalidValue: undefined });
+        assert.deepEqual(parseSearchType(''), { value: undefined, invalidValue: undefined });
         assert.deepEqual(parseSearchType(undefined), {
-            searchType: undefined,
+            value: undefined,
             invalidValue: undefined
         });
     });

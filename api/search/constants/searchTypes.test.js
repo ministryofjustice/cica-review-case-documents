@@ -35,7 +35,7 @@ describe('parseSearchType', () => {
         for (const value of [undefined, null, 42, true, {}]) {
             it(`returns empty result for ${JSON.stringify(value)}`, () => {
                 assert.deepStrictEqual(parseSearchType(value), {
-                    searchType: undefined,
+                    value: undefined,
                     invalidValue: undefined
                 });
             });
@@ -43,14 +43,14 @@ describe('parseSearchType', () => {
 
         it('returns empty result for an empty string', () => {
             assert.deepStrictEqual(parseSearchType(''), {
-                searchType: undefined,
+                value: undefined,
                 invalidValue: undefined
             });
         });
 
         it('returns empty result for a whitespace-only string', () => {
             assert.deepStrictEqual(parseSearchType('   '), {
-                searchType: undefined,
+                value: undefined,
                 invalidValue: undefined
             });
         });
@@ -59,52 +59,52 @@ describe('parseSearchType', () => {
     describe('when value is an array', () => {
         it('uses the last element of the array', () => {
             assert.deepStrictEqual(parseSearchType(['keyword', 'semantic']), {
-                searchType: 'semantic',
+                value: 'semantic',
                 invalidValue: undefined
             });
         });
 
         it('returns empty result when the last element is not a string', () => {
             assert.deepStrictEqual(parseSearchType(['keyword', undefined]), {
-                searchType: undefined,
+                value: undefined,
                 invalidValue: undefined
             });
         });
     });
 
-    describe('supported enum values', () => {
+    describe('supported type values', () => {
         it('resolves supported values directly', () => {
             assert.deepStrictEqual(parseSearchType('hybrid-dates'), {
-                searchType: 'hybrid-dates',
+                value: 'hybrid-dates',
                 invalidValue: undefined
             });
             assert.deepStrictEqual(parseSearchType('keyword-dates'), {
-                searchType: 'keyword-dates',
+                value: 'keyword-dates',
                 invalidValue: undefined
             });
             assert.deepStrictEqual(parseSearchType('hybrid'), {
-                searchType: 'hybrid',
+                value: 'hybrid',
                 invalidValue: undefined
             });
             assert.deepStrictEqual(parseSearchType('keyword'), {
-                searchType: 'keyword',
+                value: 'keyword',
                 invalidValue: undefined
             });
             assert.deepStrictEqual(parseSearchType('semantic'), {
-                searchType: 'semantic',
+                value: 'semantic',
                 invalidValue: undefined
             });
         });
     });
 
     describe('invalid inputs', () => {
-        it('returns the invalid value when the value is not supported', () => {
+        it('returns the invalid value when the type is not recognised', () => {
             assert.deepStrictEqual(parseSearchType('unknown'), {
-                searchType: undefined,
+                value: undefined,
                 invalidValue: 'unknown'
             });
             assert.deepStrictEqual(parseSearchType('foo,bar'), {
-                searchType: undefined,
+                value: undefined,
                 invalidValue: 'foo,bar'
             });
         });
@@ -113,18 +113,18 @@ describe('parseSearchType', () => {
     describe('whitespace and case handling', () => {
         it('trims whitespace around values', () => {
             assert.deepStrictEqual(parseSearchType(' hybrid-dates '), {
-                searchType: 'hybrid-dates',
+                value: 'hybrid-dates',
                 invalidValue: undefined
             });
         });
 
         it('is case-insensitive', () => {
             assert.deepStrictEqual(parseSearchType('KEYWORD-DATES'), {
-                searchType: 'keyword-dates',
+                value: 'keyword-dates',
                 invalidValue: undefined
             });
             assert.deepStrictEqual(parseSearchType('SEMANTIC'), {
-                searchType: 'semantic',
+                value: 'semantic',
                 invalidValue: undefined
             });
         });
@@ -134,7 +134,7 @@ describe('parseSearchType', () => {
 describe('parseSearchTypeTokens', () => {
     it('remains an alias of parseSearchType for compatibility', () => {
         assert.deepStrictEqual(parseSearchTypeTokens('HYBRID-DATES'), {
-            searchType: 'hybrid-dates',
+            value: 'hybrid-dates',
             invalidValue: undefined
         });
     });
