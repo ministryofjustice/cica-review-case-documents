@@ -13,7 +13,7 @@ Runtime feature flags are stored in the Express session (`req.session.featureFla
 
 Boolean flags (`align`) are toggled with `on` / `off`.
 
-The `type` flag accepts a direct search mode value:
+The `type` flag accepts a recognised search type value:
 
 ```
 /search?type=hybrid-dates          → hybrid-dates  (default)
@@ -25,7 +25,7 @@ The `type` flag accepts a direct search mode value:
 /search?type=hybrid-dates&align=off → hybrid-dates + alignment off
 ```
 
-The middleware persists the resolved search type to the session, so subsequent requests within the same session retain the setting without repeating the query parameter.
+The middleware persists the resolved value to the session, so subsequent requests within the same session retain the setting without repeating the query parameter.
 
 > **Note:** The value must match a supported search mode **exactly**. An invalid value (for example `semantic,dates`) is ignored and the system falls back to the existing session value, or the default when no session value exists.
 

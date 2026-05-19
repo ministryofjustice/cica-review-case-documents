@@ -21,9 +21,9 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
         try {
             const { query } = req.body;
             const { pageNumber = 1 } = req.query;
-            const requestSearchType = parseSearchType(req.body?.type);
+            const { value: postedSearchType } = parseSearchType(req.body?.type);
             const searchType =
-                requestSearchType.searchType ||
+                postedSearchType.searchType ||
                 getFeatureFlagValue(req.session, 'type') ||
                 DEFAULT_SEARCH_TYPE;
 
