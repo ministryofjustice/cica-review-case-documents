@@ -7,32 +7,34 @@ Runtime feature flags are stored in the Express session (`req.session.featureFla
 | Flag | Type | Default | Purpose |
 |---|---|---|---|
 | `align` | `boolean` | `true` | Enable alignment of image highlight bounding boxes to prevent overlaps |
-| `type` | `string` | `hybrid,dates` | Search mode - controls which OpenSearch query strategy is used |
+| `type` | `string` | `hybrid-dates` | Search mode - controls which OpenSearch query strategy is used |
 
 ## Toggling flags via URL
 
 Boolean flags (`align`) are toggled with `on` / `off`.
 
-The `type` flag accepts a comma-delimited string of capability tokens (`keyword`, `dates`, `semantic`, `hybrid`). The tokens are resolved order-independently to a search mode slug:
+The `type` flag accepts a comma-delimited string of capability tokens (`keyword`, `semantic`, `dates`). The tokens are resolved order-independently to a search mode slug:
 
 ```
-/search?type=hybrid,dates          → hybrid-dates  (default)
-/search?type=hybrid                → hybrid
-/search?type=keyword,dates         → keyword-dates
-/search?type=keyword               → keyword
-/search?type=semantic              → semantic
-/search?align=off                  → disable bounding-box alignment
-/search?type=hybrid,dates&align=off → hybrid-dates + alignment off
+/search?type=keyword,semantic,dates  → hybrid-dates  (default)
+/search?type=keyword,semantic        → hybrid
+/search?type=keyword,dates           → keyword-dates
+/search?type=keyword                 → keyword
+/search?type=semantic                → semantic
+/search?align=off                    → disable bounding-box alignment
+/search?type=keyword,semantic,dates&align=off → hybrid-dates + alignment off
 ```
 
 The middleware persists the resolved slug to the session, so subsequent requests within the same session retain the setting without repeating the query parameter.
+
+> **Note:** The token set must match a known resolution **exactly** — extra tokens are not ignored. An unresolvable combination (e.g. `semantic,dates`) returns a 400 error rather than falling back to the previous session value.
 
 ## Search mode slugs
 
 | `type` slug | Tokens required | OpenSearch strategy |
 |---|---|---|
-| `hybrid-dates` _(default)_ | `hybrid` + `dates` | BM25 + neural + date phrase expansion |
-| `hybrid` | `hybrid` | BM25 + neural, no date extraction |
+| `hybrid-dates` _(default)_ | `keyword` + `semantic` + `dates` | BM25 + neural + date phrase expansion |
+| `hybrid` | `keyword` + `semantic` | BM25 + neural, no date extraction |
 | `keyword-dates` | `keyword` + `dates` | BM25 + date phrase expansion |
 | `keyword` | `keyword` | BM25 only |
 | `semantic` | `semantic` | Neural vector only |

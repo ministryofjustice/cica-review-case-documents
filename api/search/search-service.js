@@ -1,5 +1,5 @@
 import createDocumentDAL from '../DAL/document-dal.js';
-import DEFAULT_SEARCH_TYPE from './constants/searchTypes.js';
+import { DEFAULT_SEARCH_TYPE } from './constants/searchTypes.js';
 
 /**
  * Factory function that creates a Search Service for retrieving documents
