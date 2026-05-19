@@ -691,7 +691,7 @@ describe('document-dal', () => {
             assert.equal(queryArgs.body.query.neural.embedding.query_text, 'needle');
             assert.deepStrictEqual(queryArgs.body.query.neural.embedding.filter, {
                 bool: {
-                    must: [
+                    filter: [
                         { term: { case_ref: '12-745678' } },
                         { term: { source_doc_id: 'doc-123' } },
                         { term: { page_number: 1 } }
