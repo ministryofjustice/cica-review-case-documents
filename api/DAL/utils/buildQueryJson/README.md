@@ -36,12 +36,12 @@ These defaults can be overridden through `queryDslConfig`.
 
 ## Neural filter
 
-All queries that include a `neural` clause attach a `filter` to pre-scope the ANN (approximate nearest neighbour) search to the correct case — and optionally to a specific document page when `documentId` is supplied. Without this, OpenSearch retrieves the top `k` candidates from across all cases before the outer `bool.must` term filter discards irrelevant results, wasting the `k` budget on noise.
+All queries that include a `neural` clause attach a `filter` to pre-scope the ANN (approximate nearest neighbour) search to the correct case — and optionally to a specific document page when `documentId` is supplied. Without this, OpenSearch retrieves the top `k` candidates from across all cases before the outer `bool.filter` term filter discards irrelevant results, wasting the `k` budget on noise.
 
 - **Case-scoped** (search results): `filter: { term: { case_ref: '...' } }`
-- **Page-scoped** (document chunk viewer): `filter: { bool: { must: [{ term: { case_ref } }, { term: { source_doc_id } }, { term: { page_number } }] } }`
+- **Page-scoped** (document chunk viewer): `filter: { bool: { filter: [{ term: { case_ref } }, { term: { source_doc_id } }, { term: { page_number } }] } }`
 
-When there is only a single filter clause and the keyword is non-empty (pure semantic, no `documentId`), the `bool.must` wrapper is unwrapped to a direct `term` clause.
+When there is only a single filter clause and the keyword is non-empty (pure semantic, no `documentId`), the `bool.filter` wrapper is unwrapped to a direct `term` clause.
 
 ## Usage
 
