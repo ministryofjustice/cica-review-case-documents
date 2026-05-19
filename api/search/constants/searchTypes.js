@@ -17,15 +17,6 @@ const SEARCH_TYPES = Object.freeze({
 export default SEARCH_TYPES;
 
 /**
- * Supported URL `type` enum values used to validate incoming query values.
- *
- * @type {ReadonlySet<string>}
- */
-export const VALID_SEARCH_TYPE_SET = Object.freeze(new Set(Object.values(SEARCH_TYPES)));
-
-export const VALID_SEARCH_TYPE_VALUES = Object.freeze(Array.from(VALID_SEARCH_TYPE_SET));
-
-/**
  * The default search mode used when no `type` query parameter is provided.
  *
  * Centralised here so that every consumer (middleware, tests, docs) derives
@@ -39,8 +30,9 @@ export const DEFAULT_SEARCH_TYPE = SEARCH_TYPES.HYBRID_DATES;
 /**
  * Resolves a `type` query parameter value to a supported SEARCH_TYPES enum value.
  *
- * The input is normalised to lowercase and validated against VALID_SEARCH_TYPE_SET.
- * Valid values pass through unchanged so URL and internal strategy key stay aligned.
+ * The input is normalised to lowercase and matched directly against
+ * SEARCH_TYPES values, so the URL value and the internal search strategy key stay
+ * aligned one to one.
  *
  * Accepts both a plain string or an array (as Express may produce when a query param
  * appears multiple times); when an array is given, the last value is used.
@@ -68,7 +60,7 @@ export function parseSearchType(value) {
     }
 
     const normalized = raw.trim().toLowerCase();
-    const resolvedValue = VALID_SEARCH_TYPE_SET.has(normalized) ? normalized : undefined;
+    const resolvedValue = Object.values(SEARCH_TYPES).includes(normalized) ? normalized : undefined;
 
     return {
         searchType: resolvedValue,
