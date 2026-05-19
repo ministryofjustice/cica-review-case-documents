@@ -1,7 +1,7 @@
 /**
- * Enumeration of supported search mode values.
+ * Enumeration of supported search type values.
  *
- * These values are the canonical enum values accepted in the `type` URL query parameter.
+ * These are the canonical values accepted in the `type` URL query parameter.
  *
  * @readonly
  * @enum {string}
@@ -28,7 +28,7 @@ export default SEARCH_TYPES;
 export const DEFAULT_SEARCH_TYPE = SEARCH_TYPES.HYBRID_DATES;
 
 /**
- * Resolves a `type` query parameter value to a supported SEARCH_TYPES enum value.
+ * Resolves a `type` query parameter value to a recognised SEARCH_TYPES value.
  *
  * The input is normalised to lowercase and matched directly against
  * SEARCH_TYPES values, so the URL value and the internal search strategy key stay
@@ -39,32 +39,32 @@ export const DEFAULT_SEARCH_TYPE = SEARCH_TYPES.HYBRID_DATES;
  * Comma-delimited values (for example `type=keyword,semantic`) are treated as a
  * single invalid value.
  *
- * Returns `{ searchType: undefined, invalidValue: undefined }` when value is absent or not a
+ * Returns `{ value: undefined, invalidValue: undefined }` when the input is absent or not a
  * string, allowing callers to distinguish "param not present" from "param present but
  * invalid".
  *
- * @param {unknown} value - Raw `req.query.type` value.
- * @returns {{ searchType: string | undefined, invalidValue: string | undefined }}
+ * @param {unknown} input - Raw `req.query.type` value.
+ * @returns {{ value: string | undefined, invalidValue: string | undefined }}
  *
  * @example
- * parseSearchType('hybrid-dates') // { searchType: 'hybrid-dates', invalidValue: undefined }
- * parseSearchType('semantic')     // { searchType: 'semantic', invalidValue: undefined }
- * parseSearchType('unknown')      // { searchType: undefined, invalidValue: 'unknown' }
- * parseSearchType(undefined)      // { searchType: undefined, invalidValue: undefined }
+ * parseSearchType('hybrid-dates') // { value: 'hybrid-dates', invalidValue: undefined }
+ * parseSearchType('semantic')     // { value: 'semantic', invalidValue: undefined }
+ * parseSearchType('unknown')      // { value: undefined, invalidValue: 'unknown' }
+ * parseSearchType(undefined)      // { value: undefined, invalidValue: undefined }
  */
-export function parseSearchType(value) {
-    const raw = Array.isArray(value) ? value.at(-1) : value;
+export function parseSearchType(input) {
+    const raw = Array.isArray(input) ? input.at(-1) : input;
 
     if (typeof raw !== 'string' || !raw.trim()) {
-        return { searchType: undefined, invalidValue: undefined };
+        return { value: undefined, invalidValue: undefined };
     }
 
     const normalized = raw.trim().toLowerCase();
-    const resolvedValue = Object.values(SEARCH_TYPES).includes(normalized) ? normalized : undefined;
+    const value = Object.values(SEARCH_TYPES).includes(normalized) ? normalized : undefined;
 
     return {
-        searchType: resolvedValue,
-        invalidValue: resolvedValue ? undefined : normalized
+        value,
+        invalidValue: value ? undefined : normalized
     };
 }
 
