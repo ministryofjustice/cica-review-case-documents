@@ -1,5 +1,6 @@
 import SEARCH_TYPES from '../../../search/constants/searchTypes.js';
 import logQueryMetrics from '../logQueryMetrics/index.js';
+import { DEFAULT_SEARCH_TYPE } from '../../../search/constants/searchTypes.js';
 import { queryTypeBuilders } from './queryTypeBuilders.js';
 
 /**
@@ -51,7 +52,7 @@ function normalisePagination(pageNumber, itemsPerPage) {
  * @param {number} params.pageNumber - The current page number (1-based).
  * @param {number} params.itemsPerPage - Number of results to return per page.
  * @param {object} [params.logger] - Optional structured logger instance.
- * @param {string} [params.searchType='hybrid-dates'] - Search mode. One of SEARCH_TYPES.KEYWORD, SEARCH_TYPES.KEYWORD_DATES, SEARCH_TYPES.SEMANTIC, SEARCH_TYPES.HYBRID, or SEARCH_TYPES.HYBRID_DATES.
+ * @param {string} [params.searchType=DEFAULT_SEARCH_TYPE] - Search mode. One of SEARCH_TYPES.KEYWORD, SEARCH_TYPES.KEYWORD_DATES, SEARCH_TYPES.SEMANTIC, SEARCH_TYPES.HYBRID, or SEARCH_TYPES.HYBRID_DATES.
  * @param {boolean} [params.includePagination=true] - Whether to include pagination fields in the query.
  * @param {number} [params.keywordBoost] - Boost multiplier for the lexical sub-query in hybrid mode.
  * @param {number} [params.dateBoost] - Boost multiplier for date variant clauses in hybrid mode.
@@ -66,7 +67,7 @@ function buildQueryJson({
     itemsPerPage,
     options: {
         logger,
-        searchType = SEARCH_TYPES.KEYWORD_DATES,
+        searchType = DEFAULT_SEARCH_TYPE,
         includePagination = true,
         documentId,
         keywordBoost,

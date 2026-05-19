@@ -1,9 +1,12 @@
 /**
  * The primitive capability tokens accepted in the `type` URL query parameter.
  *
- * These are the building blocks that callers combine in a comma-delimited string
- * (e.g. `?type=keyword,semantic,dates`) to select a search mode. Tokens are order-insensitive
- * and any unrecognised values in the string are silently ignored.
+ * Callers combine these in a comma-delimited string (e.g. `?type=keyword,semantic,dates`)
+ * to select a search mode. The token set must match a resolution in SEARCH_TYPE_RESOLUTIONS
+ * exactly — unrecognised tokens or valid-but-unresolvable combinations are rejected with a 400.
+ *
+ * Note: `hybrid` is retained as a recognised token value to avoid it being treated as unknown,
+ * but it is not used in any SEARCH_TYPE_RESOLUTIONS entry.
  *
  * @readonly
  * @enum {string}
@@ -19,13 +22,11 @@ const { KEYWORD, DATES, SEMANTIC } = SEARCH_TYPE_TOKENS;
 const VALID_TOKEN_VALUES = new Set(Object.values(SEARCH_TYPE_TOKENS));
 
 /**
- * Defines which SEARCH_TYPE_TOKENS must all be present for a given search mode to be selected.
+ * Defines the exact set of SEARCH_TYPE_TOKENS required to select each search mode.
  *
- * Entries are ordered most-specific first so that a multi-token match (e.g. `HYBRID_DATES`)
- * is always found before a subset match (e.g. `HYBRID`) when iterating.
- *
- * This object drives both the SEARCH_TYPES slug derivation and the parseSearchTypeTokens
- * resolution logic — adding a new search mode only requires a new entry here.
+ * Resolution uses an exact match — the input token set must equal a resolution's token
+ * array precisely (same tokens, same count). Entries are ordered most-specific first
+ * so that if the exact-match logic is ever relaxed, more specific modes still win.
  *
  * @type {Readonly<Record<string, string[]>>}
  */
@@ -96,12 +97,15 @@ export const DEFAULT_SEARCH_TYPE = SEARCH_TYPES.HYBRID_DATES;
  * @returns {{ slug: string | undefined, unknownTokens: string[] }}
  *
  * @example
- * parseSearchTypeTokens('hybrid,dates')          // { slug: 'hybrid-dates', unknownTokens: [] }
- * parseSearchTypeTokens('keyword,hybrid')        // { slug: 'hybrid', unknownTokens: [] }
- * parseSearchTypeTokens('keyword,unknown,dates') // { slug: 'keyword-dates', unknownTokens: ['unknown'] }
- * parseSearchTypeTokens('unknown')               // { slug: undefined, unknownTokens: ['unknown'] }
- * parseSearchTypeTokens('dates')                 // { slug: undefined, unknownTokens: [] }
- * parseSearchTypeTokens(undefined)               // { slug: undefined, unknownTokens: [] }
+ * parseSearchTypeTokens('keyword,semantic,dates') // { slug: 'hybrid-dates', unknownTokens: [] }
+ * parseSearchTypeTokens('keyword,semantic')        // { slug: 'hybrid', unknownTokens: [] }
+ * parseSearchTypeTokens('keyword,dates')           // { slug: 'keyword-dates', unknownTokens: [] }
+ * parseSearchTypeTokens('keyword')                 // { slug: 'keyword', unknownTokens: [] }
+ * parseSearchTypeTokens('semantic')                // { slug: 'semantic', unknownTokens: [] }
+ * parseSearchTypeTokens('semantic,dates')          // { slug: undefined, unknownTokens: [] }  — unresolvable
+ * parseSearchTypeTokens('keyword,unknown,dates')   // { slug: undefined, unknownTokens: ['unknown'] }
+ * parseSearchTypeTokens('unknown')                 // { slug: undefined, unknownTokens: ['unknown'] }
+ * parseSearchTypeTokens(undefined)                 // { slug: undefined, unknownTokens: [] }
  */
 export function parseSearchTypeTokens(value) {
     // last occurrence of the query param wins. Accept both string and array input for
