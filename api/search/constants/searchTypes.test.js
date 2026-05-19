@@ -3,38 +3,8 @@ import { describe, it } from 'node:test';
 import SEARCH_TYPES, {
     DEFAULT_SEARCH_TYPE,
     parseSearchType,
-    parseSearchTypeTokens,
-    VALID_SEARCH_TYPE_SET,
-    VALID_SEARCH_TYPE_VALUES
+    parseSearchTypeTokens
 } from './searchTypes.js';
-
-describe('VALID_SEARCH_TYPE_SET', () => {
-    it('should be frozen', () => {
-        assert.ok(Object.isFrozen(VALID_SEARCH_TYPE_SET));
-    });
-
-    it('should contain each supported URL type value', () => {
-        assert.deepStrictEqual(Array.from(VALID_SEARCH_TYPE_SET), [
-            'hybrid-dates',
-            'keyword-dates',
-            'hybrid',
-            'keyword',
-            'semantic'
-        ]);
-    });
-});
-
-describe('VALID_SEARCH_TYPE_VALUES', () => {
-    it('should contain every supported URL type value', () => {
-        assert.deepStrictEqual(VALID_SEARCH_TYPE_VALUES, [
-            'hybrid-dates',
-            'keyword-dates',
-            'hybrid',
-            'keyword',
-            'semantic'
-        ]);
-    });
-});
 
 describe('SEARCH_TYPES (default export)', () => {
     it('should be frozen', () => {
