@@ -8,7 +8,8 @@ describe('buildQueryJson', () => {
             keyword: 'Meeting on 12/05/2024 at office',
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
-            itemsPerPage: 10
+            itemsPerPage: 10,
+            options: { searchType: 'keyword-dates' }
         };
 
         const expected = {
@@ -47,7 +48,8 @@ describe('buildQueryJson', () => {
             keyword: 'Important meeting',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
-            itemsPerPage: 5
+            itemsPerPage: 5,
+            options: { searchType: 'keyword-dates' }
         };
 
         const expected = {
@@ -71,7 +73,8 @@ describe('buildQueryJson', () => {
             keyword: 'Event dates: 12/01/2024, 13-02-24 in the calendar',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
-            itemsPerPage: 10
+            itemsPerPage: 10,
+            options: { searchType: 'keyword-dates' }
         };
 
         const expected = {
@@ -127,7 +130,8 @@ describe('buildQueryJson', () => {
             keyword: 'Dates: 50/04/92, 12/05/2024, 17/10/123',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
-            itemsPerPage: 10
+            itemsPerPage: 10,
+            options: { searchType: 'keyword-dates' }
         };
 
         const expected = {
@@ -168,7 +172,8 @@ describe('buildQueryJson', () => {
             keyword: 'Dates:12/05/2024,13/05/2024,14/05/2024',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
-            itemsPerPage: 10
+            itemsPerPage: 10,
+            options: { searchType: 'keyword-dates' }
         };
 
         const expected = {
@@ -221,7 +226,8 @@ describe('buildQueryJson', () => {
             keyword: '12/05/2024 project discussion 13/06/2024',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
-            itemsPerPage: 10
+            itemsPerPage: 10,
+            options: { searchType: 'keyword-dates' }
         };
 
         const expected = {
@@ -268,7 +274,8 @@ describe('buildQueryJson', () => {
             keyword: '',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
-            itemsPerPage: 10
+            itemsPerPage: 10,
+            options: { searchType: 'keyword-dates' }
         };
 
         const expected = {
@@ -678,7 +685,8 @@ describe('buildQueryJson', () => {
             keyword: 'Event on 17102024 was successful',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
-            itemsPerPage: 10
+            itemsPerPage: 10,
+            options: { searchType: 'keyword-dates' }
         };
 
         const expected = {
@@ -729,7 +737,8 @@ describe('buildQueryJson', () => {
             keyword: 'Review scheduled in March 2024',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
-            itemsPerPage: 10
+            itemsPerPage: 10,
+            options: { searchType: 'keyword-dates' }
         };
         const result = buildQueryJson(params);
         assert.strictEqual(result.from, 0);
@@ -747,7 +756,8 @@ describe('buildQueryJson', () => {
             keyword: 'Event on 2024-05-12 at venue',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
-            itemsPerPage: 10
+            itemsPerPage: 10,
+            options: { searchType: 'keyword-dates' }
         };
         const result = buildQueryJson(params);
         assert.strictEqual(result.from, 0);
@@ -765,7 +775,8 @@ describe('buildQueryJson', () => {
             keyword: 'Hearing on 5th May 2024 at court',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
-            itemsPerPage: 10
+            itemsPerPage: 10,
+            options: { searchType: 'keyword-dates' }
         };
         const result = buildQueryJson(params);
         assert.strictEqual(result.from, 0);
