@@ -1,6 +1,6 @@
 import SEARCH_TYPES from '../../../search/constants/searchTypes.js';
 import logQueryMetrics from '../logQueryMetrics/index.js';
-import { DEFAULT_SEARCH_TYPE } from '../search/constants/searchTypes.js';
+import { DEFAULT_SEARCH_TYPE } from '../../../search/constants/searchTypes.js';
 import { queryTypeBuilders } from './queryTypeBuilders.js';
 
 /**
