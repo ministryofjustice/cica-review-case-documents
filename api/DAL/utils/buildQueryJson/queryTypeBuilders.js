@@ -66,7 +66,7 @@ export function createLexicalQuery({ caseReferenceNumber }) {
 
 /**
  * Creates the neural (vector) query shell scoped to the case reference.
- * The caller may extend `query.neural.embedding.filter.bool.must` with additional term filters.
+ * The caller may extend `query.neural.embedding.filter.bool.filter` with additional term filters.
  *
  * @param {object} params - Query shell options.
  * @param {string} params.keyword - Raw search text used as the neural query text.
@@ -125,23 +125,23 @@ export function createHybridQuery({
 /**
  * Builds the neural filter object that pre-scopes the ANN search to the correct case
  * (and optionally document page) so OpenSearch does not retrieve k candidates from
- * other cases before the outer bool.must filters them out.
+ * other cases before the outer bool.filter filters them out.
  *
  * @param {object} params - Filter parameters.
  * @param {string} params.caseReferenceNumber - Case reference filter value.
  * @param {string} [params.documentId] - Optional document UUID for page-level scoping.
  * @param {number} params.safePageNumber - Normalised page number for document scoping.
- * @returns {object} A single term clause or a bool.must wrapper.
+ * @returns {object} A single term clause or a bool.filter wrapper.
  */
 export function buildNeuralFilter({ caseReferenceNumber, documentId, safePageNumber }) {
-    const must = [{ term: { case_ref: caseReferenceNumber } }];
+    const filters = [{ term: { case_ref: caseReferenceNumber } }];
     if (documentId) {
-        must.push(
+        filters.push(
             { term: { source_doc_id: documentId } },
             { term: { page_number: safePageNumber } }
         );
     }
-    return must.length === 1 ? must[0] : { bool: { must } };
+    return filters.length === 1 ? filters[0] : { bool: { filter: filters } };
 }
 
 // ---------------------------------------------------------------------------
@@ -323,28 +323,28 @@ function buildSemanticQuery({
     });
 
     if (documentId) {
-        // Convert filter from single term to bool.must array for document scoping
+        // Convert filter from single term to bool.filter array for document scoping
         if (!Array.isArray(queryJson.query.neural.embedding.filter)) {
             queryJson.query.neural.embedding.filter = {
                 bool: {
-                    must: [queryJson.query.neural.embedding.filter]
+                    filter: [queryJson.query.neural.embedding.filter]
                 }
             };
         }
-        queryJson.query.neural.embedding.filter.bool.must.push(
+        queryJson.query.neural.embedding.filter.bool.filter.push(
             { term: { source_doc_id: documentId } },
             { term: { page_number: safePageNumber } }
         );
     }
 
-    // When there is only a single filter must clause and the keyword is non-empty,
+    // When there is only a single filter clause and the keyword is non-empty,
     // simplify the DSL by unwrapping the bool wrapper.
     if (
-        queryJson.query.neural.embedding.filter?.bool?.must?.length === 1 &&
+        queryJson.query.neural.embedding.filter?.bool?.filter?.length === 1 &&
         keyword.trim().length !== 0
     ) {
         queryJson.query.neural.embedding.filter =
-            queryJson.query.neural.embedding.filter.bool.must[0];
+            queryJson.query.neural.embedding.filter.bool.filter[0];
     }
 
     // An empty keyword means the neural clause has no query text and would match
@@ -370,9 +370,9 @@ function buildSemanticQuery({
  * @param {Array<object>} params.shouldClauses - Lexical should clauses from date/text extraction.
  * @param {number} params.safePageNumber - Normalised page number for document scoping.
  * @param {string} [params.documentId] - Optional document UUID to scope results to a single page.
- * @param {number} params.keywordBoost - Boost for the lexical match clause.
+ * @param {number} params.lexicalBoost - Boost for the lexical match clause.
  * @param {number} params.dateBoost - Boost for the grouped date variant clauses.
- * @param {number} params.semanticBoost - Boost for the neural clause.
+ * @param {number} params.neuralBoost - Boost for the neural clause.
  * @returns {object} Assembled hybrid query DSL object.
  */
 function buildHybridQuery({
@@ -383,13 +383,7 @@ function buildHybridQuery({
     documentId,
     queryDslConfig
 }) {
-    const {
-        semanticK,
-        semanticMinScore,
-        lexicalBoost: keywordBoost,
-        dateBoost,
-        neuralBoost: semanticBoost
-    } = queryDslConfig;
+    const { semanticK, semanticMinScore, lexicalBoost, dateBoost, neuralBoost } = queryDslConfig;
 
     const queryJson = createHybridQuery({ caseReferenceNumber, semanticMinScore });
 
@@ -411,7 +405,7 @@ function buildHybridQuery({
             match: {
                 chunk_text: {
                     ...matchClause.match.chunk_text,
-                    boost: keywordBoost
+                    boost: lexicalBoost
                 }
             }
         });
@@ -437,7 +431,7 @@ function buildHybridQuery({
                     query_text: keyword,
                     k: semanticK,
                     filter: neuralFilter,
-                    boost: semanticBoost
+                    boost: neuralBoost
                 }
             }
         });
