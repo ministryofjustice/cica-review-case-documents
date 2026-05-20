@@ -8,7 +8,7 @@
  * @param {string} documentId - The document UUID
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
- * @param {string} [searchType=''] - The active search type value
+ * @param {string} [searchType=''] - Optional active search type feature flag value; when omitted, no `type` query parameter is added
  * @returns {string} The image URL path
  */
 export function buildImageUrl(documentId, pageNumber, crn, searchType = '') {
@@ -23,7 +23,7 @@ export function buildImageUrl(documentId, pageNumber, crn, searchType = '') {
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
- * @param {string} [searchType=''] - The active search type value
+ * @param {string} [searchType=''] - Optional active search type feature flag value; when omitted, no `type` query parameter is added
  * @returns {string} The text view URL
  */
 export function buildTextPageLink(documentId, pageNumber, crn, searchTerm = '', searchType = '') {
@@ -38,7 +38,7 @@ export function buildTextPageLink(documentId, pageNumber, crn, searchTerm = '', 
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
- * @param {string} [searchType=''] - The active search type value
+ * @param {string} [searchType=''] - Optional active search type feature flag value; when omitted, no `type` query parameter is added
  * @returns {string} The image view URL
  */
 export function buildImagePageLink(documentId, pageNumber, crn, searchTerm = '', searchType = '') {
