@@ -13,7 +13,7 @@ Runtime feature flags are stored in the Express session (`req.session.featureFla
 
 Boolean flags (`align`) are toggled with `on` / `off`.
 
-The `type` flag accepts a direct search mode slug:
+The `type` flag accepts a direct search mode value:
 
 ```
 /search?type=hybrid-dates          → hybrid-dates  (default)
@@ -25,13 +25,13 @@ The `type` flag accepts a direct search mode slug:
 /search?type=hybrid-dates&align=off → hybrid-dates + alignment off
 ```
 
-The middleware persists the resolved slug to the session, so subsequent requests within the same session retain the setting without repeating the query parameter.
+The middleware persists the resolved search type to the session, so subsequent requests within the same session retain the setting without repeating the query parameter.
 
-> **Note:** The token set must match a known resolution **exactly** — extra tokens are not ignored. An unresolvable combination (e.g. `semantic,dates`) returns a 400 error rather than falling back to the previous session value.
+> **Note:** The value must match a supported search mode **exactly**. An invalid value (for example `semantic,dates`) is ignored and the system falls back to the existing session value, or the default when no session value exists.
 
-## Search mode slugs
+## Search mode values
 
-| `type` slug | Tokens required | OpenSearch strategy |
+| `type` value | Tokens required | OpenSearch strategy |
 |---|---|---|
 | `hybrid-dates` _(default)_ | `keyword` + `semantic` + `dates` | BM25 + neural + date phrase expansion |
 | `hybrid` | `keyword` + `semantic` | BM25 + neural, no date extraction |
