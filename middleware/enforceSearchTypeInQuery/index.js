@@ -1,11 +1,11 @@
-import { DEFAULT_SEARCH_TYPE } from '../../api/search/constants/searchTypes.js';
+import { DEFAULT_SEARCH_TYPE, parseSearchType } from '../../api/search/constants/searchTypes.js';
 import { getFeatureFlagValue } from '../featureFlags/index.js';
 
 /**
  * Middleware that ensures a `type` query parameter is always present on GET /search requests.
  *
- * When `type` is absent from the query string the resolved search type (from the session,
- * falling back to the application default) is appended and the browser is redirected.
+ * When `type` is absent or invalid in the query string the resolved search type (from the
+ * session, falling back to the application default) is appended and the browser is redirected.
  * This keeps the URL canonical and bookmarkable without route handlers needing to
  * duplicate the logic. The redirect preserves the current request path so it can be
  * mounted at a route or app layer.
@@ -22,7 +22,10 @@ export default function enforceSearchTypeInQuery(req, res, next) {
     }
 
     if (req.query.type !== undefined) {
-        return next();
+        const { searchType } = parseSearchType(req.query.type);
+        if (typeof searchType === 'string') {
+            return next();
+        }
     }
 
     const searchType = getFeatureFlagValue(req.session, 'type') || DEFAULT_SEARCH_TYPE;
