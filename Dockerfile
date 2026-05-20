@@ -1,25 +1,15 @@
 # If making any changes to this file, please ensure you test building and running 
 # kube deployment local
 # see deployment/local/README.md for instructions
-FROM node:26.1.0-trixie-slim@sha256:424cafd2a035ed2b2d74acc3142b68b426fb62a47742c80a75e7117db02d6b30
-
-# Security: Update base image packages
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Security: Upgrade npm to get patched brace-expansion (>=5.0.5) and picomatch (>=4.0.4)
-# npm@11.13.0 ships minimatch@^10.2.5 -> brace-expansion@^5.0.5 (fixes SNYK-JS-BRACEEXPANSION-15789759)
-# and node-gyp with tinyglobby -> picomatch@^4.0.4 (fixes SNYK-JS-PICOMATCH-15765511/15765513)
-RUN npm install -g npm@11.13.0 --ignore-scripts
-
+FROM node:26.1.0-trixie-slim@sha256:4c987c825a40e2fe2179e9e14647d0432849934def25d7595e3ba3a8811d9b69
 
 WORKDIR /usr/src/app
 
 COPY package.json package-lock.json ./
 
-RUN npm ci --omit=dev --ignore-scripts
+RUN npm ci --omit=dev --ignore-scripts && \
+	rm -rf /usr/local/lib/node_modules/npm && \
+	rm -f /usr/local/bin/npm /usr/local/bin/npx
 
 COPY . .
 
