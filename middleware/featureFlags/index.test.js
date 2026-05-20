@@ -108,72 +108,68 @@ describe('featureFlags middleware', () => {
         assert.equal(req.session.featureFlags.type, 'keyword-dates');
     });
 
-    it('calls next with a 400 error when type is not recognised', () => {
+    it('keeps session/default type when type is not recognised', () => {
         const req = {
             query: { type: 'unknown' },
             session: { featureFlags: { align: true, type: DEFAULT_SEARCH_TYPE } }
         };
         const res = { locals: {} };
-        let errorPassed;
+        let errorPassed = null;
 
         featureFlags(req, res, (err) => {
             errorPassed = err;
         });
 
-        assert.ok(errorPassed instanceof Error);
-        assert.equal(errorPassed.status, 400);
-        assert.match(errorPassed.message, /unknown/);
+        assert.equal(errorPassed, undefined);
+        assert.equal(req.session.featureFlags.type, DEFAULT_SEARCH_TYPE);
     });
 
-    it('calls next with a 400 when type uses the old token-combination format', () => {
+    it('keeps existing session type when type uses token-combination format', () => {
         const req = {
             query: { type: 'keyword,semantic,dates' },
-            session: {}
+            session: { featureFlags: { align: true, type: 'keyword' } }
         };
         const res = { locals: {} };
-        let errorPassed;
+        let errorPassed = null;
 
         featureFlags(req, res, (err) => {
             errorPassed = err;
         });
 
-        assert.ok(errorPassed instanceof Error);
-        assert.equal(errorPassed.status, 400);
-        assert.match(errorPassed.message, /keyword,semantic,dates/);
+        assert.equal(errorPassed, undefined);
+        assert.equal(req.session.featureFlags.type, 'keyword');
     });
 
-    it('calls next with a 400 when type is empty', () => {
+    it('keeps existing session type when type is empty', () => {
         const req = {
             query: { type: '   ' },
             session: { featureFlags: { align: true, type: 'hybrid-dates' } }
         };
         const res = { locals: {} };
-        let errorPassed;
+        let errorPassed = null;
 
         featureFlags(req, res, (err) => {
             errorPassed = err;
         });
 
-        assert.ok(errorPassed instanceof Error);
-        assert.equal(errorPassed.status, 400);
-        assert.match(errorPassed.message, /\(empty\)/);
+        assert.equal(errorPassed, undefined);
+        assert.equal(req.session.featureFlags.type, 'hybrid-dates');
     });
 
-    it('does not fall through to the previous session value when type is invalid', () => {
+    it('falls back to the previous session value when type is invalid', () => {
         const req = {
             query: { type: 'semantic,dates' },
             session: { featureFlags: { align: true, type: 'hybrid-dates' } }
         };
         const res = { locals: {} };
-        let errorPassed;
+        let errorPassed = null;
 
         featureFlags(req, res, (err) => {
             errorPassed = err;
         });
 
-        // session must NOT be silently updated to the stale 'hybrid-dates' value
-        assert.ok(errorPassed instanceof Error);
-        assert.equal(req.session.featureFlags?.type, 'hybrid-dates'); // unchanged
+        assert.equal(errorPassed, undefined);
+        assert.equal(req.session.featureFlags?.type, 'hybrid-dates');
     });
 });
 
