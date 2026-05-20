@@ -13,7 +13,7 @@ describe('VALID_SEARCH_TYPE_SET', () => {
         assert.ok(Object.isFrozen(VALID_SEARCH_TYPE_SET));
     });
 
-    it('should contain each supported URL type slug', () => {
+    it('should contain each supported URL type value', () => {
         assert.deepStrictEqual(Array.from(VALID_SEARCH_TYPE_SET), [
             'hybrid-dates',
             'keyword-dates',
@@ -41,7 +41,7 @@ describe('SEARCH_TYPES (default export)', () => {
         assert.ok(Object.isFrozen(SEARCH_TYPES));
     });
 
-    it('should map each key to the correct slug', () => {
+    it('should map each key to the correct value', () => {
         assert.strictEqual(SEARCH_TYPES.HYBRID_DATES, 'hybrid-dates');
         assert.strictEqual(SEARCH_TYPES.KEYWORD_DATES, 'keyword-dates');
         assert.strictEqual(SEARCH_TYPES.HYBRID, 'hybrid');
