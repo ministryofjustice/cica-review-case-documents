@@ -1,6 +1,5 @@
 import express from 'express';
 import { DEFAULT_SEARCH_TYPE, parseSearchType } from '../api/search/constants/searchTypes.js';
-import enforceSearchTypeInQuery from '../middleware/enforceSearchTypeInQuery/index.js';
 import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 
@@ -38,7 +37,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
         }
     });
 
-    router.get('/', enforceSearchTypeInQuery, async (req, res, next) => {
+    router.get('/', async (req, res, next) => {
         try {
             const templateEngineService = createTemplateEngineService();
             const { render } = templateEngineService;

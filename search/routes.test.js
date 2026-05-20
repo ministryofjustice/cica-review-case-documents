@@ -71,15 +71,6 @@ describe('Search Routes', () => {
     });
 
     describe('GET /', () => {
-        it('should redirect to include the resolved search type when type is missing', async () => {
-            const res = await request(app).get('/search?crn=12345');
-            assert.strictEqual(res.statusCode, 302);
-            assert.strictEqual(
-                res.headers.location,
-                `/search?crn=12345&type=${DEFAULT_SEARCH_TYPE}`
-            );
-        });
-
         it('should render the search index page if no query is provided', async () => {
             const res = await request(app).get(`/search?type=${DEFAULT_SEARCH_TYPE}`);
             assert.strictEqual(res.statusCode, 200);
