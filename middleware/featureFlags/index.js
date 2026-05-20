@@ -1,8 +1,4 @@
-import {
-    DEFAULT_SEARCH_TYPE,
-    parseSearchType,
-    VALID_SEARCH_TYPE_VALUES
-} from '../../api/search/constants/searchTypes.js';
+import { DEFAULT_SEARCH_TYPE, parseSearchType } from '../../api/search/constants/searchTypes.js';
 
 export const FEATURE_FLAG_DEFAULTS = Object.freeze({
     align: true, // toggle alignment of image highlighting to prevent or show overlapping
@@ -78,8 +74,8 @@ export function getFeatureFlagValue(session, flagName) {
  * Persists supported feature flags from query-string params into the session.
  *
  * Boolean flags (`align`) accept `on` / `off` query-string values.
- * The `type` flag accepts a direct search mode slug. Invalid values are rejected with
- * a 400 error.
+ * The `type` flag accepts a direct search mode slug. Invalid values are ignored,
+ * leaving the existing session/default value unchanged.
  *
  * @param {import('express').Request} req - Express request object.
  * @param {import('express').Response} res - Express response object.
@@ -98,15 +94,9 @@ export default function featureFlags(req, res, next) {
                     flags[flagName] = queryFlagValue;
                 }
             } else if (flagName === 'type' && req.query?.type !== undefined) {
-                const { searchType, invalidValue } = parseSearchType(req.query.type);
+                const { searchType } = parseSearchType(req.query.type);
                 if (typeof searchType === 'string') {
                     flags[flagName] = searchType;
-                } else {
-                    const error = new Error(
-                        `Invalid search type: ${invalidValue || '(empty)'}. Allowed values: ${VALID_SEARCH_TYPE_VALUES.join(', ')}`
-                    );
-                    error.status = 400;
-                    return next(error);
                 }
             } else {
                 const queryFlagValue = parseEnumFlagValue(req.query?.[flagName]);

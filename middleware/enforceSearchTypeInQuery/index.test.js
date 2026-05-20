@@ -63,7 +63,7 @@ describe('enforceSearchTypeInQuery', () => {
         assert.strictEqual(nextCalled, false);
     });
 
-    it('calls next without redirecting when type is present in query', () => {
+    it('calls next without redirecting when type is present and valid in query', () => {
         const req = createMockReq({ query: { query: 'acute', type: 'hybrid' } });
         const res = createMockRes();
         let nextCalled = false;
@@ -74,6 +74,22 @@ describe('enforceSearchTypeInQuery', () => {
 
         assert.strictEqual(res.redirectedUrl, null);
         assert.strictEqual(nextCalled, true);
+    });
+
+    it('redirects with session/default type when type is present but invalid', () => {
+        const req = createMockReq({
+            query: { query: 'acute', type: 'keyword,semantic' },
+            session: { featureFlags: { type: 'keyword' } }
+        });
+        const res = createMockRes();
+        let nextCalled = false;
+
+        enforceSearchTypeInQuery(req, res, () => {
+            nextCalled = true;
+        });
+
+        assert.strictEqual(res.redirectedUrl, '/search?query=acute&type=keyword');
+        assert.strictEqual(nextCalled, false);
     });
 
     it('calls next without redirecting for non-GET requests', () => {
