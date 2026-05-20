@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { DEFAULT_SEARCH_TYPE, parseSearchType } from '../../api/search/constants/searchTypes.js';
+import { DEFAULT_SEARCH_TYPE } from '../../api/search/constants/searchTypes.js';
 import featureFlags, {
     FEATURE_FLAG_DEFAULTS,
     getFeatureFlagValue,
+    parseEnumFlagValue,
     parseFeatureFlagValue
 } from './index.js';
 
@@ -108,145 +109,99 @@ describe('featureFlags middleware', () => {
         assert.equal(req.session.featureFlags.type, 'keyword-dates');
     });
 
-    it('calls next with a 400 error when type is not recognised', () => {
+    it('falls back to session type value when type query param is unrecognised', () => {
         const req = {
             query: { type: 'unknown' },
-            session: { featureFlags: { align: true, type: DEFAULT_SEARCH_TYPE } }
+            session: { featureFlags: { align: true, type: 'semantic' } }
         };
         const res = { locals: {} };
-        let errorPassed;
 
-        featureFlags(req, res, (err) => {
-            errorPassed = err;
-        });
+        featureFlags(req, res, () => {});
 
-        assert.ok(errorPassed instanceof Error);
-        assert.equal(errorPassed.status, 400);
-        assert.match(errorPassed.message, /unknown/);
+        assert.equal(req.session.featureFlags.type, 'semantic');
     });
 
-    it('error message lists all allowed type values', () => {
+    it('falls back to DEFAULT_SEARCH_TYPE when type is unrecognised and no session override exists', () => {
         const req = {
             query: { type: 'unknown' },
             session: {}
         };
         const res = { locals: {} };
-        let errorPassed;
 
-        featureFlags(req, res, (err) => {
-            errorPassed = err;
-        });
+        featureFlags(req, res, () => {});
 
-        assert.ok(errorPassed instanceof Error);
-        assert.match(errorPassed.message, /hybrid-dates/);
-        assert.match(errorPassed.message, /keyword-dates/);
-        assert.match(errorPassed.message, /hybrid/);
-        assert.match(errorPassed.message, /keyword/);
-        assert.match(errorPassed.message, /semantic/);
+        assert.equal(req.session.featureFlags.type, DEFAULT_SEARCH_TYPE);
     });
 
-    it('calls next with a 400 when type uses the old token-combination format', () => {
+    it('falls back to DEFAULT_SEARCH_TYPE when type uses an old comma-separated format', () => {
         const req = {
             query: { type: 'keyword,semantic,dates' },
             session: {}
         };
         const res = { locals: {} };
-        let errorPassed;
 
-        featureFlags(req, res, (err) => {
-            errorPassed = err;
-        });
+        featureFlags(req, res, () => {});
 
-        assert.ok(errorPassed instanceof Error);
-        assert.equal(errorPassed.status, 400);
-        assert.match(errorPassed.message, /keyword,semantic,dates/);
+        assert.equal(req.session.featureFlags.type, DEFAULT_SEARCH_TYPE);
     });
 
-    it('calls next with a 400 when type is empty', () => {
+    it('falls back to DEFAULT_SEARCH_TYPE when type is empty', () => {
         const req = {
             query: { type: '   ' },
-            session: { featureFlags: { align: true, type: 'hybrid-dates' } }
+            session: {}
         };
         const res = { locals: {} };
-        let errorPassed;
 
-        featureFlags(req, res, (err) => {
-            errorPassed = err;
-        });
+        featureFlags(req, res, () => {});
 
-        assert.ok(errorPassed instanceof Error);
-        assert.equal(errorPassed.status, 400);
-        assert.match(errorPassed.message, /\(empty\)/);
+        assert.equal(req.session.featureFlags.type, DEFAULT_SEARCH_TYPE);
     });
 
-    it('does not fall through to the previous session value when type is invalid', () => {
+    it('preserves existing session type value when type query param is absent', () => {
         const req = {
-            query: { type: 'semantic,dates' },
-            session: { featureFlags: { align: true, type: 'hybrid-dates' } }
+            query: {},
+            session: { featureFlags: { align: false, type: 'hybrid' } }
         };
         const res = { locals: {} };
-        let errorPassed;
 
-        featureFlags(req, res, (err) => {
-            errorPassed = err;
-        });
+        featureFlags(req, res, () => {});
 
-        assert.ok(errorPassed instanceof Error);
-        assert.equal(req.session.featureFlags?.type, 'hybrid-dates'); // unchanged
+        assert.equal(req.session.featureFlags.align, false);
+        assert.equal(req.session.featureFlags.type, 'hybrid');
     });
 });
 
-describe('parseSearchType', () => {
-    it('resolves supported type values directly', () => {
-        assert.deepEqual(parseSearchType('keyword'), {
-            value: 'keyword',
-            invalidValue: undefined
-        });
-        assert.deepEqual(parseSearchType('semantic'), {
-            value: 'semantic',
-            invalidValue: undefined
-        });
-        assert.deepEqual(parseSearchType('hybrid'), {
-            value: 'hybrid',
-            invalidValue: undefined
-        });
+describe('parseEnumFlagValue', () => {
+    it('returns the trimmed lowercase value when it matches the allowlist', () => {
+        assert.equal(parseEnumFlagValue('hybrid', ['hybrid', 'semantic']), 'hybrid');
+        assert.equal(parseEnumFlagValue('  SEMANTIC  ', ['hybrid', 'semantic']), 'semantic');
     });
 
-    it('is case-insensitive and trims whitespace', () => {
-        assert.deepEqual(parseSearchType('  KEYWORD-DATES  '), {
-            value: 'keyword-dates',
-            invalidValue: undefined
-        });
-        assert.deepEqual(parseSearchType('HyBrId-DaTeS'), {
-            value: 'hybrid-dates',
-            invalidValue: undefined
-        });
+    it('returns undefined when the value is not in the allowlist', () => {
+        assert.equal(parseEnumFlagValue('unknown', ['hybrid', 'semantic']), undefined);
     });
 
-    it('accepts array input and uses the last value', () => {
-        assert.deepEqual(parseSearchType(['keyword', 'semantic']), {
-            value: 'semantic',
-            invalidValue: undefined
-        });
+    it('accepts any non-empty string when no allowlist is provided', () => {
+        assert.equal(parseEnumFlagValue('anything'), 'anything');
+        assert.equal(parseEnumFlagValue('  trimmed  '), 'trimmed');
     });
 
-    it('returns invalid value for unrecognised type values', () => {
-        assert.deepEqual(parseSearchType('unknown'), {
-            value: undefined,
-            invalidValue: 'unknown'
-        });
-        assert.deepEqual(parseSearchType('keyword,semantic'), {
-            value: undefined,
-            invalidValue: 'keyword,semantic'
-        });
+    it('returns undefined for empty or whitespace-only strings', () => {
+        assert.equal(parseEnumFlagValue(''), undefined);
+        assert.equal(parseEnumFlagValue('   '), undefined);
     });
 
-    it('returns empty output for absent or empty input', () => {
-        assert.deepEqual(parseSearchType(''), { value: undefined, invalidValue: undefined });
-        assert.deepEqual(parseSearchType(undefined), {
-            value: undefined,
-            invalidValue: undefined
-        });
+    it('returns undefined for non-string values', () => {
+        assert.equal(parseEnumFlagValue(undefined), undefined);
+        assert.equal(parseEnumFlagValue(null), undefined);
+        assert.equal(parseEnumFlagValue(42), undefined);
+    });
+
+    it('uses the last element when given an array', () => {
+        assert.equal(
+            parseEnumFlagValue(['hybrid', 'semantic'], ['hybrid', 'semantic']),
+            'semantic'
+        );
     });
 });
 
