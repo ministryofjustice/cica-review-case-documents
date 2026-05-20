@@ -178,54 +178,54 @@ describe('featureFlags middleware', () => {
 });
 
 describe('parseSearchType', () => {
-    it('resolves supported slugs directly', () => {
+    it('resolves supported values directly', () => {
         assert.deepEqual(parseSearchType('keyword'), {
-            slug: 'keyword',
+            searchType: 'keyword',
             invalidValue: undefined
         });
         assert.deepEqual(parseSearchType('semantic'), {
-            slug: 'semantic',
+            searchType: 'semantic',
             invalidValue: undefined
         });
         assert.deepEqual(parseSearchType('hybrid'), {
-            slug: 'hybrid',
+            searchType: 'hybrid',
             invalidValue: undefined
         });
     });
 
     it('is case-insensitive and trims whitespace', () => {
         assert.deepEqual(parseSearchType('  KEYWORD-DATES  '), {
-            slug: 'keyword-dates',
+            searchType: 'keyword-dates',
             invalidValue: undefined
         });
         assert.deepEqual(parseSearchType('HyBrId-DaTeS'), {
-            slug: 'hybrid-dates',
+            searchType: 'hybrid-dates',
             invalidValue: undefined
         });
     });
 
     it('accepts array input and uses the last value', () => {
         assert.deepEqual(parseSearchType(['keyword', 'semantic']), {
-            slug: 'semantic',
+            searchType: 'semantic',
             invalidValue: undefined
         });
     });
 
-    it('returns invalid values for unsupported slugs', () => {
+    it('returns invalid values for unsupported values', () => {
         assert.deepEqual(parseSearchType('unknown'), {
-            slug: undefined,
+            searchType: undefined,
             invalidValue: 'unknown'
         });
         assert.deepEqual(parseSearchType('keyword,semantic'), {
-            slug: undefined,
+            searchType: undefined,
             invalidValue: 'keyword,semantic'
         });
     });
 
     it('returns empty output for absent or empty input', () => {
-        assert.deepEqual(parseSearchType(''), { slug: undefined, invalidValue: undefined });
+        assert.deepEqual(parseSearchType(''), { searchType: undefined, invalidValue: undefined });
         assert.deepEqual(parseSearchType(undefined), {
-            slug: undefined,
+            searchType: undefined,
             invalidValue: undefined
         });
     });
