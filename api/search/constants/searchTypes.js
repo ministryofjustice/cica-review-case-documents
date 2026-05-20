@@ -69,3 +69,36 @@ export function parseSearchType(input) {
 }
 
 export const parseSearchTypeTokens = parseSearchType;
+
+/**
+ * Returns whether the given value is a recognised search type.
+ *
+ * @param {unknown} value - The value to check.
+ * @returns {boolean} `true` if the value is a recognised SEARCH_TYPES value, otherwise `false`.
+ *
+ * @example
+ * isValidSearchType('hybrid-dates') // true
+ * isValidSearchType('keyword')      // true
+ * isValidSearchType('unknown')      // false
+ * isValidSearchType(undefined)      // false
+ */
+export function isValidSearchType(value) {
+    return Object.values(SEARCH_TYPES).includes(value);
+}
+
+/**
+ * Resolves a search type value, falling back to DEFAULT_SEARCH_TYPE if the value is
+ * absent or not a recognised SEARCH_TYPES value.
+ *
+ * @param {unknown} value - The value to resolve.
+ * @returns {string} The resolved search type value.
+ *
+ * @example
+ * resolveSearchType('hybrid-dates') // 'hybrid-dates'
+ * resolveSearchType('keyword')      // 'keyword'
+ * resolveSearchType('unknown')      // 'hybrid-dates' (DEFAULT_SEARCH_TYPE)
+ * resolveSearchType(undefined)      // 'hybrid-dates' (DEFAULT_SEARCH_TYPE)
+ */
+export function resolveSearchType(value) {
+    return isValidSearchType(value) ? value : DEFAULT_SEARCH_TYPE;
+}
