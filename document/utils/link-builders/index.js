@@ -2,18 +2,22 @@
  * Utility functions for building navigation and document URLs.
  */
 
+import {
+    DEFAULT_SEARCH_TYPE,
+    resolveSearchType
+} from '../../../api/search/constants/searchTypes.js';
+
 /**
  * Builds the image streaming URL for a document page.
  *
  * @param {string} documentId - The document UUID
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
- * @param {string} [searchType=''] - Optional active search type feature flag value; when omitted, no `type` query parameter is added
- * @returns {string} The image URL path
+ * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - The active search type value
  */
-export function buildImageUrl(documentId, pageNumber, crn, searchType = '') {
+export function buildImageUrl(documentId, pageNumber, crn, searchType = DEFAULT_SEARCH_TYPE) {
     const base = `/document/${documentId}/page/${pageNumber}?crn=${crn}`;
-    return searchType ? `${base}&type=${encodeURIComponent(searchType)}` : base;
+    return `${base}&type=${encodeURIComponent(resolveSearchType(searchType))}`;
 }
 
 /**
@@ -23,12 +27,18 @@ export function buildImageUrl(documentId, pageNumber, crn, searchType = '') {
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
- * @param {string} [searchType=''] - Optional active search type feature flag value; when omitted, no `type` query parameter is added
+ * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - The active search type value
  * @returns {string} The text view URL
  */
-export function buildTextPageLink(documentId, pageNumber, crn, searchTerm = '', searchType = '') {
+export function buildTextPageLink(
+    documentId,
+    pageNumber,
+    crn,
+    searchTerm = '',
+    searchType = DEFAULT_SEARCH_TYPE
+) {
     const base = `/document/${documentId}/view/text/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
-    return searchType ? `${base}&type=${encodeURIComponent(searchType)}` : base;
+    return `${base}&type=${encodeURIComponent(resolveSearchType(searchType))}`;
 }
 
 /**
@@ -38,10 +48,16 @@ export function buildTextPageLink(documentId, pageNumber, crn, searchTerm = '', 
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
- * @param {string} [searchType=''] - Optional active search type feature flag value; when omitted, no `type` query parameter is added
+ * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - The active search type value
  * @returns {string} The image view URL
  */
-export function buildImagePageLink(documentId, pageNumber, crn, searchTerm = '', searchType = '') {
+export function buildImagePageLink(
+    documentId,
+    pageNumber,
+    crn,
+    searchTerm = '',
+    searchType = DEFAULT_SEARCH_TYPE
+) {
     const base = `/document/${documentId}/view/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
-    return searchType ? `${base}&type=${encodeURIComponent(searchType)}` : base;
+    return `${base}&type=${encodeURIComponent(resolveSearchType(searchType))}`;
 }
