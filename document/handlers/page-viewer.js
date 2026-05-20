@@ -62,7 +62,7 @@ export function createPageViewerHandler(
                 searchType
             );
 
-            const imageUrl = buildImageUrl(documentId, pageNumber, crn, searchType);
+            const imageUrl = buildImageUrl(documentId, pageNumber, crn, searchType, req.session);
 
             // Provide a link for sub-navigation to the text view page for this document page
             const textPageLink = buildTextPageLink(
@@ -70,7 +70,8 @@ export function createPageViewerHandler(
                 pageNumber,
                 crn,
                 searchTerm,
-                searchType
+                searchType,
+                req.session
             );
 
             const pageTitle = formatPageTitle(pageMetadata.correspondence_type);

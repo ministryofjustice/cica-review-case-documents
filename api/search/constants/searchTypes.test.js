@@ -1,10 +1,6 @@
 import assert from 'node:assert';
 import { describe, it } from 'node:test';
-import SEARCH_TYPES, {
-    DEFAULT_SEARCH_TYPE,
-    parseSearchType,
-    parseSearchTypeTokens
-} from './searchTypes.js';
+import SEARCH_TYPES, { DEFAULT_SEARCH_TYPE, resolveSearchType } from './searchTypes.js';
 
 describe('SEARCH_TYPES (default export)', () => {
     it('should be frozen', () => {
@@ -30,112 +26,65 @@ describe('DEFAULT_SEARCH_TYPE', () => {
     });
 });
 
-describe('parseSearchType', () => {
+describe('resolveSearchType', () => {
     describe('when value is absent or not a usable string', () => {
         for (const value of [undefined, null, 42, true, {}]) {
-            it(`returns empty result for ${JSON.stringify(value)}`, () => {
-                assert.deepStrictEqual(parseSearchType(value), {
-                    value: undefined,
-                    invalidValue: undefined
-                });
+            it(`returns DEFAULT_SEARCH_TYPE for ${JSON.stringify(value)}`, () => {
+                assert.strictEqual(resolveSearchType(value), DEFAULT_SEARCH_TYPE);
             });
         }
 
-        it('returns empty result for an empty string', () => {
-            assert.deepStrictEqual(parseSearchType(''), {
-                value: undefined,
-                invalidValue: undefined
-            });
+        it('returns DEFAULT_SEARCH_TYPE for an empty string', () => {
+            assert.strictEqual(resolveSearchType(''), DEFAULT_SEARCH_TYPE);
         });
 
-        it('returns empty result for a whitespace-only string', () => {
-            assert.deepStrictEqual(parseSearchType('   '), {
-                value: undefined,
-                invalidValue: undefined
-            });
-        });
-    });
-
-    describe('when value is an array', () => {
-        it('uses the last element of the array', () => {
-            assert.deepStrictEqual(parseSearchType(['keyword', 'semantic']), {
-                value: 'semantic',
-                invalidValue: undefined
-            });
+        it('returns DEFAULT_SEARCH_TYPE for a whitespace-only string', () => {
+            assert.strictEqual(resolveSearchType('   '), DEFAULT_SEARCH_TYPE);
         });
 
-        it('returns empty result when the last element is not a string', () => {
-            assert.deepStrictEqual(parseSearchType(['keyword', undefined]), {
-                value: undefined,
-                invalidValue: undefined
-            });
+        it('returns DEFAULT_SEARCH_TYPE for an array (arrays are not strings)', () => {
+            assert.strictEqual(resolveSearchType(['keyword', 'semantic']), DEFAULT_SEARCH_TYPE);
         });
     });
 
     describe('supported type values', () => {
-        it('resolves supported values directly', () => {
-            assert.deepStrictEqual(parseSearchType('hybrid-dates'), {
-                value: 'hybrid-dates',
-                invalidValue: undefined
-            });
-            assert.deepStrictEqual(parseSearchType('keyword-dates'), {
-                value: 'keyword-dates',
-                invalidValue: undefined
-            });
-            assert.deepStrictEqual(parseSearchType('hybrid'), {
-                value: 'hybrid',
-                invalidValue: undefined
-            });
-            assert.deepStrictEqual(parseSearchType('keyword'), {
-                value: 'keyword',
-                invalidValue: undefined
-            });
-            assert.deepStrictEqual(parseSearchType('semantic'), {
-                value: 'semantic',
-                invalidValue: undefined
-            });
+        it('resolves all supported values directly', () => {
+            assert.strictEqual(resolveSearchType('hybrid-dates'), 'hybrid-dates');
+            assert.strictEqual(resolveSearchType('keyword-dates'), 'keyword-dates');
+            assert.strictEqual(resolveSearchType('hybrid'), 'hybrid');
+            assert.strictEqual(resolveSearchType('keyword'), 'keyword');
+            assert.strictEqual(resolveSearchType('semantic'), 'semantic');
         });
     });
 
-    describe('invalid inputs', () => {
-        it('returns the invalid value when the type is not recognised', () => {
-            assert.deepStrictEqual(parseSearchType('unknown'), {
-                value: undefined,
-                invalidValue: 'unknown'
-            });
-            assert.deepStrictEqual(parseSearchType('foo,bar'), {
-                value: undefined,
-                invalidValue: 'foo,bar'
-            });
+    describe('unrecognised inputs', () => {
+        it('returns DEFAULT_SEARCH_TYPE when the type is not recognised and no session fallback exists', () => {
+            assert.strictEqual(resolveSearchType('unknown'), DEFAULT_SEARCH_TYPE);
+            assert.strictEqual(resolveSearchType('foo,bar'), DEFAULT_SEARCH_TYPE);
+        });
+
+        it('returns the session feature-flag value when the type is not recognised and a session override is set', () => {
+            const session = { featureFlags: { type: 'semantic' } };
+            assert.strictEqual(resolveSearchType('unknown', session), 'semantic');
+        });
+
+        it('returns DEFAULT_SEARCH_TYPE when the session feature-flag value is falsy', () => {
+            assert.strictEqual(resolveSearchType('unknown', {}), DEFAULT_SEARCH_TYPE);
+            assert.strictEqual(
+                resolveSearchType('unknown', { featureFlags: {} }),
+                DEFAULT_SEARCH_TYPE
+            );
         });
     });
 
     describe('whitespace and case handling', () => {
         it('trims whitespace around values', () => {
-            assert.deepStrictEqual(parseSearchType(' hybrid-dates '), {
-                value: 'hybrid-dates',
-                invalidValue: undefined
-            });
+            assert.strictEqual(resolveSearchType(' hybrid-dates '), 'hybrid-dates');
         });
 
         it('is case-insensitive', () => {
-            assert.deepStrictEqual(parseSearchType('KEYWORD-DATES'), {
-                value: 'keyword-dates',
-                invalidValue: undefined
-            });
-            assert.deepStrictEqual(parseSearchType('SEMANTIC'), {
-                value: 'semantic',
-                invalidValue: undefined
-            });
-        });
-    });
-});
-
-describe('parseSearchTypeTokens', () => {
-    it('remains an alias of parseSearchType for compatibility', () => {
-        assert.deepStrictEqual(parseSearchTypeTokens('HYBRID-DATES'), {
-            value: 'hybrid-dates',
-            invalidValue: undefined
+            assert.strictEqual(resolveSearchType('KEYWORD-DATES'), 'keyword-dates');
+            assert.strictEqual(resolveSearchType('SEMANTIC'), 'semantic');
         });
     });
 });

@@ -14,10 +14,17 @@ import {
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
  * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - The active search type value
+ * @param {Object} [session={}] - The session object
  */
-export function buildImageUrl(documentId, pageNumber, crn, searchType = DEFAULT_SEARCH_TYPE) {
+export function buildImageUrl(
+    documentId,
+    pageNumber,
+    crn,
+    searchType = DEFAULT_SEARCH_TYPE,
+    session = {}
+) {
     const base = `/document/${documentId}/page/${pageNumber}?crn=${crn}`;
-    return `${base}&type=${encodeURIComponent(resolveSearchType(searchType))}`;
+    return `${base}&type=${encodeURIComponent(resolveSearchType(searchType, session))}`;
 }
 
 /**
@@ -28,6 +35,7 @@ export function buildImageUrl(documentId, pageNumber, crn, searchType = DEFAULT_
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
  * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - The active search type value
+ * @param {Object} [session={}] - The session object
  * @returns {string} The text view URL
  */
 export function buildTextPageLink(
@@ -35,10 +43,11 @@ export function buildTextPageLink(
     pageNumber,
     crn,
     searchTerm = '',
-    searchType = DEFAULT_SEARCH_TYPE
+    searchType = DEFAULT_SEARCH_TYPE,
+    session = {}
 ) {
     const base = `/document/${documentId}/view/text/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
-    return `${base}&type=${encodeURIComponent(resolveSearchType(searchType))}`;
+    return `${base}&type=${encodeURIComponent(resolveSearchType(searchType, session))}`;
 }
 
 /**
@@ -49,6 +58,7 @@ export function buildTextPageLink(
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
  * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - The active search type value
+ * @param {Object} [session={}] - The session object
  * @returns {string} The image view URL
  */
 export function buildImagePageLink(
@@ -56,8 +66,9 @@ export function buildImagePageLink(
     pageNumber,
     crn,
     searchTerm = '',
-    searchType = DEFAULT_SEARCH_TYPE
+    searchType = DEFAULT_SEARCH_TYPE,
+    session = {}
 ) {
     const base = `/document/${documentId}/view/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
-    return `${base}&type=${encodeURIComponent(resolveSearchType(searchType))}`;
+    return `${base}&type=${encodeURIComponent(resolveSearchType(searchType, session))}`;
 }

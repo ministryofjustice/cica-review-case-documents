@@ -57,6 +57,17 @@ describe('Link Builders', () => {
                 `/document/${docId}/page/1?crn=${crn}&type=${DEFAULT_SEARCH_TYPE}`
             );
         });
+
+        it('uses session feature-flag type when searchType is invalid and session override is set', () => {
+            const session = { featureFlags: { type: 'semantic' } };
+            const result = buildImageUrl(docId, 1, crn, 'invalid-type', session);
+            assert.ok(result.includes('&type=semantic'));
+        });
+
+        it('falls back to DEFAULT_SEARCH_TYPE when searchType is invalid and session has no type flag', () => {
+            const result = buildImageUrl(docId, 1, crn, 'invalid-type', {});
+            assert.ok(result.includes(`&type=${DEFAULT_SEARCH_TYPE}`));
+        });
     });
 
     describe('buildTextPageLink', () => {
@@ -100,6 +111,17 @@ describe('Link Builders', () => {
             assert.ok(result.includes(`/document/${docId}/view/text/page/1`));
             assert.ok(result.includes(`&type=${DEFAULT_SEARCH_TYPE}`));
         });
+
+        it('uses session feature-flag type when searchType is invalid and session override is set', () => {
+            const session = { featureFlags: { type: 'semantic' } };
+            const result = buildTextPageLink(docId, 1, crn, '', 'invalid-type', session);
+            assert.ok(result.includes('&type=semantic'));
+        });
+
+        it('falls back to DEFAULT_SEARCH_TYPE when searchType is invalid and session has no type flag', () => {
+            const result = buildTextPageLink(docId, 1, crn, '', 'invalid-type', {});
+            assert.ok(result.includes(`&type=${DEFAULT_SEARCH_TYPE}`));
+        });
     });
 
     describe('buildImagePageLink', () => {
@@ -136,6 +158,17 @@ describe('Link Builders', () => {
         it('defaults to DEFAULT_SEARCH_TYPE when searchType is empty string', () => {
             const result = buildImagePageLink(docId, 1, crn, '', '');
             assert.ok(result.includes(`/document/${docId}/view/page/1`));
+            assert.ok(result.includes(`&type=${DEFAULT_SEARCH_TYPE}`));
+        });
+
+        it('uses session feature-flag type when searchType is invalid and session override is set', () => {
+            const session = { featureFlags: { type: 'semantic' } };
+            const result = buildImagePageLink(docId, 1, crn, '', 'invalid-type', session);
+            assert.ok(result.includes('&type=semantic'));
+        });
+
+        it('falls back to DEFAULT_SEARCH_TYPE when searchType is invalid and session has no type flag', () => {
+            const result = buildImagePageLink(docId, 1, crn, '', 'invalid-type', {});
             assert.ok(result.includes(`&type=${DEFAULT_SEARCH_TYPE}`));
         });
     });

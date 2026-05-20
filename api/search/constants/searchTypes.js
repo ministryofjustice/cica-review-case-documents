@@ -34,71 +34,41 @@ export const DEFAULT_SEARCH_TYPE = SEARCH_TYPES.HYBRID_DATES;
  * SEARCH_TYPES values, so the URL value and the internal search strategy key stay
  * aligned one to one.
  *
- * Accepts both a plain string or an array (as Express may produce when a query param
- * appears multiple times); when an array is given, the last value is used.
+ * When the input is absent, not a string, or an empty/whitespace-only string,
+ * `DEFAULT_SEARCH_TYPE` is returned immediately.
+ *
+ * When the input is an unrecognised string, the function attempts to resolve a
+ * fallback from the session's feature flags (`session.featureFlags.type`).
+ * If no feature-flag override is present, `DEFAULT_SEARCH_TYPE` is returned.
+ *
  * Comma-delimited values (for example `type=keyword,semantic`) are treated as a
- * single invalid value.
+ * single invalid value and follow the fallback path.
  *
- * Returns `{ value: undefined, invalidValue: undefined }` when the input is absent or not a
- * string, allowing callers to distinguish "param not present" from "param present but
- * invalid".
- *
- * @param {unknown} input - Raw `req.query.type` value.
- * @returns {{ value: string | undefined, invalidValue: string | undefined }}
+ * @param {unknown} searchType - Raw `req.query.type` value.
+ * @param {import('express-session').Session} [session] - Request session used to resolve feature-flag fallbacks.
+ * @returns {string} A recognised SEARCH_TYPES value.
  *
  * @example
- * parseSearchType('hybrid-dates') // { value: 'hybrid-dates', invalidValue: undefined }
- * parseSearchType('semantic')     // { value: 'semantic', invalidValue: undefined }
- * parseSearchType('unknown')      // { value: undefined, invalidValue: 'unknown' }
- * parseSearchType(undefined)      // { value: undefined, invalidValue: undefined }
+ * resolveSearchType('hybrid-dates')         // 'hybrid-dates'
+ * resolveSearchType('semantic')             // 'semantic'
+ * resolveSearchType('KEYWORD')             // 'keyword'
+ * resolveSearchType('unknown')              // 'hybrid-dates' (DEFAULT_SEARCH_TYPE)
+ * resolveSearchType(undefined)              // 'hybrid-dates' (DEFAULT_SEARCH_TYPE)
+ * resolveSearchType('unknown', session)     // session.featureFlags.type value, or DEFAULT_SEARCH_TYPE
  */
-export function parseSearchType(input) {
-    const raw = Array.isArray(input) ? input.at(-1) : input;
-
-    if (typeof raw !== 'string' || !raw.trim()) {
-        return { value: undefined, invalidValue: undefined };
+export function resolveSearchType(searchType, session = {}) {
+    if (typeof searchType !== 'string' || !searchType.trim()) {
+        return DEFAULT_SEARCH_TYPE;
     }
 
-    const normalized = raw.trim().toLowerCase();
-    const value = Object.values(SEARCH_TYPES).includes(normalized) ? normalized : undefined;
+    const normalisedSearchType = searchType.trim().toLowerCase();
 
-    return {
-        value,
-        invalidValue: value ? undefined : normalized
-    };
-}
+    if (Object.values(SEARCH_TYPES).includes(normalisedSearchType)) {
+        return normalisedSearchType;
+    }
 
-export const parseSearchTypeTokens = parseSearchType;
-
-/**
- * Returns whether the given value is a recognised search type.
- *
- * @param {unknown} value - The value to check.
- * @returns {boolean} `true` if the value is a recognised SEARCH_TYPES value, otherwise `false`.
- *
- * @example
- * isValidSearchType('hybrid-dates') // true
- * isValidSearchType('keyword')      // true
- * isValidSearchType('unknown')      // false
- * isValidSearchType(undefined)      // false
- */
-export function isValidSearchType(value) {
-    return Object.values(SEARCH_TYPES).includes(value);
-}
-
-/**
- * Resolves a search type value, falling back to DEFAULT_SEARCH_TYPE if the value is
- * absent or not a recognised SEARCH_TYPES value.
- *
- * @param {unknown} value - The value to resolve.
- * @returns {string} The resolved search type value.
- *
- * @example
- * resolveSearchType('hybrid-dates') // 'hybrid-dates'
- * resolveSearchType('keyword')      // 'keyword'
- * resolveSearchType('unknown')      // 'hybrid-dates' (DEFAULT_SEARCH_TYPE)
- * resolveSearchType(undefined)      // 'hybrid-dates' (DEFAULT_SEARCH_TYPE)
- */
-export function resolveSearchType(value) {
-    return isValidSearchType(value) ? value : DEFAULT_SEARCH_TYPE;
+    // direct session lookup rather than getFeatureFlagValue() to avoid a circular
+    // dependency: featureFlags/index.js imports DEFAULT_SEARCH_TYPE from this module,
+    // so importing getFeatureFlagValue back here would create a cycle.
+    return session?.featureFlags?.type || DEFAULT_SEARCH_TYPE;
 }

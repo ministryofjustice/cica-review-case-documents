@@ -1,5 +1,5 @@
 import express from 'express';
-import { DEFAULT_SEARCH_TYPE, parseSearchType } from '../api/search/constants/searchTypes.js';
+import { DEFAULT_SEARCH_TYPE, resolveSearchType } from '../api/search/constants/searchTypes.js';
 import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 
@@ -21,9 +21,11 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
         try {
             const { query } = req.body;
             const { pageNumber = 1 } = req.query;
-            const { value: postedSearchType } = parseSearchType(req.body?.type);
+            const resolvedSearchType = resolveSearchType(req.body?.type);
             const searchType =
-                postedSearchType || getFeatureFlagValue(req.session, 'type') || DEFAULT_SEARCH_TYPE;
+                resolvedSearchType ||
+                getFeatureFlagValue(req.session, 'type') ||
+                DEFAULT_SEARCH_TYPE;
 
             const redirectParams = new URLSearchParams({
                 query: query.trim(),

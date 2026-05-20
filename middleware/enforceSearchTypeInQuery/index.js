@@ -1,4 +1,4 @@
-import { DEFAULT_SEARCH_TYPE, parseSearchType } from '../../api/search/constants/searchTypes.js';
+import { DEFAULT_SEARCH_TYPE, resolveSearchType } from '../../api/search/constants/searchTypes.js';
 import { getFeatureFlagValue } from '../featureFlags/index.js';
 
 /**
@@ -22,8 +22,13 @@ export default function enforceSearchTypeInQuery(req, res, next) {
     }
 
     if (req.query.type !== undefined) {
-        const { value } = parseSearchType(req.query.type);
-        if (typeof value === 'string') {
+        const normalisedQueryType =
+            typeof req.query.type === 'string' ? req.query.type.trim().toLowerCase() : '';
+        const resolved = resolveSearchType(req.query.type, req.session);
+        // Only skip the redirect when the type in the URL was itself a recognised
+        // value. If it was unrecognised, resolveSearchType falls back to the session
+        // or default, and we still need to redirect to canonicalise the URL.
+        if (normalisedQueryType && resolved === normalisedQueryType) {
             return next();
         }
     }
