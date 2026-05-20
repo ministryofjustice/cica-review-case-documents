@@ -6,11 +6,11 @@ import enforceSearchTypeInQuery from './index.js';
 /**
  * Creates a mock Express request object.
  *
- * @param {{ method?: string, query?: object, session?: object }} [opts] - Optional request properties to override.
+ * @param {{ method?: string, query?: object, session?: object, originalUrl?: string }} [opts] - Optional request properties to override.
  * @returns {object}
  */
-function createMockReq({ method = 'GET', query = {}, session = {} } = {}) {
-    return { method, query, session };
+function createMockReq({ method = 'GET', query = {}, session = {}, originalUrl = '/search' } = {}) {
+    return { method, query, session, originalUrl };
 }
 
 /**
@@ -102,5 +102,20 @@ describe('enforceSearchTypeInQuery', () => {
         assert.strictEqual(redirected.searchParams.get('pageNumber'), '2');
         assert.strictEqual(redirected.searchParams.get('crn'), '26-711111');
         assert.strictEqual(redirected.searchParams.get('type'), DEFAULT_SEARCH_TYPE);
+    });
+
+    it('preserves the current request path in the redirect', () => {
+        const req = createMockReq({
+            query: { query: 'acute' },
+            originalUrl: '/search/advanced?query=acute'
+        });
+        const res = createMockRes();
+
+        enforceSearchTypeInQuery(req, res, () => {});
+
+        assert.strictEqual(
+            res.redirectedUrl,
+            `/search/advanced?query=acute&type=${DEFAULT_SEARCH_TYPE}`
+        );
     });
 });
