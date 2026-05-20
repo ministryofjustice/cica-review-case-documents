@@ -6,8 +6,9 @@ import { getFeatureFlagValue } from '../featureFlags/index.js';
  *
  * When `type` is absent from the query string the resolved search type (from the session,
  * falling back to the application default) is appended and the browser is redirected.
- * This keeps the URL canonical and bookmarkable without the route handler needing to
- * duplicate the logic.
+ * This keeps the URL canonical and bookmarkable without route handlers needing to
+ * duplicate the logic. The redirect preserves the current request path so it can be
+ * mounted at a route or app layer.
  *
  * Applies only to GET requests; POST requests are passed through unchanged.
  *
@@ -27,5 +28,6 @@ export default function enforceSearchTypeInQuery(req, res, next) {
     const searchType = getFeatureFlagValue(req.session, 'type') || DEFAULT_SEARCH_TYPE;
     const redirectQuery = new URLSearchParams(req.query);
     redirectQuery.set('type', searchType);
-    return res.redirect(`/search?${redirectQuery.toString()}`);
+    const currentPath = req.originalUrl.split('?')[0];
+    return res.redirect(`${currentPath}?${redirectQuery.toString()}`);
 }
