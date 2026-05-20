@@ -4,23 +4,23 @@ import SEARCH_TYPES, {
     DEFAULT_SEARCH_TYPE,
     parseSearchType,
     parseSearchTypeTokens,
-    SEARCH_TYPE_RESOLUTIONS,
+    VALID_SEARCH_TYPE_SET,
     VALID_SEARCH_TYPE_VALUES
 } from './searchTypes.js';
 
-describe('SEARCH_TYPE_RESOLUTIONS', () => {
+describe('VALID_SEARCH_TYPE_SET', () => {
     it('should be frozen', () => {
-        assert.ok(Object.isFrozen(SEARCH_TYPE_RESOLUTIONS));
+        assert.ok(Object.isFrozen(VALID_SEARCH_TYPE_SET));
     });
 
-    it('should map each supported URL type directly to the same slug', () => {
-        assert.deepStrictEqual(SEARCH_TYPE_RESOLUTIONS, {
-            'hybrid-dates': 'hybrid-dates',
-            'keyword-dates': 'keyword-dates',
-            hybrid: 'hybrid',
-            keyword: 'keyword',
-            semantic: 'semantic'
-        });
+    it('should contain each supported URL type slug', () => {
+        assert.deepStrictEqual(Array.from(VALID_SEARCH_TYPE_SET), [
+            'hybrid-dates',
+            'keyword-dates',
+            'hybrid',
+            'keyword',
+            'semantic'
+        ]);
     });
 });
 
@@ -65,7 +65,7 @@ describe('parseSearchType', () => {
         for (const value of [undefined, null, 42, true, {}]) {
             it(`returns empty result for ${JSON.stringify(value)}`, () => {
                 assert.deepStrictEqual(parseSearchType(value), {
-                    slug: undefined,
+                    searchType: undefined,
                     invalidValue: undefined
                 });
             });
@@ -73,14 +73,14 @@ describe('parseSearchType', () => {
 
         it('returns empty result for an empty string', () => {
             assert.deepStrictEqual(parseSearchType(''), {
-                slug: undefined,
+                searchType: undefined,
                 invalidValue: undefined
             });
         });
 
         it('returns empty result for a whitespace-only string', () => {
             assert.deepStrictEqual(parseSearchType('   '), {
-                slug: undefined,
+                searchType: undefined,
                 invalidValue: undefined
             });
         });
@@ -89,52 +89,52 @@ describe('parseSearchType', () => {
     describe('when value is an array', () => {
         it('uses the last element of the array', () => {
             assert.deepStrictEqual(parseSearchType(['keyword', 'semantic']), {
-                slug: 'semantic',
+                searchType: 'semantic',
                 invalidValue: undefined
             });
         });
 
         it('returns empty result when the last element is not a string', () => {
             assert.deepStrictEqual(parseSearchType(['keyword', undefined]), {
-                slug: undefined,
+                searchType: undefined,
                 invalidValue: undefined
             });
         });
     });
 
-    describe('supported slug inputs', () => {
-        it('resolves supported slugs directly', () => {
+    describe('supported enum values', () => {
+        it('resolves supported values directly', () => {
             assert.deepStrictEqual(parseSearchType('hybrid-dates'), {
-                slug: 'hybrid-dates',
+                searchType: 'hybrid-dates',
                 invalidValue: undefined
             });
             assert.deepStrictEqual(parseSearchType('keyword-dates'), {
-                slug: 'keyword-dates',
+                searchType: 'keyword-dates',
                 invalidValue: undefined
             });
             assert.deepStrictEqual(parseSearchType('hybrid'), {
-                slug: 'hybrid',
+                searchType: 'hybrid',
                 invalidValue: undefined
             });
             assert.deepStrictEqual(parseSearchType('keyword'), {
-                slug: 'keyword',
+                searchType: 'keyword',
                 invalidValue: undefined
             });
             assert.deepStrictEqual(parseSearchType('semantic'), {
-                slug: 'semantic',
+                searchType: 'semantic',
                 invalidValue: undefined
             });
         });
     });
 
     describe('invalid inputs', () => {
-        it('returns the invalid value when the slug is not supported', () => {
+        it('returns the invalid value when the value is not supported', () => {
             assert.deepStrictEqual(parseSearchType('unknown'), {
-                slug: undefined,
+                searchType: undefined,
                 invalidValue: 'unknown'
             });
             assert.deepStrictEqual(parseSearchType('foo,bar'), {
-                slug: undefined,
+                searchType: undefined,
                 invalidValue: 'foo,bar'
             });
         });
@@ -143,18 +143,18 @@ describe('parseSearchType', () => {
     describe('whitespace and case handling', () => {
         it('trims whitespace around values', () => {
             assert.deepStrictEqual(parseSearchType(' hybrid-dates '), {
-                slug: 'hybrid-dates',
+                searchType: 'hybrid-dates',
                 invalidValue: undefined
             });
         });
 
         it('is case-insensitive', () => {
             assert.deepStrictEqual(parseSearchType('KEYWORD-DATES'), {
-                slug: 'keyword-dates',
+                searchType: 'keyword-dates',
                 invalidValue: undefined
             });
             assert.deepStrictEqual(parseSearchType('SEMANTIC'), {
-                slug: 'semantic',
+                searchType: 'semantic',
                 invalidValue: undefined
             });
         });
@@ -164,7 +164,7 @@ describe('parseSearchType', () => {
 describe('parseSearchTypeTokens', () => {
     it('remains an alias of parseSearchType for compatibility', () => {
         assert.deepStrictEqual(parseSearchTypeTokens('HYBRID-DATES'), {
-            slug: 'hybrid-dates',
+            searchType: 'hybrid-dates',
             invalidValue: undefined
         });
     });
