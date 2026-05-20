@@ -13,6 +13,7 @@ import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
 import enforceCrnInQuery from './middleware/enforceCrnInQuery/index.js';
 import enforceFeatureFlagsInQuery from './middleware/enforceFeatureFlagsInQuery/index.js';
+import enforceSearchTypeInQuery from './middleware/enforceSearchTypeInQuery/index.js';
 import {
     checkEnvVars,
     getMandatoryEnvVars,
@@ -201,6 +202,7 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
         getCaseReferenceNumberFromQueryString,
         caseSelected,
         featureFlags,
+        enforceSearchTypeInQuery,
         searchRouter({ createTemplateEngineService, createSearchService })
     );
 
