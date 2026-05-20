@@ -22,8 +22,8 @@ export default function enforceSearchTypeInQuery(req, res, next) {
     }
 
     if (req.query.type !== undefined) {
-        const { searchType } = parseSearchType(req.query.type);
-        if (typeof searchType === 'string') {
+        const { value } = parseSearchType(req.query.type);
+        if (typeof value === 'string') {
             return next();
         }
     }
