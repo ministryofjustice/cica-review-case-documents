@@ -108,68 +108,91 @@ describe('featureFlags middleware', () => {
         assert.equal(req.session.featureFlags.type, 'keyword-dates');
     });
 
-    it('keeps session/default type when type is not recognised', () => {
+    it('calls next with a 400 error when type is not recognised', () => {
         const req = {
             query: { type: 'unknown' },
             session: { featureFlags: { align: true, type: DEFAULT_SEARCH_TYPE } }
         };
         const res = { locals: {} };
-        let errorPassed = null;
+        let errorPassed;
 
         featureFlags(req, res, (err) => {
             errorPassed = err;
         });
 
-        assert.equal(errorPassed, undefined);
-        assert.equal(req.session.featureFlags.type, DEFAULT_SEARCH_TYPE);
+        assert.ok(errorPassed instanceof Error);
+        assert.equal(errorPassed.status, 400);
+        assert.match(errorPassed.message, /unknown/);
     });
 
-    it('keeps existing session type when type uses token-combination format', () => {
+    it('error message lists all allowed type values', () => {
         const req = {
-            query: { type: 'keyword,semantic,dates' },
-            session: { featureFlags: { align: true, type: 'keyword' } }
+            query: { type: 'unknown' },
+            session: {}
         };
         const res = { locals: {} };
-        let errorPassed = null;
+        let errorPassed;
 
         featureFlags(req, res, (err) => {
             errorPassed = err;
         });
 
-        assert.equal(errorPassed, undefined);
-        assert.equal(req.session.featureFlags.type, 'keyword');
+        assert.ok(errorPassed instanceof Error);
+        assert.match(errorPassed.message, /hybrid-dates/);
+        assert.match(errorPassed.message, /keyword-dates/);
+        assert.match(errorPassed.message, /hybrid/);
+        assert.match(errorPassed.message, /keyword/);
+        assert.match(errorPassed.message, /semantic/);
     });
 
-    it('keeps existing session type when type is empty', () => {
+    it('calls next with a 400 when type uses the old token-combination format', () => {
+        const req = {
+            query: { type: 'keyword,semantic,dates' },
+            session: {}
+        };
+        const res = { locals: {} };
+        let errorPassed;
+
+        featureFlags(req, res, (err) => {
+            errorPassed = err;
+        });
+
+        assert.ok(errorPassed instanceof Error);
+        assert.equal(errorPassed.status, 400);
+        assert.match(errorPassed.message, /keyword,semantic,dates/);
+    });
+
+    it('calls next with a 400 when type is empty', () => {
         const req = {
             query: { type: '   ' },
             session: { featureFlags: { align: true, type: 'hybrid-dates' } }
         };
         const res = { locals: {} };
-        let errorPassed = null;
+        let errorPassed;
 
         featureFlags(req, res, (err) => {
             errorPassed = err;
         });
 
-        assert.equal(errorPassed, undefined);
-        assert.equal(req.session.featureFlags.type, 'hybrid-dates');
+        assert.ok(errorPassed instanceof Error);
+        assert.equal(errorPassed.status, 400);
+        assert.match(errorPassed.message, /\(empty\)/);
     });
 
-    it('falls back to the previous session value when type is invalid', () => {
+    it('does not fall through to the previous session value when type is invalid', () => {
         const req = {
             query: { type: 'semantic,dates' },
             session: { featureFlags: { align: true, type: 'hybrid-dates' } }
         };
         const res = { locals: {} };
-        let errorPassed = null;
+        let errorPassed;
 
         featureFlags(req, res, (err) => {
             errorPassed = err;
         });
 
-        assert.equal(errorPassed, undefined);
-        assert.equal(req.session.featureFlags?.type, 'hybrid-dates');
+        assert.ok(errorPassed instanceof Error);
+        assert.equal(req.session.featureFlags?.type, 'hybrid-dates'); // unchanged
     });
 });
 
