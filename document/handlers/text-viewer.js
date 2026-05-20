@@ -68,7 +68,8 @@ export function createTextViewerHandler(
                 pageNumber,
                 crn,
                 searchTerm,
-                searchType
+                searchType,
+                req.session
             );
 
             const { text } = pageMetadata;

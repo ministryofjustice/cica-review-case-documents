@@ -55,7 +55,7 @@ function createPageChunksRouter(options = {}) {
         try {
             const { documentId, pageNumber } = req.params;
             const { crn, searchTerm } = req.query;
-            const searchType = resolveSearchType(req.query.type);
+            const searchType = resolveSearchType(req.query.type, req.session);
 
             if (!crn) {
                 const err = new Error('Case reference number (crn) is required');
