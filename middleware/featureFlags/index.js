@@ -106,9 +106,9 @@ export default function featureFlags(req, res, next) {
                     flags[flagName] = queryFlagValue;
                 }
             } else if (flagName === 'type' && req.query?.type !== undefined) {
-                const { slug, invalidValue } = parseSearchType(req.query.type);
-                if (typeof slug === 'string') {
-                    flags[flagName] = slug;
+                const { searchType, invalidValue } = parseSearchType(req.query.type);
+                if (typeof searchType === 'string') {
+                    flags[flagName] = searchType;
                 } else {
                     const error = new Error(
                         `Invalid search type: ${invalidValue || '(empty)'}. Allowed values: ${VALID_SEARCH_TYPE_VALUES.join(', ')}`
