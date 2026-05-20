@@ -270,7 +270,7 @@ function buildKeywordQuery({ caseReferenceNumber, shouldClauses, safePageNumber,
  * @param {Array<object>} [params.matchPhraseClauses=[]] - Date match_phrase clauses to include alongside the neural clause.
  * @returns {object} Assembled semantic (or semantic + dates) query DSL object.
  */
-function buildSemanticQuery({
+export function buildSemanticQuery({
     keyword,
     caseReferenceNumber,
     safePageNumber,
@@ -335,16 +335,6 @@ function buildSemanticQuery({
             { term: { source_doc_id: documentId } },
             { term: { page_number: safePageNumber } }
         );
-    }
-
-    // When there is only a single filter clause and the keyword is non-empty,
-    // simplify the DSL by unwrapping the bool wrapper.
-    if (
-        queryJson.query.neural.embedding.filter?.bool?.filter?.length === 1 &&
-        keyword.trim().length !== 0
-    ) {
-        queryJson.query.neural.embedding.filter =
-            queryJson.query.neural.embedding.filter.bool.filter[0];
     }
 
     // An empty keyword means the neural clause has no query text and would match
