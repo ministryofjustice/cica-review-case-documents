@@ -74,7 +74,7 @@ export function getFeatureFlagValue(session, flagName) {
  * Persists supported feature flags from query-string params into the session.
  *
  * Boolean flags (`align`) accept `on` / `off` query-string values.
- * The `type` flag accepts a direct search mode slug. Invalid values are ignored,
+ * The `type` flag accepts a direct search mode value. Invalid values are ignored,
  * leaving the existing session/default value unchanged.
  *
  * @param {import('express').Request} req - Express request object.

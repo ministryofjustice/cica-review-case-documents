@@ -90,7 +90,7 @@ describe('featureFlags middleware', () => {
         assert.deepEqual(req.session.featureFlags, FEATURE_FLAG_DEFAULTS);
     });
 
-    it('accepts supported search type slugs directly', () => {
+    it('accepts supported search type values directly', () => {
         const req = { query: { type: 'hybrid-dates' }, session: {} };
         const res = { locals: {} };
 
@@ -99,7 +99,7 @@ describe('featureFlags middleware', () => {
         assert.equal(req.session.featureFlags.type, 'hybrid-dates');
     });
 
-    it('normalises supported search type slugs', () => {
+    it('normalises supported search type values', () => {
         const req = { query: { type: ' KEYWORD-DATES ' }, session: {} };
         const res = { locals: {} };
 
