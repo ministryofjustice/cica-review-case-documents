@@ -152,8 +152,8 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
 
     app.use(
         '/assets',
-        express.static(path.join(__dirname, '/node_modules/govuk-frontend/dist/govuk/assets'), {
-            maxAge: '1y',
+        express.static(path.join(__dirname, 'node_modules/govuk-frontend/dist/govuk/assets'), {
+            maxAge: 365 * 24 * 60 * 60 * 1000, // 365 days in ms — explicit to avoid ms('1y') = 31557600 (365.25d)
             immutable: true
         })
     );
