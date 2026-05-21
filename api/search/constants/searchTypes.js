@@ -67,8 +67,11 @@ export function resolveSearchType(searchType, session = {}) {
         return normalisedSearchType;
     }
 
-    // direct session lookup rather than getFeatureFlagValue() to avoid a circular
+    // Direct session lookup rather than getFeatureFlagValue() to avoid a circular
     // dependency: featureFlags/index.js imports DEFAULT_SEARCH_TYPE from this module,
     // so importing getFeatureFlagValue back here would create a cycle.
-    return session?.featureFlags?.type || DEFAULT_SEARCH_TYPE;
+    // Validate the session value before using it — an unrecognised value should not
+    // be propagated into URLs or downstream query building.
+    const sessionType = session?.featureFlags?.type;
+    return Object.values(SEARCH_TYPES).includes(sessionType) ? sessionType : DEFAULT_SEARCH_TYPE;
 }

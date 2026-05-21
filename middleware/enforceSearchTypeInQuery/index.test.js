@@ -76,6 +76,36 @@ describe('enforceSearchTypeInQuery', () => {
         assert.strictEqual(nextCalled, true);
     });
 
+    it('redirects to canonical form when type is valid but has non-canonical casing', () => {
+        const req = createMockReq({ query: { query: 'acute', type: 'HYBRID' } });
+        const res = createMockRes();
+        let nextCalled = false;
+
+        enforceSearchTypeInQuery(req, res, () => {
+            nextCalled = true;
+        });
+
+        assert.ok(res.redirectedUrl !== null, 'should redirect');
+        assert.strictEqual(nextCalled, false);
+        const redirected = new URL(res.redirectedUrl, 'http://localhost');
+        assert.strictEqual(redirected.searchParams.get('type'), 'hybrid');
+    });
+
+    it('redirects to canonical form when type is valid but has surrounding whitespace', () => {
+        const req = createMockReq({ query: { query: 'acute', type: ' keyword-dates ' } });
+        const res = createMockRes();
+        let nextCalled = false;
+
+        enforceSearchTypeInQuery(req, res, () => {
+            nextCalled = true;
+        });
+
+        assert.ok(res.redirectedUrl !== null, 'should redirect');
+        assert.strictEqual(nextCalled, false);
+        const redirected = new URL(res.redirectedUrl, 'http://localhost');
+        assert.strictEqual(redirected.searchParams.get('type'), 'keyword-dates');
+    });
+
     it('redirects with session/default type when type is present but invalid', () => {
         const req = createMockReq({
             query: { query: 'acute', type: 'keyword,semantic' },
