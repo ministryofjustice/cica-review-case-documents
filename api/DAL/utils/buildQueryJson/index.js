@@ -70,12 +70,13 @@ function buildQueryJson({
 }) {
     const buildStart = Date.now();
 
-    // Re-use the module-level default builder map when no config overrides are
-    // provided — avoids rebuilding the map and re-merging config on every request.
-    const queryTypeBuilders = queryDslConfig
-        ? createQueryTypeBuilders({ queryDslConfig })
-        : defaultQueryTypeBuilders;
+    const { safePageNumber, safeItemsPerPage } = normalisePagination(pageNumber, itemsPerPage);
 
+    // Only build a new queryTypeBuilders map when queryDslConfig overrides are supplied.
+     // Otherwise reuse the module-level default map to avoid per-request allocations.
+     const queryTypeBuilders = queryDslConfig
+         ? createQueryTypeBuilders({ queryDslConfig })
+         : defaultQueryTypeBuilders;
     // dispatch to the appropriate mode-specific builder. Each builder handles
     // its own date preprocessing (keyword and hybrid extract dates, semantic
     // skips preprocessing entirely for efficiency).
@@ -85,8 +86,6 @@ function buildQueryJson({
             `Invalid searchType "${searchType}". Must be one of: ${Object.values(SEARCH_TYPES).join(', ')}`
         );
     }
-
-    const { safePageNumber, safeItemsPerPage } = normalisePagination(pageNumber, itemsPerPage);
 
     const builderParams = {
         keyword,
