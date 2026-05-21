@@ -66,7 +66,17 @@ export function createLexicalQuery({ caseReferenceNumber }) {
 
 /**
  * Creates the neural (vector) query shell scoped to the case reference.
- * The caller may extend `query.neural.embedding.filter.bool.filter` with additional term filters.
+ *
+ * The `filter` field is initialised as a single `{ term: { case_ref } }` object, **not**
+ * a `bool.filter` array. Callers that need to add further term filters (e.g. document
+ * scoping) must first promote it to a `bool.filter` wrapper:
+ *
+ * ```js
+ * queryJson.query.neural.embedding.filter = {
+ *     bool: { filter: [queryJson.query.neural.embedding.filter] }
+ * };
+ * queryJson.query.neural.embedding.filter.bool.filter.push({ term: { ... } });
+ * ```
  *
  * @param {object} params - Query shell options.
  * @param {string} params.keyword - Raw search text used as the neural query text.
