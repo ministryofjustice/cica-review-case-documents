@@ -145,7 +145,7 @@ describe('featureFlags middleware', () => {
         assert.equal(req.session.featureFlags.type, DEFAULT_SEARCH_TYPE);
     });
 
-    it('falls back to DEFAULT_SEARCH_TYPE when type is empty', () => {
+    it('falls back to DEFAULT_SEARCH_TYPE when type is empty/whitespace and no session value exists', () => {
         const req = {
             query: { type: '   ' },
             session: {}
@@ -155,6 +155,18 @@ describe('featureFlags middleware', () => {
         featureFlags(req, res, () => {});
 
         assert.equal(req.session.featureFlags.type, DEFAULT_SEARCH_TYPE);
+    });
+
+    it('preserves existing session type when type query param is empty/whitespace', () => {
+        const req = {
+            query: { type: '   ' },
+            session: { featureFlags: { type: 'semantic' } }
+        };
+        const res = { locals: {} };
+
+        featureFlags(req, res, () => {});
+
+        assert.equal(req.session.featureFlags.type, 'semantic');
     });
 
     it('preserves existing session type value when type query param is absent', () => {

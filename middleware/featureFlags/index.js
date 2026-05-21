@@ -93,7 +93,13 @@ export default function featureFlags(req, res, next) {
                 if (typeof queryFlagValue === 'boolean') {
                     flags[flagName] = queryFlagValue;
                 }
-            } else if (flagName === 'type' && req.query?.type !== undefined) {
+            } else if (
+                flagName === 'type' &&
+                typeof req.query?.type === 'string' &&
+                req.query.type.trim().length > 0
+            ) {
+                // Only process a non-empty type value. An empty or whitespace-only
+                // ?type= query param is treated as absent so the session value is preserved.
                 const searchType = resolveSearchType(req.query.type, req.session);
                 if (typeof searchType === 'string') {
                     flags[flagName] = searchType;
