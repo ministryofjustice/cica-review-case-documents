@@ -349,17 +349,27 @@ describe('buildQueryJson', () => {
     });
 
     it('Should build a hybrid query when searchType is hybrid', () => {
+        // Test owns its tuning via explicit overrides so it is decoupled from
+        // production defaults in DEFAULT_QUERY_DSL_CONFIG.
+        const testQueryDslConfig = {
+            semanticMinScore: 0.5,
+            semanticK: 50,
+            lexicalBoost: 20,
+            dateBoost: 1,
+            neuralBoost: 4
+        };
         const params = {
             keyword: 'Important meeting',
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            options: { searchType: 'hybrid' }
+            options: { searchType: 'hybrid', queryDslConfig: testQueryDslConfig }
         };
 
         const expected = {
             from: 5,
             size: 5,
+            min_score: 0.5,
             query: {
                 bool: {
                     filter: [{ term: { case_ref: '26-711111' } }],
@@ -376,6 +386,7 @@ describe('buildQueryJson', () => {
                             neural: {
                                 embedding: {
                                     query_text: 'Important meeting',
+                                    k: 50,
                                     filter: { term: { case_ref: '26-711111' } },
                                     boost: 4
                                 }
@@ -388,21 +399,7 @@ describe('buildQueryJson', () => {
         };
 
         const result = buildQueryJson(params);
-        assert.equal(typeof result.min_score, 'number');
-        assert.ok(result.min_score >= 0);
-        assert.ok(result.min_score <= 1);
-
-        const { min_score: _hybridMinScore, ...resultWithoutMinScore } = result;
-        const hybridNeuralClause = resultWithoutMinScore.query.bool.should.find(
-            (clause) => clause.neural?.embedding
-        );
-        const { k: hybridK, ...hybridEmbeddingWithoutK } = hybridNeuralClause.neural.embedding;
-        assert.equal(typeof hybridK, 'number');
-        assert.ok(hybridK > 0);
-        hybridNeuralClause.neural.embedding = hybridEmbeddingWithoutK;
-        // Update expected filter to match what code now produces
-        expected.query.bool.filter = [{ term: { case_ref: '26-711111' } }];
-        assert.deepStrictEqual(resultWithoutMinScore, expected);
+        assert.deepStrictEqual(result, expected);
     });
 
     it('Should build a semantic query when searchType is semantic', () => {
@@ -411,16 +408,28 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            options: { searchType: 'semantic' }
+            options: {
+                searchType: 'semantic',
+                queryDslConfig: {
+                    // Pure semantic mode uses semanticOnlyMinScore (cosine 0..1).
+                    semanticOnlyMinScore: 0.5,
+                    semanticK: 50,
+                    lexicalBoost: 20,
+                    dateBoost: 1,
+                    neuralBoost: 4
+                }
+            }
         };
 
         const expected = {
             from: 5,
             size: 5,
+            min_score: 0.5,
             query: {
                 neural: {
                     embedding: {
                         query_text: 'Important meeting',
+                        k: 50,
                         filter: {
                             term: {
                                 case_ref: '26-711111'
@@ -432,26 +441,25 @@ describe('buildQueryJson', () => {
         };
 
         const result = buildQueryJson(params);
-        assert.equal(typeof result.min_score, 'number');
-        assert.ok(result.min_score >= 0);
-        assert.ok(result.min_score <= 1);
-
-        const { min_score: _semanticMinScore, ...resultWithoutMinScore } = result;
-        const { k: semanticK, ...semanticEmbeddingWithoutK } =
-            resultWithoutMinScore.query.neural.embedding;
-        assert.equal(typeof semanticK, 'number');
-        assert.ok(semanticK > 0);
-        resultWithoutMinScore.query.neural.embedding = semanticEmbeddingWithoutK;
-        assert.deepStrictEqual(resultWithoutMinScore, expected);
+        assert.deepStrictEqual(result, expected);
     });
 
     it('Should apply separate boosts for date and keyword clauses in hybrid mode', () => {
+        // Test owns its tuning via explicit overrides so assertions don't depend
+        // on production tuning in DEFAULT_QUERY_DSL_CONFIG.
+        const testQueryDslConfig = {
+            semanticMinScore: 0.5,
+            semanticK: 50,
+            lexicalBoost: 17,
+            dateBoost: 3,
+            neuralBoost: 11
+        };
         const params = {
             keyword: 'brain injury september 2021',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 5,
-            options: { searchType: 'hybrid-dates' }
+            options: { searchType: 'hybrid-dates', queryDslConfig: testQueryDslConfig }
         };
 
         const result = buildQueryJson(params);
@@ -465,10 +473,10 @@ describe('buildQueryJson', () => {
         const lexicalFilter = result.query.bool.filter;
         assert.ok(Array.isArray(lexicalFilter) && lexicalFilter[0]?.term?.case_ref === '26-711111');
         assert.strictEqual(result.query.bool.minimum_should_match, 1);
-        assert.strictEqual(dateBoolClause.bool.boost, 1);
+        assert.strictEqual(dateBoolClause.bool.boost, 3);
         assert.strictEqual(dateBoolClause.bool.minimum_should_match, 1);
-        assert.strictEqual(keywordClause.match.chunk_text.boost, 20);
-        assert.strictEqual(neuralClause.neural.embedding.boost, 4);
+        assert.strictEqual(keywordClause.match.chunk_text.boost, 17);
+        assert.strictEqual(neuralClause.neural.embedding.boost, 11);
     });
 
     it('Should correctly compute hybrid pagination when page params are strings', () => {
@@ -832,11 +840,13 @@ describe('buildQueryJson', () => {
     });
 
     it('Should apply queryDslConfig overrides for min score, k and default boosts', () => {
+        // Use a simple first-page request and verify the configured semanticK
+        // override is passed through unchanged in the built query.
         const result = buildQueryJson({
             keyword: 'acute 28/11/2022',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
-            itemsPerPage: 10,
+            itemsPerPage: 5,
             options: {
                 searchType: 'hybrid-dates',
                 queryDslConfig: {
@@ -1067,7 +1077,9 @@ describe('buildQueryJson', () => {
             documentId: 'doc-456',
             queryDslConfig: {
                 semanticK: 11,
-                semanticMinScore: 0.66
+                // Pure neural mode uses semanticOnlyMinScore (cosine 0..1 range),
+                // not semanticMinScore (which is for combined hybrid scores).
+                semanticOnlyMinScore: 0.66
             }
         });
 

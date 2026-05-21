@@ -22,12 +22,14 @@ import generateDateFormatVariants from '../generateDateFormatVariants/index.js';
  * behavioural tests to production tuning constants.
  */
 export const DEFAULT_QUERY_DSL_CONFIG = Object.freeze({
-    /** @type {number} Minimum neural score — needs tuning or replaced with a low K value. */
-    semanticMinScore: 0.55,
-    /** @type {number} Default number of nearest-neighbour candidates for neural queries. */
-    semanticK: 15,
+    /** @type {number} Minimum score threshold for hybrid queries where lexical, date, and neural scores combine after boosting. */
+    semanticMinScore: 2.25,
+    /** @type {number} Minimum score threshold for pure neural queries — cosine similarity is bounded to 0..1, so a lower cut-off applies. */
+    semanticOnlyMinScore: 0.5,
+    /** @type {number} Number of nearest-neighbour candidates for neural queries. Set high enough to cover the deepest expected pagination so result ranking is stable across pages. */
+    semanticK: 250,
     lexicalBoost: 20,
-    dateBoost: 1,
+    dateBoost: 4,
     neuralBoost: 4
 });
 
@@ -288,7 +290,7 @@ export function buildSemanticQuery({
     matchPhraseClauses = [],
     queryDslConfig = DEFAULT_QUERY_DSL_CONFIG
 }) {
-    const { semanticK, semanticMinScore } = queryDslConfig;
+    const { semanticK, semanticMinScore, semanticOnlyMinScore } = queryDslConfig;
 
     // When date phrases are present, produce a bool query with the neural clause and
     // date phrase clauses as sibling should branches. A non-empty keyword is implied
@@ -329,7 +331,7 @@ export function buildSemanticQuery({
         keyword,
         caseReferenceNumber,
         semanticK,
-        semanticMinScore
+        semanticMinScore: semanticOnlyMinScore
     });
 
     if (documentId) {

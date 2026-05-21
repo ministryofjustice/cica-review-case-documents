@@ -92,8 +92,6 @@ function buildQueryJson({
         );
     }
 
-    const { safePageNumber, safeItemsPerPage } = normalisePagination(pageNumber, itemsPerPage);
-
     const builderParams = {
         keyword,
         caseReferenceNumber,

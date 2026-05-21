@@ -21,6 +21,8 @@ export default function enforceSearchTypeInQuery(req, res, next) {
         return next();
     }
 
+    let redirectType;
+
     if (req.query.type !== undefined) {
         const rawQueryType = typeof req.query.type === 'string' ? req.query.type : '';
         const canonicalQueryType = rawQueryType.trim().toLowerCase();
@@ -35,18 +37,12 @@ export default function enforceSearchTypeInQuery(req, res, next) {
         ) {
             return next();
         }
-        // If the type is recognisable but not canonical (e.g. wrong case or
-        // surrounding whitespace), redirect to the canonical form of the input
-        // rather than falling back to the session/default.
-        if (canonicalQueryType && resolved === canonicalQueryType) {
-            const redirectQuery = new URLSearchParams(req.query);
-            redirectQuery.set('type', canonicalQueryType);
-            const currentPath = req.originalUrl.split('?')[0];
-            return res.redirect(`${currentPath}?${redirectQuery.toString()}`);
-        }
+
+        redirectType = resolved;
     }
 
-    const searchType = getFeatureFlagValue(req.session, 'type') || DEFAULT_SEARCH_TYPE;
+    const searchType =
+        redirectType || getFeatureFlagValue(req.session, 'type') || DEFAULT_SEARCH_TYPE;
     const redirectQuery = new URLSearchParams(req.query);
     redirectQuery.set('type', searchType);
     const currentPath = req.originalUrl.split('?')[0];
