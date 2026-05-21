@@ -1,6 +1,9 @@
 import SEARCH_TYPES, { DEFAULT_SEARCH_TYPE } from '../../../search/constants/searchTypes.js';
 import logQueryMetrics from '../logQueryMetrics/index.js';
-import { createQueryTypeBuilders } from './queryTypeBuilders.js';
+import {
+    createQueryTypeBuilders,
+    queryTypeBuilders as defaultQueryTypeBuilders
+} from './queryTypeBuilders.js';
 
 /**
  * Normalises raw pageNumber and itemsPerPage inputs to safe integer values.
@@ -72,7 +75,11 @@ function buildQueryJson({
 }) {
     const buildStart = Date.now();
 
-    const queryTypeBuilders = createQueryTypeBuilders({ queryDslConfig });
+    // Re-use the module-level default builder map when no config overrides are
+    // provided — avoids rebuilding the map and re-merging config on every request.
+    const queryTypeBuilders = queryDslConfig
+        ? createQueryTypeBuilders({ queryDslConfig })
+        : defaultQueryTypeBuilders;
 
     // dispatch to the appropriate mode-specific builder. Each builder handles
     // its own date preprocessing (keyword and hybrid extract dates, semantic
