@@ -75,6 +75,16 @@ describe('resolveSearchType', () => {
                 DEFAULT_SEARCH_TYPE
             );
         });
+
+        it('returns DEFAULT_SEARCH_TYPE when the session feature-flag type is not a recognised value', () => {
+            const session = { featureFlags: { type: 'not-a-real-type' } };
+            assert.strictEqual(resolveSearchType('unknown', session), DEFAULT_SEARCH_TYPE);
+        });
+
+        it('returns DEFAULT_SEARCH_TYPE when the session feature-flag type is a comma-separated invalid value', () => {
+            const session = { featureFlags: { type: 'keyword,semantic' } };
+            assert.strictEqual(resolveSearchType('unknown', session), DEFAULT_SEARCH_TYPE);
+        });
     });
 
     describe('whitespace and case handling', () => {
