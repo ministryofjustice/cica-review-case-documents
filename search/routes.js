@@ -21,11 +21,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
         try {
             const { query } = req.body;
             const { pageNumber = 1 } = req.query;
-            const resolvedSearchType = resolveSearchType(req.body?.type);
-            const searchType =
-                resolvedSearchType ||
-                getFeatureFlagValue(req.session, 'type') ||
-                DEFAULT_SEARCH_TYPE;
+            const searchType = resolveSearchType(req.body?.type, req.session);
 
             const redirectParams = new URLSearchParams({
                 query: query.trim(),
