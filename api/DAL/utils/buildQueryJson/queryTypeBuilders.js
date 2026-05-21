@@ -286,7 +286,7 @@ export function buildSemanticQuery({
     safePageNumber,
     documentId,
     matchPhraseClauses = [],
-    queryDslConfig
+    queryDslConfig = DEFAULT_QUERY_DSL_CONFIG
 }) {
     const { semanticK, semanticMinScore } = queryDslConfig;
 
@@ -381,7 +381,7 @@ function buildHybridQuery({
     shouldClauses,
     safePageNumber,
     documentId,
-    queryDslConfig
+    queryDslConfig = DEFAULT_QUERY_DSL_CONFIG
 }) {
     const { semanticK, semanticMinScore, lexicalBoost, dateBoost, neuralBoost } = queryDslConfig;
 
