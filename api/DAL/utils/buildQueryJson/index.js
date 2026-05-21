@@ -1,9 +1,6 @@
 import SEARCH_TYPES, { DEFAULT_SEARCH_TYPE } from '../../../search/constants/searchTypes.js';
 import logQueryMetrics from '../logQueryMetrics/index.js';
-import {
-    createQueryTypeBuilders,
-    queryTypeBuilders as defaultQueryTypeBuilders
-} from './queryTypeBuilders.js';
+import { createQueryTypeBuilders, resolveQueryDslConfig } from './queryTypeBuilders.js';
 
 /**
  * Normalises raw pageNumber and itemsPerPage inputs to safe integer values.
@@ -75,12 +72,16 @@ function buildQueryJson({
 }) {
     const buildStart = Date.now();
 
-    // Re-use the module-level default builder map when no config overrides are
-    // provided — avoids rebuilding the map and re-merging config on every request.
-    const queryTypeBuilders = queryDslConfig
-        ? createQueryTypeBuilders({ queryDslConfig })
-        : defaultQueryTypeBuilders;
+    const { safePageNumber, safeItemsPerPage } = normalisePagination(pageNumber, itemsPerPage);
 
+    // Resolve effective query DSL config (overrides merged with defaults).
+    // semanticK is intentionally a fixed candidate-pool size: keeping k stable
+    // across pages means the neural ranking is identical on every page so
+    // from/size simply slice into a stable ordered list. The default is sized
+    // to cover the deepest realistic pagination for a single case_ref scope.
+    const effectiveQueryDslConfig = resolveQueryDslConfig(queryDslConfig);
+
+    const queryTypeBuilders = createQueryTypeBuilders({ queryDslConfig: effectiveQueryDslConfig });
     // dispatch to the appropriate mode-specific builder. Each builder handles
     // its own date preprocessing (keyword and hybrid extract dates, semantic
     // skips preprocessing entirely for efficiency).
