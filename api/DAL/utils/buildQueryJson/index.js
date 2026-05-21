@@ -1,6 +1,6 @@
 import SEARCH_TYPES, { DEFAULT_SEARCH_TYPE } from '../../../search/constants/searchTypes.js';
 import logQueryMetrics from '../logQueryMetrics/index.js';
-import { createQueryTypeBuilders, resolveQueryDslConfig } from './queryTypeBuilders.js';
+import { createQueryTypeBuilders } from './queryTypeBuilders.js';
 
 /**
  * Normalises raw pageNumber and itemsPerPage inputs to safe integer values.
@@ -72,8 +72,7 @@ function buildQueryJson({
 }) {
     const buildStart = Date.now();
 
-    const effectiveQueryDslConfig = resolveQueryDslConfig(queryDslConfig);
-    const queryTypeBuilders = createQueryTypeBuilders({ queryDslConfig: effectiveQueryDslConfig });
+    const queryTypeBuilders = createQueryTypeBuilders({ queryDslConfig });
 
     // dispatch to the appropriate mode-specific builder. Each builder handles
     // its own date preprocessing (keyword and hybrid extract dates, semantic
@@ -129,7 +128,7 @@ function buildQueryJson({
         caseReferenceNumber,
         safePageNumber,
         documentId,
-        effectiveQueryDslConfig
+        queryDslConfig
     };
     const prettyJsonEnabled = process.env.APP_LOG_PRETTY_JSON === 'true';
     const paramsPrettyJson = prettyJsonEnabled
