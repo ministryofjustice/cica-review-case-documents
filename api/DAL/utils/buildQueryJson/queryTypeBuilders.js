@@ -333,8 +333,10 @@ export function buildSemanticQuery({
     });
 
     if (documentId) {
-        // Convert filter from single term to bool.filter array for document scoping
-        if (!Array.isArray(queryJson.query.neural.embedding.filter)) {
+        // Promote a bare term filter to a bool.filter wrapper so we can push
+        // additional document-scoping clauses. Skip promotion if it is already
+        // a bool.filter wrapper (avoids double-wrapping on future refactors).
+        if (!queryJson.query.neural.embedding.filter?.bool?.filter) {
             queryJson.query.neural.embedding.filter = {
                 bool: {
                     filter: [queryJson.query.neural.embedding.filter]
