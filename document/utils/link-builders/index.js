@@ -15,6 +15,7 @@ import {
  * @param {string} crn - The case reference number
  * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - The active search type value
  * @param {Object} [session={}] - The session object
+ * @returns {string} The image streaming URL
  */
 export function buildImageUrl(
     documentId,
