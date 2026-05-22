@@ -62,6 +62,32 @@ test('skip function returns true in non-production mode', async () => {
     }
 });
 
+test('skip function bypasses limiter for /api paths in production', async () => {
+    const originalEnv = process.env.NODE_ENV;
+    const originalUnauth = process.env.APP_RATE_LIMIT_MAX_UNAUTH;
+    process.env.NODE_ENV = 'production';
+    process.env.APP_RATE_LIMIT_MAX_UNAUTH = '1';
+
+    try {
+        const app = express();
+        app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
+        app.use(generalRateLimiter);
+        app.get('/api/test', (req, res) => res.send('OK'));
+
+        const res1 = await request(app).get('/api/test');
+        const res2 = await request(app).get('/api/test');
+        const res3 = await request(app).get('/api/test');
+
+        assert.strictEqual(res1.status, 200);
+        assert.strictEqual(res2.status, 200);
+        assert.strictEqual(res3.status, 200);
+    } finally {
+        process.env.NODE_ENV = originalEnv;
+        if (originalUnauth) process.env.APP_RATE_LIMIT_MAX_UNAUTH = originalUnauth;
+        else delete process.env.APP_RATE_LIMIT_MAX_UNAUTH;
+    }
+});
+
 test('limit function returns AUTHENTICATED_LIMIT when session.loggedIn is true', async () => {
     const originalEnv = process.env.NODE_ENV;
     const originalAuth = process.env.APP_RATE_LIMIT_MAX_AUTH;

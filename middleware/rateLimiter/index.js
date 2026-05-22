@@ -35,8 +35,8 @@ export function generateRateLimitKey(req) {
  * Determines whether to skip rate limiting (non-production only).
  * @private
  */
-function shouldSkipRateLimit() {
-    return !isProduction();
+function shouldSkipRateLimit(req) {
+    return !isProduction() || req.path.startsWith('/api');
 }
 
 /**

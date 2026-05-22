@@ -6,11 +6,14 @@ import createApi from './app.js';
 
 const API_ENV_VARS = [
     'APP_LOG_LEVEL',
+    'NODE_ENV',
     'DEPLOY_ENV',
     'npm_package_version',
     'APP_JWT_SECRET',
     'APP_API_JWT_ISSUER',
-    'APP_API_JWT_AUDIENCE'
+    'APP_API_JWT_AUDIENCE',
+    'API_RATE_LIMIT_MAX_AUTH',
+    'API_RATE_LIMIT_MAX_UNAUTH'
 ];
 
 /**
@@ -274,6 +277,49 @@ describe('API Application', () => {
 
             assert.match(res.headers['content-type'], /application\/vnd\.api\+json/);
             assert.strictEqual(res.headers['application-version'], '1.0.0-test');
+        });
+
+        // TODO fix this behaviour after addressing the rate limit review ticket
+        test('bypasses authenticated rate-limit bucket for authenticated API requests', async () => {
+            process.env.NODE_ENV = 'production';
+            process.env.API_RATE_LIMIT_MAX_AUTH = '1';
+            process.env.API_RATE_LIMIT_MAX_UNAUTH = '1';
+
+            const prodLikeApp = await createApi({
+                createSearchService: mockCreateSearchService
+            });
+
+            const first = await request(prodLikeApp)
+                .get('/search?query=test&pageNumber=1&itemsPerPage=1')
+                .set('Authorization', `Bearer ${validToken}`)
+                .set('On-Behalf-Of', '25-711111');
+
+            const second = await request(prodLikeApp)
+                .get('/search?query=test&pageNumber=1&itemsPerPage=1')
+                .set('Authorization', `Bearer ${validToken}`)
+                .set('On-Behalf-Of', '25-711111');
+
+            assert.strictEqual(first.statusCode, 200);
+            assert.strictEqual(second.statusCode, 200);
+            assert.strictEqual(first.headers['x-ratelimit-limit'], undefined);
+            assert.strictEqual(second.headers['x-ratelimit-limit'], undefined);
+        });
+
+        test('rate limits unauthenticated API requests in production', async () => {
+            process.env.NODE_ENV = 'production';
+            process.env.API_RATE_LIMIT_MAX_UNAUTH = '2';
+
+            const prodLikeApp = await createApi({
+                createSearchService: mockCreateSearchService
+            });
+
+            const first = await request(prodLikeApp).get('/search?query=test');
+            const second = await request(prodLikeApp).get('/search?query=test');
+            const third = await request(prodLikeApp).get('/search?query=test');
+
+            assert.strictEqual(first.statusCode, 401);
+            assert.strictEqual(second.statusCode, 401);
+            assert.strictEqual(third.statusCode, 429);
         });
     });
 

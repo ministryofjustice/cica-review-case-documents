@@ -25,6 +25,10 @@ function getTokenFromRequest(req) {
  * @param {Function} next - Express next middleware function.
  */
 function authenticateJWTToken(req, res, next) {
+    if (req.apiJwtVerified === true && req.user) {
+        return next();
+    }
+
     const token = getTokenFromRequest(req);
 
     if (!token) {
