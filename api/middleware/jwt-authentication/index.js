@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { getApiJwtAudience, getApiJwtIssuer } from '../../auth/apiJwtClaims/index.js';
+import normalizeApiJwtUser from '../utils/normalizeApiJwtUser.js';
 
 /**
  * Extracts a bearer token from the Authorization header.
@@ -25,6 +26,10 @@ function getTokenFromRequest(req) {
  * @param {Function} next - Express next middleware function.
  */
 function authenticateJWTToken(req, res, next) {
+    if (req.apiJwtVerified === true && req.user) {
+        return next();
+    }
+
     const token = getTokenFromRequest(req);
 
     if (!token) {
@@ -69,7 +74,22 @@ function authenticateJWTToken(req, res, next) {
 
     try {
         const user = jwt.verify(token, process.env.APP_JWT_SECRET, jwtVerificationOptions);
-        req.user = user;
+        req.user = normalizeApiJwtUser(user);
+        if (req.user?.id == null || req.user.id === '') {
+            req.log?.warn(
+                { url: req.originalUrl },
+                'Authentication token is missing a usable identity claim'
+            );
+            return res.status(403).json({
+                errors: [
+                    {
+                        status: '403',
+                        title: 'Forbidden',
+                        detail: 'Authentication token is missing required identity claims'
+                    }
+                ]
+            });
+        }
         next();
     } catch (err) {
         req.log?.warn({ url: req.originalUrl, error: err.message }, 'Invalid authentication token');

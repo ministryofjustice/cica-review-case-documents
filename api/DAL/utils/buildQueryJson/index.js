@@ -73,10 +73,10 @@ function buildQueryJson({
     const { safePageNumber, safeItemsPerPage } = normalisePagination(pageNumber, itemsPerPage);
 
     // Only build a new queryTypeBuilders map when queryDslConfig overrides are supplied.
-     // Otherwise reuse the module-level default map to avoid per-request allocations.
-     const queryTypeBuilders = queryDslConfig
-         ? createQueryTypeBuilders({ queryDslConfig })
-         : defaultQueryTypeBuilders;
+    // Otherwise reuse the module-level default map to avoid per-request allocations.
+    const queryTypeBuilders = queryDslConfig
+        ? createQueryTypeBuilders({ queryDslConfig })
+        : defaultQueryTypeBuilders;
     // dispatch to the appropriate mode-specific builder. Each builder handles
     // its own date preprocessing (keyword and hybrid extract dates, semantic
     // skips preprocessing entirely for efficiency).
