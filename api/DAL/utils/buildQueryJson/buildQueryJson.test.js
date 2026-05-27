@@ -909,7 +909,7 @@ describe('buildQueryJson', () => {
 
         assert.strictEqual(result.query.bool.filter[0].term.case_ref, '26-711111');
         assert.ok(debugCalls.length >= 5);
-        assert.strictEqual(infoCalls.length, 1);
+        assert.strictEqual(infoCalls.length, 0);
         assert.strictEqual(warnCalls.length, 0);
 
         const debugMessages = debugCalls.map((call) => call[1]).filter(Boolean);

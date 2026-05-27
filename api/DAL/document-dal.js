@@ -127,7 +127,7 @@ function createDocumentDAL({
 
             // safe query hash for correlation, not raw text.
             const queryHash = crypto.createHash('sha256').update(keyword).digest('hex').slice(0, 8);
-            logger.info(
+            logger?.debug?.(
                 {
                     index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
                     queryBody,

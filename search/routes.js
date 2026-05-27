@@ -74,7 +74,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 searchType
             };
 
-            req.log.info({ query, pageNumber, itemsPerPage }, 'Creating search service');
+            req.log?.debug?.({ query, pageNumber, itemsPerPage }, 'Creating search service');
             const searchService = createSearchService({
                 caseReferenceNumber: req.session?.caseReferenceNumber,
                 logger: req.log
