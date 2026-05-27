@@ -36,7 +36,7 @@ function createSearchService({
         token,
         { searchType = DEFAULT_SEARCH_TYPE } = {}
     ) {
-        logger.info({ query, pageNumber, itemsPerPage }, 'Fetching search results');
+        logger?.debug?.({ query, pageNumber, itemsPerPage }, 'Fetching search results');
         const opts = {
             url:
                 `${process.env.APP_API_URL}/search/?query=${query}` +

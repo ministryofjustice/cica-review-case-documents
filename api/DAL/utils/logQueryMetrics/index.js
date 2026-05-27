@@ -50,7 +50,7 @@ function logQueryMetrics({
         return;
     }
 
-    logger.info(
+    logger?.debug?.(
         {
             caseReferenceNumber,
             ...metrics
