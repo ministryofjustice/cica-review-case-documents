@@ -1,5 +1,68 @@
+import crypto from 'node:crypto';
 import { Client as defaultClient } from '@opensearch-project/opensearch';
 import VError from 'verror';
+
+/**
+ *  Module-scoped client cache so OpenSearch TCP connections are reused across requests.
+ *
+ * @type {WeakMap<Function, Map<string, OpenSearchClient>>}
+ */
+const clientByConstructorAndNode = new WeakMap();
+/**
+ * Default threshold for slow query warnings in milliseconds.
+ *
+ * @type {number}
+ */
+const DEFAULT_SLOW_QUERY_WARN_MS = 2000;
+
+/**
+ * Hashes node URL for safe logging without exposing credentials.
+ *
+ * @param {string} node - OpenSearch node URL to hash for log-safe metadata.
+ * @returns {string}
+ */
+function nodeHash(node) {
+    return crypto.createHash('sha256').update(node).digest('hex').slice(0, 8);
+}
+
+/**
+ * Returns a shared OpenSearch client instance for the provided constructor+node pair.
+ *
+ * @param {new (...args: any[]) => OpenSearchClient} Client - OpenSearch client constructor to instantiate when no cached client exists.
+ * @param {string} node - OpenSearch node URL used as the cache key and client connection target.
+ * @param {Logger} [logger] - Optional logger used to record client creation/reuse events.
+ * @returns {OpenSearchClient}
+ */
+function getOrCreateSharedClient(Client, node, logger) {
+    let clientsByNode = clientByConstructorAndNode.get(Client);
+    if (!clientsByNode) {
+        clientsByNode = new Map();
+        clientByConstructorAndNode.set(Client, clientsByNode);
+    }
+
+    let client = clientsByNode.get(node);
+    if (!client) {
+        client = new Client({ node });
+        clientsByNode.set(node, client);
+        logger?.debug?.(
+            {
+                clientType: Client.name || 'anonymous-client',
+                nodeHash: nodeHash(node)
+            },
+            'OpenSearch client created'
+        );
+    } else {
+        logger?.debug?.(
+            {
+                clientType: Client.name || 'anonymous-client',
+                nodeHash: nodeHash(node)
+            },
+            'OpenSearch client reused'
+        );
+    }
+
+    return client;
+}
 
 /**
  * @typedef {object} OpenSearchQuery
@@ -25,6 +88,8 @@ import VError from 'verror';
  * @typedef {object} Logger
  * @property {(data: object, message?: string) => void} info - Logs informational messages with structured data.
  * @property {(data: object, message?: string) => void} error - Logs errors with structured data.
+ * @property {(data: object, message?: string) => void} [warn] - Logs warning messages with structured data.
+ * @property {(data: object, message?: string) => void} [debug] - Logs debug messages with structured data.
  */
 
 /**
@@ -53,9 +118,11 @@ function createDBQuery({ Client = defaultClient, logger }) {
         );
     }
 
-    const client = new Client({
-        node: process.env.APP_DATABASE_URL
-    });
+    const client = getOrCreateSharedClient(Client, process.env.APP_DATABASE_URL, logger);
+    const slowQueryWarnMs = Number.parseInt(
+        process.env.DB_SLOW_QUERY_WARN_MS ?? `${DEFAULT_SLOW_QUERY_WARN_MS}`,
+        10
+    );
 
     /**
      * Executes a query against the OpenSearch database and logs its execution time.
@@ -73,21 +140,39 @@ function createDBQuery({ Client = defaultClient, logger }) {
         const processExecutionStart = process.hrtime();
         const results = await client.search(query);
         const processExecutionTime = process.hrtime(processExecutionStart);
+        const seconds = processExecutionTime[0];
+        const nanoseconds = processExecutionTime[1];
+        const executionTimeMs = seconds * 1e3 + nanoseconds / 1e6;
+        const rows = results?.body?.hits?.hits?.length ?? results?.hits?.hits?.length ?? 0;
 
         if (logger?.info) {
-            const seconds = processExecutionTime[0];
-            const nanoseconds = processExecutionTime[1];
-            const milliseconds = nanoseconds / 1e6;
             logger.info(
                 {
                     data: {
                         query,
-                        rows: results.hits?.hits?.length ?? 0
+                        rows
                     },
-                    executionTime: `${seconds}s ${milliseconds.toFixed(3)}ms`,
+                    executionTime: `${seconds}s ${(nanoseconds / 1e6).toFixed(3)}ms`,
+                    executionTimeMs,
                     executionTimeNs: seconds * 1e9 + nanoseconds
                 },
                 'DB QUERY'
+            );
+        }
+
+        if (
+            logger?.warn &&
+            Number.isFinite(slowQueryWarnMs) &&
+            executionTimeMs >= slowQueryWarnMs
+        ) {
+            logger.warn(
+                {
+                    index: query?.index,
+                    executionTimeMs,
+                    slowQueryWarnMs,
+                    rows
+                },
+                'DB QUERY SLOW'
             );
         }
 
