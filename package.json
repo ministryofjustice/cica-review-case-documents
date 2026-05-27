@@ -26,7 +26,7 @@
         "lint": "biome check --write",
         "format": "biome format --write",
         "precommit:secrets": "command -v gitleaks >/dev/null 2>&1 || { echo 'gitleaks not found on PATH; skipping secrets scan. Install gitleaks from https://github.com/gitleaks/gitleaks or disable the precommit:secrets hook if this is intentional.'; exit 1; }; gitleaks protect --staged --redact --verbose --config .gitleaks.toml",
-        "precommit": "npm run format && npm run lint && npm run sass && npm run precommit:secrets",
+        "precommit": "npm run format && npm run lint && npm run sass && npm run precommit:secrets && npm run test && npm run jsdoc:check && npm run openapi:build",
         "prepush": "npm run test && npm run jsdoc:check",
         "jsdoc:check": "eslint .",
         "prepare": "husky"
