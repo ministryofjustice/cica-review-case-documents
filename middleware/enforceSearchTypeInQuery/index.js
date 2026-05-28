@@ -20,27 +20,31 @@ export default function enforceSearchTypeInQuery(req, res, next) {
         return next();
     }
 
-    // Express parses repeated query params (e.g. ?type=a&type=b) as an array.
-    // Use the last element in that case, consistent with parseFeatureFlagValue /
-    // parseEnumFlagValue, so a valid trailing value is not silently discarded.
-    const queryType = Array.isArray(req.query.type) ? req.query.type.at(-1) : req.query.type;
+    const rawQueryType = req.query.type;
 
-    const resolved = resolveSearchType(queryType, req.session);
+    // Express parses repeated query params (e.g. ?type=a&type=b) as an array.
+    // Normalize to the last entry first, consistent with parseFeatureFlagValue /
+    // parseEnumFlagValue.
+    const queryType = Array.isArray(rawQueryType) ? rawQueryType.at(-1) : rawQueryType;
+
+    const resolvedType = resolveSearchType(queryType, req.session);
 
     // Only skip the redirect when the query value is already the exact canonical
     // form. Anything absent, invalid, or messy (wrong case, whitespace) is
     // redirected to the resolved value from the session or app default.
-    if (queryType === resolved) {
+    if (!Array.isArray(rawQueryType) && queryType === resolvedType) {
         return next();
     }
 
-    // For the redirect, resolve from the session value directly so that a valid
-    // session type is used as the fallback rather than always defaulting to the
-    // app default. resolveSearchType(undefined, session) skips the session lookup
-    // and returns DEFAULT_SEARCH_TYPE immediately, so we pass the session value
-    // explicitly here.
-    const searchType = resolveSearchType(req.session?.featureFlags?.type, req.session);
     const redirectQuery = new URLSearchParams(req.query);
+
+    // Keep historical behaviour for single values (fallback from session/default),
+    // but canonicalize repeated params to one resolved value so downstream
+    // middleware sees a string type rather than an array.
+    const searchType = Array.isArray(rawQueryType)
+        ? resolvedType
+        : resolveSearchType(req.session?.featureFlags?.type, req.session);
+
     redirectQuery.set('type', searchType);
     const currentPath = req.originalUrl.split('?')[0];
     return res.redirect(`${currentPath}?${redirectQuery.toString()}`);

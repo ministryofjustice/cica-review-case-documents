@@ -122,7 +122,7 @@ describe('enforceSearchTypeInQuery', () => {
         assert.strictEqual(redirected.searchParams.get('type'), DEFAULT_SEARCH_TYPE);
     });
 
-    it('uses the last value when type is supplied as an array with a valid final element', () => {
+    it('redirects to the last value when type is supplied as an array with a valid final element', () => {
         const req = createMockReq({ query: { query: 'acute', type: ['invalid', 'keyword'] } });
         const res = createMockRes();
         let nextCalled = false;
@@ -131,8 +131,8 @@ describe('enforceSearchTypeInQuery', () => {
             nextCalled = true;
         });
 
-        assert.strictEqual(res.redirectedUrl, null);
-        assert.strictEqual(nextCalled, true);
+        assert.strictEqual(res.redirectedUrl, '/search?query=acute&type=keyword');
+        assert.strictEqual(nextCalled, false);
     });
 
     it('redirects to session/default when type is an array whose last element is invalid', () => {
