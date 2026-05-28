@@ -122,6 +122,35 @@ describe('enforceSearchTypeInQuery', () => {
         assert.strictEqual(redirected.searchParams.get('type'), 'keyword-dates');
     });
 
+    it('uses the last value when type is supplied as an array with a valid final element', () => {
+        const req = createMockReq({ query: { query: 'acute', type: ['invalid', 'keyword'] } });
+        const res = createMockRes();
+        let nextCalled = false;
+
+        enforceSearchTypeInQuery(req, res, () => {
+            nextCalled = true;
+        });
+
+        assert.strictEqual(res.redirectedUrl, null);
+        assert.strictEqual(nextCalled, true);
+    });
+
+    it('redirects to session/default when type is an array whose last element is invalid', () => {
+        const req = createMockReq({
+            query: { query: 'acute', type: ['keyword', 'not-a-type'] },
+            session: { featureFlags: { type: 'semantic' } }
+        });
+        const res = createMockRes();
+        let nextCalled = false;
+
+        enforceSearchTypeInQuery(req, res, () => {
+            nextCalled = true;
+        });
+
+        assert.strictEqual(res.redirectedUrl, '/search?query=acute&type=semantic');
+        assert.strictEqual(nextCalled, false);
+    });
+
     it('redirects with session/default type when type is present but invalid', () => {
         const req = createMockReq({
             query: { query: 'acute', type: 'keyword,semantic' },
