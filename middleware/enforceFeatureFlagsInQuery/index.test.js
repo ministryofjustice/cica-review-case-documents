@@ -96,6 +96,46 @@ test('ignores unsupported session feature flags when building redirect query', (
     assert.ok(!res.redirectedUrl?.includes('staleFlag='));
 });
 
+test('does not append stale invalid session type values', () => {
+    const req = createMockReq({
+        session: {
+            featureFlags: {
+                align: true,
+                type: 'old-invalid-type'
+            }
+        }
+    });
+    const res = createMockRes();
+    let nextCalled = false;
+
+    enforceFeatureFlagsInQuery(req, res, () => {
+        nextCalled = true;
+    });
+
+    assert.strictEqual(res.redirectedUrl, null);
+    assert.strictEqual(nextCalled, true);
+});
+
+test('does not append non-boolean stale session align values', () => {
+    const req = createMockReq({
+        session: {
+            featureFlags: {
+                align: 'off',
+                type: DEFAULT_SEARCH_TYPE
+            }
+        }
+    });
+    const res = createMockRes();
+    let nextCalled = false;
+
+    enforceFeatureFlagsInQuery(req, res, () => {
+        nextCalled = true;
+    });
+
+    assert.strictEqual(res.redirectedUrl, null);
+    assert.strictEqual(nextCalled, true);
+});
+
 test('preserves existing query parameters when redirecting', () => {
     const req = createMockReq({
         query: { crn: '12-745678', page: '2' },
