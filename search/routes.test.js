@@ -139,6 +139,62 @@ describe('Search Routes', () => {
             });
         });
 
+        it('should fall back to default search type when session type is invalid', async () => {
+            const testApp = express();
+            const captured = { searchType: undefined };
+
+            const router = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: () => ({
+                    getSearchResults: async (
+                        _query,
+                        _pageNumber,
+                        _itemsPerPage,
+                        _token,
+                        options
+                    ) => {
+                        captured.searchType = options.searchType;
+                        return {
+                            body: {
+                                data: {
+                                    attributes: {
+                                        results: {
+                                            hits: [],
+                                            total: { value: 0 }
+                                        }
+                                    }
+                                }
+                            }
+                        };
+                    }
+                })
+            });
+
+            testApp.use(express.json());
+            testApp.use(express.urlencoded({ extended: true }));
+            testApp.use((req, res, next) => {
+                req.session = {
+                    caseSelected: true,
+                    caseReferenceNumber: '12345',
+                    username: 'search.user@example.com',
+                    featureFlags: {
+                        type: 'old-value'
+                    }
+                };
+                req.log = { info: () => {}, error: () => {} };
+                res.locals.csrfToken = 'test-csrf-token';
+                res.locals.cspNonce = 'test-csp-nonce';
+                next();
+            });
+            testApp.use('/search', router);
+
+            const res = await request(testApp).get('/search?query=test&type=old-value');
+
+            assert.strictEqual(res.statusCode, 200);
+            assert.strictEqual(captured.searchType, DEFAULT_SEARCH_TYPE);
+            assert.strictEqual(lastRenderParams.searchType, DEFAULT_SEARCH_TYPE);
+        });
+
         it('should handle errors from the search service', async () => {
             // This test needs a fresh app instance to re-initialize the router with new mocks
             const testApp = express();
