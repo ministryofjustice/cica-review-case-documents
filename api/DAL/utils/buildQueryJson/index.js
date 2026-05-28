@@ -28,16 +28,12 @@ function normalisePagination(pageNumber, itemsPerPage) {
 }
 
 /**
- * Assembles the semantic (neural) query, applying optional document-scoping should clauses
+ * Assembles an OpenSearch query DSL object for the given search mode.
  *
- * The query:
- * - Filters by an exact `case_ref` using a `term` query.
- * - Applies pagination using `from` and `size`.
- * - Composes results from up to four independently toggled capabilities:
- *   - **keyword** (`searchType`)  — BM25 lexical matching against `chunk_text`.
- *   - **semantic** (`searchType`) — neural vector matching via the `embedding` field.
+ * Dispatches to the appropriate mode-specific builder based on `searchType` and
+ * applies pagination, optional document scoping, and structured logging.
  *
- * Valid combinations:
+ * Valid search modes:
  * | searchType                    | Effective mode     |
  * |-------------------------------|--------------------|
  * | SEARCH_TYPES.KEYWORD          | keyword only       |
@@ -46,18 +42,17 @@ function normalisePagination(pageNumber, itemsPerPage) {
  * | SEARCH_TYPES.HYBRID           | hybrid             |
  * | SEARCH_TYPES.HYBRID_DATES     | hybrid + dates     |
  *
- * `searchType` must be one of the SEARCH_TYPES values.
- *
  * @param {object} params - Search parameters.
  * @param {string} params.keyword - Raw search string entered by the user. May contain date phrases and free text.
  * @param {string} params.caseReferenceNumber - Exact case reference number to filter results by.
  * @param {number} params.pageNumber - The current page number (1-based).
  * @param {number} params.itemsPerPage - Number of results to return per page.
- * @param {object} [params.logger] - Optional structured logger instance.
- * @param {string} [params.searchType=DEFAULT_SEARCH_TYPE] - Search mode. One of SEARCH_TYPES.KEYWORD, SEARCH_TYPES.KEYWORD_DATES, SEARCH_TYPES.SEMANTIC, SEARCH_TYPES.HYBRID, or SEARCH_TYPES.HYBRID_DATES.
- * @param {boolean} [params.includePagination=true] - Whether to include pagination fields in the query.
- * @param {object} [params.queryDslConfig] - Optional tuning overrides for semantic thresholds, ANN k, and default boosts.
- * @param {string} [params.documentId] - Document UUID to scope results to a single document and page.
+ * @param {object} [params.options] - Optional behavioural overrides.
+ * @param {object} [params.options.logger] - Optional structured logger instance.
+ * @param {string} [params.options.searchType=DEFAULT_SEARCH_TYPE] - Search mode. One of SEARCH_TYPES.KEYWORD, SEARCH_TYPES.KEYWORD_DATES, SEARCH_TYPES.SEMANTIC, SEARCH_TYPES.HYBRID, or SEARCH_TYPES.HYBRID_DATES.
+ * @param {boolean} [params.options.includePagination=true] - Whether to include pagination fields in the query.
+ * @param {object} [params.options.queryDslConfig] - Optional tuning overrides for semantic thresholds, ANN k, and default boosts.
+ * @param {string} [params.options.documentId] - Document UUID to scope results to a single document and page.
  * @returns {object} OpenSearch query DSL JSON object.
  */
 function buildQueryJson({
