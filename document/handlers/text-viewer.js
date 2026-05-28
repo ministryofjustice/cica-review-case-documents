@@ -1,5 +1,4 @@
-import { DEFAULT_SEARCH_TYPE } from '../../api/search/constants/searchTypes.js';
-import { getFeatureFlagValue } from '../../middleware/featureFlags/index.js';
+import { resolveSearchType } from '../../api/search/constants/searchTypes.js';
 import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
@@ -31,7 +30,7 @@ export function createTextViewerHandler(
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
             const { searchTerm = '' } = req.query;
-            const searchType = getFeatureFlagValue(req.session, 'type') || DEFAULT_SEARCH_TYPE;
+            const searchType = resolveSearchType(req.session?.featureFlags?.type, req.session);
             const apiJwtToken = createApiJwtToken(req.session?.username);
 
             // Fetch document page metadata from OpenSearch via API

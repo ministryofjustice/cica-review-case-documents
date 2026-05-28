@@ -63,6 +63,22 @@ describe('enforceSearchTypeInQuery', () => {
         assert.strictEqual(nextCalled, false);
     });
 
+    it('redirects with default type when session type is invalid and type absent from query', () => {
+        const req = createMockReq({
+            query: { query: 'acute' },
+            session: { featureFlags: { type: 'old-value' } }
+        });
+        const res = createMockRes();
+        let nextCalled = false;
+
+        enforceSearchTypeInQuery(req, res, () => {
+            nextCalled = true;
+        });
+
+        assert.strictEqual(res.redirectedUrl, `/search?query=acute&type=${DEFAULT_SEARCH_TYPE}`);
+        assert.strictEqual(nextCalled, false);
+    });
+
     it('calls next without redirecting when type is present and valid in query', () => {
         const req = createMockReq({ query: { query: 'acute', type: 'hybrid' } });
         const res = createMockRes();
