@@ -9,7 +9,14 @@ import enforceSearchTypeInQuery from './index.js';
  * @param {{ method?: string, query?: object, session?: object, originalUrl?: string, baseUrl?: string, path?: string }} [opts] - Optional request properties to override.
  * @returns {object}
  */
-function createMockReq({ method = 'GET', query = {}, session = {}, originalUrl = '/search', baseUrl = '/search', path = '/' } = {}) {
+function createMockReq({
+    method = 'GET',
+    query = {},
+    session = {},
+    originalUrl = '/search',
+    baseUrl = '/search',
+    path = '/'
+} = {}) {
     return { method, query, session, originalUrl, baseUrl, path };
 }
 
