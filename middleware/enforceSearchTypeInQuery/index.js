@@ -54,6 +54,12 @@ export default function enforceSearchTypeInQuery(req, res, next) {
     }
 
     redirectQuery.set('type', searchType);
-    const currentPath = req.originalUrl.split('?')[0];
-    return res.redirect(`${currentPath}?${redirectQuery.toString()}`);
+
+    // Reconstruct the redirect path from Express-parsed routing values rather than
+    // forwarding req.originalUrl directly, which is raw user-controlled input.
+    // req.baseUrl is set by Express based on the matched mount point; req.path is
+    // the sub-path after that mount point. Combining them avoids taint from the
+    // raw URL string while correctly preserving the effective request path.
+    const safePath = req.baseUrl + req.path.replace(/\/$/, '');
+    return res.redirect(`${safePath}?${redirectQuery.toString()}`);
 }
