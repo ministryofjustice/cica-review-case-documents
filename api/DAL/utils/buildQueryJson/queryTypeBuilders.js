@@ -444,6 +444,13 @@ function buildHybridQuery({
         });
     }
 
+    // When there are no scoring clauses, the query becomes filter-only and scores 0.
+    // Remove min_score in this case to avoid filtering out all results, matching the
+    // fallback behavior used by buildSemanticQuery for empty keywords.
+    if (queryJson.query.bool.should.length === 0) {
+        delete queryJson.min_score;
+    }
+
     return queryJson;
 }
 
