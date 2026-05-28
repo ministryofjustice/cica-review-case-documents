@@ -31,13 +31,13 @@ The middleware persists the resolved value to the session, so subsequent request
 
 ## Search mode values
 
-| `type` value | Tokens required | OpenSearch strategy |
-|---|---|---|
-| `hybrid-dates` _(default)_ | `keyword` + `semantic` + `dates` | BM25 + neural + date phrase expansion |
-| `hybrid` | `keyword` + `semantic` | BM25 + neural, no date extraction |
-| `keyword-dates` | `keyword` + `dates` | BM25 + date phrase expansion |
-| `keyword` | `keyword` | BM25 only |
-| `semantic` | `semantic` | Neural vector only |
+| `type` value | Query strategy |
+|---|---|
+| `hybrid-dates` _(default)_ | BM25 + neural + date phrase expansion |
+| `hybrid` | BM25 + neural, no date extraction |
+| `keyword-dates` | BM25 + date phrase expansion |
+| `keyword` | BM25 only |
+| `semantic` | Neural vector only |
 
 ## Implementation
 
