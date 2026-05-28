@@ -89,19 +89,21 @@ const buildPaginationItems = ({ visiblePages, currentPageIndex, buildPageUrl }) 
  * @param {object} options - Query options.
  * @param {object} [options.query] - Optional request query object.
  * @param {string} [options.query.searchTerm] - Search term to preserve in links.
- * @param {string} [options.query.type] - Search type to preserve in links.
  * @param {object} [options.params] - Optional route params object.
  * @param {string} [options.params.crn] - Case reference number.
+ * @param {string} [options.resolvedSearchType] - The canonical resolved search type (from session/default). Used instead of raw query.type to ensure pagination links are always canonical.
  * @returns {string} Encoded query string.
  */
-const buildQueryString = ({ query, params }) => {
-    const { searchTerm = '', type = '' } = query || {};
+const buildQueryString = ({ query, params, resolvedSearchType }) => {
+    const { searchTerm = '' } = query || {};
     const { crn } = params || {};
     const queryParams = new URLSearchParams();
 
     if (crn) queryParams.append('crn', crn);
     if (searchTerm) queryParams.append('searchTerm', searchTerm);
-    if (type) queryParams.append('type', type);
+    if (resolvedSearchType) {
+        queryParams.append('type', resolvedSearchType);
+    }
 
     return queryParams.toString();
 };
@@ -178,15 +180,17 @@ export const createPaginationData = ({
  * @param {object} [query] - Optional request query object.
  * @param {object} [params] - Optional route params object.
  * @param {'image'|'text'} [viewMode='image'] - Viewer mode used to build page URLs.
+ * @param {string} [resolvedSearchType] - The canonical resolved search type. When provided, pagination links use this instead of the raw query.type to ensure they reflect the active search mode.
  * @returns {{items:Array,results:{pages:{current:number,count:number},count:number,text:string},previous:{text:string,href:string}|null,next:{text:string,href:string}|null}} Pagination data object.
  */
 export const paginationDataFromMetadata = (
     pageMetadata,
     query,
     params,
-    viewMode = VIEW_MODES.IMAGE
+    viewMode = VIEW_MODES.IMAGE,
+    resolvedSearchType
 ) => {
-    const queryString = buildQueryString({ query, params });
+    const queryString = buildQueryString({ query, params, resolvedSearchType });
     const { documentId } = params || {};
     const viewPath = viewMode === VIEW_MODES.TEXT ? '/view/text/page/' : '/view/page/';
     const buildDocumentPageUrl = (pageNum) =>
