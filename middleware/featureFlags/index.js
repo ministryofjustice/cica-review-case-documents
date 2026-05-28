@@ -64,8 +64,20 @@ export function getFeatureFlagValue(session, flagName) {
     const sessionFlagValue = session?.featureFlags?.[flagName];
     const defaultValue = FEATURE_FLAG_DEFAULTS[flagName];
 
-    if (typeof sessionFlagValue === 'boolean' || typeof sessionFlagValue === 'string') {
-        return sessionFlagValue;
+    // Validate the session value matches the expected type for this flag.
+    // Boolean flags like 'align' should only accept booleans; string flags like 'type'
+    // should only accept strings. Stale/corrupt sessions with mismatched types fall back
+    // to the default.
+    if (typeof defaultValue === 'boolean') {
+        // align flag expects a boolean
+        if (typeof sessionFlagValue === 'boolean') {
+            return sessionFlagValue;
+        }
+    } else if (typeof defaultValue === 'string') {
+        // type flag expects a string
+        if (typeof sessionFlagValue === 'string') {
+            return sessionFlagValue;
+        }
     }
 
     return defaultValue;
