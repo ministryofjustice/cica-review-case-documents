@@ -292,4 +292,42 @@ describe('getFeatureFlagValue', () => {
         assert.equal(getFeatureFlagValue({}, 'align'), true);
         assert.equal(getFeatureFlagValue({}, 'type'), DEFAULT_SEARCH_TYPE);
     });
+
+    it('rejects mismatched types and falls back to defaults', () => {
+        // String value for boolean flag (align) should be rejected
+        assert.equal(
+            getFeatureFlagValue({ featureFlags: { align: 'false' } }, 'align'),
+            true,
+            'String value for align should fall back to default (true)'
+        );
+        assert.equal(
+            getFeatureFlagValue({ featureFlags: { align: 'off' } }, 'align'),
+            true,
+            'String "off" for align should fall back to default (true)'
+        );
+
+        // Boolean value for string flag (type) should be rejected
+        assert.equal(
+            getFeatureFlagValue({ featureFlags: { type: false } }, 'type'),
+            DEFAULT_SEARCH_TYPE,
+            'Boolean value for type should fall back to default'
+        );
+        assert.equal(
+            getFeatureFlagValue({ featureFlags: { type: true } }, 'type'),
+            DEFAULT_SEARCH_TYPE,
+            'Boolean true for type should fall back to default'
+        );
+
+        // Other invalid types should also be rejected
+        assert.equal(
+            getFeatureFlagValue({ featureFlags: { align: 42 } }, 'align'),
+            true,
+            'Number value for align should fall back to default'
+        );
+        assert.equal(
+            getFeatureFlagValue({ featureFlags: { type: 42 } }, 'type'),
+            DEFAULT_SEARCH_TYPE,
+            'Number value for type should fall back to default'
+        );
+    });
 });
