@@ -6,11 +6,11 @@ import enforceSearchTypeInQuery from './index.js';
 /**
  * Creates a mock Express request object.
  *
- * @param {{ method?: string, query?: object, session?: object, originalUrl?: string }} [opts] - Optional request properties to override.
+ * @param {{ method?: string, query?: object, session?: object, originalUrl?: string, baseUrl?: string, path?: string }} [opts] - Optional request properties to override.
  * @returns {object}
  */
-function createMockReq({ method = 'GET', query = {}, session = {}, originalUrl = '/search' } = {}) {
-    return { method, query, session, originalUrl };
+function createMockReq({ method = 'GET', query = {}, session = {}, originalUrl = '/search', baseUrl = '/search', path = '/' } = {}) {
+    return { method, query, session, originalUrl, baseUrl, path };
 }
 
 /**
@@ -226,7 +226,9 @@ describe('enforceSearchTypeInQuery', () => {
     it('preserves the current request path in the redirect', () => {
         const req = createMockReq({
             query: { query: 'acute' },
-            originalUrl: '/search/advanced?query=acute'
+            originalUrl: '/search/advanced?query=acute',
+            baseUrl: '/search',
+            path: '/advanced'
         });
         const res = createMockRes();
 
@@ -236,5 +238,23 @@ describe('enforceSearchTypeInQuery', () => {
             res.redirectedUrl,
             `/search/advanced?query=acute&type=${DEFAULT_SEARCH_TYPE}`
         );
+    });
+
+    it('does not forward raw originalUrl into the redirect destination', () => {
+        const req = createMockReq({
+            query: { query: 'acute' },
+            originalUrl: 'https://evil.example.com/search?query=acute',
+            baseUrl: '/search',
+            path: '/'
+        });
+        const res = createMockRes();
+
+        enforceSearchTypeInQuery(req, res, () => {});
+
+        assert.ok(
+            !res.redirectedUrl?.startsWith('https://'),
+            'redirect must not use raw originalUrl'
+        );
+        assert.ok(res.redirectedUrl?.startsWith('/search?'));
     });
 });

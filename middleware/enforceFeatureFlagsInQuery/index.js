@@ -1,5 +1,5 @@
-import { FEATURE_FLAG_DEFAULTS, getFeatureFlagValue } from '../featureFlags/index.js';
 import { resolveSearchType } from '../../api/search/constants/searchTypes.js';
+import { FEATURE_FLAG_DEFAULTS, getFeatureFlagValue } from '../featureFlags/index.js';
 
 /**
  * An array of allowed URL paths for which feature-flag enforcement applies.
