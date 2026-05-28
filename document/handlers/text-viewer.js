@@ -56,7 +56,8 @@ export function createTextViewerHandler(
                 pageMetadata,
                 req.query,
                 req.validatedParams,
-                viewMode
+                viewMode,
+                searchType
             );
 
             const pageTitle = formatPageTitle(pageMetadata.correspondence_type);

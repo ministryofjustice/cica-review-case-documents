@@ -58,7 +58,8 @@ export function createPageViewerHandler(
                 pageMetadata,
                 req.query,
                 req.validatedParams,
-                viewMode
+                viewMode,
+                searchType
             );
 
             const imageUrl = buildImageUrl(documentId, pageNumber, crn, searchType, req.session);
