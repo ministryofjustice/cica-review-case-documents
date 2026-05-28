@@ -1126,4 +1126,79 @@ describe('buildQueryJson', () => {
         // Should use the default semanticMinScore (0.55) not undefined
         assert.strictEqual(result.min_score, 0.55);
     });
+
+    it('Should remove min_score from hybrid query when keyword is empty with no date phrases', () => {
+        // When keyword is empty and there are no date phrases, the hybrid query has
+        // no scoring clauses (only filter clauses). min_score must be removed to
+        // prevent filtering out all results from a filter-only query.
+        const result = buildQueryJson({
+            keyword: '',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 10,
+            options: { searchType: SEARCH_TYPES.HYBRID }
+        });
+
+        const expected = {
+            from: 0,
+            size: 10,
+            query: {
+                bool: {
+                    filter: [{ term: { case_ref: '26-711111' } }]
+                }
+            }
+        };
+
+        // min_score should be removed (undefined)
+        assert.strictEqual(result.min_score, undefined);
+        assert.deepStrictEqual(result, expected);
+    });
+
+    it('Should remove min_score from hybrid-dates query when keyword is empty with no date phrases', () => {
+        // Even with hybrid-dates searchType, when keyword is empty and date extraction
+        // finds no dates, the result is filter-only. min_score must be removed.
+        const result = buildQueryJson({
+            keyword: '',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 10,
+            options: { searchType: SEARCH_TYPES.HYBRID_DATES }
+        });
+
+        const expected = {
+            from: 0,
+            size: 10,
+            query: {
+                bool: {
+                    filter: [{ term: { case_ref: '26-711111' } }]
+                }
+            }
+        };
+
+        // min_score should be removed (undefined)
+        assert.strictEqual(result.min_score, undefined);
+        assert.deepStrictEqual(result, expected);
+    });
+
+    it('Should keep min_score in hybrid query when there are scoring clauses despite empty keyword', () => {
+        // If date phrases are extracted (keyword is not truly empty in content),
+        // min_score should be kept since there are scoring clauses.
+        const result = buildQueryJson({
+            keyword: '12/05/2024',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 10,
+            options: { searchType: SEARCH_TYPES.HYBRID_DATES }
+        });
+
+        // min_score should be present since there are date phrase clauses
+        assert.strictEqual(typeof result.min_score, 'number');
+        assert.ok(result.min_score > 0);
+        // Should have date phrase scoring clauses
+        assert.ok(
+            result.query.bool.should.some((clause) =>
+                clause.bool?.should?.some((c) => c.match_phrase)
+            )
+        );
+    });
 });
