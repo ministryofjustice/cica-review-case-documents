@@ -93,16 +93,21 @@ export default function featureFlags(req, res, next) {
                 if (typeof queryFlagValue === 'boolean') {
                     flags[flagName] = queryFlagValue;
                 }
-            } else if (
-                flagName === 'type' &&
-                typeof req.query?.type === 'string' &&
-                req.query.type.trim().length > 0
-            ) {
-                // Only process a non-empty type value. An empty or whitespace-only
-                // ?type= query param is treated as absent so the session value is preserved.
-                const searchType = resolveSearchType(req.query.type, req.session);
-                if (typeof searchType === 'string') {
-                    flags[flagName] = searchType;
+            } else if (flagName === 'type') {
+                // Express parses repeated query params (e.g. ?type=a&type=b) as an array.
+                // Normalize to the last entry first, consistent with parseFeatureFlagValue /
+                // parseEnumFlagValue.
+                const queryType = Array.isArray(req.query?.type)
+                    ? req.query.type.at(-1)
+                    : req.query?.type;
+
+                if (typeof queryType === 'string' && queryType.trim().length > 0) {
+                    // Only process a non-empty type value. An empty or whitespace-only
+                    // ?type= query param is treated as absent so the session value is preserved.
+                    const searchType = resolveSearchType(queryType, req.session);
+                    if (typeof searchType === 'string') {
+                        flags[flagName] = searchType;
+                    }
                 }
             } else {
                 const queryFlagValue = parseEnumFlagValue(req.query?.[flagName]);
