@@ -92,7 +92,7 @@ describe('enforceSearchTypeInQuery', () => {
         assert.strictEqual(nextCalled, true);
     });
 
-    it('redirects to canonical form when type is valid but has non-canonical casing', () => {
+    it('redirects with session/default type when type has non-canonical casing', () => {
         const req = createMockReq({ query: { query: 'acute', type: 'HYBRID' } });
         const res = createMockRes();
         let nextCalled = false;
@@ -104,10 +104,10 @@ describe('enforceSearchTypeInQuery', () => {
         assert.ok(res.redirectedUrl !== null, 'should redirect');
         assert.strictEqual(nextCalled, false);
         const redirected = new URL(res.redirectedUrl, 'http://localhost');
-        assert.strictEqual(redirected.searchParams.get('type'), 'hybrid');
+        assert.strictEqual(redirected.searchParams.get('type'), DEFAULT_SEARCH_TYPE);
     });
 
-    it('redirects to canonical form when type is valid but has surrounding whitespace', () => {
+    it('redirects with session/default type when type has surrounding whitespace', () => {
         const req = createMockReq({ query: { query: 'acute', type: ' keyword-dates ' } });
         const res = createMockRes();
         let nextCalled = false;
@@ -119,7 +119,7 @@ describe('enforceSearchTypeInQuery', () => {
         assert.ok(res.redirectedUrl !== null, 'should redirect');
         assert.strictEqual(nextCalled, false);
         const redirected = new URL(res.redirectedUrl, 'http://localhost');
-        assert.strictEqual(redirected.searchParams.get('type'), 'keyword-dates');
+        assert.strictEqual(redirected.searchParams.get('type'), DEFAULT_SEARCH_TYPE);
     });
 
     it('uses the last value when type is supplied as an array with a valid final element', () => {

@@ -20,39 +20,25 @@ export default function enforceSearchTypeInQuery(req, res, next) {
         return next();
     }
 
-    if (req.query.type !== undefined) {
-           // Express parses repeated query params (e.g. ?type=a&type=b) as an array.
-           // Use the last element in that case, consistent with parseFeatureFlagValue /
-           // parseEnumFlagValue, so a valid trailing value is not silently discarded and
-           // the user's intent is preserved in any subsequent redirect.
-        const rawQueryType = Array.isArray(req.query.type)
-            ? (req.query.type.at(-1) ?? '')
-            : typeof req.query.type === 'string'
-              ? req.query.type
-              : '';
-        const canonicalQueryType = rawQueryType.trim().toLowerCase();
-        const resolved = resolveSearchType(req.query.type, req.session);
-        // Only skip the redirect when the type in the URL is already in its
-        // canonical form and is itself a recognised value. Non-canonical casing
-        // or whitespace should still be redirected so the URL is canonicalised.
-        if (
-            rawQueryType &&
-            rawQueryType === canonicalQueryType &&
-            resolved === canonicalQueryType
-        ) {
-            return next();
-        }
-        // If the type is recognisable but not canonical (e.g. wrong case or
-        // surrounding whitespace), redirect to the canonical form of the input
-        // rather than falling back to the session/default.
-        if (canonicalQueryType && resolved === canonicalQueryType) {
-            const redirectQuery = new URLSearchParams(req.query);
-            redirectQuery.set('type', canonicalQueryType);
-            const currentPath = req.originalUrl.split('?')[0];
-            return res.redirect(`${currentPath}?${redirectQuery.toString()}`);
-        }
+    // Express parses repeated query params (e.g. ?type=a&type=b) as an array.
+    // Use the last element in that case, consistent with parseFeatureFlagValue /
+    // parseEnumFlagValue, so a valid trailing value is not silently discarded.
+    const queryType = Array.isArray(req.query.type) ? req.query.type.at(-1) : req.query.type;
+
+    const resolved = resolveSearchType(queryType, req.session);
+
+    // Only skip the redirect when the query value is already the exact canonical
+    // form. Anything absent, invalid, or messy (wrong case, whitespace) is
+    // redirected to the resolved value from the session or app default.
+    if (queryType === resolved) {
+        return next();
     }
 
+    // For the redirect, resolve from the session value directly so that a valid
+    // session type is used as the fallback rather than always defaulting to the
+    // app default. resolveSearchType(undefined, session) skips the session lookup
+    // and returns DEFAULT_SEARCH_TYPE immediately, so we pass the session value
+    // explicitly here.
     const searchType = resolveSearchType(req.session?.featureFlags?.type, req.session);
     const redirectQuery = new URLSearchParams(req.query);
     redirectQuery.set('type', searchType);
