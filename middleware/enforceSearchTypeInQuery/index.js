@@ -21,7 +21,15 @@ export default function enforceSearchTypeInQuery(req, res, next) {
     }
 
     if (req.query.type !== undefined) {
-        const rawQueryType = typeof req.query.type === 'string' ? req.query.type : '';
+           // Express parses repeated query params (e.g. ?type=a&type=b) as an array.
+           // Use the last element in that case, consistent with parseFeatureFlagValue /
+           // parseEnumFlagValue, so a valid trailing value is not silently discarded and
+           // the user's intent is preserved in any subsequent redirect.
+        const rawQueryType = Array.isArray(req.query.type)
+            ? (req.query.type.at(-1) ?? '')
+            : typeof req.query.type === 'string'
+              ? req.query.type
+              : '';
         const canonicalQueryType = rawQueryType.trim().toLowerCase();
         const resolved = resolveSearchType(req.query.type, req.session);
         // Only skip the redirect when the type in the URL is already in its
