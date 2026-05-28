@@ -205,6 +205,34 @@ describe('featureFlags middleware', () => {
 
         assert.equal(req.session.featureFlags.type, 'semantic');
     });
+
+    it('corrects stale/invalid session type to DEFAULT_SEARCH_TYPE when no query param provided', () => {
+        const req = {
+            query: {},
+            session: { featureFlags: { type: 'old-invalid-type' } }
+        };
+        const res = { locals: {} };
+
+        featureFlags(req, res, () => {});
+
+        // Invalid session type should be corrected to the default
+        assert.equal(req.session.featureFlags.type, DEFAULT_SEARCH_TYPE);
+        assert.equal(res.locals.featureFlags.type, DEFAULT_SEARCH_TYPE);
+    });
+
+    it('overrides stale session type with valid query param', () => {
+        const req = {
+            query: { type: 'hybrid' },
+            session: { featureFlags: { type: 'old-invalid-type' } }
+        };
+        const res = { locals: {} };
+
+        featureFlags(req, res, () => {});
+
+        // Valid query param should override stale session type
+        assert.equal(req.session.featureFlags.type, 'hybrid');
+        assert.equal(res.locals.featureFlags.type, 'hybrid');
+    });
 });
 
 describe('parseEnumFlagValue', () => {

@@ -86,7 +86,14 @@ export default function featureFlags(req, res, next) {
 
     if (req.session) {
         for (const flagName of Object.keys(FEATURE_FLAG_DEFAULTS)) {
-            flags[flagName] = getFeatureFlagValue(req.session, flagName);
+            // Initialize with session value or default, but validate the type flag.
+            // This ensures an invalid existing session type doesn't persist and
+            // get re-added to URLs or exposed through res.locals.featureFlags.
+            if (flagName === 'type') {
+                flags[flagName] = resolveSearchType(req.session?.featureFlags?.type, req.session);
+            } else {
+                flags[flagName] = getFeatureFlagValue(req.session, flagName);
+            }
 
             if (typeof FEATURE_FLAG_DEFAULTS[flagName] === 'boolean') {
                 const queryFlagValue = parseFeatureFlagValue(req.query?.[flagName]);
