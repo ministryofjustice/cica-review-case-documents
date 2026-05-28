@@ -92,7 +92,7 @@ describe('enforceSearchTypeInQuery', () => {
         assert.strictEqual(nextCalled, true);
     });
 
-    it('redirects with session/default type when type has non-canonical casing', () => {
+    it('redirects to canonical form when type has non-canonical casing', () => {
         const req = createMockReq({ query: { query: 'acute', type: 'HYBRID' } });
         const res = createMockRes();
         let nextCalled = false;
@@ -104,10 +104,11 @@ describe('enforceSearchTypeInQuery', () => {
         assert.ok(res.redirectedUrl !== null, 'should redirect');
         assert.strictEqual(nextCalled, false);
         const redirected = new URL(res.redirectedUrl, 'http://localhost');
-        assert.strictEqual(redirected.searchParams.get('type'), DEFAULT_SEARCH_TYPE);
+        // Non-canonical input 'HYBRID' should resolve and redirect to canonical 'hybrid'
+        assert.strictEqual(redirected.searchParams.get('type'), 'hybrid');
     });
 
-    it('redirects with session/default type when type has surrounding whitespace', () => {
+    it('redirects to canonical form when type has surrounding whitespace', () => {
         const req = createMockReq({ query: { query: 'acute', type: ' keyword-dates ' } });
         const res = createMockRes();
         let nextCalled = false;
@@ -119,7 +120,34 @@ describe('enforceSearchTypeInQuery', () => {
         assert.ok(res.redirectedUrl !== null, 'should redirect');
         assert.strictEqual(nextCalled, false);
         const redirected = new URL(res.redirectedUrl, 'http://localhost');
-        assert.strictEqual(redirected.searchParams.get('type'), DEFAULT_SEARCH_TYPE);
+        // Non-canonical input with whitespace should resolve and redirect to canonical form
+        assert.strictEqual(redirected.searchParams.get('type'), 'keyword-dates');
+    });
+
+    it('uses resolved query value over session value for non-canonical single params', () => {
+        const req = createMockReq({
+            query: { query: 'acute', type: ' KEYWORD ' },
+            session: { featureFlags: { type: 'semantic' } }
+        });
+        const res = createMockRes();
+
+        enforceSearchTypeInQuery(req, res, () => {});
+
+        // Non-canonical query param should be canonicalized to 'keyword', not fallback to session 'semantic'
+        assert.strictEqual(res.redirectedUrl, '/search?query=acute&type=keyword');
+    });
+
+    it('falls back to session value when type is empty or whitespace-only', () => {
+        const req = createMockReq({
+            query: { query: 'acute', type: '   ' },
+            session: { featureFlags: { type: 'semantic' } }
+        });
+        const res = createMockRes();
+
+        enforceSearchTypeInQuery(req, res, () => {});
+
+        // Empty/whitespace query param should fall back to session value
+        assert.strictEqual(res.redirectedUrl, '/search?query=acute&type=semantic');
     });
 
     it('redirects to the last value when type is supplied as an array with a valid final element', () => {
