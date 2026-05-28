@@ -26,13 +26,13 @@ Builds an OpenSearch query DSL object for a given `searchType`.
 
 Boosts are only applied in hybrid modes (`searchType: 'hybrid'` or `'hybrid-dates'`). They have no effect in keyword-only or semantic-only modes.
 
-| Constant | Default | Controls |
-|---|---|---|
-| `DEFAULT_LEXICAL_BOOST` | `12` | Weight of the BM25 `match` clause relative to neural |
-| `DEFAULT_DATE_BOOST` | `1` | Weight of the grouped `match_phrase` date clauses |
-| `DEFAULT_NEURAL_BOOST` | `4` | Weight of the `neural` clause |
+These values are defined in `DEFAULT_QUERY_DSL_CONFIG` and can be overridden through `queryDslConfig`:
 
-These defaults can be overridden through `queryDslConfig`.
+| Config key | Default | Controls |
+|---|---|---|
+| `lexicalBoost` | `20` | Weight of the BM25 `match` clause relative to neural |
+| `dateBoost` | `1` | Weight of the grouped `match_phrase` date clauses |
+| `neuralBoost` | `4` | Weight of the `neural` clause |
 
 ## Neural filter
 
