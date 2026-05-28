@@ -78,6 +78,24 @@ test('redirects with multiple non-default flags appended', () => {
     assert.ok(res.redirectedUrl?.startsWith('/search?'), 'should start with /search?');
 });
 
+test('ignores unsupported session feature flags when building redirect query', () => {
+    const req = createMockReq({
+        session: {
+            featureFlags: {
+                align: false,
+                type: DEFAULT_SEARCH_TYPE,
+                staleFlag: 'unexpected'
+            }
+        }
+    });
+    const res = createMockRes();
+
+    enforceFeatureFlagsInQuery(req, res, () => {});
+
+    assert.strictEqual(res.redirectedUrl, '/search?align=off');
+    assert.ok(!res.redirectedUrl?.includes('staleFlag='));
+});
+
 test('preserves existing query parameters when redirecting', () => {
     const req = createMockReq({
         query: { crn: '12-745678', page: '2' },
