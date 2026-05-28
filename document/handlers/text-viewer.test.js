@@ -78,15 +78,15 @@ describe('Text Viewer Handler', () => {
         assert.equal(renderParams.paginationData?.results?.count, 3);
         assert.equal(
             renderParams.paginationData?.items?.[0]?.href,
-            '/document/123e4567-e89b-12d3-a456-426614174000/view/text/page/1?crn=26-745678'
+            '/document/123e4567-e89b-12d3-a456-426614174000/view/text/page/1?crn=26-745678&type=hybrid-dates'
         );
         assert.equal(
             renderParams.paginationData?.previous?.href,
-            '/document/123e4567-e89b-12d3-a456-426614174000/view/text/page/1?crn=26-745678'
+            '/document/123e4567-e89b-12d3-a456-426614174000/view/text/page/1?crn=26-745678&type=hybrid-dates'
         );
         assert.equal(
             renderParams.paginationData?.next?.href,
-            '/document/123e4567-e89b-12d3-a456-426614174000/view/text/page/3?crn=26-745678'
+            '/document/123e4567-e89b-12d3-a456-426614174000/view/text/page/3?crn=26-745678&type=hybrid-dates'
         );
         assert.equal(result, sendResult);
     });
