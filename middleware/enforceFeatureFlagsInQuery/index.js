@@ -41,7 +41,10 @@ const EXCLUDED_PATHS = [
  * @returns {string} The query-string representation.
  */
 function serializeFlagValue(value) {
-    if (typeof value === 'boolean') return value ? 'on' : 'off';
+    if (typeof value === 'boolean') {
+        return value ? 'on' : 'off';
+    }
+
     return String(value);
 }
 
@@ -70,12 +73,20 @@ const enforceFeatureFlagsInQuery = (req, res, next) => {
 
     const sessionFlags = req.session.featureFlags;
 
-    // Find non-default flags that are absent from the current query string
-    const flagsToAdd = Object.entries(sessionFlags).filter(
-        ([key, val]) => val !== FEATURE_FLAG_DEFAULTS[key] && req.query[key] === undefined
-    );
+    // Find non-default supported flags that are absent from the current query string.
+    // Unknown/stale session keys are ignored so only bookmarkable flags are reflected.
+    const flagsToAdd = Object.keys(FEATURE_FLAG_DEFAULTS)
+        .map((flagName) => [flagName, sessionFlags[flagName]])
+        .filter(([, sessionFlagValue]) => sessionFlagValue !== undefined)
+        .filter(
+            ([flagName, sessionFlagValue]) =>
+                sessionFlagValue !== FEATURE_FLAG_DEFAULTS[flagName] &&
+                req.query[flagName] === undefined
+        );
 
-    if (flagsToAdd.length === 0) return next();
+    if (flagsToAdd.length === 0) {
+        return next();
+    }
 
     // Harden: reject unsafe paths before attempting a redirect
     if (
