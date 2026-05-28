@@ -32,6 +32,12 @@ const EXCLUDED_PATHS = [
     /^\/\.well-known\//
 ];
 
+const DOCUMENT_VIEW_PAGE_PATH_PATTERN =
+    /^\/document\/([0-9a-fA-F-]{36})\/view\/page\/(\d+)$/;
+const DOCUMENT_VIEW_TEXT_PAGE_PATH_PATTERN =
+    /^\/document\/([0-9a-fA-F-]{36})\/view\/text\/page\/(\d+)$/;
+const DOCUMENT_IMAGE_PAGE_PATH_PATTERN = /^\/document\/([0-9a-fA-F-]{36})\/page\/(\d+)$/;
+
 /**
  * Serialises a feature-flag session value to its query-string representation.
  *
@@ -46,6 +52,43 @@ function serializeFlagValue(value) {
     }
 
     return String(value);
+}
+
+/**
+ * Returns a canonical redirect path for supported routes.
+ *
+ * The returned path is rebuilt from regex-captured segments so redirects never
+ * depend on raw, unsanitized request path input.
+ *
+ * @param {string} path - Request path to validate.
+ * @returns {string | undefined} Canonical safe path when allowed.
+ */
+function resolveSafeRedirectPath(path) {
+    const normalizedPath = path.replace(/\/+$/, '');
+
+    if (ALLOWED_PATHS.includes(normalizedPath)) {
+        return normalizedPath;
+    }
+
+    const viewPageMatch = normalizedPath.match(DOCUMENT_VIEW_PAGE_PATH_PATTERN);
+    if (viewPageMatch) {
+        const [, documentId, pageNumber] = viewPageMatch;
+        return `/document/${documentId}/view/page/${pageNumber}`;
+    }
+
+    const viewTextPageMatch = normalizedPath.match(DOCUMENT_VIEW_TEXT_PAGE_PATH_PATTERN);
+    if (viewTextPageMatch) {
+        const [, documentId, pageNumber] = viewTextPageMatch;
+        return `/document/${documentId}/view/text/page/${pageNumber}`;
+    }
+
+    const imagePageMatch = normalizedPath.match(DOCUMENT_IMAGE_PAGE_PATH_PATTERN);
+    if (imagePageMatch) {
+        const [, documentId, pageNumber] = imagePageMatch;
+        return `/document/${documentId}/page/${pageNumber}`;
+    }
+
+    return undefined;
 }
 
 /**
@@ -102,19 +145,7 @@ const enforceFeatureFlagsInQuery = (req, res, next) => {
         return next(err);
     }
 
-    const normalizedPath = req.path.replace(/\/+$/, '');
-
-    let safePath;
-    if (ALLOWED_PATHS.includes(normalizedPath)) {
-        safePath = normalizedPath;
-    } else {
-        for (const pattern of ALLOWED_PATH_PATTERNS) {
-            if (pattern.test(normalizedPath)) {
-                safePath = normalizedPath;
-                break;
-            }
-        }
-    }
+    const safePath = resolveSafeRedirectPath(req.path);
 
     if (!safePath) {
         const err = new Error('Redirect not allowed for this path');
@@ -123,8 +154,8 @@ const enforceFeatureFlagsInQuery = (req, res, next) => {
     }
 
     const newQuery = { ...req.query };
-    for (const [key, val] of flagsToAdd) {
-        newQuery[key] = serializeFlagValue(val);
+    for (const [flagName, sessionFlagValue] of flagsToAdd) {
+        newQuery[flagName] = serializeFlagValue(sessionFlagValue);
     }
 
     const queryString = new URLSearchParams(newQuery).toString();
