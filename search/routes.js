@@ -1,6 +1,5 @@
 import express from 'express';
-import { DEFAULT_SEARCH_TYPE, resolveSearchType } from '../api/search/constants/searchTypes.js';
-import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
+import { resolveSearchType } from '../api/search/constants/searchTypes.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 
 /**
@@ -42,7 +41,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
 
             const { query, pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.query;
             const userName = req.session?.username;
-            const searchType = getFeatureFlagValue(req.session, 'type') || DEFAULT_SEARCH_TYPE;
+            const searchType = resolveSearchType(req.session?.featureFlags?.type, req.session);
 
             if (!query) {
                 const html = render('search/page/index.njk', {
