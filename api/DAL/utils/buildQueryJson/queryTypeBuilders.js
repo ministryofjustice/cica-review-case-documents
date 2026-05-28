@@ -38,9 +38,14 @@ export const DEFAULT_QUERY_DSL_CONFIG = Object.freeze({
  * @returns {typeof DEFAULT_QUERY_DSL_CONFIG} Effective query DSL configuration.
  */
 export function resolveQueryDslConfig(overrides = {}) {
+    // Filter out undefined values so they don't override defaults with undefined.
+    // This allows partial overrides like { semanticK: undefined } to fall back to defaults.
+    const filteredOverrides = Object.fromEntries(
+        Object.entries(overrides).filter(([, value]) => value !== undefined)
+    );
     return {
         ...DEFAULT_QUERY_DSL_CONFIG,
-        ...overrides
+        ...filteredOverrides
     };
 }
 

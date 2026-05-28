@@ -1101,4 +1101,29 @@ describe('buildQueryJson', () => {
             { term: { page_number: 1 } }
         ]);
     });
+
+    it('Should fall back to defaults when queryDslConfig contains undefined values', () => {
+        // When overrides contain undefined values, they should not replace defaults.
+        // This ensures partial config objects like { semanticK: undefined } don't break queries.
+        const result = buildQueryJson({
+            keyword: 'test search',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 10,
+            options: {
+                searchType: SEARCH_TYPES.SEMANTIC,
+                queryDslConfig: {
+                    semanticK: undefined,
+                    semanticMinScore: undefined
+                    // other fields omitted to test partial override
+                }
+            }
+        });
+
+        const neuralEmbedding = result.query.neural.embedding;
+        // Should use the default semanticK (15) not undefined
+        assert.strictEqual(neuralEmbedding.k, 15);
+        // Should use the default semanticMinScore (0.55) not undefined
+        assert.strictEqual(result.min_score, 0.55);
+    });
 });
