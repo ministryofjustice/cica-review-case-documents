@@ -37,8 +37,7 @@ function createPageChunksRouter(options = {}) {
      * @param {string} req.params.pageNumber - The page number to retrieve chunks for.
      * @param {string} req.query.crn - The case reference number (required).
      * @param {string} [req.query.searchTerm] - Search term to filter chunks by content.
-     * @param {string} [req.query.type=DEFAULT_SEARCH_TYPE] - Search mode: `keyword`, `keyword-dates`, `semantic`, `hybrid`, or `hybrid-dates`.
-     * @param {string} [req.query.dates='on'] - Whether date extraction is enabled (`on` or `off`).
+     * @param {string} [req.query.type=DEFAULT_SEARCH_TYPE] - Search mode: `keyword`, `keyword-dates`, `semantic`, `hybrid`, or `hybrid-dates`. Date extraction is enabled for `-dates` variants.
      * @param {express.Response} res - The Express response object.
      *
      * @returns {Object} JSON response with page chunks:
