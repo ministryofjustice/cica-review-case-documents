@@ -38,12 +38,20 @@ export default function enforceSearchTypeInQuery(req, res, next) {
 
     const redirectQuery = new URLSearchParams(req.query);
 
-    // Keep historical behaviour for single values (fallback from session/default),
-    // but canonicalize repeated params to one resolved value so downstream
-    // middleware sees a string type rather than an array.
-    const searchType = Array.isArray(rawQueryType)
-        ? resolvedType
-        : resolveSearchType(req.session?.featureFlags?.type, req.session);
+    // Use the resolved canonical value when the query param is provided (even if
+    // non-canonical like "HYBRID" or " keyword-dates "). Fall back to session/default
+    // only when the query value is genuinely absent or empty.
+    let searchType;
+    if (Array.isArray(rawQueryType)) {
+        // Canonicalize repeated params to resolved value
+        searchType = resolvedType;
+    } else if (typeof queryType === 'string' && queryType.trim().length > 0) {
+        // Query value was provided (not absent/empty) - use the resolved canonical form
+        searchType = resolvedType;
+    } else {
+        // Query value was absent or empty - fall back to session/default
+        searchType = resolveSearchType(req.session?.featureFlags?.type, req.session);
+    }
 
     redirectQuery.set('type', searchType);
     const currentPath = req.originalUrl.split('?')[0];
