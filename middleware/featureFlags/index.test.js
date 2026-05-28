@@ -181,6 +181,30 @@ describe('featureFlags middleware', () => {
         assert.equal(req.session.featureFlags.align, false);
         assert.equal(req.session.featureFlags.type, 'hybrid');
     });
+
+    it('normalises repeated type parameters to the last valid element', () => {
+        const req = {
+            query: { type: ['invalid', 'keyword'] },
+            session: {}
+        };
+        const res = { locals: {} };
+
+        featureFlags(req, res, () => {});
+
+        assert.equal(req.session.featureFlags.type, 'keyword');
+    });
+
+    it('falls back to session/default when repeated type has invalid final element', () => {
+        const req = {
+            query: { type: ['keyword', 'not-a-type'] },
+            session: { featureFlags: { type: 'semantic' } }
+        };
+        const res = { locals: {} };
+
+        featureFlags(req, res, () => {});
+
+        assert.equal(req.session.featureFlags.type, 'semantic');
+    });
 });
 
 describe('parseEnumFlagValue', () => {
