@@ -7,11 +7,15 @@ import normalizeApiJwtUser from '../utils/normalizeApiJwtUser.js';
  */
 function getTokenFromRequest(req) {
     const authHeader = req.headers?.authorization;
-    if (!authHeader) return null;
+    if (!authHeader) {
+        return null;
+    }
 
     // Must follow: "Bearer <token>"
     const [scheme, token] = authHeader.split(' ');
-    if (scheme !== 'Bearer' || !token) return null;
+    if (scheme !== 'Bearer' || !token) {
+        return null;
+    }
 
     return token;
 }
