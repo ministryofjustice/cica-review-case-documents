@@ -374,23 +374,6 @@ describe('API Application', () => {
             assert.strictEqual(secondUserFirstRequest.statusCode, 200);
         });
 
-        test('rate limits unauthenticated API requests in production', async () => {
-            process.env.NODE_ENV = 'production';
-            process.env.API_RATE_LIMIT_MAX_UNAUTH = '2';
-
-            const prodLikeApp = await createApi({
-                createSearchService: mockCreateSearchService
-            });
-
-            const first = await request(prodLikeApp).get('/search?query=test');
-            const second = await request(prodLikeApp).get('/search?query=test');
-            const third = await request(prodLikeApp).get('/search?query=test');
-
-            assert.strictEqual(first.statusCode, 401);
-            assert.strictEqual(second.statusCode, 401);
-            assert.strictEqual(third.statusCode, 429);
-        });
-
         test('returns 403 when JWT is valid but missing required identity claims', async () => {
             const identitylessToken = signApiToken({ email: 'missing-identity@example.com' });
 

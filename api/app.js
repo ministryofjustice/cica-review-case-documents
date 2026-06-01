@@ -10,9 +10,7 @@ import swaggerUi from 'swagger-ui-express';
 import createApiRouter from './document/routes.js';
 import errorHandler from './middleware/errorHandler/index.js';
 import authenticateJWTToken from './middleware/jwt-authentication/index.js';
-import dynamicRateLimiter, {
-    unauthenticatedApiRateLimiter
-} from './middleware/rateLimiter/index.js';
+import dynamicRateLimiter from './middleware/rateLimiter/index.js';
 import createOpenApiValidatorMiddleware from './middleware/validator/index.js';
 import createSearchService from './search/search-service.js';
 
@@ -99,8 +97,6 @@ export default async function createApi(options = {}) {
 
     app.use(
         '/',
-        // Defense-in-depth: Rate limit by IP before auth to prevent brute-force attacks on the token endpoint
-        unauthenticatedApiRateLimiter,
         authenticateJWTToken,
         // Rate limit authenticated users by user ID after successful auth
         dynamicRateLimiter,
