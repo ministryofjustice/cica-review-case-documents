@@ -83,6 +83,7 @@ jobs:
               run: npm ci
 
             - name: Scan application (SARIF + policy evaluation)
+              id: scan_application
               if: ${{ inputs.skip_security_scan != true }}
               run: |
                   set -euo pipefail
@@ -116,20 +117,26 @@ jobs:
 
                   echo "=== APPLICATION VULN SUMMARY ==="
 
-                  cat snyk-test-results.json | jq '
-                    def all_vulns:
-                        [
-                            (.vulnerabilities[]?),
-                            (.applications[]?.vulnerabilities[]?)
-                        ];
-                    {
-                        total: (all_vulns | length),
-                        high: (all_vulns | map(select(.severity=="high")) | length),
-                        critical: (all_vulns | map(select(.severity=="critical")) | length),
-                        fixable: (all_vulns | map(select(.isUpgradable==true or .isPatchable==true)) | length)
-                    }'
+                  if [ -s snyk-test-results.json ]; then
+                      if ! jq '
+                        def all_vulns:
+                            [
+                                (.vulnerabilities[]?),
+                                (.applications[]?.vulnerabilities[]?)
+                            ];
+                        {
+                            total: (all_vulns | length),
+                            high: (all_vulns | map(select(.severity=="high")) | length),
+                            critical: (all_vulns | map(select(.severity=="critical")) | length),
+                            fixable: (all_vulns | map(select(.isUpgradable==true or .isPatchable==true)) | length)
+                        }' snyk-test-results.json; then
+                          echo "::warning::Unable to parse snyk-test-results.json; scan exit code was $EXIT_CODE"
+                      fi
+                  else
+                      echo "::warning::No snyk-test-results.json produced; scan exit code was $EXIT_CODE"
+                  fi
 
-                  echo "SNYK_APPLICATION_SCAN_EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV
+                  echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
 
             - name: Upload dependency SARIF to GitHub
               if: ${{ inputs.skip_security_scan != true  && hashFiles('snyk-test-results.sarif') != '' }}
@@ -165,6 +172,7 @@ jobs:
                   echo "::warning::⚠️ SECURITY SCAN BYPASSED - This is an emergency deployment without vulnerability scanning"
 
             - name: Scan container (SARIF + policy evaluation)
+              id: scan_container
               if: ${{ inputs.skip_security_scan != true }}
               env:
                   REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -220,7 +228,7 @@ jobs:
                         fixable: (all_vulns | map(select(.isUpgradable==true or .isPatchable==true)) | length)
                     }'
 
-                  echo "SNYK_CONTAINER_SCAN_EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV
+                  echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
 
             - name: Dump full container Snyk JSON
               if: ${{ inputs.skip_security_scan != true }}
@@ -290,7 +298,35 @@ jobs:
                     fi
                   fi
 
-            - name: Warn on non-fixable container vulnerabilities
+            - name: ⚠️ Report policy-suppressed vulnerabilities
+              if: ${{ inputs.skip_security_scan != true }}
+              run: |
+                  echo "=== SNYK POLICY FILE (.snyk) - IGNORED VULNERABILITIES ==="
+                  echo ""
+                  if [ -f .snyk ]; then
+                      cat .snyk
+                      echo ""
+                      echo "=== POLICY SUMMARY ==="
+                      ACTIVE_IGNORES=$(awk '
+                        BEGIN { in_ignore = 0; count = 0 }
+                        /^ignore:[[:space:]]*$/ { in_ignore = 1; next }
+                        in_ignore && /^[^[:space:]]/ { in_ignore = 0 }
+                        in_ignore && /^[[:space:]]{2}[A-Za-z0-9._-]+:[[:space:]]*$/ { count++ }
+                        END { print count }
+                      ' .snyk)
+
+                      echo "Active ignore entries detected: $ACTIVE_IGNORES"
+
+                      if [ "$ACTIVE_IGNORES" -gt 0 ]; then
+                          echo "::warning::Policy file detected and applied via --policy-path=.snyk"
+                          echo "::warning::Active suppressions are present in .snyk"
+                          echo "::warning::Review the .snyk file above to verify suppressions have clear reason and expiry"
+                      else
+                          echo "No active suppressions found in .snyk"
+                      fi
+                  fi
+
+            - name: Fail on non-fixable container vulnerabilities
               if: ${{ inputs.skip_security_scan != true }}
               run: |
                   NON_FIXABLE=$(jq '
@@ -306,13 +342,35 @@ jobs:
                     ' snyk-container-test-results.json)
 
                   if [ "$NON_FIXABLE" -gt 0 ]; then
-                      echo "::warning::High/critical vulnerabilities found that are NOT fixable ($NON_FIXABLE)"
+                      echo "❌ Failing build: $NON_FIXABLE high/critical container vulnerabilities found that are NOT fixable"
+                      echo "These must be acknowledged via skip_security_scan for emergency deployments only."
+                      exit 1
                   fi
 
-            - name: Fail workflow on application vulnerabilities (fixable only)
-              if: ${{ inputs.skip_security_scan != true && env.SNYK_APPLICATION_SCAN_EXIT_CODE != '0' }}
+            - name: Fail workflow on application vulnerabilities
+              if: ${{ inputs.skip_security_scan != true && steps.scan_application.outputs.exit_code != '0' }}
               run: |
-                  echo "⚠️ Fixable high/critical application vulnerabilities found"
+                  EXIT_CODE="${{ steps.scan_application.outputs.exit_code }}"
+
+                  if [ "$EXIT_CODE" = "1" ]; then
+                      echo "❌ High/critical application vulnerabilities found"
+                      echo "These must be acknowledged via skip_security_scan for emergency deployments only."
+                  elif [ "$EXIT_CODE" = "2" ]; then
+                      echo "❌ Snyk application scan encountered an error (exit code 2)"
+                      echo "This could indicate authentication failure, network issues, or misconfiguration."
+                      echo "Please check the scan output above for details."
+                  else
+                      echo "❌ Snyk application scan failed with unexpected exit code: $EXIT_CODE"
+                  fi
+
+                  exit 1
+
+            - name: Fail workflow on container scan error
+              if: ${{ inputs.skip_security_scan != true && steps.scan_container.outputs.exit_code == '2' }}
+              run: |
+                  echo "❌ Snyk container scan encountered an error (exit code 2)"
+                  echo "This could indicate authentication failure, network issues, or misconfiguration."
+                  echo "Please check the scan output above for details."
                   exit 1
 
             - name: Fail on fixable container vulnerabilities (jq evaluation)
