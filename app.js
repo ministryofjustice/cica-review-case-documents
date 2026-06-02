@@ -11,6 +11,7 @@ import createDocumentRouter from './document/routes.js';
 import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
+import debugMiddleware from './middleware/debug/index.js';
 import enforceCrnInQuery from './middleware/enforceCrnInQuery/index.js';
 import enforceFeatureFlagsInQuery from './middleware/enforceFeatureFlagsInQuery/index.js';
 import enforceSearchTypeInQuery from './middleware/enforceSearchTypeInQuery/index.js';
@@ -185,12 +186,17 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     // Reinstates non-default feature flags into the URL so they persist across navigation
     // and can be bookmarked. Mirrors the pattern of enforceCrnInQuery.
     app.use(enforceFeatureFlagsInQuery);
+
+    // Apply feature flags middleware globally so all routes and templates have access
+    app.use(featureFlags);
+
+    // Collect debug information when debug flag is enabled
+    app.use(debugMiddleware);
     app.use(
         '/document',
         isAuthenticated,
         getCaseReferenceNumberFromQueryString,
         caseSelected,
-        featureFlags,
         createDocumentRouter()
     );
     app.use(
@@ -198,7 +204,6 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
         isAuthenticated,
         getCaseReferenceNumberFromQueryString,
         caseSelected,
-        featureFlags,
         enforceSearchTypeInQuery,
         searchRouter({ createTemplateEngineService, createSearchService })
     );

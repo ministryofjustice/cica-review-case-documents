@@ -28,7 +28,7 @@ describe('featureFlags middleware', () => {
         assert.deepEqual(res.locals.featureFlags, FEATURE_FLAG_DEFAULTS);
     });
 
-    it(`defaults: align=true, type=${DEFAULT_SEARCH_TYPE}`, () => {
+    it(`defaults: align=true, type=${DEFAULT_SEARCH_TYPE}, debug=false`, () => {
         const req = { query: {}, session: {} };
         const res = { locals: {} };
 
@@ -36,6 +36,7 @@ describe('featureFlags middleware', () => {
 
         assert.equal(req.session.featureFlags.align, true);
         assert.equal(req.session.featureFlags.type, DEFAULT_SEARCH_TYPE);
+        assert.equal(req.session.featureFlags.debug, false);
     });
 
     it('ignores unknown flags from query string', () => {
@@ -59,6 +60,15 @@ describe('featureFlags middleware', () => {
         featureFlags(req, res, () => {});
 
         assert.equal(req.session.featureFlags.align, false);
+    });
+
+    it('updates debug flag from query string', () => {
+        const req = { query: { debug: 'on' }, session: {} };
+        const res = { locals: {} };
+
+        featureFlags(req, res, () => {});
+
+        assert.equal(req.session.featureFlags.debug, true);
     });
 
     it('preserves existing feature flag values when the query string is absent', () => {
