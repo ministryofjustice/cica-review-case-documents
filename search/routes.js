@@ -1,7 +1,14 @@
 import express from 'express';
+import crypto from 'node:crypto';
 import { resolveSearchType } from '../api/search/constants/searchTypes.js';
 import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
+
+function finalizeDebugInfo(res, statusCode) {
+    if (typeof res.locals?.finalizeDebugInfo === 'function') {
+        res.locals.finalizeDebugInfo({ responseStatus: statusCode });
+    }
+}
 
 /**
  * Creates an Express router for handling search functionality.
@@ -45,6 +52,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             const searchType = getFeatureFlagValue(req.session, 'type');
 
             if (!query) {
+                finalizeDebugInfo(res, 200);
                 const html = render('search/page/index.njk', {
                     caseSelected: req.session.caseSelected,
                     caseReferenceNumber: req.session.caseReferenceNumber,
@@ -52,7 +60,9 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                     csrfToken: res.locals.csrfToken,
                     cspNonce: res.locals.cspNonce,
                     userName,
-                    searchType
+                    searchType,
+                    featureFlags: res.locals.featureFlags,
+                    debugInfo: res.locals.debugInfo
                 });
                 return res.send(html);
             }
@@ -71,7 +81,9 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 cspNonce: res.locals.cspNonce,
                 userName,
                 query,
-                searchType
+                searchType,
+                featureFlags: res.locals.featureFlags,
+                debugInfo: res.locals.debugInfo
             };
 
             req.log?.debug?.({ query, pageNumber, itemsPerPage }, 'Creating search service');
@@ -81,13 +93,36 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             });
 
             const token = createApiJwtToken(userName);
-            const response = await searchService.getSearchResults(
-                encodeURIComponent(query),
-                pageNumber,
-                itemsPerPage,
-                token,
-                { searchType }
-            );
+            const apiCallStartTime = Date.now();
+            let response;
+            try {
+                response = await searchService.getSearchResults(
+                    encodeURIComponent(query),
+                    pageNumber,
+                    itemsPerPage,
+                    token,
+                    { searchType }
+                );
+
+                res.locals.recordDebugApiCall?.({
+                    method: 'GET',
+                    path: '/api/search',
+                    statusCode: response?.statusCode || 200,
+                    durationMs: Date.now() - apiCallStartTime,
+                    source: 'search-service'
+                });
+            } catch (error) {
+                res.locals.recordDebugApiCall?.({
+                    method: 'GET',
+                    path: '/api/search',
+                    statusCode: error?.response?.statusCode || 500,
+                    durationMs: Date.now() - apiCallStartTime,
+                    source: 'search-service',
+                    errorMessage: error?.message || 'API request failed'
+                });
+                throw error;
+            }
+
             const { body } = response || {};
 
             if (body?.errors) {
@@ -96,6 +131,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                     href: `#${error.source?.pointer?.split('/')?.pop() || 'error'}`
                 }));
 
+                finalizeDebugInfo(res, 400);
                 const html = render('search/page/results.njk', templateParams);
                 return res.status(400).send(html);
             }
@@ -103,6 +139,37 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             const searchResults = body?.data?.attributes?.results;
             const hits = searchResults?.hits || [];
             const totalItemCount = Number(searchResults?.total?.value || 0);
+
+            // Populate debug info with search results if debug is enabled
+            if (res.locals.debugInfo) {
+                const queryHash = crypto
+                    .createHash('sha256')
+                    .update(String(query))
+                    .digest('hex')
+                    .slice(0, 12);
+
+                res.locals.debugInfo.search = {
+                    lastQuery: query,
+                    lastDSL: body?.data?.attributes?.dsl || null,
+                    previousDSLs: [],
+                    lastResults: {
+                        totalHits: totalItemCount,
+                        returnedHits: hits.length,
+                        searchType
+                    },
+                    executionTime: body?.data?.attributes?.executionTime || null,
+                    opensearch: {
+                        index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME || 'unknown',
+                        queryHash,
+                        totalHits: totalItemCount,
+                        returnedHits: hits.length,
+                        apiDurationMs: res.locals.debugInfo.apiCalls
+                            .slice()
+                            .reverse()
+                            .find((call) => call.path === '/api/search')?.durationMs
+                    }
+                };
+            }
 
             // Enrich each result with docUuid, searchTerm, and caseReferenceNumber (crn)
             const searchResultsWithDocUuid = hits.map((hit) => ({
@@ -132,6 +199,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 isLastPage: currentPageIndex >= totalPageCount
             };
 
+            finalizeDebugInfo(res, 200);
             const html = render('search/page/results.njk', templateParams);
             return res.status(200).send(html);
         } catch (error) {
