@@ -1,4 +1,5 @@
 import { resolveSearchType } from '../../api/search/constants/searchTypes.js';
+import { getFeatureFlagValue } from '../featureFlags/index.js';
 
 /**
  * Middleware that ensures a `type` query parameter is always present on GET /search requests.
@@ -50,7 +51,7 @@ export default function enforceSearchTypeInQuery(req, res, next) {
         searchType = resolvedType;
     } else {
         // Query value was absent or empty - fall back to session/default
-        searchType = resolveSearchType(req.session?.featureFlags?.type, req.session);
+        searchType = getFeatureFlagValue(req.session, 'type');
     }
 
     redirectQuery.set('type', searchType);
