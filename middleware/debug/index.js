@@ -57,7 +57,7 @@ export default function debugMiddleware(req, res, next) {
         apiCalls: []
     };
 
-    res.locals.recordDebugApiCall = function (call) {
+    res.locals.recordDebugApiCall = (call) => {
         if (!res.locals.debugInfo || !Array.isArray(res.locals.debugInfo.apiCalls)) {
             return;
         }
@@ -77,7 +77,7 @@ export default function debugMiddleware(req, res, next) {
         });
     };
 
-    res.locals.finalizeDebugInfo = function ({ responseStatus } = {}) {
+    res.locals.finalizeDebugInfo = ({ responseStatus } = {}) => {
         if (!res.locals.debugInfo) {
             return;
         }
@@ -91,7 +91,7 @@ export default function debugMiddleware(req, res, next) {
 
     // Store original res.json to intercept and log API responses
     const originalJson = res.json.bind(res);
-    res.json = function (data) {
+    res.json = (data) => {
         // Track successful API responses
         res.locals.recordDebugApiCall({
             method: req.method,
