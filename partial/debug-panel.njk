@@ -1,17 +1,17 @@
 {# Debug Panel - Overlay showing diagnostic information #}
+{% from "govuk/components/tag/macro.njk" import govukTag %}
+{% from "govuk/components/select/macro.njk" import govukSelect %}
 {% if featureFlags and featureFlags.debug %}
 <div class="debug-panel" role="region" aria-label="Debug Panel">
   <div class="debug-panel__header">
-    <h2 class="debug-panel__title">🔧 Debug Panel</h2>
-    <button class="debug-panel__toggle" aria-expanded="true" aria-controls="debug-content">
-      ▼
-    </button>
+    <h2 class="debug-panel__title govuk-heading-s">Debug panel</h2>
+    <button class="debug-panel__toggle" aria-expanded="true" aria-controls="debug-content" type="button">Hide</button>
   </div>
 
   <div class="debug-panel__content" id="debug-content">
     {# Request Summary #}
     <section class="debug-panel__section">
-      <h3 class="debug-panel__section-title">Request Summary</h3>
+      <h3 class="debug-panel__section-title govuk-heading-s">Request Summary</h3>
       <div class="debug-panel__info-grid">
         <div class="debug-panel__info-item">
           <span class="debug-panel__label">Correlation ID:</span>
@@ -19,7 +19,16 @@
         </div>
         <div class="debug-panel__info-item">
           <span class="debug-panel__label">Status:</span>
-          <span class="debug-panel__value">{{ debugInfo.request.responseStatus or 'pending' }}</span>
+          <span class="debug-panel__value">
+            {% if debugInfo.request.responseStatus %}
+              {{ govukTag({
+                text: debugInfo.request.responseStatus,
+                classes: 'govuk-tag--blue'
+              }) }}
+            {% else %}
+              pending
+            {% endif %}
+          </span>
         </div>
         <div class="debug-panel__info-item">
           <span class="debug-panel__label">Duration:</span>
@@ -34,7 +43,7 @@
 
     {# Environment & Session #}
     <section class="debug-panel__section">
-      <h3 class="debug-panel__section-title">Environment & Session</h3>
+      <h3 class="debug-panel__section-title govuk-heading-s">Environment & Session</h3>
       <div class="debug-panel__info-grid">
         <div class="debug-panel__info-item">
           <span class="debug-panel__label">Environment:</span>
@@ -57,16 +66,22 @@
 
     {# Feature Flags #}
     <section class="debug-panel__section">
-      <h3 class="debug-panel__section-title">Feature Flags</h3>
+      <h3 class="debug-panel__section-title govuk-heading-s">Feature Flags</h3>
       <div class="debug-panel__info-grid">
         {% for flag in debugInfo.featureFlags %}
           <div class="debug-panel__info-item">
             <span class="debug-panel__label">{{ flag.name }}:</span>
             <span class="debug-panel__value">
               {% if flag.value == true %}
-                <span class="debug-panel__badge debug-panel__badge--true">✓ On</span>
+                {{ govukTag({
+                  text: 'On',
+                  classes: 'govuk-tag--green'
+                }) }}
               {% elif flag.value == false %}
-                <span class="debug-panel__badge debug-panel__badge--false">✗ Off</span>
+                {{ govukTag({
+                  text: 'Off',
+                  classes: 'govuk-tag--red'
+                }) }}
               {% else %}
                 <span class="debug-panel__value--mono">{{ flag.value }}</span>
               {% endif %}
@@ -76,20 +91,51 @@
         {% endfor %}
       </div>
       <div class="debug-panel__control-group">
-        <label class="debug-panel__label" for="debug-search-type-select">Search Type</label>
-        <select id="debug-search-type-select" class="debug-panel__select" aria-label="Select search type">
-          <option value="hybrid-dates" {% if featureFlags.type == 'hybrid-dates' %}selected{% endif %}>hybrid-dates</option>
-          <option value="hybrid" {% if featureFlags.type == 'hybrid' %}selected{% endif %}>hybrid</option>
-          <option value="keyword-dates" {% if featureFlags.type == 'keyword-dates' %}selected{% endif %}>keyword-dates</option>
-          <option value="keyword" {% if featureFlags.type == 'keyword' %}selected{% endif %}>keyword</option>
-          <option value="semantic" {% if featureFlags.type == 'semantic' %}selected{% endif %}>semantic</option>
-        </select>
+        {{ govukSelect({
+          id: "debug-search-type-select",
+          name: "type",
+          classes: "debug-panel__select govuk-!-font-size-16",
+          label: {
+            text: "Search type",
+            classes: "govuk-label govuk-label--s"
+          },
+          formGroup: {
+            classes: "govuk-!-margin-bottom-0"
+          },
+          items: [
+            {
+              value: "hybrid-dates",
+              text: "hybrid-dates",
+              selected: featureFlags.type == "hybrid-dates"
+            },
+            {
+              value: "hybrid",
+              text: "hybrid",
+              selected: featureFlags.type == "hybrid"
+            },
+            {
+              value: "keyword-dates",
+              text: "keyword-dates",
+              selected: featureFlags.type == "keyword-dates"
+            },
+            {
+              value: "keyword",
+              text: "keyword",
+              selected: featureFlags.type == "keyword"
+            },
+            {
+              value: "semantic",
+              text: "semantic",
+              selected: featureFlags.type == "semantic"
+            }
+          ]
+        }) }}
       </div>
     </section>
 
     {# Current Request #}
     <section class="debug-panel__section">
-      <h3 class="debug-panel__section-title">Current Request</h3>
+      <h3 class="debug-panel__section-title govuk-heading-s">Current Request</h3>
       <div class="debug-panel__info-grid">
         <div class="debug-panel__info-item">
           <span class="debug-panel__label">Method:</span>
@@ -109,8 +155,10 @@
         </div>
       </div>
       {% if debugInfo.request.query | length > 0 %}
-        <details class="debug-panel__details">
-          <summary class="debug-panel__summary">Query Parameters</summary>
+        <details class="govuk-details debug-panel__details" data-module="govuk-details">
+          <summary class="govuk-details__summary debug-panel__summary">
+            <span class="govuk-details__summary-text">Query Parameters</span>
+          </summary>
           <pre class="debug-panel__code">{{ debugInfo.request.query | dump(2) }}</pre>
         </details>
       {% endif %}
@@ -119,7 +167,7 @@
     {# Search Info (if available) #}
     {% if debugInfo.search.lastQuery or debugInfo.search.lastDSL or debugInfo.search.opensearch %}
       <section class="debug-panel__section">
-        <h3 class="debug-panel__section-title">Search Info</h3>
+        <h3 class="debug-panel__section-title govuk-heading-s">Search Info</h3>
         {% if debugInfo.search.lastQuery %}
           <div class="debug-panel__info-item">
             <span class="debug-panel__label">Last Query:</span>
@@ -159,18 +207,24 @@
           </div>
         {% endif %}
         {% if debugInfo.search.lastDSL %}
-          <details class="debug-panel__details">
-            <summary class="debug-panel__summary">Current DSL Query</summary>
+          <details class="govuk-details debug-panel__details" data-module="govuk-details">
+            <summary class="govuk-details__summary debug-panel__summary">
+              <span class="govuk-details__summary-text">Current DSL Query</span>
+            </summary>
             <pre class="debug-panel__code">{{ debugInfo.search.lastDSL | dump(2) }}</pre>
           </details>
         {% endif %}
         {% if debugInfo.search.previousDSLs | length > 0 %}
-          <details class="debug-panel__details">
-            <summary class="debug-panel__summary">Previous DSLs ({{ debugInfo.search.previousDSLs | length }})</summary>
+          <details class="govuk-details debug-panel__details" data-module="govuk-details">
+            <summary class="govuk-details__summary debug-panel__summary">
+              <span class="govuk-details__summary-text">Previous DSLs ({{ debugInfo.search.previousDSLs | length }})</span>
+            </summary>
             <div class="debug-panel__dsl-history">
               {% for dsl in debugInfo.search.previousDSLs %}
-                <details class="debug-panel__dsl-item">
-                  <summary class="debug-panel__dsl-summary">{{ loop.index }}. {{ dsl.timestamp }}</summary>
+                <details class="govuk-details debug-panel__dsl-item" data-module="govuk-details">
+                  <summary class="govuk-details__summary debug-panel__dsl-summary">
+                    <span class="govuk-details__summary-text">{{ loop.index }}. {{ dsl.timestamp }}</span>
+                  </summary>
                   <pre class="debug-panel__code">{{ dsl.query | dump(2) }}</pre>
                 </details>
               {% endfor %}
@@ -183,7 +237,7 @@
     {# Document Info (if available) #}
     {% if debugInfo.document.documentId %}
       <section class="debug-panel__section">
-        <h3 class="debug-panel__section-title">Document Info</h3>
+        <h3 class="debug-panel__section-title govuk-heading-s">Document Info</h3>
         <div class="debug-panel__info-grid">
           <div class="debug-panel__info-item">
             <span class="debug-panel__label">Document ID:</span>
@@ -201,9 +255,15 @@
             <span class="debug-panel__label">Aligned:</span>
             <span class="debug-panel__value">
               {% if debugInfo.document.chunksAligned %}
-                <span class="debug-panel__badge debug-panel__badge--true">✓ Yes</span>
+                {{ govukTag({
+                  text: 'Yes',
+                  classes: 'govuk-tag--green'
+                }) }}
               {% else %}
-                <span class="debug-panel__badge debug-panel__badge--false">✗ No</span>
+                {{ govukTag({
+                  text: 'No',
+                  classes: 'govuk-tag--red'
+                }) }}
               {% endif %}
             </span>
           </div>
@@ -214,7 +274,7 @@
     {# API Calls #}
     {% if debugInfo.apiCalls | length > 0 %}
       <section class="debug-panel__section">
-        <h3 class="debug-panel__section-title">API Calls ({{ debugInfo.apiCalls | length }})</h3>
+        <h3 class="debug-panel__section-title govuk-heading-s">API Calls ({{ debugInfo.apiCalls | length }})</h3>
         <label class="debug-panel__control" for="debug-api-failures-only">
           <input id="debug-api-failures-only" type="checkbox" />
           Show failures only
@@ -245,14 +305,14 @@
     right: 0;
     width: 100%;
     max-width: 600px;
-    background: #1e1e1e;
-    color: #e0e0e0;
-    border: 2px solid #ff6b6b;
-    border-radius: 8px 8px 0 0;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
+    background: #ffffff;
+    color: #0b0c0c;
+    border: 2px solid #1d70b8;
+    border-radius: 6px 6px 0 0;
+    font-family: GDS Transport, arial, sans-serif;
+    font-size: 14px;
     z-index: 99999;
-    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 -4px 14px rgba(11, 12, 12, 0.25);
     max-height: 50vh;
     overflow-y: auto;
   }
@@ -261,38 +321,38 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
-    background: #2d2d2d;
-    border-bottom: 1px solid #444;
-    cursor: pointer;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 10px 14px;
+    background: #f3f2f1;
+    border-bottom: 1px solid #b1b4b6;
   }
 
   .debug-panel__title {
     margin: 0;
-    font-size: 14px;
-    font-weight: bold;
-    color: #ff6b6b;
+    color: #0b0c0c;
   }
 
   .debug-panel__toggle {
     background: none;
     border: none;
-    color: #ff6b6b;
+    color: #1d70b8;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: underline;
     padding: 0;
   }
 
   .debug-panel__content {
-    padding: 12px;
-    overflow-y: auto;
-    max-height: calc(50vh - 48px);
+    padding: 14px;
   }
 
   .debug-panel__section {
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #444;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #d8d8d8;
   }
 
   .debug-panel__section:last-child {
@@ -303,85 +363,63 @@
 
   .debug-panel__section-title {
     margin: 0 0 8px 0;
-    font-size: 13px;
-    font-weight: bold;
-    color: #4fc3f7;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    color: #0b0c0c;
   }
 
   .debug-panel__info-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 10px;
   }
 
   .debug-panel__info-item {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
   }
 
   .debug-panel__label {
-    color: #90caf9;
+    color: #505a5f;
     font-weight: bold;
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .debug-panel__value {
-    color: #e0e0e0;
+    color: #0b0c0c;
     word-break: break-all;
   }
 
   .debug-panel__source {
-    color: #b0bec5;
+    color: #505a5f;
     margin-left: 6px;
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .debug-panel__control-group {
-    margin-top: 10px;
+    margin-top: 12px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
   }
 
   .debug-panel__select {
     width: 100%;
     max-width: 260px;
-    background: #2d2d2d;
-    color: #e0e0e0;
-    border: 1px solid #4fc3f7;
-    border-radius: 3px;
-    padding: 6px 8px;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
+    background: #ffffff;
+    color: #0b0c0c;
+    border: 2px solid #0b0c0c;
+    border-radius: 0;
+    padding: 4px 8px;
+    font-family: GDS Transport, arial, sans-serif;
+    font-size: 14px;
   }
 
   .debug-panel__value--mono {
-    font-family: 'Courier New', monospace;
-    color: #a5d6a7;
-    background: #1e1e1e;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    color: #0b0c0c;
+    background: #f3f2f1;
     padding: 2px 4px;
     border-radius: 2px;
-  }
-
-  .debug-panel__badge {
-    display: inline-block;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 11px;
-    font-weight: bold;
-  }
-
-  .debug-panel__badge--true {
-    background: #4caf50;
-    color: white;
-  }
-
-  .debug-panel__badge--false {
-    background: #f44336;
-    color: white;
   }
 
   .debug-panel__details {
@@ -389,32 +427,32 @@
   }
 
   .debug-panel__summary {
-    color: #64b5f6;
+    color: #1d70b8;
     cursor: pointer;
-    font-weight: bold;
-    padding: 4px;
+    font-weight: 700;
+    padding: 2px 0;
     user-select: none;
   }
 
   .debug-panel__summary:hover {
-    color: #90caf9;
+    color: #003078;
   }
 
   .debug-panel__code {
-    background: #1e1e1e;
-    color: #a5d6a7;
+    background: #f3f2f1;
+    color: #0b0c0c;
     padding: 8px;
-    border-radius: 4px;
-    border: 1px solid #444;
+    border-radius: 0;
+    border: 1px solid #b1b4b6;
     margin: 8px 0;
     overflow-x: auto;
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.4;
   }
 
   .debug-panel__dsl-history {
     margin: 8px 0;
-    border-left: 2px solid #4fc3f7;
+    border-left: 4px solid #b1b4b6;
     padding-left: 8px;
   }
 
@@ -423,9 +461,9 @@
   }
 
   .debug-panel__dsl-summary {
-    color: #81c784;
+    color: #1d70b8;
     cursor: pointer;
-    font-size: 11px;
+    font-size: 12px;
     padding: 4px;
   }
 
@@ -439,9 +477,9 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: #90caf9;
+    color: #0b0c0c;
     margin-bottom: 8px;
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .debug-panel__api-call {
@@ -450,18 +488,19 @@
     gap: 8px;
     align-items: center;
     padding: 6px;
-    background: #252525;
-    border-radius: 3px;
-    font-size: 11px;
+    background: #f8f8f8;
+    border-radius: 0;
+    border: 1px solid #d8d8d8;
+    font-size: 12px;
   }
 
   .debug-panel__api-method {
     font-weight: bold;
-    color: #ffb74d;
+    color: #0b0c0c;
   }
 
   .debug-panel__api-path {
-    color: #e0e0e0;
+    color: #0b0c0c;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -471,40 +510,44 @@
     text-align: center;
     font-weight: bold;
     padding: 2px 4px;
-    border-radius: 2px;
+    border-radius: 0;
   }
 
   .debug-panel__api-status[data-status^="2"] {
-    background: #4caf50;
-    color: white;
+    background: #00703c;
+    color: #ffffff;
   }
 
   .debug-panel__api-status[data-status^="3"] {
-    background: #2196f3;
-    color: white;
+    background: #1d70b8;
+    color: #ffffff;
   }
 
   .debug-panel__api-status[data-status^="4"] {
-    background: #ff9800;
-    color: white;
+    background: #f47738;
+    color: #0b0c0c;
   }
 
   .debug-panel__api-status[data-status^="5"] {
-    background: #f44336;
-    color: white;
+    background: #d4351c;
+    color: #ffffff;
   }
 
   .debug-panel__api-time {
-    color: #999;
-    font-size: 10px;
+    color: #505a5f;
+    font-size: 11px;
     text-align: right;
   }
 
   .debug-panel__api-error {
     grid-column: 1 / -1;
-    color: #ef9a9a;
-    font-size: 10px;
+    color: #d4351c;
+    font-size: 11px;
     padding-top: 2px;
+  }
+
+  .debug-panel .govuk-tag {
+    margin-right: 4px;
   }
 
   .debug-panel__api-call--hidden {
@@ -541,10 +584,10 @@
       // Toggle content visibility
       if (newExpanded) {
         content.style.display = 'block';
-        this.textContent = '▼';
+        this.textContent = 'Hide';
       } else {
         content.style.display = 'none';
-        this.textContent = '▶';
+        this.textContent = 'Show';
       }
 
       // Save preference to localStorage
@@ -556,7 +599,7 @@
     if (!wasExpanded) {
       content.style.display = 'none';
       toggleButton.setAttribute('aria-expanded', 'false');
-      toggleButton.textContent = '▶';
+      toggleButton.textContent = 'Show';
     }
   }
 
