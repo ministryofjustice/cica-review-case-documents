@@ -64,6 +64,10 @@ export function getFeatureFlagValue(session, flagName) {
     const sessionFlagValue = session?.featureFlags?.[flagName];
     const defaultValue = FEATURE_FLAG_DEFAULTS[flagName];
 
+    if (flagName === 'type') {
+        return resolveSearchType(sessionFlagValue, session);
+    }
+
     // Validate the session value matches the expected type for this flag.
     // Boolean flags like 'align' should only accept booleans; string flags like 'type'
     // should only accept strings. Stale/corrupt sessions with mismatched types fall back
@@ -99,14 +103,8 @@ export default function featureFlags(req, res, next) {
 
     if (req.session) {
         for (const flagName of Object.keys(FEATURE_FLAG_DEFAULTS)) {
-            // Initialize with session value or default, but validate the type flag.
-            // This ensures an invalid existing session type doesn't persist and
-            // get re-added to URLs or exposed through res.locals.featureFlags.
-            if (flagName === 'type') {
-                flags[flagName] = resolveSearchType(req.session?.featureFlags?.type, req.session);
-            } else {
-                flags[flagName] = getFeatureFlagValue(req.session, flagName);
-            }
+            // Initialize from validated session values with repo defaults.
+            flags[flagName] = getFeatureFlagValue(req.session, flagName);
 
             if (typeof FEATURE_FLAG_DEFAULTS[flagName] === 'boolean') {
                 const queryFlagValue = parseFeatureFlagValue(req.query?.[flagName]);
@@ -124,10 +122,7 @@ export default function featureFlags(req, res, next) {
                 if (typeof queryType === 'string' && queryType.trim().length > 0) {
                     // Only process a non-empty type value. An empty or whitespace-only
                     // ?type= query param is treated as absent so the session value is preserved.
-                    const searchType = resolveSearchType(queryType, req.session);
-                    if (typeof searchType === 'string') {
-                        flags[flagName] = searchType;
-                    }
+                    flags[flagName] = resolveSearchType(queryType, req.session);
                 }
             } else {
                 const queryFlagValue = parseEnumFlagValue(req.query?.[flagName]);
