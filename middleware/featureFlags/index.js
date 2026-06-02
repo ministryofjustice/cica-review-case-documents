@@ -1,8 +1,12 @@
-import { DEFAULT_SEARCH_TYPE, resolveSearchType } from '../../api/search/constants/searchTypes.js';
+import SEARCH_TYPES, {
+    DEFAULT_SEARCH_TYPE,
+    resolveSearchType
+} from '../../api/search/constants/searchTypes.js';
 
 export const FEATURE_FLAG_DEFAULTS = Object.freeze({
     align: true, // toggle alignment of image highlighting to prevent or show overlapping
-    type: DEFAULT_SEARCH_TYPE // search mode: keyword, keyword-dates, semantic, hybrid, or hybrid-dates
+    type: DEFAULT_SEARCH_TYPE, // search mode: keyword, keyword-dates, semantic, hybrid, or hybrid-dates
+    debug: false // toggle debug panel showing diagnostic info, DSL, feature flags, etc.
 });
 
 /**
@@ -54,10 +58,42 @@ export function parseEnumFlagValue(value, allowedValues) {
 }
 
 /**
+ * Resolves where a feature flag value originated from.
+ *
+ * @param {import('express-session').Session | undefined} session - Request session object.
+ * @param {'align' | 'type' | 'debug'} flagName - Supported feature flag name.
+ * @returns {'default' | 'session'} Source of the resolved value.
+ */
+export function getFeatureFlagSource(session, flagName) {
+    const sessionFlagValue = session?.featureFlags?.[flagName];
+    const defaultValue = FEATURE_FLAG_DEFAULTS[flagName];
+
+    if (flagName === 'type') {
+        if (typeof sessionFlagValue === 'string') {
+            const normalisedSessionType = sessionFlagValue.trim().toLowerCase();
+            if (Object.values(SEARCH_TYPES).includes(normalisedSessionType)) {
+                return 'session';
+            }
+        }
+        return 'default';
+    }
+
+    if (typeof defaultValue === 'boolean') {
+        return typeof sessionFlagValue === 'boolean' ? 'session' : 'default';
+    }
+
+    if (typeof defaultValue === 'string') {
+        return typeof sessionFlagValue === 'string' ? 'session' : 'default';
+    }
+
+    return 'default';
+}
+
+/**
  * Resolves a feature flag value from session state, with repo defaults.
  *
  * @param {import('express-session').Session | undefined} session - Request session object.
- * @param {'align' | 'type'} flagName - Supported feature flag name.
+ * @param {'align' | 'type' | 'debug'} flagName - Supported feature flag name.
  * @returns {boolean | string} The active feature flag value.
  */
 export function getFeatureFlagValue(session, flagName) {
@@ -100,16 +136,19 @@ export function getFeatureFlagValue(session, flagName) {
  */
 export default function featureFlags(req, res, next) {
     const flags = {};
+    const provenance = {};
 
     if (req.session) {
         for (const flagName of Object.keys(FEATURE_FLAG_DEFAULTS)) {
             // Initialize from validated session values with repo defaults.
             flags[flagName] = getFeatureFlagValue(req.session, flagName);
+            provenance[flagName] = getFeatureFlagSource(req.session, flagName);
 
             if (typeof FEATURE_FLAG_DEFAULTS[flagName] === 'boolean') {
                 const queryFlagValue = parseFeatureFlagValue(req.query?.[flagName]);
                 if (typeof queryFlagValue === 'boolean') {
                     flags[flagName] = queryFlagValue;
+                    provenance[flagName] = 'query';
                 }
             } else if (flagName === 'type') {
                 // Express parses repeated query params (e.g. ?type=a&type=b) as an array.
@@ -122,17 +161,25 @@ export default function featureFlags(req, res, next) {
                 if (typeof queryType === 'string' && queryType.trim().length > 0) {
                     // Only process a non-empty type value. An empty or whitespace-only
                     // ?type= query param is treated as absent so the session value is preserved.
-                    flags[flagName] = resolveSearchType(queryType, req.session);
+                    const normalizedQueryType = queryType.trim().toLowerCase();
+                    if (Object.values(SEARCH_TYPES).includes(normalizedQueryType)) {
+                        flags[flagName] = normalizedQueryType;
+                        provenance[flagName] = 'query';
+                    } else {
+                        flags[flagName] = resolveSearchType(queryType, req.session);
+                    }
                 }
             } else {
                 const queryFlagValue = parseEnumFlagValue(req.query?.[flagName]);
                 if (typeof queryFlagValue === 'string') {
                     flags[flagName] = queryFlagValue;
+                    provenance[flagName] = 'query';
                 }
             }
         }
         req.session.featureFlags = flags;
         res.locals.featureFlags = flags;
+        res.locals.featureFlagProvenance = provenance;
     }
     next();
 }

@@ -8,10 +8,11 @@ Runtime feature flags are stored in the Express session (`req.session.featureFla
 |---|---|---|---|
 | `align` | `boolean` | `true` | Enable alignment of image highlight bounding boxes to prevent overlaps |
 | `type` | `string` | `hybrid-dates` | Search mode - controls which OpenSearch query strategy is used |
+| `debug` | `boolean` | `false` | Show debug panel with diagnostic info, DSL queries, feature flags, and API calls |
 
 ## Toggling flags via URL
 
-Boolean flags (`align`) are toggled with `on` / `off`.
+Boolean flags (`align`, `debug`) are toggled with `on` / `off`.
 
 The `type` flag accepts a recognised search type value:
 
@@ -22,7 +23,9 @@ The `type` flag accepts a recognised search type value:
 /search?type=keyword               → keyword
 /search?type=semantic              → semantic
 /search?align=off                  → disable bounding-box alignment
+/search?debug=on                   → enable debug panel
 /search?type=hybrid-dates&align=off → hybrid-dates + alignment off
+/search?type=semantic&debug=on     → semantic search + debug panel
 ```
 
 The middleware persists the resolved value to the session, so subsequent requests within the same session retain the setting without repeating the query parameter.
@@ -69,3 +72,28 @@ This centralizes all feature-flag logic in one place, making it easier to mainta
 - `parseEnumFlagValue(value, allowedValues?)` — parses a string flag, with optional allowlist.
 - `getFeatureFlagValue(session, flagName)` — **Canonical accessor.** Resolves a flag from session with proper validation and fallback to defaults. Automatically applies `resolveSearchType()` for the `type` flag.
 - `featureFlags` (default export) — Express middleware that reads query params, updates session, and sets `res.locals.featureFlags`.
+
+## Debug mode
+
+The `debug` flag enables a comprehensive debug panel that renders as an overlay on the page when enabled (`?debug=on`). 
+
+The panel displays:
+- **Environment & Session** — environment (dev/prod), user info, case reference number, request timestamp
+- **Feature Flags** — current state of all flags with visual indicators (✓/✗)
+- **Current Request** — HTTP method, path, query parameters
+- **Search Info** — search query, execution time, generated DSL, previous DSL queries
+- **Document Info** — document ID, current page, highlights count, alignment status
+- **API Calls** — traced API requests with method, path, status code, timestamp
+
+The debug panel is implemented through:
+1. **middleware/debug/index.js** — Collects diagnostic data into `res.locals.debugInfo` and intercepts `res.json()` to track API responses.
+2. **partial/debug-panel.njk** — Renders the styled overlay panel when the debug flag is active.
+
+To use debug mode in development:
+
+```
+/search?type=semantic&debug=on     → search with semantic mode + debug panel
+/document/ABC123?page=1&debug=on   → document viewer + debug panel
+```
+
+The debug panel appears as a fixed-position overlay in the bottom-right corner of the page with collapsible sections.

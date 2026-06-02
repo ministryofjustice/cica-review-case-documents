@@ -1,0 +1,587 @@
+{# Debug Panel - Overlay showing diagnostic information #}
+{% if featureFlags and featureFlags.debug %}
+<div class="debug-panel" role="region" aria-label="Debug Panel">
+  <div class="debug-panel__header">
+    <h2 class="debug-panel__title">🔧 Debug Panel</h2>
+    <button class="debug-panel__toggle" aria-expanded="true" aria-controls="debug-content">
+      ▼
+    </button>
+  </div>
+
+  <div class="debug-panel__content" id="debug-content">
+    {# Request Summary #}
+    <section class="debug-panel__section">
+      <h3 class="debug-panel__section-title">Request Summary</h3>
+      <div class="debug-panel__info-grid">
+        <div class="debug-panel__info-item">
+          <span class="debug-panel__label">Correlation ID:</span>
+          <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.correlationId or 'n/a' }}</span>
+        </div>
+        <div class="debug-panel__info-item">
+          <span class="debug-panel__label">Status:</span>
+          <span class="debug-panel__value">{{ debugInfo.request.responseStatus or 'pending' }}</span>
+        </div>
+        <div class="debug-panel__info-item">
+          <span class="debug-panel__label">Duration:</span>
+          <span class="debug-panel__value">{{ debugInfo.request.elapsedMs or 'n/a' }}{% if debugInfo.request.elapsedMs %}ms{% endif %}</span>
+        </div>
+        <div class="debug-panel__info-item">
+          <span class="debug-panel__label">Route:</span>
+          <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.route or 'n/a' }}</span>
+        </div>
+      </div>
+    </section>
+
+    {# Environment & Session #}
+    <section class="debug-panel__section">
+      <h3 class="debug-panel__section-title">Environment & Session</h3>
+      <div class="debug-panel__info-grid">
+        <div class="debug-panel__info-item">
+          <span class="debug-panel__label">Environment:</span>
+          <span class="debug-panel__value">{{ debugInfo.environment }}</span>
+        </div>
+        <div class="debug-panel__info-item">
+          <span class="debug-panel__label">User:</span>
+          <span class="debug-panel__value">{{ debugInfo.session.username }}</span>
+        </div>
+        <div class="debug-panel__info-item">
+          <span class="debug-panel__label">CRN:</span>
+          <span class="debug-panel__value">{{ debugInfo.session.caseReferenceNumber }}</span>
+        </div>
+        <div class="debug-panel__info-item">
+          <span class="debug-panel__label">Timestamp:</span>
+          <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.timestamp }}</span>
+        </div>
+      </div>
+    </section>
+
+    {# Feature Flags #}
+    <section class="debug-panel__section">
+      <h3 class="debug-panel__section-title">Feature Flags</h3>
+      <div class="debug-panel__info-grid">
+        {% for flag in debugInfo.featureFlags %}
+          <div class="debug-panel__info-item">
+            <span class="debug-panel__label">{{ flag.name }}:</span>
+            <span class="debug-panel__value">
+              {% if flag.value == true %}
+                <span class="debug-panel__badge debug-panel__badge--true">✓ On</span>
+              {% elif flag.value == false %}
+                <span class="debug-panel__badge debug-panel__badge--false">✗ Off</span>
+              {% else %}
+                <span class="debug-panel__value--mono">{{ flag.value }}</span>
+              {% endif %}
+              <span class="debug-panel__source">({{ flag.source }})</span>
+            </span>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="debug-panel__control-group">
+        <label class="debug-panel__label" for="debug-search-type-select">Search Type</label>
+        <select id="debug-search-type-select" class="debug-panel__select" aria-label="Select search type">
+          <option value="hybrid-dates" {% if featureFlags.type == 'hybrid-dates' %}selected{% endif %}>hybrid-dates</option>
+          <option value="hybrid" {% if featureFlags.type == 'hybrid' %}selected{% endif %}>hybrid</option>
+          <option value="keyword-dates" {% if featureFlags.type == 'keyword-dates' %}selected{% endif %}>keyword-dates</option>
+          <option value="keyword" {% if featureFlags.type == 'keyword' %}selected{% endif %}>keyword</option>
+          <option value="semantic" {% if featureFlags.type == 'semantic' %}selected{% endif %}>semantic</option>
+        </select>
+      </div>
+    </section>
+
+    {# Current Request #}
+    <section class="debug-panel__section">
+      <h3 class="debug-panel__section-title">Current Request</h3>
+      <div class="debug-panel__info-grid">
+        <div class="debug-panel__info-item">
+          <span class="debug-panel__label">Method:</span>
+          <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.method }}</span>
+        </div>
+        <div class="debug-panel__info-item">
+          <span class="debug-panel__label">Path:</span>
+          <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.path }}</span>
+        </div>
+        <div class="debug-panel__info-item">
+          <span class="debug-panel__label">URL:</span>
+          <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.url }}</span>
+        </div>
+        <div class="debug-panel__info-item">
+          <span class="debug-panel__label">Started At:</span>
+          <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.startedAt }}</span>
+        </div>
+      </div>
+      {% if debugInfo.request.query | length > 0 %}
+        <details class="debug-panel__details">
+          <summary class="debug-panel__summary">Query Parameters</summary>
+          <pre class="debug-panel__code">{{ debugInfo.request.query | dump(2) }}</pre>
+        </details>
+      {% endif %}
+    </section>
+
+    {# Search Info (if available) #}
+    {% if debugInfo.search.lastQuery or debugInfo.search.lastDSL or debugInfo.search.opensearch %}
+      <section class="debug-panel__section">
+        <h3 class="debug-panel__section-title">Search Info</h3>
+        {% if debugInfo.search.lastQuery %}
+          <div class="debug-panel__info-item">
+            <span class="debug-panel__label">Last Query:</span>
+            <span class="debug-panel__value">{{ debugInfo.search.lastQuery }}</span>
+          </div>
+        {% endif %}
+        {% if debugInfo.search.executionTime %}
+          <div class="debug-panel__info-item">
+            <span class="debug-panel__label">Execution Time:</span>
+            <span class="debug-panel__value">{{ debugInfo.search.executionTime }}ms</span>
+          </div>
+        {% endif %}
+        {% if debugInfo.search.opensearch %}
+          <div class="debug-panel__info-grid">
+            <div class="debug-panel__info-item">
+              <span class="debug-panel__label">OpenSearch Index:</span>
+              <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.search.opensearch.index }}</span>
+            </div>
+            <div class="debug-panel__info-item">
+              <span class="debug-panel__label">Query Hash:</span>
+              <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.search.opensearch.queryHash }}</span>
+            </div>
+            <div class="debug-panel__info-item">
+              <span class="debug-panel__label">Returned Hits:</span>
+              <span class="debug-panel__value">{{ debugInfo.search.opensearch.returnedHits }}</span>
+            </div>
+            <div class="debug-panel__info-item">
+              <span class="debug-panel__label">Total Hits:</span>
+              <span class="debug-panel__value">{{ debugInfo.search.opensearch.totalHits }}</span>
+            </div>
+            {% if debugInfo.search.opensearch.apiDurationMs %}
+              <div class="debug-panel__info-item">
+                <span class="debug-panel__label">API Duration:</span>
+                <span class="debug-panel__value">{{ debugInfo.search.opensearch.apiDurationMs }}ms</span>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+        {% if debugInfo.search.lastDSL %}
+          <details class="debug-panel__details">
+            <summary class="debug-panel__summary">Current DSL Query</summary>
+            <pre class="debug-panel__code">{{ debugInfo.search.lastDSL | dump(2) }}</pre>
+          </details>
+        {% endif %}
+        {% if debugInfo.search.previousDSLs | length > 0 %}
+          <details class="debug-panel__details">
+            <summary class="debug-panel__summary">Previous DSLs ({{ debugInfo.search.previousDSLs | length }})</summary>
+            <div class="debug-panel__dsl-history">
+              {% for dsl in debugInfo.search.previousDSLs %}
+                <details class="debug-panel__dsl-item">
+                  <summary class="debug-panel__dsl-summary">{{ loop.index }}. {{ dsl.timestamp }}</summary>
+                  <pre class="debug-panel__code">{{ dsl.query | dump(2) }}</pre>
+                </details>
+              {% endfor %}
+            </div>
+          </details>
+        {% endif %}
+      </section>
+    {% endif %}
+
+    {# Document Info (if available) #}
+    {% if debugInfo.document.documentId %}
+      <section class="debug-panel__section">
+        <h3 class="debug-panel__section-title">Document Info</h3>
+        <div class="debug-panel__info-grid">
+          <div class="debug-panel__info-item">
+            <span class="debug-panel__label">Document ID:</span>
+            <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.document.documentId }}</span>
+          </div>
+          <div class="debug-panel__info-item">
+            <span class="debug-panel__label">Page Number:</span>
+            <span class="debug-panel__value">{{ debugInfo.document.pageNumber }}</span>
+          </div>
+          <div class="debug-panel__info-item">
+            <span class="debug-panel__label">Highlights:</span>
+            <span class="debug-panel__value">{{ debugInfo.document.highlightsCount }}</span>
+          </div>
+          <div class="debug-panel__info-item">
+            <span class="debug-panel__label">Aligned:</span>
+            <span class="debug-panel__value">
+              {% if debugInfo.document.chunksAligned %}
+                <span class="debug-panel__badge debug-panel__badge--true">✓ Yes</span>
+              {% else %}
+                <span class="debug-panel__badge debug-panel__badge--false">✗ No</span>
+              {% endif %}
+            </span>
+          </div>
+        </div>
+      </section>
+    {% endif %}
+
+    {# API Calls #}
+    {% if debugInfo.apiCalls | length > 0 %}
+      <section class="debug-panel__section">
+        <h3 class="debug-panel__section-title">API Calls ({{ debugInfo.apiCalls | length }})</h3>
+        <label class="debug-panel__control" for="debug-api-failures-only">
+          <input id="debug-api-failures-only" type="checkbox" />
+          Show failures only
+        </label>
+        <div class="debug-panel__api-calls">
+          {% for call in debugInfo.apiCalls | reverse %}
+            <div class="debug-panel__api-call" data-failed="{{ call.isError }}">
+              <span class="debug-panel__api-method">{{ call.method }}</span>
+              <span class="debug-panel__api-path">{{ call.path }}</span>
+              <span class="debug-panel__api-status" data-status="{{ call.statusCode }}">{{ call.statusCode }}</span>
+              <span class="debug-panel__api-time">{{ call.durationMs or 'n/a' }}{% if call.durationMs %}ms{% endif %}</span>
+              {% if call.errorMessage %}
+                <span class="debug-panel__api-error">{{ call.errorMessage }}</span>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<style>
+  .debug-panel {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    max-width: 600px;
+    background: #1e1e1e;
+    color: #e0e0e0;
+    border: 2px solid #ff6b6b;
+    border-radius: 8px 8px 0 0;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    z-index: 99999;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.5);
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+
+  .debug-panel__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #2d2d2d;
+    border-bottom: 1px solid #444;
+    cursor: pointer;
+  }
+
+  .debug-panel__title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: bold;
+    color: #ff6b6b;
+  }
+
+  .debug-panel__toggle {
+    background: none;
+    border: none;
+    color: #ff6b6b;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+  }
+
+  .debug-panel__content {
+    padding: 12px;
+    overflow-y: auto;
+    max-height: calc(50vh - 48px);
+  }
+
+  .debug-panel__section {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #444;
+  }
+
+  .debug-panel__section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .debug-panel__section-title {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    font-weight: bold;
+    color: #4fc3f7;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .debug-panel__info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .debug-panel__info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .debug-panel__label {
+    color: #90caf9;
+    font-weight: bold;
+    font-size: 11px;
+  }
+
+  .debug-panel__value {
+    color: #e0e0e0;
+    word-break: break-all;
+  }
+
+  .debug-panel__source {
+    color: #b0bec5;
+    margin-left: 6px;
+    font-size: 10px;
+  }
+
+  .debug-panel__control-group {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .debug-panel__select {
+    width: 100%;
+    max-width: 260px;
+    background: #2d2d2d;
+    color: #e0e0e0;
+    border: 1px solid #4fc3f7;
+    border-radius: 3px;
+    padding: 6px 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+  }
+
+  .debug-panel__value--mono {
+    font-family: 'Courier New', monospace;
+    color: #a5d6a7;
+    background: #1e1e1e;
+    padding: 2px 4px;
+    border-radius: 2px;
+  }
+
+  .debug-panel__badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+
+  .debug-panel__badge--true {
+    background: #4caf50;
+    color: white;
+  }
+
+  .debug-panel__badge--false {
+    background: #f44336;
+    color: white;
+  }
+
+  .debug-panel__details {
+    margin-top: 8px;
+  }
+
+  .debug-panel__summary {
+    color: #64b5f6;
+    cursor: pointer;
+    font-weight: bold;
+    padding: 4px;
+    user-select: none;
+  }
+
+  .debug-panel__summary:hover {
+    color: #90caf9;
+  }
+
+  .debug-panel__code {
+    background: #1e1e1e;
+    color: #a5d6a7;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #444;
+    margin: 8px 0;
+    overflow-x: auto;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .debug-panel__dsl-history {
+    margin: 8px 0;
+    border-left: 2px solid #4fc3f7;
+    padding-left: 8px;
+  }
+
+  .debug-panel__dsl-item {
+    margin-bottom: 8px;
+  }
+
+  .debug-panel__dsl-summary {
+    color: #81c784;
+    cursor: pointer;
+    font-size: 11px;
+    padding: 4px;
+  }
+
+  .debug-panel__api-calls {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .debug-panel__control {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #90caf9;
+    margin-bottom: 8px;
+    font-size: 11px;
+  }
+
+  .debug-panel__api-call {
+    display: grid;
+    grid-template-columns: 60px 1fr 40px 70px;
+    gap: 8px;
+    align-items: center;
+    padding: 6px;
+    background: #252525;
+    border-radius: 3px;
+    font-size: 11px;
+  }
+
+  .debug-panel__api-method {
+    font-weight: bold;
+    color: #ffb74d;
+  }
+
+  .debug-panel__api-path {
+    color: #e0e0e0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .debug-panel__api-status {
+    text-align: center;
+    font-weight: bold;
+    padding: 2px 4px;
+    border-radius: 2px;
+  }
+
+  .debug-panel__api-status[data-status^="2"] {
+    background: #4caf50;
+    color: white;
+  }
+
+  .debug-panel__api-status[data-status^="3"] {
+    background: #2196f3;
+    color: white;
+  }
+
+  .debug-panel__api-status[data-status^="4"] {
+    background: #ff9800;
+    color: white;
+  }
+
+  .debug-panel__api-status[data-status^="5"] {
+    background: #f44336;
+    color: white;
+  }
+
+  .debug-panel__api-time {
+    color: #999;
+    font-size: 10px;
+    text-align: right;
+  }
+
+  .debug-panel__api-error {
+    grid-column: 1 / -1;
+    color: #ef9a9a;
+    font-size: 10px;
+    padding-top: 2px;
+  }
+
+  .debug-panel__api-call--hidden {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    .debug-panel {
+      max-width: 100%;
+    }
+
+    .debug-panel__info-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script nonce="{{ cspNonce }}">
+(function() {
+  // Initialize debug panel toggle functionality
+  const toggleButton = document.querySelector('.debug-panel__toggle');
+  const content = document.getElementById('debug-content');
+  const failuresOnlyCheckbox = document.getElementById('debug-api-failures-only');
+  const searchTypeSelect = document.getElementById('debug-search-type-select');
+
+  if (toggleButton && content) {
+    toggleButton.addEventListener('click', function() {
+      const isExpanded = this.getAttribute('aria-expanded') === 'true';
+      const newExpanded = !isExpanded;
+
+      // Update aria-expanded attribute
+      this.setAttribute('aria-expanded', newExpanded);
+
+      // Toggle content visibility
+      if (newExpanded) {
+        content.style.display = 'block';
+        this.textContent = '▼';
+      } else {
+        content.style.display = 'none';
+        this.textContent = '▶';
+      }
+
+      // Save preference to localStorage
+      localStorage.setItem('debug-panel-expanded', newExpanded);
+    });
+
+    // Restore previous state from localStorage
+    const wasExpanded = localStorage.getItem('debug-panel-expanded') !== 'false';
+    if (!wasExpanded) {
+      content.style.display = 'none';
+      toggleButton.setAttribute('aria-expanded', 'false');
+      toggleButton.textContent = '▶';
+    }
+  }
+
+  if (failuresOnlyCheckbox) {
+    const apiCallRows = document.querySelectorAll('.debug-panel__api-call');
+    const applyApiFilter = function() {
+      const failuresOnly = failuresOnlyCheckbox.checked;
+
+      apiCallRows.forEach((row) => {
+        const failed = row.getAttribute('data-failed') === 'true';
+        row.classList.toggle('debug-panel__api-call--hidden', failuresOnly && !failed);
+      });
+    };
+
+    failuresOnlyCheckbox.addEventListener('change', applyApiFilter);
+    applyApiFilter();
+  }
+
+  if (searchTypeSelect) {
+    searchTypeSelect.addEventListener('change', function() {
+      const nextType = this.value;
+      const url = new URL(window.location.href);
+      url.searchParams.set('type', nextType);
+      window.location.assign(url.toString());
+    });
+  }
+})();
+</script>

@@ -40,7 +40,7 @@ function createMockRes() {
 
 test('redirects to URL with non-default boolean flag when missing from query', () => {
     const req = createMockReq({
-        session: { featureFlags: { align: false, type: DEFAULT_SEARCH_TYPE } }
+        session: { featureFlags: { align: false, type: DEFAULT_SEARCH_TYPE, debug: false } }
     });
     const res = createMockRes();
     let nextCalled = false;
@@ -55,7 +55,7 @@ test('redirects to URL with non-default boolean flag when missing from query', (
 
 test('redirects to URL with non-default string flag when missing from query', () => {
     const req = createMockReq({
-        session: { featureFlags: { align: true, type: 'hybrid' } }
+        session: { featureFlags: { align: true, type: 'hybrid', debug: false } }
     });
     const res = createMockRes();
 
@@ -64,9 +64,20 @@ test('redirects to URL with non-default string flag when missing from query', ()
     assert.strictEqual(res.redirectedUrl, '/search?type=hybrid');
 });
 
+test('redirects to URL when debug flag is enabled', () => {
+    const req = createMockReq({
+        session: { featureFlags: { align: true, type: DEFAULT_SEARCH_TYPE, debug: true } }
+    });
+    const res = createMockRes();
+
+    enforceFeatureFlagsInQuery(req, res, () => {});
+
+    assert.strictEqual(res.redirectedUrl, '/search?debug=on');
+});
+
 test('redirects with multiple non-default flags appended', () => {
     const req = createMockReq({
-        session: { featureFlags: { align: false, type: 'hybrid' } }
+        session: { featureFlags: { align: false, type: 'hybrid', debug: false } }
     });
     const res = createMockRes();
 
@@ -84,6 +95,7 @@ test('ignores unsupported session feature flags when building redirect query', (
             featureFlags: {
                 align: false,
                 type: DEFAULT_SEARCH_TYPE,
+                debug: false,
                 staleFlag: 'unexpected'
             }
         }
@@ -101,7 +113,8 @@ test('does not append stale invalid session type values', () => {
         session: {
             featureFlags: {
                 align: true,
-                type: 'old-invalid-type'
+                type: 'old-invalid-type',
+                debug: false
             }
         }
     });
@@ -121,7 +134,8 @@ test('does not append non-boolean stale session align values', () => {
         session: {
             featureFlags: {
                 align: 'off',
-                type: DEFAULT_SEARCH_TYPE
+                type: DEFAULT_SEARCH_TYPE,
+                debug: false
             }
         }
     });
@@ -139,7 +153,7 @@ test('does not append non-boolean stale session align values', () => {
 test('preserves existing query parameters when redirecting', () => {
     const req = createMockReq({
         query: { crn: '12-745678', page: '2' },
-        session: { featureFlags: { align: true, type: 'hybrid' } }
+        session: { featureFlags: { align: true, type: 'hybrid', debug: false } }
     });
     const res = createMockRes();
 
@@ -157,7 +171,7 @@ test('preserves existing query parameters when redirecting', () => {
 test('does not redirect when all non-default flags are already in the query', () => {
     const req = createMockReq({
         query: { type: 'hybrid' },
-        session: { featureFlags: { align: true, type: 'hybrid' } }
+        session: { featureFlags: { align: true, type: 'hybrid', debug: false } }
     });
     const res = createMockRes();
     let nextCalled = false;
@@ -172,7 +186,7 @@ test('does not redirect when all non-default flags are already in the query', ()
 
 test('does not redirect when all flags are at their defaults', () => {
     const req = createMockReq({
-        session: { featureFlags: { align: true, type: DEFAULT_SEARCH_TYPE } }
+        session: { featureFlags: { align: true, type: DEFAULT_SEARCH_TYPE, debug: false } }
     });
     const res = createMockRes();
     let nextCalled = false;
@@ -201,7 +215,7 @@ test('does not redirect when session has no featureFlags', () => {
 test('does not redirect for non-GET requests', () => {
     const req = createMockReq({
         method: 'POST',
-        session: { featureFlags: { align: false, type: 'hybrid' } }
+        session: { featureFlags: { align: false, type: 'hybrid', debug: false } }
     });
     const res = createMockRes();
     let nextCalled = false;
@@ -221,7 +235,7 @@ test('does not redirect for non-GET requests', () => {
 test('redirects for document view page path', () => {
     const req = createMockReq({
         path: '/document/123e4567-e89b-12d3-a456-426614174000/view/page/1',
-        session: { featureFlags: { align: false, type: DEFAULT_SEARCH_TYPE } }
+        session: { featureFlags: { align: false, type: DEFAULT_SEARCH_TYPE, debug: false } }
     });
     const res = createMockRes();
 
@@ -236,7 +250,7 @@ test('redirects for document view page path', () => {
 test('redirects for document image streaming endpoint', () => {
     const req = createMockReq({
         path: '/document/123e4567-e89b-12d3-a456-426614174000/page/5',
-        session: { featureFlags: { align: true, type: 'hybrid' } }
+        session: { featureFlags: { align: true, type: 'hybrid', debug: false } }
     });
     const res = createMockRes();
 

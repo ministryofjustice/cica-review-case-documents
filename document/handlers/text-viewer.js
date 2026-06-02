@@ -109,6 +109,20 @@ export function createTextViewerHandler(
 
             const pageTextSegments = buildTextHighlightSegments(pageText, pageChunks);
 
+            // Populate debug info with document data if debug is enabled
+            if (res.locals.debugInfo) {
+                res.locals.debugInfo.document = {
+                    documentId,
+                    pageNumber,
+                    pageMetadata: {
+                        correspondenceType: pageMetadata?.correspondence_type,
+                        totalPages: pageMetadata?.total_pages
+                    },
+                    highlightsCount: pageChunks?.length || 0,
+                    chunksAligned: false // text view doesn't use alignment
+                };
+            }
+
             const html = render('document/page/textview.njk', {
                 documentId,
                 pageNumber,
@@ -123,7 +137,9 @@ export function createTextViewerHandler(
                 pageText,
                 pageTextSegments,
                 showPagination: paginationData?.results?.count > 1,
-                paginationData
+                paginationData,
+                featureFlags: res.locals.featureFlags,
+                debugInfo: res.locals.debugInfo
             });
 
             return res.send(html);
