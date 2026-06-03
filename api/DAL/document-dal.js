@@ -149,12 +149,23 @@ function createDocumentDAL({
             const dbEnd = Date.now();
             const hits = response?.body?.hits ?? {};
 
+            // Capture OpenSearch metadata for inclusion in response
+            const opensearchMetadata = {
+                totalShards: response?.body?._shards?.total,
+                failedShards: response?.body?._shards?.failed,
+                timedOut: response?.body?.timed_out
+            };
+
+            // Attach metadata to hits object for consumption by API layer
+            hits._opensearchMetadata = opensearchMetadata;
+
             logger?.info?.(
                 {
                     keyword,
                     caseReferenceNumber,
                     hitsCount: hits?.hits?.length ?? 0,
-                    dbMs: dbEnd - dbStart
+                    dbMs: dbEnd - dbStart,
+                    opensearchMetadata
                 },
                 '[OpenSearch] Search response'
             );
