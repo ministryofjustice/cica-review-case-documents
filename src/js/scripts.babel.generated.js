@@ -1,4 +1,5 @@
 import { initAll } from '/node_modules/govuk-frontend/dist/govuk/govuk-frontend.min.js';
+import './debug-panel.js';
 initAll();
 document.addEventListener('click', event => {
   const targetElement = event.target instanceof Element ? event.target : event.target instanceof Node ? event.target.parentElement : null;
