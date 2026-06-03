@@ -25,18 +25,18 @@ describe('buildQueryJson', () => {
                 bool: {
                     filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
-                        { match_phrase: { chunk_text: '12 5 24' } },
-                        { match_phrase: { chunk_text: '12 5 2024' } },
-                        { match_phrase: { chunk_text: '12 05 24' } },
-                        { match_phrase: { chunk_text: '12 05 2024' } },
-                        { match_phrase: { chunk_text: '12 May 24' } },
-                        { match_phrase: { chunk_text: '12 May 2024' } },
-                        { match_phrase: { chunk_text: '2024 5 12' } },
-                        { match_phrase: { chunk_text: '2024 05 12' } },
-                        { match_phrase: { chunk_text: '2024 May 12' } },
+                        { match_phrase: { chunk_text: { query: '12 5 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 5 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 05 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 05 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 May 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 May 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 5 12', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 05 12', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 May 12', _name: 'dates' } } },
                         {
                             match: {
-                                chunk_text: { query: 'Meeting on at office' }
+                                chunk_text: { query: 'Meeting on at office', _name: 'keyword' }
                             }
                         }
                     ],
@@ -64,7 +64,9 @@ describe('buildQueryJson', () => {
             query: {
                 bool: {
                     filter: [{ term: { case_ref: '26-711111' } }],
-                    should: [{ match: { chunk_text: { query: 'Important meeting' } } }],
+                    should: [
+                        { match: { chunk_text: { query: 'Important meeting', _name: 'keyword' } } }
+                    ],
                     minimum_should_match: 1
                 }
             }
@@ -90,34 +92,57 @@ describe('buildQueryJson', () => {
                 bool: {
                     filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
-                        { match_phrase: { chunk_text: '12 1 24' } },
-                        { match_phrase: { chunk_text: '12 1 2024' } },
-                        { match_phrase: { chunk_text: '12 01 24' } },
-                        { match_phrase: { chunk_text: '12 01 2024' } },
-                        { match_phrase: { chunk_text: '12 Jan 24' } },
-                        { match_phrase: { chunk_text: '12 Jan 2024' } },
-                        { match_phrase: { chunk_text: '12 January 24' } },
-                        { match_phrase: { chunk_text: '12 January 2024' } },
-                        { match_phrase: { chunk_text: '2024 1 12' } },
-                        { match_phrase: { chunk_text: '2024 01 12' } },
-                        { match_phrase: { chunk_text: '2024 Jan 12' } },
-                        { match_phrase: { chunk_text: '2024 January 12' } },
-                        { match_phrase: { chunk_text: '13 2 24' } },
-                        { match_phrase: { chunk_text: '13 2 2024' } },
-                        { match_phrase: { chunk_text: '13 02 24' } },
-                        { match_phrase: { chunk_text: '13 02 2024' } },
-                        { match_phrase: { chunk_text: '13 Feb 24' } },
-                        { match_phrase: { chunk_text: '13 Feb 2024' } },
-                        { match_phrase: { chunk_text: '13 February 24' } },
-                        { match_phrase: { chunk_text: '13 February 2024' } },
-                        { match_phrase: { chunk_text: '2024 2 13' } },
-                        { match_phrase: { chunk_text: '2024 02 13' } },
-                        { match_phrase: { chunk_text: '2024 Feb 13' } },
-                        { match_phrase: { chunk_text: '2024 February 13' } },
+                        { match_phrase: { chunk_text: { query: '12 1 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 1 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 01 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 01 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 Jan 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 Jan 2024', _name: 'dates' } } },
+                        {
+                            match_phrase: { chunk_text: { query: '12 January 24', _name: 'dates' } }
+                        },
+                        {
+                            match_phrase: {
+                                chunk_text: { query: '12 January 2024', _name: 'dates' }
+                            }
+                        },
+                        { match_phrase: { chunk_text: { query: '2024 1 12', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 01 12', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 Jan 12', _name: 'dates' } } },
+                        {
+                            match_phrase: {
+                                chunk_text: { query: '2024 January 12', _name: 'dates' }
+                            }
+                        },
+                        { match_phrase: { chunk_text: { query: '13 2 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 2 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 02 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 02 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 Feb 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 Feb 2024', _name: 'dates' } } },
+                        {
+                            match_phrase: {
+                                chunk_text: { query: '13 February 24', _name: 'dates' }
+                            }
+                        },
+                        {
+                            match_phrase: {
+                                chunk_text: { query: '13 February 2024', _name: 'dates' }
+                            }
+                        },
+                        { match_phrase: { chunk_text: { query: '2024 2 13', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 02 13', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 Feb 13', _name: 'dates' } } },
+                        {
+                            match_phrase: {
+                                chunk_text: { query: '2024 February 13', _name: 'dates' }
+                            }
+                        },
                         {
                             match: {
                                 chunk_text: {
-                                    query: 'Event dates: , in the calendar'
+                                    query: 'Event dates: , in the calendar',
+                                    _name: 'keyword'
                                 }
                             }
                         }
@@ -147,19 +172,20 @@ describe('buildQueryJson', () => {
                 bool: {
                     filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
-                        { match_phrase: { chunk_text: '12 5 24' } },
-                        { match_phrase: { chunk_text: '12 5 2024' } },
-                        { match_phrase: { chunk_text: '12 05 24' } },
-                        { match_phrase: { chunk_text: '12 05 2024' } },
-                        { match_phrase: { chunk_text: '12 May 24' } },
-                        { match_phrase: { chunk_text: '12 May 2024' } },
-                        { match_phrase: { chunk_text: '2024 5 12' } },
-                        { match_phrase: { chunk_text: '2024 05 12' } },
-                        { match_phrase: { chunk_text: '2024 May 12' } },
+                        { match_phrase: { chunk_text: { query: '12 5 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 5 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 05 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 05 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 May 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 May 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 5 12', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 05 12', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 May 12', _name: 'dates' } } },
                         {
                             match: {
                                 chunk_text: {
-                                    query: 'Dates: 50/04/92, , 17/10/123'
+                                    query: 'Dates: 50/04/92, , 17/10/123',
+                                    _name: 'keyword'
                                 }
                             }
                         }
@@ -189,34 +215,34 @@ describe('buildQueryJson', () => {
                 bool: {
                     filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
-                        { match_phrase: { chunk_text: '12 5 24' } },
-                        { match_phrase: { chunk_text: '12 5 2024' } },
-                        { match_phrase: { chunk_text: '12 05 24' } },
-                        { match_phrase: { chunk_text: '12 05 2024' } },
-                        { match_phrase: { chunk_text: '12 May 24' } },
-                        { match_phrase: { chunk_text: '12 May 2024' } },
-                        { match_phrase: { chunk_text: '2024 5 12' } },
-                        { match_phrase: { chunk_text: '2024 05 12' } },
-                        { match_phrase: { chunk_text: '2024 May 12' } },
-                        { match_phrase: { chunk_text: '13 5 24' } },
-                        { match_phrase: { chunk_text: '13 5 2024' } },
-                        { match_phrase: { chunk_text: '13 05 24' } },
-                        { match_phrase: { chunk_text: '13 05 2024' } },
-                        { match_phrase: { chunk_text: '13 May 24' } },
-                        { match_phrase: { chunk_text: '13 May 2024' } },
-                        { match_phrase: { chunk_text: '2024 5 13' } },
-                        { match_phrase: { chunk_text: '2024 05 13' } },
-                        { match_phrase: { chunk_text: '2024 May 13' } },
-                        { match_phrase: { chunk_text: '14 5 24' } },
-                        { match_phrase: { chunk_text: '14 5 2024' } },
-                        { match_phrase: { chunk_text: '14 05 24' } },
-                        { match_phrase: { chunk_text: '14 05 2024' } },
-                        { match_phrase: { chunk_text: '14 May 24' } },
-                        { match_phrase: { chunk_text: '14 May 2024' } },
-                        { match_phrase: { chunk_text: '2024 5 14' } },
-                        { match_phrase: { chunk_text: '2024 05 14' } },
-                        { match_phrase: { chunk_text: '2024 May 14' } },
-                        { match: { chunk_text: { query: 'Dates:,,' } } }
+                        { match_phrase: { chunk_text: { query: '12 5 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 5 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 05 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 05 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 May 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 May 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 5 12', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 05 12', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 May 12', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 5 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 5 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 05 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 05 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 May 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 May 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 5 13', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 05 13', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 May 13', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '14 5 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '14 5 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '14 05 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '14 05 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '14 May 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '14 May 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 5 14', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 05 14', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 May 14', _name: 'dates' } } },
+                        { match: { chunk_text: { query: 'Dates:,,', _name: 'keyword' } } }
                     ],
                     minimum_should_match: 1
                 }
@@ -243,28 +269,28 @@ describe('buildQueryJson', () => {
                 bool: {
                     filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
-                        { match_phrase: { chunk_text: '12 5 24' } },
-                        { match_phrase: { chunk_text: '12 5 2024' } },
-                        { match_phrase: { chunk_text: '12 05 24' } },
-                        { match_phrase: { chunk_text: '12 05 2024' } },
-                        { match_phrase: { chunk_text: '12 May 24' } },
-                        { match_phrase: { chunk_text: '12 May 2024' } },
-                        { match_phrase: { chunk_text: '2024 5 12' } },
-                        { match_phrase: { chunk_text: '2024 05 12' } },
-                        { match_phrase: { chunk_text: '2024 May 12' } },
-                        { match_phrase: { chunk_text: '13 6 24' } },
-                        { match_phrase: { chunk_text: '13 6 2024' } },
-                        { match_phrase: { chunk_text: '13 06 24' } },
-                        { match_phrase: { chunk_text: '13 06 2024' } },
-                        { match_phrase: { chunk_text: '13 Jun 24' } },
-                        { match_phrase: { chunk_text: '13 Jun 2024' } },
-                        { match_phrase: { chunk_text: '13 June 24' } },
-                        { match_phrase: { chunk_text: '13 June 2024' } },
-                        { match_phrase: { chunk_text: '2024 6 13' } },
-                        { match_phrase: { chunk_text: '2024 06 13' } },
-                        { match_phrase: { chunk_text: '2024 Jun 13' } },
-                        { match_phrase: { chunk_text: '2024 June 13' } },
-                        { match: { chunk_text: { query: 'project discussion' } } }
+                        { match_phrase: { chunk_text: { query: '12 5 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 5 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 05 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 05 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 May 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '12 May 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 5 12', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 05 12', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 May 12', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 6 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 6 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 06 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 06 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 Jun 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 Jun 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 June 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '13 June 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 6 13', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 06 13', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 Jun 13', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 June 13', _name: 'dates' } } },
+                        { match: { chunk_text: { query: 'project discussion', _name: 'keyword' } } }
                     ],
                     minimum_should_match: 1
                 }
@@ -316,7 +342,14 @@ describe('buildQueryJson', () => {
                 bool: {
                     filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
-                        { match: { chunk_text: { query: 'Meeting on 12/05/2024 at office' } } }
+                        {
+                            match: {
+                                chunk_text: {
+                                    query: 'Meeting on 12/05/2024 at office',
+                                    _name: 'keyword'
+                                }
+                            }
+                        }
                     ],
                     minimum_should_match: 1
                 }
@@ -378,7 +411,8 @@ describe('buildQueryJson', () => {
                             match: {
                                 chunk_text: {
                                     query: 'Important meeting',
-                                    boost: 20
+                                    boost: 20,
+                                    _name: 'keyword'
                                 }
                             }
                         },
@@ -388,7 +422,8 @@ describe('buildQueryJson', () => {
                                     query_text: 'Important meeting',
                                     k: 50,
                                     filter: { term: { case_ref: '26-711111' } },
-                                    boost: 4
+                                    boost: 4,
+                                    _name: 'semantic'
                                 }
                             }
                         }
@@ -441,6 +476,12 @@ describe('buildQueryJson', () => {
         };
 
         const result = buildQueryJson(params);
+        assert.equal(typeof result.min_score, 'number');
+        assert.ok(result.min_score >= 0);
+        assert.ok(result.min_score <= 1);
+
+        // Builder adds named query metadata to the neural clause.
+        expected.query.neural.embedding._name = 'semantic';
         assert.deepStrictEqual(result, expected);
     });
 
@@ -533,97 +574,153 @@ describe('buildQueryJson', () => {
                 bool: {
                     filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
-                        { match_phrase: { chunk_text: '1 2 24' } },
-                        { match_phrase: { chunk_text: '1 2 2024' } },
-                        { match_phrase: { chunk_text: '1 02 24' } },
-                        { match_phrase: { chunk_text: '1 02 2024' } },
-                        { match_phrase: { chunk_text: '1 Feb 24' } },
-                        { match_phrase: { chunk_text: '1 Feb 2024' } },
-                        { match_phrase: { chunk_text: '1 February 24' } },
-                        { match_phrase: { chunk_text: '1 February 2024' } },
-                        { match_phrase: { chunk_text: '01 2 24' } },
-                        { match_phrase: { chunk_text: '01 2 2024' } },
-                        { match_phrase: { chunk_text: '01 02 24' } },
-                        { match_phrase: { chunk_text: '01 02 2024' } },
-                        { match_phrase: { chunk_text: '01 Feb 24' } },
-                        { match_phrase: { chunk_text: '01 Feb 2024' } },
-                        { match_phrase: { chunk_text: '01 February 24' } },
-                        { match_phrase: { chunk_text: '01 February 2024' } },
-                        { match_phrase: { chunk_text: '2024 2 1' } },
-                        { match_phrase: { chunk_text: '2024 2 01' } },
-                        { match_phrase: { chunk_text: '2024 02 1' } },
-                        { match_phrase: { chunk_text: '2024 02 01' } },
-                        { match_phrase: { chunk_text: '2024 Feb 1' } },
-                        { match_phrase: { chunk_text: '2024 Feb 01' } },
-                        { match_phrase: { chunk_text: '2024 February 1' } },
-                        { match_phrase: { chunk_text: '2024 February 01' } },
-                        { match_phrase: { chunk_text: '3 4 24' } },
-                        { match_phrase: { chunk_text: '3 4 2024' } },
-                        { match_phrase: { chunk_text: '3 04 24' } },
-                        { match_phrase: { chunk_text: '3 04 2024' } },
-                        { match_phrase: { chunk_text: '3 Apr 24' } },
-                        { match_phrase: { chunk_text: '3 Apr 2024' } },
-                        { match_phrase: { chunk_text: '3 April 24' } },
-                        { match_phrase: { chunk_text: '3 April 2024' } },
-                        { match_phrase: { chunk_text: '03 4 24' } },
-                        { match_phrase: { chunk_text: '03 4 2024' } },
-                        { match_phrase: { chunk_text: '03 04 24' } },
-                        { match_phrase: { chunk_text: '03 04 2024' } },
-                        { match_phrase: { chunk_text: '03 Apr 24' } },
-                        { match_phrase: { chunk_text: '03 Apr 2024' } },
-                        { match_phrase: { chunk_text: '03 April 24' } },
-                        { match_phrase: { chunk_text: '03 April 2024' } },
-                        { match_phrase: { chunk_text: '2024 4 3' } },
-                        { match_phrase: { chunk_text: '2024 4 03' } },
-                        { match_phrase: { chunk_text: '2024 04 3' } },
-                        { match_phrase: { chunk_text: '2024 04 03' } },
-                        { match_phrase: { chunk_text: '2024 Apr 3' } },
-                        { match_phrase: { chunk_text: '2024 Apr 03' } },
-                        { match_phrase: { chunk_text: '2024 April 3' } },
-                        { match_phrase: { chunk_text: '2024 April 03' } },
-                        { match_phrase: { chunk_text: '7 8 24' } },
-                        { match_phrase: { chunk_text: '7 8 2024' } },
-                        { match_phrase: { chunk_text: '7 08 24' } },
-                        { match_phrase: { chunk_text: '7 08 2024' } },
-                        { match_phrase: { chunk_text: '7 Aug 24' } },
-                        { match_phrase: { chunk_text: '7 Aug 2024' } },
-                        { match_phrase: { chunk_text: '7 August 24' } },
-                        { match_phrase: { chunk_text: '7 August 2024' } },
-                        { match_phrase: { chunk_text: '07 8 24' } },
-                        { match_phrase: { chunk_text: '07 8 2024' } },
-                        { match_phrase: { chunk_text: '07 08 24' } },
-                        { match_phrase: { chunk_text: '07 08 2024' } },
-                        { match_phrase: { chunk_text: '07 Aug 24' } },
-                        { match_phrase: { chunk_text: '07 Aug 2024' } },
-                        { match_phrase: { chunk_text: '07 August 24' } },
-                        { match_phrase: { chunk_text: '07 August 2024' } },
-                        { match_phrase: { chunk_text: '2024 8 7' } },
-                        { match_phrase: { chunk_text: '2024 8 07' } },
-                        { match_phrase: { chunk_text: '2024 08 7' } },
-                        { match_phrase: { chunk_text: '2024 08 07' } },
-                        { match_phrase: { chunk_text: '2024 Aug 7' } },
-                        { match_phrase: { chunk_text: '2024 Aug 07' } },
-                        { match_phrase: { chunk_text: '2024 August 7' } },
-                        { match_phrase: { chunk_text: '2024 August 07' } },
-                        { match_phrase: { chunk_text: '9 10 24' } },
-                        { match_phrase: { chunk_text: '9 10 2024' } },
-                        { match_phrase: { chunk_text: '9 Oct 24' } },
-                        { match_phrase: { chunk_text: '9 Oct 2024' } },
-                        { match_phrase: { chunk_text: '9 October 24' } },
-                        { match_phrase: { chunk_text: '9 October 2024' } },
-                        { match_phrase: { chunk_text: '09 10 24' } },
-                        { match_phrase: { chunk_text: '09 10 2024' } },
-                        { match_phrase: { chunk_text: '09 Oct 24' } },
-                        { match_phrase: { chunk_text: '09 Oct 2024' } },
-                        { match_phrase: { chunk_text: '09 October 24' } },
-                        { match_phrase: { chunk_text: '09 October 2024' } },
-                        { match_phrase: { chunk_text: '2024 10 9' } },
-                        { match_phrase: { chunk_text: '2024 10 09' } },
-                        { match_phrase: { chunk_text: '2024 Oct 9' } },
-                        { match_phrase: { chunk_text: '2024 Oct 09' } },
-                        { match_phrase: { chunk_text: '2024 October 9' } },
-                        { match_phrase: { chunk_text: '2024 October 09' } },
-                        { match: { chunk_text: { query: 'Dates:' } } }
+                        { match_phrase: { chunk_text: { query: '1 2 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '1 2 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '1 02 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '1 02 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '1 Feb 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '1 Feb 2024', _name: 'dates' } } },
+                        {
+                            match_phrase: { chunk_text: { query: '1 February 24', _name: 'dates' } }
+                        },
+                        {
+                            match_phrase: {
+                                chunk_text: { query: '1 February 2024', _name: 'dates' }
+                            }
+                        },
+                        { match_phrase: { chunk_text: { query: '01 2 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '01 2 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '01 02 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '01 02 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '01 Feb 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '01 Feb 2024', _name: 'dates' } } },
+                        {
+                            match_phrase: {
+                                chunk_text: { query: '01 February 24', _name: 'dates' }
+                            }
+                        },
+                        {
+                            match_phrase: {
+                                chunk_text: { query: '01 February 2024', _name: 'dates' }
+                            }
+                        },
+                        { match_phrase: { chunk_text: { query: '2024 2 1', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 2 01', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 02 1', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 02 01', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 Feb 1', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 Feb 01', _name: 'dates' } } },
+                        {
+                            match_phrase: {
+                                chunk_text: { query: '2024 February 1', _name: 'dates' }
+                            }
+                        },
+                        {
+                            match_phrase: {
+                                chunk_text: { query: '2024 February 01', _name: 'dates' }
+                            }
+                        },
+                        { match_phrase: { chunk_text: { query: '3 4 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '3 4 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '3 04 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '3 04 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '3 Apr 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '3 Apr 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '3 April 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '3 April 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '03 4 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '03 4 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '03 04 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '03 04 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '03 Apr 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '03 Apr 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '03 April 24', _name: 'dates' } } },
+                        {
+                            match_phrase: { chunk_text: { query: '03 April 2024', _name: 'dates' } }
+                        },
+                        { match_phrase: { chunk_text: { query: '2024 4 3', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 4 03', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 04 3', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 04 03', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 Apr 3', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 Apr 03', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 April 3', _name: 'dates' } } },
+                        {
+                            match_phrase: { chunk_text: { query: '2024 April 03', _name: 'dates' } }
+                        },
+                        { match_phrase: { chunk_text: { query: '7 8 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '7 8 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '7 08 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '7 08 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '7 Aug 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '7 Aug 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '7 August 24', _name: 'dates' } } },
+                        {
+                            match_phrase: { chunk_text: { query: '7 August 2024', _name: 'dates' } }
+                        },
+                        { match_phrase: { chunk_text: { query: '07 8 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '07 8 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '07 08 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '07 08 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '07 Aug 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '07 Aug 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '07 August 24', _name: 'dates' } } },
+                        {
+                            match_phrase: {
+                                chunk_text: { query: '07 August 2024', _name: 'dates' }
+                            }
+                        },
+                        { match_phrase: { chunk_text: { query: '2024 8 7', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 8 07', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 08 7', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 08 07', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 Aug 7', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 Aug 07', _name: 'dates' } } },
+                        {
+                            match_phrase: { chunk_text: { query: '2024 August 7', _name: 'dates' } }
+                        },
+                        {
+                            match_phrase: {
+                                chunk_text: { query: '2024 August 07', _name: 'dates' }
+                            }
+                        },
+                        { match_phrase: { chunk_text: { query: '9 10 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '9 10 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '9 Oct 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '9 Oct 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '9 October 24', _name: 'dates' } } },
+                        {
+                            match_phrase: {
+                                chunk_text: { query: '9 October 2024', _name: 'dates' }
+                            }
+                        },
+                        { match_phrase: { chunk_text: { query: '09 10 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '09 10 2024', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '09 Oct 24', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '09 Oct 2024', _name: 'dates' } } },
+                        {
+                            match_phrase: { chunk_text: { query: '09 October 24', _name: 'dates' } }
+                        },
+                        {
+                            match_phrase: {
+                                chunk_text: { query: '09 October 2024', _name: 'dates' }
+                            }
+                        },
+                        { match_phrase: { chunk_text: { query: '2024 10 9', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 10 09', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 Oct 9', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2024 Oct 09', _name: 'dates' } } },
+                        {
+                            match_phrase: {
+                                chunk_text: { query: '2024 October 9', _name: 'dates' }
+                            }
+                        },
+                        {
+                            match_phrase: {
+                                chunk_text: { query: '2024 October 09', _name: 'dates' }
+                            }
+                        },
+                        { match: { chunk_text: { query: 'Dates:', _name: 'keyword' } } }
                     ],
                     minimum_should_match: 1
                 }
@@ -651,38 +748,43 @@ describe('buildQueryJson', () => {
                 bool: {
                     filter: [{ term: { case_ref: '26-711111' } }],
                     should: [
-                        { match_phrase: { chunk_text: '20 4 22' } },
-                        { match_phrase: { chunk_text: '20 4 2022' } },
-                        { match_phrase: { chunk_text: '20 04 22' } },
-                        { match_phrase: { chunk_text: '20 04 2022' } },
-                        { match_phrase: { chunk_text: '20 Apr 22' } },
-                        { match_phrase: { chunk_text: '20 Apr 2022' } },
-                        { match_phrase: { chunk_text: '20 April 22' } },
-                        { match_phrase: { chunk_text: '20 April 2022' } },
-                        { match_phrase: { chunk_text: '2022 4 20' } },
-                        { match_phrase: { chunk_text: '2022 04 20' } },
-                        { match_phrase: { chunk_text: '2022 Apr 20' } },
-                        { match_phrase: { chunk_text: '2022 April 20' } },
-                        { match_phrase: { chunk_text: 'Jun 22' } },
-                        { match_phrase: { chunk_text: 'Jun 2022' } },
-                        { match_phrase: { chunk_text: 'June 22' } },
-                        { match_phrase: { chunk_text: 'June 2022' } },
-                        { match_phrase: { chunk_text: '15 7 22' } },
-                        { match_phrase: { chunk_text: '15 7 2022' } },
-                        { match_phrase: { chunk_text: '15 07 22' } },
-                        { match_phrase: { chunk_text: '15 07 2022' } },
-                        { match_phrase: { chunk_text: '15 Jul 22' } },
-                        { match_phrase: { chunk_text: '15 Jul 2022' } },
-                        { match_phrase: { chunk_text: '15 July 22' } },
-                        { match_phrase: { chunk_text: '15 July 2022' } },
-                        { match_phrase: { chunk_text: '2022 7 15' } },
-                        { match_phrase: { chunk_text: '2022 07 15' } },
-                        { match_phrase: { chunk_text: '2022 Jul 15' } },
-                        { match_phrase: { chunk_text: '2022 July 15' } },
+                        { match_phrase: { chunk_text: { query: '20 4 22', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '20 4 2022', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '20 04 22', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '20 04 2022', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '20 Apr 22', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '20 Apr 2022', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '20 April 22', _name: 'dates' } } },
+                        {
+                            match_phrase: { chunk_text: { query: '20 April 2022', _name: 'dates' } }
+                        },
+                        { match_phrase: { chunk_text: { query: '2022 4 20', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2022 04 20', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2022 Apr 20', _name: 'dates' } } },
+                        {
+                            match_phrase: { chunk_text: { query: '2022 April 20', _name: 'dates' } }
+                        },
+                        { match_phrase: { chunk_text: { query: 'Jun 22', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: 'Jun 2022', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: 'June 22', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: 'June 2022', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '15 7 22', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '15 7 2022', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '15 07 22', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '15 07 2022', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '15 Jul 22', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '15 Jul 2022', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '15 July 22', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '15 July 2022', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2022 7 15', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2022 07 15', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2022 Jul 15', _name: 'dates' } } },
+                        { match_phrase: { chunk_text: { query: '2022 July 15', _name: 'dates' } } },
                         {
                             match: {
                                 chunk_text: {
-                                    query: 'Dates: , through to the end of , with a review on'
+                                    query: 'Dates: , through to the end of , with a review on',
+                                    _name: 'keyword'
                                 }
                             }
                         }
@@ -715,7 +817,8 @@ describe('buildQueryJson', () => {
                         {
                             match: {
                                 chunk_text: {
-                                    query: 'Event on 17102024 was successful'
+                                    query: 'Event on 17102024 was successful',
+                                    _name: 'keyword'
                                 }
                             }
                         }
@@ -936,7 +1039,7 @@ describe('buildQueryJson', () => {
         assert.deepStrictEqual(result.phrases, ['31/02/2024']);
         assert.deepStrictEqual(result.phrasesVariants, ['31/02/2024']);
         assert.deepStrictEqual(result.shouldClauses, [
-            { match_phrase: { chunk_text: '31/02/2024' } }
+            { match_phrase: { chunk_text: { query: '31/02/2024', _name: 'dates' } } }
         ]);
     });
 
@@ -1031,7 +1134,9 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             safePageNumber: 4,
             documentId: 'doc-123',
-            matchPhraseClauses: [{ match_phrase: { chunk_text: '12 May 2024' } }],
+            matchPhraseClauses: [
+                { match_phrase: { chunk_text: { query: '12 May 2024', _name: 'dates' } } }
+            ],
             queryDslConfig: {
                 semanticK: 9,
                 semanticMinScore: 0.77
@@ -1046,7 +1151,10 @@ describe('buildQueryJson', () => {
         ]);
         assert.deepStrictEqual(result.query.bool.should[0], {
             bool: {
-                should: [{ match_phrase: { chunk_text: '12 May 2024' } }],
+                _name: 'dates',
+                should: [
+                    { match_phrase: { chunk_text: { query: '12 May 2024', _name: 'dates' } } }
+                ],
                 minimum_should_match: 1
             }
         });
@@ -1063,7 +1171,8 @@ describe('buildQueryJson', () => {
                                 { term: { page_number: 4 } }
                             ]
                         }
-                    }
+                    },
+                    _name: 'semantic'
                 }
             }
         });

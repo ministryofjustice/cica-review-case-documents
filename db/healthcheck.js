@@ -30,6 +30,7 @@ export async function checkOpenSearchHealth(proxyUrl, timeout = 10, interval = 1
             }
             console.warn(`OpenSearch unhealthy: status=${status}`);
         } catch (e) {
+            console.log({ e });
             console.warn(`OpenSearch not reachable: ${e.message}`);
         }
         await new Promise((res) => setTimeout(res, interval));
