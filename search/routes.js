@@ -4,6 +4,13 @@ import { resolveSearchType } from '../api/search/constants/searchTypes.js';
 import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 
+/**
+ * Finalizes request-scoped debug information with the outbound response status.
+ *
+ * @param {express.Response} res - Express response object.
+ * @param {number} statusCode - HTTP status code returned to the client.
+ * @returns {void}
+ */
 function finalizeDebugInfo(res, statusCode) {
     if (typeof res.locals?.finalizeDebugInfo === 'function') {
         res.locals.finalizeDebugInfo({ responseStatus: statusCode });
@@ -24,6 +31,14 @@ function finalizeDebugInfo(res, statusCode) {
 function createSearchRouter({ createTemplateEngineService, createSearchService }) {
     const router = express.Router();
 
+    /**
+     * Handles search form submissions and normalizes input into query-string based navigation.
+     *
+     * @param {express.Request} req - Express request containing body fields.
+     * @param {express.Response} res - Express response used for redirects.
+     * @param {express.NextFunction} next - Express next middleware callback.
+     * @returns {void}
+     */
     router.post('/', (req, res, next) => {
         try {
             const { query } = req.body;
@@ -42,6 +57,14 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
         }
     });
 
+    /**
+     * Renders search index/results pages and coordinates API-backed search execution.
+     *
+     * @param {express.Request} req - Express request with query parameters and session context.
+     * @param {express.Response} res - Express response used to send rendered HTML.
+     * @param {express.NextFunction} next - Express next middleware callback.
+     * @returns {Promise<void>}
+     */
     router.get('/', async (req, res, next) => {
         try {
             const templateEngineService = createTemplateEngineService();

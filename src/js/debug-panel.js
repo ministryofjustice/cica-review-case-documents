@@ -1,3 +1,8 @@
+/**
+ * Reads and parses debug payload JSON embedded in the page.
+ *
+ * @returns {Record<string, unknown> | null} Parsed debug info object, or null when unavailable/invalid.
+ */
 function parseDebugInfoFromDom() {
     const debugInfoElement = document.getElementById('debug-panel-data');
     if (!debugInfoElement) {
@@ -12,6 +17,11 @@ function parseDebugInfoFromDom() {
     }
 }
 
+/**
+ * Wires up all client-side debug panel interactions.
+ *
+ * @returns {void}
+ */
 function initializeDebugPanel() {
     const panel = document.querySelector('.debug-panel');
     if (!panel) {
@@ -25,6 +35,12 @@ function initializeDebugPanel() {
     const copySnapshotButton = panel.querySelector('#debug-copy-snapshot');
     const copyStatus = panel.querySelector('#debug-copy-status');
 
+    /**
+     * Shows or hides the panel and synchronizes persisted/ARIA state.
+     *
+     * @param {boolean} show - True to show the panel, false to hide it.
+     * @returns {void}
+     */
     const togglePanel = (show) => {
         if (show) {
             panel.classList.add('debug-panel--visible');
@@ -66,6 +82,11 @@ function initializeDebugPanel() {
     if (failuresOnlyCheckbox) {
         const apiCallRows = panel.querySelectorAll('.debug-panel__api-call');
 
+        /**
+         * Applies the "failures only" filter to API call rows.
+         *
+         * @returns {void}
+         */
         const applyApiFilter = () => {
             const failuresOnly = failuresOnlyCheckbox.checked;
             apiCallRows.forEach((row) => {
