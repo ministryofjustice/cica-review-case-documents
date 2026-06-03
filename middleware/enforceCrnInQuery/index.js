@@ -108,6 +108,12 @@ const enforceCrnInQuery = (req, res, next) => {
         delete newQuery.caseReferenceNumber;
 
         const queryString = new URLSearchParams(newQuery).toString();
+
+        // Record redirect for debug panel
+        if (typeof res.locals?.recordDebugRedirect === 'function') {
+            res.locals.recordDebugRedirect('CRN missing from query (enforced from session)');
+        }
+
         return res.redirect(`${safePath}?${queryString}`);
     }
     next();

@@ -54,7 +54,39 @@ export default function debugMiddleware(req, res, next) {
             chunksAligned: false
         },
         // API call tracking
-        apiCalls: []
+        apiCalls: [],
+        // Redirect trace
+        redirects: [],
+        // Validation errors
+        validationErrors: [],
+        // OpenSearch metadata
+        opensearchMetadata: {
+            totalShards: null,
+            failedShards: null,
+            timedOut: false
+        }
+    };
+
+    res.locals.recordDebugRedirect = (reason) => {
+        if (!res.locals.debugInfo || !Array.isArray(res.locals.debugInfo.redirects)) {
+            return;
+        }
+        res.locals.debugInfo.redirects.push({
+            timestamp: new Date().toISOString(),
+            reason,
+            url: req.originalUrl
+        });
+    };
+
+    res.locals.recordDebugValidationError = (field, message) => {
+        if (!res.locals.debugInfo || !Array.isArray(res.locals.debugInfo.validationErrors)) {
+            return;
+        }
+        res.locals.debugInfo.validationErrors.push({
+            field,
+            message,
+            timestamp: new Date().toISOString()
+        });
     };
 
     res.locals.recordDebugApiCall = (call) => {

@@ -148,6 +148,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                     .digest('hex')
                     .slice(0, 12);
 
+                const opensearchMetadata = searchResults?._opensearchMetadata || {};
                 res.locals.debugInfo.search = {
                     lastQuery: query,
                     lastDSL: body?.data?.attributes?.dsl || null,
@@ -166,7 +167,10 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                         apiDurationMs: res.locals.debugInfo.apiCalls
                             .slice()
                             .reverse()
-                            .find((call) => call.path === '/api/search')?.durationMs
+                            .find((call) => call.path === '/api/search')?.durationMs,
+                        totalShards: opensearchMetadata.totalShards,
+                        failedShards: opensearchMetadata.failedShards,
+                        timedOut: opensearchMetadata.timedOut
                     }
                 };
             }
