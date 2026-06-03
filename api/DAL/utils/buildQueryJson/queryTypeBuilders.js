@@ -217,7 +217,10 @@ export function buildDateAwareShouldClauses({ keyword, enableDateExtraction = tr
         phrasesVariants.forEach((phrase) => {
             shouldClauses.push({
                 match_phrase: {
-                    chunk_text: phrase
+                    chunk_text: {
+                        query: phrase,
+                        _name: 'dates'
+                    }
                 }
             });
         });
@@ -227,7 +230,8 @@ export function buildDateAwareShouldClauses({ keyword, enableDateExtraction = tr
         shouldClauses.push({
             match: {
                 chunk_text: {
-                    query: remainingText
+                    query: remainingText,
+                    _name: 'keyword'
                 }
             }
         });
@@ -312,6 +316,7 @@ export function buildSemanticQuery({
 
         queryJson.query.bool.should.push({
             bool: {
+                _name: 'dates',
                 should: matchPhraseClauses,
                 minimum_should_match: 1
             }
@@ -323,7 +328,8 @@ export function buildSemanticQuery({
                 embedding: {
                     query_text: keyword,
                     k: semanticK,
-                    filter: neuralFilter
+                    filter: neuralFilter,
+                    _name: 'semantic'
                 }
             }
         });
@@ -338,6 +344,9 @@ export function buildSemanticQuery({
         semanticK,
         semanticMinScore: semanticOnlyMinScore
     });
+
+    // Name the neural query so matched_queries on each hit includes 'semantic'
+    queryJson.query.neural.embedding._name = 'semantic';
 
     if (documentId) {
         // Promote a bare term filter to a bool.filter wrapper so we can push
@@ -414,7 +423,8 @@ function buildHybridQuery({
             match: {
                 chunk_text: {
                     ...matchClause.match.chunk_text,
-                    boost: lexicalBoost
+                    boost: lexicalBoost,
+                    _name: 'keyword'
                 }
             }
         });
@@ -424,6 +434,7 @@ function buildHybridQuery({
     if (matchPhraseClauses.length > 0) {
         queryJson.query.bool.should.push({
             bool: {
+                _name: 'dates',
                 should: matchPhraseClauses,
                 minimum_should_match: 1,
                 boost: dateBoost
@@ -440,7 +451,8 @@ function buildHybridQuery({
                     query_text: keyword,
                     k: semanticK,
                     filter: neuralFilter,
-                    boost: neuralBoost
+                    boost: neuralBoost,
+                    _name: 'semantic'
                 }
             }
         });

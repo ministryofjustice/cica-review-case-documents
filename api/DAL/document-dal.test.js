@@ -169,7 +169,7 @@ describe('document-dal', () => {
         });
 
         const result = await dal.getDocumentsChunksByKeyword('keyword', 1, 10);
-        assert.deepEqual(result, []);
+        assert.strictEqual(result.length, 0);
     });
 
     it('Should call warn when OpenSearch returns zero hits in hits.hits', async () => {
@@ -198,7 +198,14 @@ describe('document-dal', () => {
 
         const result = await dal.getDocumentsChunksByKeyword('keyword', 1, 10);
 
-        assert.deepStrictEqual(result, { hits: [] });
+        assert.deepStrictEqual(result, {
+            hits: [],
+            _opensearchMetadata: {
+                totalShards: undefined,
+                failedShards: undefined,
+                timedOut: undefined
+            }
+        });
         assert.strictEqual(warnCalls.length, 1);
         assert.strictEqual(warnCalls[0].message, '[OpenSearch] No results found for query');
         assert.strictEqual(warnCalls[0].context.keyword, 'keyword');
@@ -333,7 +340,7 @@ describe('document-dal', () => {
             });
 
             const result = await dal.getDocumentsChunksByKeyword('keyword', 1, 10);
-            assert.deepEqual(result, []);
+            assert.strictEqual(result.length, 0);
         });
 
         it('should handle logger without warn method in getDocumentsChunksByKeyword', async () => {
@@ -352,7 +359,7 @@ describe('document-dal', () => {
             });
 
             const result = await dal.getDocumentsChunksByKeyword('keyword', 1, 10);
-            assert.deepEqual(result, []);
+            assert.strictEqual(result.length, 0);
         });
 
         it('should handle missing logger in getDocumentsChunksByKeyword - error fallback', async () => {
