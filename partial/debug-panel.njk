@@ -294,6 +294,83 @@
         </div>
       </section>
     {% endif %}
+
+    {# Redirects (if any) #}
+    {% if debugInfo.redirects | length > 0 %}
+      <section class="debug-panel__section">
+        <h3 class="debug-panel__section-title govuk-heading-s">Redirects ({{ debugInfo.redirects | length }})</h3>
+        <div class="debug-panel__redirects">
+          {% for redirect in debugInfo.redirects %}
+            <div class="debug-panel__redirect-item">
+              <span class="debug-panel__redirect-reason">{{ redirect.reason }}</span>
+              <span class="debug-panel__redirect-time">{{ redirect.timestamp }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    {# Validation Errors (if any) #}
+    {% if debugInfo.validationErrors | length > 0 %}
+      <section class="debug-panel__section">
+        <h3 class="debug-panel__section-title govuk-heading-s">Validation Errors ({{ debugInfo.validationErrors | length }})</h3>
+        <div class="debug-panel__validation-errors">
+          {% for error in debugInfo.validationErrors %}
+            <div class="debug-panel__error-item">
+              <span class="debug-panel__error-field">{{ error.field }}</span>
+              <span class="debug-panel__error-message">{{ error.message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    {# OpenSearch Metadata (if search happened) #}
+    {% if debugInfo.search.opensearch and debugInfo.search.opensearch.totalShards %}
+      <section class="debug-panel__section">
+        <h3 class="debug-panel__section-title govuk-heading-s">OpenSearch Metadata</h3>
+        <div class="debug-panel__info-grid">
+          <div class="debug-panel__info-item">
+            <span class="debug-panel__label">Total Shards:</span>
+            <span class="debug-panel__value">{{ debugInfo.search.opensearch.totalShards }}</span>
+          </div>
+          <div class="debug-panel__info-item">
+            <span class="debug-panel__label">Failed Shards:</span>
+            <span class="debug-panel__value">
+              {% if debugInfo.search.opensearch.failedShards %}
+                {{ govukTag({
+                  text: debugInfo.search.opensearch.failedShards,
+                  classes: 'govuk-tag--red'
+                }) }}
+              {% else %}
+                0
+              {% endif %}
+            </span>
+          </div>
+          <div class="debug-panel__info-item">
+            <span class="debug-panel__label">Timed Out:</span>
+            <span class="debug-panel__value">
+              {% if debugInfo.search.opensearch.timedOut %}
+                {{ govukTag({
+                  text: 'Yes',
+                  classes: 'govuk-tag--red'
+                }) }}
+              {% else %}
+                {{ govukTag({
+                  text: 'No',
+                  classes: 'govuk-tag--green'
+                }) }}
+              {% endif %}
+            </span>
+          </div>
+        </div>
+      </section>
+    {% endif %}
+
+    {# Copy Snapshot #}
+    <div class="debug-panel__footer">
+      <button id="debug-copy-snapshot" class="debug-panel__copy-btn" type="button" title="Copy debug info as JSON">📋 Copy Snapshot</button>
+    </div>
   </div>
 </div>
 {% endif %}
@@ -554,6 +631,87 @@
     display: none;
   }
 
+  .debug-panel__redirects {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .debug-panel__redirect-item {
+    display: grid;
+    grid-template-columns: 1fr 100px;
+    gap: 8px;
+    padding: 6px;
+    background: #f8f8f8;
+    border: 1px solid #d8d8d8;
+    font-size: 12px;
+  }
+
+  .debug-panel__redirect-reason {
+    color: #0b0c0c;
+  }
+
+  .debug-panel__redirect-time {
+    color: #505a5f;
+    font-size: 10px;
+    text-align: right;
+  }
+
+  .debug-panel__validation-errors {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .debug-panel__error-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px;
+    background: #f8f8f8;
+    border: 1px solid #d8d8d8;
+    font-size: 12px;
+  }
+
+  .debug-panel__error-field {
+    color: #0b0c0c;
+    font-weight: 700;
+  }
+
+  .debug-panel__error-message {
+    color: #d4351c;
+    font-size: 11px;
+  }
+
+  .debug-panel__footer {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding-top: 12px;
+    border-top: 1px solid #d8d8d8;
+    margin-top: 12px;
+  }
+
+  .debug-panel__copy-btn {
+    background: #1d70b8;
+    color: #ffffff;
+    border: none;
+    border-radius: 0;
+    padding: 6px 12px;
+    font-family: GDS Transport, arial, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .debug-panel__copy-btn:hover {
+    background: #003078;
+  }
+
+  .debug-panel__copy-btn:active {
+    background: #002d5f;
+  }
+
   @media (max-width: 768px) {
     .debug-panel {
       max-width: 100%;
@@ -567,6 +725,9 @@
 
 <script nonce="{{ cspNonce }}">
 (function() {
+  // Expose debugInfo to window for copying
+  window.debugInfo = {{ debugInfo | dump | safe }};
+
   // Initialize debug panel toggle functionality
   const toggleButton = document.querySelector('.debug-panel__toggle');
   const content = document.getElementById('debug-content');
@@ -624,6 +785,24 @@
       const url = new URL(window.location.href);
       url.searchParams.set('type', nextType);
       window.location.assign(url.toString());
+    });
+  }
+
+  const copySnapshotBtn = document.getElementById('debug-copy-snapshot');
+  if (copySnapshotBtn && window.debugInfo) {
+    copySnapshotBtn.addEventListener('click', function() {
+      try {
+        const snapshot = JSON.stringify(window.debugInfo, null, 2);
+        navigator.clipboard.writeText(snapshot).then(() => {
+          const originalText = this.textContent;
+          this.textContent = '✓ Copied!';
+          setTimeout(() => {
+            this.textContent = originalText;
+          }, 2000);
+        });
+      } catch (err) {
+        console.error('Failed to copy snapshot:', err);
+      }
     });
   }
 })();
