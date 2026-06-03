@@ -177,11 +177,21 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
 
             // Enrich each result with docUuid, searchTerm, and caseReferenceNumber (crn)
             const searchResultsWithDocUuid = hits.map((hit) => ({
+                // OpenSearch may return repeated or unknown matched query names.
+                // Keep only the constituent labels we expose in debug UI.
+                matchSources: Array.from(
+                    new Set(
+                        (hit?.matched_queries || []).filter(
+                            (name) => name === 'keyword' || name === 'semantic' || name === 'dates'
+                        )
+                    )
+                ),
                 ...hit,
                 docUuid: hit._source?.source_doc_id || 0,
                 searchTerm: query,
                 searchType,
-                caseReferenceNumber: req.session?.caseReferenceNumber
+                caseReferenceNumber: req.session?.caseReferenceNumber,
+                featureFlags: res.locals.featureFlags
             }));
 
             templateParams.searchResults = searchResultsWithDocUuid;

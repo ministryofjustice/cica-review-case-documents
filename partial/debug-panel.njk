@@ -712,6 +712,46 @@
     background: #002d5f;
   }
 
+  /* Search result match-source tags (visible in debug mode inline with each result) */
+  .search-result-debug {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 6px 0 4px;
+  }
+
+  .search-result-debug__tag {
+    display: inline-block;
+    padding: 2px 8px;
+    font-family: GDS Transport, arial, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 2px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    background: #505a5f;
+    color: #ffffff;
+  }
+
+  .search-result-debug__tag--keyword {
+    background: #1d70b8;
+  }
+
+  .search-result-debug__tag--semantic {
+    background: #4c2c92;
+  }
+
+  .search-result-debug__tag--dates {
+    background: #d4351c;
+  }
+
+  .search-result-debug__score {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 11px;
+    color: #505a5f;
+  }
+
   @media (max-width: 768px) {
     .debug-panel {
       max-width: 100%;
