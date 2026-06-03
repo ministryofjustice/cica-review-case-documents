@@ -1,14 +1,59 @@
 {# Debug Panel - Overlay showing diagnostic information #}
 {% from "govuk/components/tag/macro.njk" import govukTag %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
 {% if featureFlags and featureFlags.debug %}
-<div class="debug-panel" role="region" aria-label="Debug Panel">
+<button id="debug-panel-toggle" class="debug-panel-trigger" type="button" aria-expanded="false" title="Toggle debug panel">Debug info</button>
+<div class="debug-panel" role="region" aria-label="Request debug information">
   <div class="debug-panel__header">
     <h2 class="debug-panel__title govuk-heading-s">Debug panel</h2>
-    <button class="debug-panel__toggle" aria-expanded="true" aria-controls="debug-content" type="button">Hide</button>
+    <div class="debug-panel__header-actions">
+      {{ govukButton({
+        text: 'Copy snapshot',
+        classes: 'govuk-button--secondary govuk-!-margin-bottom-0 debug-panel__copy-btn',
+        attributes: {
+          id: 'debug-copy-snapshot',
+          title: 'Copy debug info as JSON'
+        },
+        type: 'button'
+      }) }}
+      <button class="debug-panel__toggle govuk-!-margin-bottom-0" aria-expanded="true" aria-controls="debug-content" type="button">Hide</button>
+    </div>
+    <span id="debug-copy-status" class="govuk-visually-hidden" aria-live="polite"></span>
   </div>
-
   <div class="debug-panel__content" id="debug-content">
+    {# Search Controls #}
+    <section class="debug-panel__section">
+      <h3 class="debug-panel__section-title govuk-heading-s">Search Type</h3>
+      <div class="debug-panel__control-group">
+        <fieldset class="debug-panel__fieldset">
+          <legend class="debug-panel__legend govuk-label govuk-label--s">Choose search type</legend>
+          <div class="debug-panel__radio-group">
+            <div class="debug-panel__radio-item">
+              <input id="debug-search-type-hybrid-dates" type="radio" name="debug-search-type" value="hybrid-dates" class="debug-panel__radio" {% if featureFlags.type == "hybrid-dates" %}checked{% endif %} />
+              <label for="debug-search-type-hybrid-dates" class="debug-panel__radio-label">hybrid-dates</label>
+            </div>
+            <div class="debug-panel__radio-item">
+              <input id="debug-search-type-hybrid" type="radio" name="debug-search-type" value="hybrid" class="debug-panel__radio" {% if featureFlags.type == "hybrid" %}checked{% endif %} />
+              <label for="debug-search-type-hybrid" class="debug-panel__radio-label">hybrid</label>
+            </div>
+            <div class="debug-panel__radio-item">
+              <input id="debug-search-type-keyword-dates" type="radio" name="debug-search-type" value="keyword-dates" class="debug-panel__radio" {% if featureFlags.type == "keyword-dates" %}checked{% endif %} />
+              <label for="debug-search-type-keyword-dates" class="debug-panel__radio-label">keyword-dates</label>
+            </div>
+            <div class="debug-panel__radio-item">
+              <input id="debug-search-type-keyword" type="radio" name="debug-search-type" value="keyword" class="debug-panel__radio" {% if featureFlags.type == "keyword" %}checked{% endif %} />
+              <label for="debug-search-type-keyword" class="debug-panel__radio-label">keyword</label>
+            </div>
+            <div class="debug-panel__radio-item">
+              <input id="debug-search-type-semantic" type="radio" name="debug-search-type" value="semantic" class="debug-panel__radio" {% if featureFlags.type == "semantic" %}checked{% endif %} />
+              <label for="debug-search-type-semantic" class="debug-panel__radio-label">semantic</label>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+    </section>
+
     {# Request Summary #}
     <section class="debug-panel__section">
       <h3 class="debug-panel__section-title govuk-heading-s">Request Summary</h3>
@@ -67,70 +112,38 @@
     {# Feature Flags #}
     <section class="debug-panel__section">
       <h3 class="debug-panel__section-title govuk-heading-s">Feature Flags</h3>
-      <div class="debug-panel__info-grid">
-        {% for flag in debugInfo.featureFlags %}
-          <div class="debug-panel__info-item">
-            <span class="debug-panel__label">{{ flag.name }}:</span>
-            <span class="debug-panel__value">
-              {% if flag.value == true %}
-                {{ govukTag({
-                  text: 'On',
-                  classes: 'govuk-tag--green'
-                }) }}
-              {% elif flag.value == false %}
-                {{ govukTag({
-                  text: 'Off',
-                  classes: 'govuk-tag--red'
-                }) }}
-              {% else %}
-                <span class="debug-panel__value--mono">{{ flag.value }}</span>
-              {% endif %}
-              <span class="debug-panel__source">({{ flag.source }})</span>
-            </span>
-          </div>
-        {% endfor %}
-      </div>
-      <div class="debug-panel__control-group">
-        {{ govukSelect({
-          id: "debug-search-type-select",
-          name: "type",
-          classes: "debug-panel__select govuk-!-font-size-16",
-          label: {
-            text: "Search type",
-            classes: "govuk-label govuk-label--s"
-          },
-          formGroup: {
-            classes: "govuk-!-margin-bottom-0"
-          },
-          items: [
-            {
-              value: "hybrid-dates",
-              text: "hybrid-dates",
-              selected: featureFlags.type == "hybrid-dates"
-            },
-            {
-              value: "hybrid",
-              text: "hybrid",
-              selected: featureFlags.type == "hybrid"
-            },
-            {
-              value: "keyword-dates",
-              text: "keyword-dates",
-              selected: featureFlags.type == "keyword-dates"
-            },
-            {
-              value: "keyword",
-              text: "keyword",
-              selected: featureFlags.type == "keyword"
-            },
-            {
-              value: "semantic",
-              text: "semantic",
-              selected: featureFlags.type == "semantic"
-            }
-          ]
-        }) }}
-      </div>
+      <table class="debug-panel__table">
+        <thead class="debug-panel__table-head">
+          <tr>
+            <th class="debug-panel__table-header" scope="col">Flag</th>
+            <th class="debug-panel__table-header" scope="col">Status</th>
+            <th class="debug-panel__table-header" scope="col">Origin</th>
+          </tr>
+        </thead>
+        <tbody class="debug-panel__table-body">
+          {% for flag in debugInfo.featureFlags %}
+            <tr class="debug-panel__table-row">
+              <td class="debug-panel__table-cell debug-panel__table-cell--name">{{ flag.name }}</td>
+              <td class="debug-panel__table-cell debug-panel__table-cell--status">
+                {% if flag.value == true %}
+                  {{ govukTag({
+                    text: 'On',
+                    classes: 'govuk-tag--green'
+                  }) }}
+                {% elif flag.value == false %}
+                  {{ govukTag({
+                    text: 'Off',
+                    classes: 'govuk-tag--red'
+                  }) }}
+                {% else %}
+                  <span class="debug-panel__value--mono">{{ flag.value }}</span>
+                {% endif %}
+              </td>
+              <td class="debug-panel__table-cell debug-panel__table-cell--origin">{{ flag.source }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </section>
 
     {# Current Request #}
@@ -145,23 +158,21 @@
           <span class="debug-panel__label">Path:</span>
           <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.path }}</span>
         </div>
-        <div class="debug-panel__info-item">
+        <div class="debug-panel__info-item debug-panel__info-item--full">
           <span class="debug-panel__label">URL:</span>
           <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.url }}</span>
         </div>
-        <div class="debug-panel__info-item">
+        <div class="debug-panel__info-item debug-panel__info-item--full">
           <span class="debug-panel__label">Started At:</span>
           <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.startedAt }}</span>
         </div>
+        {% if debugInfo.request.query | length > 0 %}
+          <div class="debug-panel__info-item debug-panel__info-item--full">
+            <span class="debug-panel__label">Query Parameters:</span>
+            <pre class="debug-panel__value debug-panel__value--mono debug-panel__value--json">{{ debugInfo.request.query | dump(2) }}</pre>
+          </div>
+        {% endif %}
       </div>
-      {% if debugInfo.request.query | length > 0 %}
-        <details class="govuk-details debug-panel__details" data-module="govuk-details">
-          <summary class="govuk-details__summary debug-panel__summary">
-            <span class="govuk-details__summary-text">Query Parameters</span>
-          </summary>
-          <pre class="debug-panel__code">{{ debugInfo.request.query | dump(2) }}</pre>
-        </details>
-      {% endif %}
     </section>
 
     {# Search Info (if available) #}
@@ -275,7 +286,7 @@
     {% if debugInfo.apiCalls | length > 0 %}
       <section class="debug-panel__section">
         <h3 class="debug-panel__section-title govuk-heading-s">API Calls ({{ debugInfo.apiCalls | length }})</h3>
-        <label class="debug-panel__control" for="debug-api-failures-only">
+        <label class="debug-panel__control govuk-label" for="debug-api-failures-only">
           <input id="debug-api-failures-only" type="checkbox" />
           Show failures only
         </label>
@@ -366,11 +377,10 @@
         </div>
       </section>
     {% endif %}
-
     {# Copy Snapshot #}
-    <div class="debug-panel__footer">
+    {# <div class="debug-panel__footer">
       <button id="debug-copy-snapshot" class="debug-panel__copy-btn" type="button" title="Copy debug info as JSON">📋 Copy Snapshot</button>
-    </div>
+    </div> #}
   </div>
   <script id="debug-panel-data" type="application/json">{{ debugInfo | dump | safe }}</script>
 </div>

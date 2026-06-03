@@ -19,30 +19,49 @@ function initializeDebugPanel() {
     }
 
     const debugInfo = parseDebugInfoFromDom();
-    const toggleButton = panel.querySelector('.debug-panel__toggle');
-    const content = panel.querySelector('#debug-content');
+    const triggerButton = document.getElementById('debug-panel-toggle');
+    const internalToggle = panel.querySelector('.debug-panel__toggle');
     const failuresOnlyCheckbox = panel.querySelector('#debug-api-failures-only');
-    const searchTypeSelect = panel.querySelector('#debug-search-type-select');
     const copySnapshotButton = panel.querySelector('#debug-copy-snapshot');
+    const copyStatus = panel.querySelector('#debug-copy-status');
 
-    if (toggleButton && content) {
-        toggleButton.addEventListener('click', () => {
-            const isExpanded = toggleButton.getAttribute('aria-expanded') === 'true';
-            const newExpanded = !isExpanded;
-
-            toggleButton.setAttribute('aria-expanded', String(newExpanded));
-            content.style.display = newExpanded ? 'block' : 'none';
-            toggleButton.textContent = newExpanded ? 'Hide' : 'Show';
-            localStorage.setItem('debug-panel-expanded', String(newExpanded));
-        });
-
-        const wasExpanded = localStorage.getItem('debug-panel-expanded') !== 'false';
-        if (!wasExpanded) {
-            content.style.display = 'none';
-            toggleButton.setAttribute('aria-expanded', 'false');
-            toggleButton.textContent = 'Show';
+    const togglePanel = (show) => {
+        if (show) {
+            panel.classList.add('debug-panel--visible');
+        } else {
+            panel.classList.remove('debug-panel--visible');
         }
+
+        if (triggerButton) {
+            triggerButton.setAttribute('aria-expanded', String(show));
+        }
+        if (internalToggle) {
+            internalToggle.setAttribute('aria-expanded', String(show));
+            internalToggle.textContent = show ? 'Hide' : 'Show';
+        }
+
+        localStorage.setItem('debug-panel-visible', String(show));
+    };
+
+    // External trigger button (floating button)
+    if (triggerButton) {
+        triggerButton.addEventListener('click', () => {
+            const isVisible = panel.classList.contains('debug-panel--visible');
+            togglePanel(!isVisible);
+        });
     }
+
+    // Internal toggle button (in panel header)
+    if (internalToggle) {
+        internalToggle.addEventListener('click', () => {
+            const isVisible = panel.classList.contains('debug-panel--visible');
+            togglePanel(!isVisible);
+        });
+    }
+
+    // Restore previous state
+    const wasVisible = localStorage.getItem('debug-panel-visible') === 'true';
+    togglePanel(wasVisible);
 
     if (failuresOnlyCheckbox) {
         const apiCallRows = panel.querySelectorAll('.debug-panel__api-call');
@@ -59,29 +78,53 @@ function initializeDebugPanel() {
         applyApiFilter();
     }
 
-    if (searchTypeSelect) {
-        searchTypeSelect.addEventListener('change', () => {
-            const nextType = searchTypeSelect.value;
-            const url = new URL(window.location.href);
-            url.searchParams.set('type', nextType);
-            window.location.assign(url.toString());
+    const searchTypeRadios = panel.querySelectorAll('input[name="debug-search-type"]');
+    if (searchTypeRadios.length > 0) {
+        searchTypeRadios.forEach((radio) => {
+            radio.addEventListener('change', () => {
+                if (radio.checked) {
+                    const nextType = radio.value;
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('type', nextType);
+                    window.location.assign(url.toString());
+                }
+            });
         });
     }
 
     if (copySnapshotButton && debugInfo) {
         copySnapshotButton.addEventListener('click', () => {
             const snapshot = JSON.stringify(debugInfo, null, 2);
-            navigator.clipboard
-                .writeText(snapshot)
+            const originalText = copySnapshotButton.textContent;
+            copySnapshotButton.disabled = true;
+            copySnapshotButton.textContent = 'Copying...';
+
+            const copyToClipboard =
+                navigator.clipboard?.writeText(snapshot) ||
+                Promise.reject(new Error('Clipboard API unavailable'));
+
+            copyToClipboard
                 .then(() => {
-                    const originalText = copySnapshotButton.textContent;
-                    copySnapshotButton.textContent = 'Copied!';
-                    setTimeout(() => {
-                        copySnapshotButton.textContent = originalText;
-                    }, 2000);
+                    copySnapshotButton.textContent = 'Copied';
+                    if (copyStatus) {
+                        copyStatus.textContent = 'Snapshot copied to clipboard';
+                    }
                 })
                 .catch((error) => {
                     console.error('Failed to copy snapshot:', error);
+                    copySnapshotButton.textContent = 'Copy failed';
+                    if (copyStatus) {
+                        copyStatus.textContent = 'Copy failed. Please try again.';
+                    }
+                })
+                .finally(() => {
+                    setTimeout(() => {
+                        copySnapshotButton.disabled = false;
+                        copySnapshotButton.textContent = originalText;
+                        if (copyStatus) {
+                            copyStatus.textContent = '';
+                        }
+                    }, 1500);
                 });
         });
     }
