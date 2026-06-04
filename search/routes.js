@@ -1,9 +1,9 @@
 import crypto from 'node:crypto';
 import express from 'express';
 import { resolveSearchType } from '../api/search/constants/searchTypes.js';
+import { finalizeDebugInfo } from '../middleware/debug/index.js';
 import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
-import { finalizeDebugInfo } from '../middleware/debug/index.js';
 
 /**
  * Creates an Express router for handling search functionality.
@@ -130,7 +130,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             const totalItemCount = Number(searchResults?.total?.value || 0);
 
             // Populate debug info with search results if debug is enabled
-            if (res.locals.debugInfo) {
+            if (res.locals.featureFlags?.debug && res.locals.debugInfo) {
                 const queryHash = crypto
                     .createHash('sha256')
                     .update(String(query))
