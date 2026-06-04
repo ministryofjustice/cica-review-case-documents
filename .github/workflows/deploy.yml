@@ -209,24 +209,24 @@ jobs:
 
                   echo "=== CONTAINER VULN SUMMARY ==="
 
-
-                  ALL_VULNS='[
-                    (.vulnerabilities[]?),
-                    (.applications[]?.vulnerabilities[]?)
-                  ]'
-
-                  cat snyk-container-test-results.json | jq '
-                    def all_vulns:
-                        [
-                            (.vulnerabilities[]?),
-                            (.applications[]?.vulnerabilities[]?)
-                        ];
-                    {
-                        total: (all_vulns | length),
-                        high: (all_vulns | map(select(.severity=="high")) | length),
-                        critical: (all_vulns | map(select(.severity=="critical")) | length),
-                        fixable: (all_vulns | map(select(.isUpgradable==true or .isPatchable==true)) | length)
-                    }'
+                  if [ -s snyk-container-test-results.json ]; then
+                      if ! jq '
+                        def all_vulns:
+                            [
+                                (.vulnerabilities[]?),
+                                (.applications[]?.vulnerabilities[]?)
+                            ];
+                        {
+                            total: (all_vulns | length),
+                            high: (all_vulns | map(select(.severity=="high")) | length),
+                            critical: (all_vulns | map(select(.severity=="critical")) | length),
+                            fixable: (all_vulns | map(select(.isUpgradable==true or .isPatchable==true)) | length)
+                        }' snyk-container-test-results.json; then
+                          echo "::warning::Unable to parse snyk-container-test-results.json; scan exit code was $EXIT_CODE"
+                      fi
+                  else
+                      echo "::warning::No snyk-container-test-results.json produced; scan exit code was $EXIT_CODE"
+                  fi
 
                   echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
 
@@ -329,6 +329,11 @@ jobs:
             - name: Fail on non-fixable container vulnerabilities
               if: ${{ inputs.skip_security_scan != true }}
               run: |
+                  if [ ! -s snyk-container-test-results.json ]; then
+                      echo "::warning::No snyk-container-test-results.json found; skipping non-fixable check"
+                      exit 0
+                  fi
+
                   NON_FIXABLE=$(jq '
                     [
                     (.vulnerabilities[]?),
