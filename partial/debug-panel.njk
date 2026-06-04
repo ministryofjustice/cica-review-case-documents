@@ -326,21 +326,6 @@
       </section>
     {% endif %}
 
-    {# Redirects (if any) #}
-    {% if debugInfo.redirects | length > 0 %}
-      <section class="debug-panel__section">
-        <h3 class="debug-panel__section-title govuk-heading-s">Redirects ({{ debugInfo.redirects | length }})</h3>
-        <div class="debug-panel__redirects">
-          {% for redirect in debugInfo.redirects %}
-            <div class="debug-panel__redirect-item">
-              <span class="debug-panel__redirect-reason">{{ redirect.reason }}</span>
-              <span class="debug-panel__redirect-time">{{ redirect.timestamp }}</span>
-            </div>
-          {% endfor %}
-        </div>
-      </section>
-    {% endif %}
-
     {# Copy Snapshot #}
     {# <div class="debug-panel__footer">
       <button id="debug-copy-snapshot" class="debug-panel__copy-btn" type="button" title="Copy debug info as JSON">📋 Copy Snapshot</button>

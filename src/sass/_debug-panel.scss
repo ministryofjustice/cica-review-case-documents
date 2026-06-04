@@ -312,33 +312,6 @@
     margin-right: 4px;
 }
 
-.debug-panel__redirects {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.debug-panel__redirect-item {
-    display: grid;
-    grid-template-columns: 1fr 110px;
-    gap: 12px;
-    padding: 12px;
-    background: #ffffff;
-    border: 1px solid #d8dde0;
-    font-size: 14px;
-}
-
-.debug-panel__redirect-reason {
-    color: #0b0c0c;
-    font-weight: 700;
-}
-
-.debug-panel__redirect-time {
-    color: #505a5f;
-    font-size: 13px;
-    text-align: right;
-}
-
 .debug-panel__table {
     width: 100%;
     border-collapse: collapse;
