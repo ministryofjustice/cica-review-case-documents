@@ -9,15 +9,15 @@
     {% if params.matchSources and params.matchSources | length > 0 %}
       {% for name in params.matchSources %}
         {% if name == 'keyword' %}
-          <span class="search-result-debug__tag search-result-debug__tag--keyword">keyword</span>
+          <strong class="govuk-tag govuk-tag--blue">Keyword</strong>
         {% elif name == 'semantic' %}
-          <span class="search-result-debug__tag search-result-debug__tag--semantic">semantic</span>
+          <strong class="govuk-tag govuk-tag--turquoise">Semantic</strong>
         {% elif name == 'dates' %}
-          <span class="search-result-debug__tag search-result-debug__tag--dates">dates</span>
+          <strong class="govuk-tag govuk-tag--red">Dates</strong>
         {% endif %}
       {% endfor %}
     {% endif %}
-    <span class="search-result-debug__score" title="OpenSearch relevance score">score: {{ params._score }}</span>
+    <span class="search-result-debug__score govuk-hint govuk-!-margin-bottom-0" title="OpenSearch relevance score">Relevance score: {{ params._score }}</span>
   </div>
 {% endif %}
 
