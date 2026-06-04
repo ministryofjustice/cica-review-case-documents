@@ -116,35 +116,13 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             });
 
             const token = createApiJwtToken(userName);
-            const apiCallStartTime = Date.now();
-            let response;
-            try {
-                response = await searchService.getSearchResults(
-                    encodeURIComponent(query),
-                    pageNumber,
-                    itemsPerPage,
-                    token,
-                    { searchType }
-                );
-
-                res.locals.recordDebugApiCall?.({
-                    method: 'GET',
-                    path: '/api/search',
-                    statusCode: response?.statusCode || 200,
-                    durationMs: Date.now() - apiCallStartTime,
-                    source: 'search-service'
-                });
-            } catch (error) {
-                res.locals.recordDebugApiCall?.({
-                    method: 'GET',
-                    path: '/api/search',
-                    statusCode: error?.response?.statusCode || 500,
-                    durationMs: Date.now() - apiCallStartTime,
-                    source: 'search-service',
-                    errorMessage: error?.message || 'API request failed'
-                });
-                throw error;
-            }
+            const response = await searchService.getSearchResults(
+                encodeURIComponent(query),
+                pageNumber,
+                itemsPerPage,
+                token,
+                { searchType }
+            );
 
             const { body } = response || {};
 
@@ -171,7 +149,6 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                     .digest('hex')
                     .slice(0, 12);
 
-                const opensearchMetadata = searchResults?._opensearchMetadata || {};
                 res.locals.debugInfo.search = {
                     lastQuery: query,
                     lastDSL: body?.data?.attributes?.dsl || null,
@@ -186,14 +163,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                         index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME || 'unknown',
                         queryHash,
                         totalHits: totalItemCount,
-                        returnedHits: hits.length,
-                        apiDurationMs: res.locals.debugInfo.apiCalls
-                            .slice()
-                            .reverse()
-                            .find((call) => call.path === '/api/search')?.durationMs,
-                        totalShards: opensearchMetadata.totalShards,
-                        failedShards: opensearchMetadata.failedShards,
-                        timedOut: opensearchMetadata.timedOut
+                        returnedHits: hits.length
                     }
                 };
             }

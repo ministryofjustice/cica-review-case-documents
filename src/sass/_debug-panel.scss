@@ -204,7 +204,33 @@
     margin-top: 16px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.debug-panel__control-group > .debug-panel__fieldset,
+.debug-panel__control-group > .govuk-form-group {
+    margin: 0;
+    padding: 12px;
+    background: #ffffff;
+    border: 1px solid #d8dde0;
+    border-left: 3px solid var(--debug-accent);
+}
+
+.debug-panel__request-box {
+    margin: 0;
+    padding: 12px;
+    background: #ffffff;
+    border: 1px solid #d8dde0;
+    border-left: 3px solid var(--debug-accent);
+}
+
+.debug-panel__search-box {
+    margin: 0;
+    padding: 12px;
+    background: #ffffff;
+    border: 1px solid #d8dde0;
+    border-left: 3px solid var(--debug-accent);
 }
 
 .debug-panel__value--mono {
@@ -282,103 +308,8 @@
     outline-offset: 0;
 }
 
-.debug-panel__api-calls {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.debug-panel__control {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: #0b0c0c;
-    margin-bottom: 12px;
-    font-size: 14px;
-}
-
-.debug-panel__control input[type='checkbox'] {
-    cursor: pointer;
-}
-
-.debug-panel__control input[type='checkbox']:focus {
-    outline: 3px solid #ffbf47;
-    outline-offset: 0;
-}
-
-.debug-panel__api-call {
-    display: grid;
-    grid-template-columns: 60px 1fr 45px 70px;
-    gap: 12px;
-    align-items: center;
-    padding: 12px;
-    background: #ffffff;
-    border-radius: 0;
-    border: 1px solid #d8dde0;
-    font-size: 14px;
-}
-
-.debug-panel__api-method {
-    font-weight: 700;
-    color: #0b0c0c;
-    font-size: 13px;
-}
-
-.debug-panel__api-path {
-    color: #0b0c0c;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 14px;
-}
-
-.debug-panel__api-status {
-    text-align: center;
-    font-weight: 700;
-    padding: 4px 8px;
-    border-radius: 0;
-    font-size: 13px;
-}
-
-.debug-panel__api-status[data-status^='2'] {
-    background: #00703c;
-    color: #ffffff;
-}
-
-.debug-panel__api-status[data-status^='3'] {
-    background: #1d70b8;
-    color: #ffffff;
-}
-
-.debug-panel__api-status[data-status^='4'] {
-    background: #f47738;
-    color: #0b0c0c;
-}
-
-.debug-panel__api-status[data-status^='5'] {
-    background: #d4351c;
-    color: #ffffff;
-}
-
-.debug-panel__api-time {
-    color: #505a5f;
-    font-size: 13px;
-    text-align: right;
-}
-
-.debug-panel__api-error {
-    grid-column: 1 / -1;
-    color: #d4351c;
-    font-size: 13px;
-    padding-top: 4px;
-}
-
 .debug-panel .govuk-tag {
     margin-right: 4px;
-}
-
-.debug-panel__api-call--hidden {
-    display: none;
 }
 
 .debug-panel__redirects {
@@ -406,32 +337,6 @@
     color: #505a5f;
     font-size: 13px;
     text-align: right;
-}
-
-.debug-panel__validation-errors {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.debug-panel__error-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 12px;
-    background: #fff5f4;
-    border: 1px solid #f1b0a8;
-    font-size: 14px;
-}
-
-.debug-panel__error-field {
-    color: #0b0c0c;
-    font-weight: 700;
-}
-
-.debug-panel__error-message {
-    color: #d4351c;
-    font-size: 13px;
 }
 
 .debug-panel__table {
@@ -468,14 +373,8 @@
 
 .debug-panel__table-cell {
     padding: 12px;
-    color: #0b0c0c;
     border: 1px solid #d8dde0;
-    font-size: 14px;
-    vertical-align: middle;
-}
-
-.debug-panel__table-row:nth-child(even) {
-    background: #f8fbff;
+    vertical-align: top;
 }
 
 .debug-panel__table-cell--name {
@@ -501,7 +400,7 @@
 
 .debug-panel__legend {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     color: #0b0c0c;
     font-size: 16px;
     font-weight: 700;
@@ -513,10 +412,17 @@
     gap: 8px;
 }
 
+.debug-panel__radio-group--inline {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
 .debug-panel__radio-item {
     display: flex;
     align-items: center;
     gap: 8px;
+    padding: 2px 0;
 }
 
 .debug-panel__radio {
@@ -657,11 +563,5 @@
     .debug-panel__info-grid {
         grid-template-columns: 1fr;
         gap: 12px;
-    }
-
-    .debug-panel__api-call {
-        grid-template-columns: 50px 1fr 45px;
-        gap: 8px;
-        padding: 8px;
     }
 }
