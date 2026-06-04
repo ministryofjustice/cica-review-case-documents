@@ -149,7 +149,8 @@ export default function featureFlags(req, res, next) {
 
             if (typeof FEATURE_FLAG_DEFAULTS[flagName] === 'boolean') {
                 const queryFlagValue = parseFeatureFlagValue(req.query?.[flagName]);
-                if (typeof queryFlagValue === 'boolean') {
+                // Block query-string override for debug flag in production
+                if (typeof queryFlagValue === 'boolean' && !(flagName === 'debug' && process.env.DEPLOY_ENV === 'production')) {
                     flags[flagName] = queryFlagValue;
                     provenance[flagName] = 'query';
                 }
