@@ -59,7 +59,7 @@ const searchType = req.session?.featureFlags?.type;              // unvalidated
 ```
 
 The `getFeatureFlagValue` accessor handles all validation:
-- **Boolean flags** (`align`): Type-checks and rejects mismatched types; falls back to default.
+- **Boolean flags** (`align`, `debug`): Type-checks and rejects mismatched types; falls back to default.
 - **String flags** (`type`): Calls `resolveSearchType()` internally to canonicalize and validate the search mode.
 
 This centralizes all feature-flag logic in one place, making it easier to maintain and test.
@@ -86,7 +86,7 @@ The panel displays:
 - **API Calls** — traced API requests with method, path, status code, timestamp
 
 The debug panel is implemented through:
-1. **middleware/debug/index.js** — Collects diagnostic data into `res.locals.debugInfo` and intercepts `res.json()` to track API responses.
+1. **middleware/debug/index.js** — Collects diagnostic data into `res.locals.debugInfo` so route handlers can attach request/search/document metadata.
 2. **partial/debug-panel.njk** — Renders the styled overlay panel when the debug flag is active.
 
 To use debug mode in development:

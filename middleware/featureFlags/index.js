@@ -97,6 +97,9 @@ export function getFeatureFlagSource(session, flagName) {
  * @returns {boolean | string} The active feature flag value.
  */
 export function getFeatureFlagValue(session, flagName) {
+    if (flagName === 'debug' && process.env.DEPLOY_ENV === 'production') {
+        return false;
+    }
     const sessionFlagValue = session?.featureFlags?.[flagName];
     const defaultValue = FEATURE_FLAG_DEFAULTS[flagName];
 

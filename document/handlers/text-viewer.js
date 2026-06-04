@@ -110,7 +110,7 @@ export function createTextViewerHandler(
             const pageTextSegments = buildTextHighlightSegments(pageText, pageChunks);
 
             // Populate debug info with document data if debug is enabled
-            if (res.locals.debugInfo) {
+            if (res.locals.featureFlags?.debug && res.locals.debugInfo) {
                 res.locals.debugInfo.document = {
                     documentId,
                     pageNumber,
