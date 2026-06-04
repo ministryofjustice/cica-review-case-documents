@@ -3,19 +3,7 @@ import express from 'express';
 import { resolveSearchType } from '../api/search/constants/searchTypes.js';
 import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
-
-/**
- * Finalizes request-scoped debug information with the outbound response status.
- *
- * @param {express.Response} res - Express response object.
- * @param {number} statusCode - HTTP status code returned to the client.
- * @returns {void}
- */
-function finalizeDebugInfo(res, statusCode) {
-    if (typeof res.locals?.finalizeDebugInfo === 'function') {
-        res.locals.finalizeDebugInfo({ responseStatus: statusCode });
-    }
-}
+import { finalizeDebugInfo } from '../middleware/debug/index.js';
 
 /**
  * Creates an Express router for handling search functionality.

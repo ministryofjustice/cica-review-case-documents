@@ -199,12 +199,7 @@ describe('document-dal', () => {
         const result = await dal.getDocumentsChunksByKeyword('keyword', 1, 10);
 
         assert.deepStrictEqual(result, {
-            hits: [],
-            _opensearchMetadata: {
-                totalShards: undefined,
-                failedShards: undefined,
-                timedOut: undefined
-            }
+            hits: []
         });
         assert.strictEqual(warnCalls.length, 1);
         assert.strictEqual(warnCalls[0].message, '[OpenSearch] No results found for query');
