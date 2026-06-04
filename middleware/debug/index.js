@@ -52,20 +52,7 @@ export default function debugMiddleware(req, res, next) {
             pageMetadata: null,
             highlightsCount: 0,
             chunksAligned: false
-        },
-        // Redirect trace
-        redirects: []
-    };
-
-    res.locals.recordDebugRedirect = (reason) => {
-        if (!res.locals.debugInfo || !Array.isArray(res.locals.debugInfo.redirects)) {
-            return;
         }
-        res.locals.debugInfo.redirects.push({
-            timestamp: new Date().toISOString(),
-            reason,
-            url: req.originalUrl
-        });
     };
 
     res.locals.finalizeDebugInfo = ({ responseStatus } = {}) => {
@@ -81,4 +68,17 @@ export default function debugMiddleware(req, res, next) {
     };
 
     next();
+}
+
+/**
+ * Finalizes request-scoped debug information with the outbound response status.
+ *
+ * @param {import('express').Response} res - Express response object.
+ * @param {number} statusCode - HTTP status code returned to the client.
+ * @returns {void}
+ */
+export function finalizeDebugInfo(res, statusCode) {
+    if (typeof res.locals?.finalizeDebugInfo === 'function') {
+        res.locals.finalizeDebugInfo({ responseStatus: statusCode });
+    }
 }
