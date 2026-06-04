@@ -403,6 +403,127 @@ describe('Search Routes', () => {
             assert.strictEqual(res.statusCode, 200);
             assert.match(res.text, /search\/page\/results.njk/);
         });
+
+        it('normalizes matchSources to known unique constituent labels and preserves _score', async () => {
+            const testApp = express();
+            const searchResponseWithMatchedQueries = async () => ({
+                body: {
+                    data: {
+                        attributes: {
+                            results: {
+                                hits: [
+                                    {
+                                        _score: 12.34,
+                                        matched_queries: [
+                                            'keyword',
+                                            'semantic',
+                                            'keyword',
+                                            'unknown',
+                                            'dates'
+                                        ],
+                                        _source: {
+                                            source_doc_id: 'doc-uuid-1'
+                                        }
+                                    }
+                                ],
+                                total: { value: 1 }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const searchService = () => ({
+                getSearchResults: searchResponseWithMatchedQueries
+            });
+
+            const routerWithResults = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: searchService
+            });
+
+            testApp.use((req, res, next) => {
+                req.session = {
+                    caseSelected: true,
+                    caseReferenceNumber: '12345',
+                    username: 'search.user@example.com'
+                };
+                req.log = { info: () => {}, error: () => {} };
+                res.locals.csrfToken = 'test-csrf-token';
+                res.locals.cspNonce = 'test-csp-nonce';
+                next();
+            });
+            testApp.use('/search', routerWithResults);
+
+            const res = await request(testApp).get(
+                `/search?query=test&type=${DEFAULT_SEARCH_TYPE}`
+            );
+
+            assert.strictEqual(res.statusCode, 200);
+            assert.ok(Array.isArray(lastRenderParams.searchResults));
+            assert.strictEqual(lastRenderParams.searchResults.length, 1);
+            assert.deepStrictEqual(lastRenderParams.searchResults[0].matchSources, [
+                'keyword',
+                'semantic',
+                'dates'
+            ]);
+            assert.strictEqual(lastRenderParams.searchResults[0]._score, 12.34);
+        });
+
+        it('maps missing matched_queries to an empty matchSources array', async () => {
+            const testApp = express();
+            const searchResponseWithoutMatchedQueries = async () => ({
+                body: {
+                    data: {
+                        attributes: {
+                            results: {
+                                hits: [
+                                    {
+                                        _score: 4.56,
+                                        _source: {
+                                            source_doc_id: 'doc-uuid-2'
+                                        }
+                                    }
+                                ],
+                                total: { value: 1 }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const searchService = () => ({
+                getSearchResults: searchResponseWithoutMatchedQueries
+            });
+
+            const routerWithResults = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: searchService
+            });
+
+            testApp.use((req, res, next) => {
+                req.session = {
+                    caseSelected: true,
+                    caseReferenceNumber: '12345',
+                    username: 'search.user@example.com'
+                };
+                req.log = { info: () => {}, error: () => {} };
+                res.locals.csrfToken = 'test-csrf-token';
+                res.locals.cspNonce = 'test-csp-nonce';
+                next();
+            });
+            testApp.use('/search', routerWithResults);
+
+            const res = await request(testApp).get(
+                `/search?query=test&type=${DEFAULT_SEARCH_TYPE}`
+            );
+
+            assert.strictEqual(res.statusCode, 200);
+            assert.ok(Array.isArray(lastRenderParams.searchResults));
+            assert.strictEqual(lastRenderParams.searchResults.length, 1);
+            assert.deepStrictEqual(lastRenderParams.searchResults[0].matchSources, []);
+            assert.strictEqual(lastRenderParams.searchResults[0]._score, 4.56);
+        });
     });
 
     describe('POST /', () => {

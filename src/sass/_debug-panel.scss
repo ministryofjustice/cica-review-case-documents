@@ -470,39 +470,17 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
     margin: 6px 0 4px;
 }
 
-.search-result-debug__tag {
-    display: inline-block;
-    padding: 2px 8px;
-    font-family: GDS Transport, arial, sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    border-radius: 2px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    background: #505a5f;
-    color: #ffffff;
-}
-
-.search-result-debug__tag--keyword {
-    background: #1d70b8;
-}
-
-.search-result-debug__tag--semantic {
-    background: #4c2c92;
-}
-
-.search-result-debug__tag--dates {
-    background: #d4351c;
+.search-result-debug .govuk-tag {
+    margin-bottom: 0;
 }
 
 .search-result-debug__score {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 12px;
-    color: #505a5f;
+    font-size: 14px;
 }
 
 @media (max-width: 640px) {
