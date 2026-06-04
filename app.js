@@ -190,19 +190,16 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     // Apply feature flags middleware globally so all routes and templates have access
     app.use(featureFlags);
 
+    // Extract CRN from query string globally so it's available in session for debug middleware
+    app.use(getCaseReferenceNumberFromQueryString);
+
     // Collect debug information when debug flag is enabled
     app.use(debugMiddleware);
-    app.use(
-        '/document',
-        isAuthenticated,
-        getCaseReferenceNumberFromQueryString,
-        caseSelected,
-        createDocumentRouter()
-    );
+    app.use('/document', isAuthenticated, generalRateLimiter, caseSelected, createDocumentRouter());
     app.use(
         '/search',
         isAuthenticated,
-        getCaseReferenceNumberFromQueryString,
+        generalRateLimiter,
         caseSelected,
         enforceSearchTypeInQuery,
         searchRouter({ createTemplateEngineService, createSearchService })

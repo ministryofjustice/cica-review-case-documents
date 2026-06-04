@@ -22,96 +22,80 @@
     <span id="debug-copy-status" class="govuk-visually-hidden" aria-live="polite"></span>
   </div>
   <div class="debug-panel__content" id="debug-content">
-    {# Search Controls #}
-    <section class="debug-panel__section">
-      <h3 class="debug-panel__section-title govuk-heading-s">Search Type</h3>
-      <div class="debug-panel__control-group">
-        <fieldset class="debug-panel__fieldset">
-          <legend class="debug-panel__legend govuk-label govuk-label--s">Choose search type</legend>
-          <div class="debug-panel__radio-group">
-            <div class="debug-panel__radio-item">
-              <input id="debug-search-type-hybrid-dates" type="radio" name="debug-search-type" value="hybrid-dates" class="debug-panel__radio" {% if featureFlags.type == "hybrid-dates" %}checked{% endif %} />
-              <label for="debug-search-type-hybrid-dates" class="debug-panel__radio-label">hybrid-dates</label>
-            </div>
-            <div class="debug-panel__radio-item">
-              <input id="debug-search-type-hybrid" type="radio" name="debug-search-type" value="hybrid" class="debug-panel__radio" {% if featureFlags.type == "hybrid" %}checked{% endif %} />
-              <label for="debug-search-type-hybrid" class="debug-panel__radio-label">hybrid</label>
-            </div>
-            <div class="debug-panel__radio-item">
-              <input id="debug-search-type-keyword-dates" type="radio" name="debug-search-type" value="keyword-dates" class="debug-panel__radio" {% if featureFlags.type == "keyword-dates" %}checked{% endif %} />
-              <label for="debug-search-type-keyword-dates" class="debug-panel__radio-label">keyword-dates</label>
-            </div>
-            <div class="debug-panel__radio-item">
-              <input id="debug-search-type-keyword" type="radio" name="debug-search-type" value="keyword" class="debug-panel__radio" {% if featureFlags.type == "keyword" %}checked{% endif %} />
-              <label for="debug-search-type-keyword" class="debug-panel__radio-label">keyword</label>
-            </div>
-            <div class="debug-panel__radio-item">
-              <input id="debug-search-type-semantic" type="radio" name="debug-search-type" value="semantic" class="debug-panel__radio" {% if featureFlags.type == "semantic" %}checked{% endif %} />
-              <label for="debug-search-type-semantic" class="debug-panel__radio-label">semantic</label>
-            </div>
-          </div>
-        </fieldset>
-      </div>
-    </section>
-
-    {# Request Summary #}
-    <section class="debug-panel__section">
-      <h3 class="debug-panel__section-title govuk-heading-s">Request Summary</h3>
-      <div class="debug-panel__info-grid">
-        <div class="debug-panel__info-item">
-          <span class="debug-panel__label">Correlation ID:</span>
-          <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.correlationId or 'n/a' }}</span>
-        </div>
-        <div class="debug-panel__info-item">
-          <span class="debug-panel__label">Status:</span>
-          <span class="debug-panel__value">
-            {% if debugInfo.request.responseStatus %}
-              {{ govukTag({
-                text: debugInfo.request.responseStatus,
-                classes: 'govuk-tag--blue'
-              }) }}
-            {% else %}
-              pending
-            {% endif %}
-          </span>
-        </div>
-        <div class="debug-panel__info-item">
-          <span class="debug-panel__label">Duration:</span>
-          <span class="debug-panel__value">{{ debugInfo.request.elapsedMs or 'n/a' }}{% if debugInfo.request.elapsedMs %}ms{% endif %}</span>
-        </div>
-        <div class="debug-panel__info-item">
-          <span class="debug-panel__label">Route:</span>
-          <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.route or 'n/a' }}</span>
-        </div>
-      </div>
-    </section>
-
-    {# Environment & Session #}
-    <section class="debug-panel__section">
-      <h3 class="debug-panel__section-title govuk-heading-s">Environment & Session</h3>
-      <div class="debug-panel__info-grid">
-        <div class="debug-panel__info-item">
-          <span class="debug-panel__label">Environment:</span>
-          <span class="debug-panel__value">{{ debugInfo.environment }}</span>
-        </div>
-        <div class="debug-panel__info-item">
-          <span class="debug-panel__label">User:</span>
-          <span class="debug-panel__value">{{ debugInfo.session.username }}</span>
-        </div>
-        <div class="debug-panel__info-item">
-          <span class="debug-panel__label">CRN:</span>
-          <span class="debug-panel__value">{{ debugInfo.session.caseReferenceNumber }}</span>
-        </div>
-        <div class="debug-panel__info-item">
-          <span class="debug-panel__label">Timestamp:</span>
-          <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.timestamp }}</span>
-        </div>
-      </div>
-    </section>
 
     {# Feature Flags #}
     <section class="debug-panel__section">
       <h3 class="debug-panel__section-title govuk-heading-s">Feature Flags</h3>
+      <div class="debug-panel__control-group">
+        <fieldset class="debug-panel__fieldset">
+          <legend class="debug-panel__legend govuk-label govuk-label--s">Align</legend>
+          <div class="debug-panel__radio-group debug-panel__radio-group--inline">
+            <div class="debug-panel__radio-item">
+              <input id="debug-flag-align-on" type="radio" name="debug-flag-align" value="on" class="debug-panel__radio" {% if featureFlags.align == true %}checked{% endif %} />
+              <label for="debug-flag-align-on" class="debug-panel__radio-label">On</label>
+            </div>
+            <div class="debug-panel__radio-item">
+              <input id="debug-flag-align-off" type="radio" name="debug-flag-align" value="off" class="debug-panel__radio" {% if featureFlags.align == false %}checked{% endif %} />
+              <label for="debug-flag-align-off" class="debug-panel__radio-label">Off</label>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="debug-panel__fieldset">
+          <legend class="debug-panel__legend govuk-label govuk-label--s">Debug</legend>
+          <div class="debug-panel__radio-group debug-panel__radio-group--inline">
+            <div class="debug-panel__radio-item">
+              <input id="debug-flag-debug-on" type="radio" name="debug-flag-debug" value="on" class="debug-panel__radio" {% if featureFlags.debug == true %}checked{% endif %} />
+              <label for="debug-flag-debug-on" class="debug-panel__radio-label">On</label>
+            </div>
+            <div class="debug-panel__radio-item">
+              <input id="debug-flag-debug-off" type="radio" name="debug-flag-debug" value="off" class="debug-panel__radio" {% if featureFlags.debug == false %}checked{% endif %} />
+              <label for="debug-flag-debug-off" class="debug-panel__radio-label">Off</label>
+            </div>
+          </div>
+        </fieldset>
+
+        {{ govukSelect({
+          id: 'debug-feature-type-select',
+          name: 'debug-feature-type-select',
+          classes: 'govuk-!-font-size-16',
+          label: {
+            text: 'Type',
+            classes: 'govuk-label govuk-label--s'
+          },
+          formGroup: {
+            classes: 'govuk-!-margin-bottom-0'
+          },
+          items: [
+            {
+              value: 'hybrid-dates',
+              text: 'hybrid-dates',
+              selected: featureFlags.type == 'hybrid-dates'
+            },
+            {
+              value: 'hybrid',
+              text: 'hybrid',
+              selected: featureFlags.type == 'hybrid'
+            },
+            {
+              value: 'keyword-dates',
+              text: 'keyword-dates',
+              selected: featureFlags.type == 'keyword-dates'
+            },
+            {
+              value: 'keyword',
+              text: 'keyword',
+              selected: featureFlags.type == 'keyword'
+            },
+            {
+              value: 'semantic',
+              text: 'semantic',
+              selected: featureFlags.type == 'semantic'
+            }
+          ]
+        }) }}
+      </div>
+
       <table class="debug-panel__table">
         <thead class="debug-panel__table-head">
           <tr>
@@ -146,77 +130,55 @@
       </table>
     </section>
 
-    {# Current Request #}
-    <section class="debug-panel__section">
-      <h3 class="debug-panel__section-title govuk-heading-s">Current Request</h3>
-      <div class="debug-panel__info-grid">
-        <div class="debug-panel__info-item">
-          <span class="debug-panel__label">Method:</span>
-          <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.method }}</span>
-        </div>
-        <div class="debug-panel__info-item">
-          <span class="debug-panel__label">Path:</span>
-          <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.path }}</span>
-        </div>
-        <div class="debug-panel__info-item debug-panel__info-item--full">
-          <span class="debug-panel__label">URL:</span>
-          <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.url }}</span>
-        </div>
-        <div class="debug-panel__info-item debug-panel__info-item--full">
-          <span class="debug-panel__label">Started At:</span>
-          <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.startedAt }}</span>
-        </div>
-        {% if debugInfo.request.query | length > 0 %}
-          <div class="debug-panel__info-item debug-panel__info-item--full">
-            <span class="debug-panel__label">Query Parameters:</span>
-            <pre class="debug-panel__value debug-panel__value--mono debug-panel__value--json">{{ debugInfo.request.query | dump(2) }}</pre>
-          </div>
-        {% endif %}
-      </div>
-    </section>
+
+    
 
     {# Search Info (if available) #}
     {% if debugInfo.search.lastQuery or debugInfo.search.lastDSL or debugInfo.search.opensearch %}
       <section class="debug-panel__section">
         <h3 class="debug-panel__section-title govuk-heading-s">Search Info</h3>
-        {% if debugInfo.search.lastQuery %}
-          <div class="debug-panel__info-item">
-            <span class="debug-panel__label">Last Query:</span>
-            <span class="debug-panel__value">{{ debugInfo.search.lastQuery }}</span>
+        <div class="debug-panel__control-group">
+          <div class="debug-panel__search-box">
+            <div class="debug-panel__info-grid">
+              {% if debugInfo.search.lastQuery %}
+                <div class="debug-panel__info-item debug-panel__info-item--full">
+                  <span class="debug-panel__label">Last Query:</span>
+                  <span class="debug-panel__value">{{ debugInfo.search.lastQuery }}</span>
+                </div>
+              {% endif %}
+              {% if debugInfo.search.executionTime %}
+                <div class="debug-panel__info-item">
+                  <span class="debug-panel__label">Execution Time:</span>
+                  <span class="debug-panel__value">{{ debugInfo.search.executionTime }}ms</span>
+                </div>
+              {% endif %}
+              {% if debugInfo.search.opensearch %}
+                <div class="debug-panel__info-item">
+                  <span class="debug-panel__label">OpenSearch Index:</span>
+                  <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.search.opensearch.index }}</span>
+                </div>
+                <div class="debug-panel__info-item">
+                  <span class="debug-panel__label">Query Hash:</span>
+                  <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.search.opensearch.queryHash }}</span>
+                </div>
+                <div class="debug-panel__info-item">
+                  <span class="debug-panel__label">Returned Hits:</span>
+                  <span class="debug-panel__value">{{ debugInfo.search.opensearch.returnedHits }}</span>
+                </div>
+                <div class="debug-panel__info-item">
+                  <span class="debug-panel__label">Total Hits:</span>
+                  <span class="debug-panel__value">{{ debugInfo.search.opensearch.totalHits }}</span>
+                </div>
+                {% if debugInfo.search.opensearch.apiDurationMs %}
+                  <div class="debug-panel__info-item">
+                    <span class="debug-panel__label">API Duration:</span>
+                    <span class="debug-panel__value">{{ debugInfo.search.opensearch.apiDurationMs }}ms</span>
+                  </div>
+                {% endif %}
+              {% endif %}
+            </div>
           </div>
-        {% endif %}
-        {% if debugInfo.search.executionTime %}
-          <div class="debug-panel__info-item">
-            <span class="debug-panel__label">Execution Time:</span>
-            <span class="debug-panel__value">{{ debugInfo.search.executionTime }}ms</span>
-          </div>
-        {% endif %}
-        {% if debugInfo.search.opensearch %}
-          <div class="debug-panel__info-grid">
-            <div class="debug-panel__info-item">
-              <span class="debug-panel__label">OpenSearch Index:</span>
-              <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.search.opensearch.index }}</span>
-            </div>
-            <div class="debug-panel__info-item">
-              <span class="debug-panel__label">Query Hash:</span>
-              <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.search.opensearch.queryHash }}</span>
-            </div>
-            <div class="debug-panel__info-item">
-              <span class="debug-panel__label">Returned Hits:</span>
-              <span class="debug-panel__value">{{ debugInfo.search.opensearch.returnedHits }}</span>
-            </div>
-            <div class="debug-panel__info-item">
-              <span class="debug-panel__label">Total Hits:</span>
-              <span class="debug-panel__value">{{ debugInfo.search.opensearch.totalHits }}</span>
-            </div>
-            {% if debugInfo.search.opensearch.apiDurationMs %}
-              <div class="debug-panel__info-item">
-                <span class="debug-panel__label">API Duration:</span>
-                <span class="debug-panel__value">{{ debugInfo.search.opensearch.apiDurationMs }}ms</span>
-              </div>
-            {% endif %}
-          </div>
-        {% endif %}
+        </div>
         {% if debugInfo.search.lastDSL %}
           <details class="govuk-details debug-panel__details" data-module="govuk-details">
             <summary class="govuk-details__summary debug-panel__summary">
@@ -244,6 +206,88 @@
         {% endif %}
       </section>
     {% endif %}
+
+
+    {# Request #}
+    <section class="debug-panel__section">
+      <h3 class="debug-panel__section-title govuk-heading-s">Request</h3>
+      <div class="debug-panel__control-group">
+        <div class="debug-panel__request-box">
+          <div class="debug-panel__info-grid">
+            <div class="debug-panel__info-item">
+              <span class="debug-panel__label">Correlation ID:</span>
+              <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.correlationId or 'n/a' }}</span>
+            </div>
+            <div class="debug-panel__info-item">
+              <span class="debug-panel__label">Status:</span>
+              <span class="debug-panel__value">
+                {% if debugInfo.request.responseStatus %}
+                  {{ govukTag({
+                    text: debugInfo.request.responseStatus,
+                    classes: 'govuk-tag--blue'
+                  }) }}
+                {% else %}
+                  pending
+                {% endif %}
+              </span>
+            </div>
+            <div class="debug-panel__info-item">
+              <span class="debug-panel__label">Duration:</span>
+              <span class="debug-panel__value">{{ debugInfo.request.elapsedMs or 'n/a' }}{% if debugInfo.request.elapsedMs %}ms{% endif %}</span>
+            </div>
+            <div class="debug-panel__info-item">
+              <span class="debug-panel__label">Route:</span>
+              <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.route or 'n/a' }}</span>
+            </div>
+            <div class="debug-panel__info-item">
+              <span class="debug-panel__label">Method:</span>
+              <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.method }}</span>
+            </div>
+            <div class="debug-panel__info-item">
+              <span class="debug-panel__label">Path:</span>
+              <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.path }}</span>
+            </div>
+            <div class="debug-panel__info-item debug-panel__info-item--full">
+              <span class="debug-panel__label">URL:</span>
+              <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.url }}</span>
+            </div>
+            <div class="debug-panel__info-item debug-panel__info-item--full">
+              <span class="debug-panel__label">Started At:</span>
+              <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.startedAt }}</span>
+            </div>
+            {% if debugInfo.request.query | length > 0 %}
+              <div class="debug-panel__info-item debug-panel__info-item--full">
+                <span class="debug-panel__label">Query Parameters:</span>
+                <pre class="debug-panel__value debug-panel__value--mono debug-panel__value--json">{{ debugInfo.request.query | dump(2) }}</pre>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {# Environment & Session #}
+    <section class="debug-panel__section">
+      <h3 class="debug-panel__section-title govuk-heading-s">Environment & Session</h3>
+      <div class="debug-panel__info-grid">
+        <div class="debug-panel__info-item">
+          <span class="debug-panel__label">Environment:</span>
+          <span class="debug-panel__value">{{ debugInfo.environment }}</span>
+        </div>
+        <div class="debug-panel__info-item">
+          <span class="debug-panel__label">User:</span>
+          <span class="debug-panel__value">{{ debugInfo.session.username }}</span>
+        </div>
+        <div class="debug-panel__info-item">
+          <span class="debug-panel__label">CRN:</span>
+          <span class="debug-panel__value">{{ debugInfo.session.caseReferenceNumber }}</span>
+        </div>
+        <div class="debug-panel__info-item">
+          <span class="debug-panel__label">Timestamp:</span>
+          <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.timestamp }}</span>
+        </div>
+      </div>
+    </section>
 
     {# Document Info (if available) #}
     {% if debugInfo.document.documentId %}
@@ -282,30 +326,6 @@
       </section>
     {% endif %}
 
-    {# API Calls #}
-    {% if debugInfo.apiCalls | length > 0 %}
-      <section class="debug-panel__section">
-        <h3 class="debug-panel__section-title govuk-heading-s">API Calls ({{ debugInfo.apiCalls | length }})</h3>
-        <label class="debug-panel__control govuk-label" for="debug-api-failures-only">
-          <input id="debug-api-failures-only" type="checkbox" />
-          Show failures only
-        </label>
-        <div class="debug-panel__api-calls">
-          {% for call in debugInfo.apiCalls | reverse %}
-            <div class="debug-panel__api-call" data-failed="{{ call.isError }}">
-              <span class="debug-panel__api-method">{{ call.method }}</span>
-              <span class="debug-panel__api-path">{{ call.path }}</span>
-              <span class="debug-panel__api-status" data-status="{{ call.statusCode }}">{{ call.statusCode }}</span>
-              <span class="debug-panel__api-time">{{ call.durationMs or 'n/a' }}{% if call.durationMs %}ms{% endif %}</span>
-              {% if call.errorMessage %}
-                <span class="debug-panel__api-error">{{ call.errorMessage }}</span>
-              {% endif %}
-            </div>
-          {% endfor %}
-        </div>
-      </section>
-    {% endif %}
-
     {# Redirects (if any) #}
     {% if debugInfo.redirects | length > 0 %}
       <section class="debug-panel__section">
@@ -321,62 +341,6 @@
       </section>
     {% endif %}
 
-    {# Validation Errors (if any) #}
-    {% if debugInfo.validationErrors | length > 0 %}
-      <section class="debug-panel__section">
-        <h3 class="debug-panel__section-title govuk-heading-s">Validation Errors ({{ debugInfo.validationErrors | length }})</h3>
-        <div class="debug-panel__validation-errors">
-          {% for error in debugInfo.validationErrors %}
-            <div class="debug-panel__error-item">
-              <span class="debug-panel__error-field">{{ error.field }}</span>
-              <span class="debug-panel__error-message">{{ error.message }}</span>
-            </div>
-          {% endfor %}
-        </div>
-      </section>
-    {% endif %}
-
-    {# OpenSearch Metadata (if search happened) #}
-    {% if debugInfo.search.opensearch and debugInfo.search.opensearch.totalShards %}
-      <section class="debug-panel__section">
-        <h3 class="debug-panel__section-title govuk-heading-s">OpenSearch Metadata</h3>
-        <div class="debug-panel__info-grid">
-          <div class="debug-panel__info-item">
-            <span class="debug-panel__label">Total Shards:</span>
-            <span class="debug-panel__value">{{ debugInfo.search.opensearch.totalShards }}</span>
-          </div>
-          <div class="debug-panel__info-item">
-            <span class="debug-panel__label">Failed Shards:</span>
-            <span class="debug-panel__value">
-              {% if debugInfo.search.opensearch.failedShards %}
-                {{ govukTag({
-                  text: debugInfo.search.opensearch.failedShards,
-                  classes: 'govuk-tag--red'
-                }) }}
-              {% else %}
-                0
-              {% endif %}
-            </span>
-          </div>
-          <div class="debug-panel__info-item">
-            <span class="debug-panel__label">Timed Out:</span>
-            <span class="debug-panel__value">
-              {% if debugInfo.search.opensearch.timedOut %}
-                {{ govukTag({
-                  text: 'Yes',
-                  classes: 'govuk-tag--red'
-                }) }}
-              {% else %}
-                {{ govukTag({
-                  text: 'No',
-                  classes: 'govuk-tag--green'
-                }) }}
-              {% endif %}
-            </span>
-          </div>
-        </div>
-      </section>
-    {% endif %}
     {# Copy Snapshot #}
     {# <div class="debug-panel__footer">
       <button id="debug-copy-snapshot" class="debug-panel__copy-btn" type="button" title="Copy debug info as JSON">📋 Copy Snapshot</button>

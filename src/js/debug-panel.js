@@ -31,7 +31,9 @@ function initializeDebugPanel() {
     const debugInfo = parseDebugInfoFromDom();
     const triggerButton = document.getElementById('debug-panel-toggle');
     const internalToggle = panel.querySelector('.debug-panel__toggle');
-    const failuresOnlyCheckbox = panel.querySelector('#debug-api-failures-only');
+    const alignRadios = panel.querySelectorAll('input[name="debug-flag-align"]');
+    const debugRadios = panel.querySelectorAll('input[name="debug-flag-debug"]');
+    const typeSelect = panel.querySelector('#debug-feature-type-select');
     const copySnapshotButton = panel.querySelector('#debug-copy-snapshot');
     const copyStatus = panel.querySelector('#debug-copy-status');
 
@@ -79,37 +81,48 @@ function initializeDebugPanel() {
     const wasVisible = localStorage.getItem('debug-panel-visible') === 'true';
     togglePanel(wasVisible);
 
-    if (failuresOnlyCheckbox) {
-        const apiCallRows = panel.querySelectorAll('.debug-panel__api-call');
+    /**
+     * Applies a feature-flag change via query params while preserving existing URL state.
+     *
+     * @param {'align' | 'debug' | 'type'} flagName - Feature flag query key.
+     * @param {string} value - Query value to apply.
+     * @param {boolean} [resetPage=false] - Whether to reset pagination to first page.
+     * @returns {void}
+     */
+    const applyFeatureFlag = (flagName, value, resetPage = false) => {
+        const url = new URL(window.location.href);
+        url.searchParams.set(flagName, value);
 
-        /**
-         * Applies the "failures only" filter to API call rows.
-         *
-         * @returns {void}
-         */
-        const applyApiFilter = () => {
-            const failuresOnly = failuresOnlyCheckbox.checked;
-            apiCallRows.forEach((row) => {
-                const failed = row.getAttribute('data-failed') === 'true';
-                row.classList.toggle('debug-panel__api-call--hidden', failuresOnly && !failed);
-            });
-        };
+        if (resetPage) {
+            url.searchParams.set('pageNumber', '1');
+        }
 
-        failuresOnlyCheckbox.addEventListener('change', applyApiFilter);
-        applyApiFilter();
-    }
+        window.location.assign(url.toString());
+    };
 
-    const searchTypeRadios = panel.querySelectorAll('input[name="debug-search-type"]');
-    if (searchTypeRadios.length > 0) {
-        searchTypeRadios.forEach((radio) => {
+    if (alignRadios.length > 0) {
+        alignRadios.forEach((radio) => {
             radio.addEventListener('change', () => {
                 if (radio.checked) {
-                    const nextType = radio.value;
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('type', nextType);
-                    window.location.assign(url.toString());
+                    applyFeatureFlag('align', radio.value);
                 }
             });
+        });
+    }
+
+    if (debugRadios.length > 0) {
+        debugRadios.forEach((radio) => {
+            radio.addEventListener('change', () => {
+                if (radio.checked) {
+                    applyFeatureFlag('debug', radio.value);
+                }
+            });
+        });
+    }
+
+    if (typeSelect) {
+        typeSelect.addEventListener('change', () => {
+            applyFeatureFlag('type', typeSelect.value, true);
         });
     }
 
