@@ -10,6 +10,9 @@
  * @param {import('express').NextFunction} next - Express next middleware function.
  */
 export default function debugMiddleware(req, res, next) {
+    if (!res.locals.featureFlags?.debug) {
+        return next();
+    }
     const requestStartTime = Date.now();
 
     // Initialize debug info container on every request

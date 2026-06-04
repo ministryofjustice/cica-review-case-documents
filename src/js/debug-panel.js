@@ -58,7 +58,11 @@ function initializeDebugPanel() {
             internalToggle.textContent = show ? 'Hide' : 'Show';
         }
 
-        localStorage.setItem('debug-panel-visible', String(show));
+        try {
+            localStorage.setItem('debug-panel-visible', String(show));
+        } catch {
+            // Ignore storage errors (e.g. blocked/disabled storage)
+        }
     };
 
     // External trigger button (floating button)
@@ -78,7 +82,12 @@ function initializeDebugPanel() {
     }
 
     // Restore previous state
-    const wasVisible = localStorage.getItem('debug-panel-visible') === 'true';
+    let wasVisible = false;
+    try {
+        wasVisible = localStorage.getItem('debug-panel-visible') === 'true';
+    } catch {
+        wasVisible = false;
+    }
     togglePanel(wasVisible);
 
     /**
