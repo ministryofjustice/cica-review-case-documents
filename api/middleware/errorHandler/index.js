@@ -234,15 +234,6 @@ export default (err, req, res, next) => {
                 fullError: e
             })
         );
-
-        // Capture validation errors for debug panel
-        if (typeof res.locals?.recordDebugValidationError === 'function') {
-            err.errors.forEach((validationError) => {
-                const field = validationError.path || validationError.instancePath || 'unknown';
-                const message = validationError.message || JSON.stringify(validationError);
-                res.locals.recordDebugValidationError(field, message);
-            });
-        }
     } else {
         // Single error
         errors = [

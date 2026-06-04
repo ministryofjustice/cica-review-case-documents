@@ -53,18 +53,8 @@ export default function debugMiddleware(req, res, next) {
             highlightsCount: 0,
             chunksAligned: false
         },
-        // API call tracking
-        apiCalls: [],
         // Redirect trace
-        redirects: [],
-        // Validation errors
-        validationErrors: [],
-        // OpenSearch metadata
-        opensearchMetadata: {
-            totalShards: null,
-            failedShards: null,
-            timedOut: false
-        }
+        redirects: []
     };
 
     res.locals.recordDebugRedirect = (reason) => {
@@ -78,37 +68,6 @@ export default function debugMiddleware(req, res, next) {
         });
     };
 
-    res.locals.recordDebugValidationError = (field, message) => {
-        if (!res.locals.debugInfo || !Array.isArray(res.locals.debugInfo.validationErrors)) {
-            return;
-        }
-        res.locals.debugInfo.validationErrors.push({
-            field,
-            message,
-            timestamp: new Date().toISOString()
-        });
-    };
-
-    res.locals.recordDebugApiCall = (call) => {
-        if (!res.locals.debugInfo || !Array.isArray(res.locals.debugInfo.apiCalls)) {
-            return;
-        }
-
-        const statusCode = Number(call?.statusCode) || 0;
-        const durationMs = Number(call?.durationMs);
-
-        res.locals.debugInfo.apiCalls.push({
-            method: call?.method || req.method,
-            path: call?.path || req.path,
-            statusCode,
-            source: call?.source || 'internal',
-            durationMs: Number.isFinite(durationMs) ? durationMs : null,
-            isError: statusCode >= 400,
-            errorMessage: call?.errorMessage || null,
-            timestamp: new Date().toISOString()
-        });
-    };
-
     res.locals.finalizeDebugInfo = ({ responseStatus } = {}) => {
         if (!res.locals.debugInfo) {
             return;
@@ -119,20 +78,6 @@ export default function debugMiddleware(req, res, next) {
         res.locals.debugInfo.request.responseStatus =
             responseStatus ?? res.statusCode ?? res.locals.debugInfo.request.responseStatus;
         res.locals.debugInfo.request.elapsedMs = elapsedMs;
-    };
-
-    // Store original res.json to intercept and log API responses
-    const originalJson = res.json.bind(res);
-    res.json = (data) => {
-        // Track successful API responses
-        res.locals.recordDebugApiCall({
-            method: req.method,
-            path: req.path,
-            statusCode: res.statusCode,
-            durationMs: Date.now() - requestStartTime,
-            source: 'res.json'
-        });
-        return originalJson(data);
     };
 
     next();
