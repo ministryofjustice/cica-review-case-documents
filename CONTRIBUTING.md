@@ -127,7 +127,7 @@ The deployment process consists of two stages:
 
 ##### Manual Deployment
 Deployments can be triggered manually via workflow dispatch:
-- Select environment (dev/prod)
+- Select environment (dev/uat)
 - Specify branch/ref to deploy
 - Optional: Skip security scan for emergency deployments (not recommended)
 

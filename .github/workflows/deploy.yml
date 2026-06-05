@@ -92,11 +92,13 @@ jobs:
 
                   # Allow command to fail without killing step
                   set +e
+                  # Capture stdout (JSON) and stderr (diagnostics) separately so downstream steps
+                  # can parse clean JSON via jq and access error context from the log file
                   snyk test \
                       --policy-path=.snyk \
                       --all-projects \
                       --severity-threshold=high \
-                      --json > snyk-test-results.json
+                      --json > snyk-test-results.json 2> snyk-test-results.log
 
                   EXIT_CODE=$?
                   set -e
@@ -111,11 +113,12 @@ jobs:
                   fi
 
                   # Convert to SARIF (always succeeds)
+                  # Append stderr from SARIF conversion to the same log for complete diagnostics
                   snyk test \
                       --policy-path=.snyk \
                       --all-projects \
                       --severity-threshold=high \
-                      --sarif > snyk-test-results.sarif || true
+                      --sarif > snyk-test-results.sarif 2>> snyk-test-results.log || true
 
                   # Ensure SARIF exists
                   if [ ! -s snyk-test-results.sarif ]; then
@@ -193,11 +196,13 @@ jobs:
                   echo "Scanning image: $IMAGE"
 
                   set +e
+                  # Capture stdout (JSON) and stderr (diagnostics) separately so downstream steps
+                  # can parse clean JSON via jq and access error context from the log file
                   snyk container test "$IMAGE" \
                       --policy-path=.snyk \
                       --file=Dockerfile \
                       --severity-threshold=high \
-                      --json > snyk-container-test-results.json
+                      --json > snyk-container-test-results.json 2> snyk-container-test-results.log
 
                   EXIT_CODE=$?
                   set -e
@@ -211,11 +216,12 @@ jobs:
                       printf '{"ok":false,"error":"snyk container test --json produced no valid JSON","exitCode":%s,"vulnerabilities":[],"applications":[]}\n' "$EXIT_CODE" > snyk-container-test-results.json
                   fi
 
+                  # Append stderr from SARIF conversion to the same log for complete diagnostics
                   snyk container test "$IMAGE" \
                       --policy-path=.snyk \
                       --file=Dockerfile \
                       --severity-threshold=high \
-                      --sarif > snyk-container-test-results.sarif || true
+                      --sarif > snyk-container-test-results.sarif 2>> snyk-container-test-results.log || true
 
                   if [ ! -s snyk-container-test-results.sarif ]; then
                       echo '{"version":"2.1.0","runs":[]}' > snyk-container-test-results.sarif
