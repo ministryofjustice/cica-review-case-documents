@@ -36,13 +36,15 @@ function createSearchService({
         token,
         { searchType = DEFAULT_SEARCH_TYPE } = {}
     ) {
-        logger?.debug?.({ query, pageNumber, itemsPerPage }, 'Fetching search results');
-        const encodedSearchType = encodeURIComponent(searchType);
+        logger.info({ query, pageNumber, itemsPerPage }, 'Fetching search results');
+        const searchParams = new URLSearchParams({
+            query: String(query),
+            pageNumber: String(pageNumber),
+            itemsPerPage: String(itemsPerPage),
+            type: searchType
+        });
         const opts = {
-            url:
-                `${process.env.APP_API_URL}/search/?query=${query}` +
-                `&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}` +
-                `&type=${encodedSearchType}`,
+            url: `${process.env.APP_API_URL}/search/?${searchParams.toString()}`,
             headers: {
                 'On-Behalf-Of': caseReferenceNumber
             }

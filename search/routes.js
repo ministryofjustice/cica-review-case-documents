@@ -105,7 +105,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
 
             const token = createApiJwtToken(userName);
             const response = await searchService.getSearchResults(
-                encodeURIComponent(query),
+                query,
                 pageNumber,
                 itemsPerPage,
                 token,
