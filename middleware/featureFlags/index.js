@@ -201,12 +201,12 @@ export default function featureFlags(req, res, next) {
         // Only update the session if there are changes to prevent unnecessary
         // session writes and churn in session stores.
         const existingFlags = req.session.featureFlags || {};
-        const hasStaleKeys = Object.keys(existingFlags)
-            .some((key) => !(key in FEATURE_FLAG_DEFAULTS));
-        const hasChanges = hasStaleKeys ||
-            Object.keys(FEATURE_FLAG_DEFAULTS).some(
-                (key) => existingFlags[key] !== flags[key]
-            );
+        const hasStaleKeys = Object.keys(existingFlags).some(
+            (key) => !(key in FEATURE_FLAG_DEFAULTS)
+        );
+        const hasChanges =
+            hasStaleKeys ||
+            Object.keys(FEATURE_FLAG_DEFAULTS).some((key) => existingFlags[key] !== flags[key]);
         if (hasChanges) {
             req.session.featureFlags = flags;
         }
