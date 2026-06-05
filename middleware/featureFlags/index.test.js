@@ -243,6 +243,43 @@ describe('featureFlags middleware', () => {
         assert.equal(req.session.featureFlags.type, 'hybrid');
         assert.equal(res.locals.featureFlags.type, 'hybrid');
     });
+
+    it('forces debug flag to false in production, ignoring query param', () => {
+        const originalEnv = process.env.DEPLOY_ENV;
+        try {
+            process.env.DEPLOY_ENV = 'production';
+            const req = { query: { debug: 'on' }, session: {} };
+            const res = { locals: {} };
+
+            featureFlags(req, res, () => {});
+
+            // Query param should be ignored in production
+            assert.equal(req.session.featureFlags.debug, false);
+            assert.equal(res.locals.featureFlags.debug, false);
+        } finally {
+            process.env.DEPLOY_ENV = originalEnv;
+        }
+    });
+
+    it('forces debug flag to false in production, overriding stale session', () => {
+        const originalEnv = process.env.DEPLOY_ENV;
+        try {
+            process.env.DEPLOY_ENV = 'production';
+            const req = {
+                query: {},
+                session: { featureFlags: { debug: true } }
+            };
+            const res = { locals: {} };
+
+            featureFlags(req, res, () => {});
+
+            // Stale session value should be overridden in production
+            assert.equal(req.session.featureFlags.debug, false);
+            assert.equal(res.locals.featureFlags.debug, false);
+        } finally {
+            process.env.DEPLOY_ENV = originalEnv;
+        }
+    });
 });
 
 describe('parseEnumFlagValue', () => {
