@@ -44,7 +44,7 @@ The middleware persists the resolved value to the session, so subsequent request
 
 ## Accessing flags
 
-All feature-flag access **must** use `getFeatureFlagValue(session, flagName)` rather than directly accessing `session.featureFlags`. This ensures consistent validation and fallback behavior across the entire app:
+All feature-flag access **should** use `getFeatureFlagValue(session, flagName)` rather than directly accessing `session.featureFlags`. This ensures consistent validation and fallback behavior across the entire app:
 
 ```javascript
 import { getFeatureFlagValue } from './middleware/featureFlags/index.js';
@@ -53,9 +53,12 @@ import { getFeatureFlagValue } from './middleware/featureFlags/index.js';
 const alignFlag = getFeatureFlagValue(req.session, 'align');     // boolean
 const searchType = getFeatureFlagValue(req.session, 'type');      // string
 
+// ⚠️ Direct access - only acceptable to avoid circular dependencies
+const sessionType = session?.featureFlags?.type;                 // direct access (see note below)
+
 // ❌ Incorrect - bypasses validation and normalization
 const alignFlag = req.session?.featureFlags?.align;              // unvalidated
-const searchType = req.session?.featureFlags?.type;              // unvalidated
+const searchType = req.session?.featureFlags?.type;              // unvalidated - use getFeatureFlagValue instead
 ```
 
 The `getFeatureFlagValue` accessor handles all validation:
@@ -63,6 +66,16 @@ The `getFeatureFlagValue` accessor handles all validation:
 - **String flags** (`type`): Calls `resolveSearchType()` internally to canonicalize and validate the search mode.
 
 This centralizes all feature-flag logic in one place, making it easier to maintain and test.
+
+### Exception: Direct access when circular dependencies exist
+
+In rare cases, directly accessing `session.featureFlags` is acceptable if importing `getFeatureFlagValue` would create a circular dependency. Example: `api/search/constants/searchTypes.js` uses direct access to avoid importing from `middleware/featureFlags/index.js` (which itself imports `DEFAULT_SEARCH_TYPE` from `searchTypes.js`).
+
+When using direct access:
+1. **Document why** — add a comment explaining the circular dependency risk
+2. **Validate the value** — check against allowed values before using (e.g., `Object.values(SEARCH_TYPES).includes(sessionType)`)
+3. **Fallback to defaults** — return a safe default if validation fails
+4. **Keep it minimal** — only access the specific flag you need, validate it, and return
 
 ## Implementation
 
