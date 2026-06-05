@@ -118,7 +118,7 @@ The deployment process consists of two stages:
 - Builds Docker image with the commit SHA as the tag
 - Runs Snyk security scanning:
   - **Breaking scan**: Fails on CRITICAL/HIGH vulnerabilities
-  - **Informative scan**: Reports all vulnerabilities without failing
+  - **Informational monitor**: Sends the container image snapshot to Snyk for ongoing monitoring (does not fail the workflow)
 - Pushes image to Amazon ECR
 
 ##### 2. Deploy
