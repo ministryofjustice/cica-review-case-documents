@@ -97,8 +97,9 @@ export default async function createApi(options = {}) {
 
     app.use(
         '/',
-        dynamicRateLimiter,
         authenticateJWTToken,
+        // Rate limit authenticated users by user ID after successful auth
+        dynamicRateLimiter,
         apiSetupMiddleware,
         openApiValidator,
         apiRouter
