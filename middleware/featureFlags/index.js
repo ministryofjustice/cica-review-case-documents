@@ -37,7 +37,7 @@ export function parseFeatureFlagValue(value) {
 /**
  * Parses a query-string string feature flag value.
  *
- * Returns the trimmed string value when provided, otherwise undefined.
+ * Returns the trimmed, lowercased string value when provided, otherwise undefined.
  *
  * @param {unknown} value - Raw query-string value.
  * @param {readonly string[] | undefined} allowedValues - Optional allowlist; if omitted any non-empty string is accepted.
@@ -143,7 +143,7 @@ export function getFeatureFlagValue(session, flagName) {
 /**
  * Persists supported feature flags from query-string params into the session.
  *
- * Boolean flags (`align`) accept `on` / `off` query-string values.
+ * Boolean flags (`align`, `debug`) accept `on` / `off` query-string values.
  * The `type` flag is resolved to a supported search type. Unrecognised values fall back to
  * the current session value or the default search type.
  *

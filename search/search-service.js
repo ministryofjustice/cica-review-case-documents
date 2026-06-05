@@ -37,11 +37,12 @@ function createSearchService({
         { searchType = DEFAULT_SEARCH_TYPE } = {}
     ) {
         logger?.debug?.({ query, pageNumber, itemsPerPage }, 'Fetching search results');
+        const encodedSearchType = encodeURIComponent(searchType);
         const opts = {
             url:
                 `${process.env.APP_API_URL}/search/?query=${query}` +
                 `&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}` +
-                `&type=${searchType}`,
+                `&type=${encodedSearchType}`,
             headers: {
                 'On-Behalf-Of': caseReferenceNumber
             }
