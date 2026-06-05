@@ -79,7 +79,7 @@ The `debug` flag enables a comprehensive debug panel that renders as an overlay 
 
 The panel displays:
 - **Environment & Session** — environment (dev/prod), user info, case reference number, request timestamp
-- **Feature Flags** — current state of all flags with visual indicators (✓/✗)
+- **Feature Flags** — current state of all flags with GOV.UK tags (boolean flags show "On"/green or "Off"/red; non-boolean flags show as monospace values)
 - **Current Request** — HTTP method, path, query parameters
 - **Search Info** — search query, execution time, generated DSL, previous DSL queries
 - **Document Info** — document ID, current page, highlights count, alignment status
@@ -96,4 +96,4 @@ To use debug mode in development:
 /document/ABC123?page=1&debug=on   → document viewer + debug panel
 ```
 
-The debug panel appears as a fixed-position overlay in the bottom-right corner of the page with collapsible sections.
+The debug panel appears as a full-height slide-in panel anchored to the right side of the viewport (max 500px wide). It is toggled via a fixed trigger button positioned at the top-right corner of the page. The panel contains collapsible sections for browsing diagnostic data.
