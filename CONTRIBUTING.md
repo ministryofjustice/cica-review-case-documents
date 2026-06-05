@@ -102,8 +102,7 @@ The project uses Husky for Git hooks:
 | Hook Name  | Action       | Description                          |
 | ---------- | ------------ | ------------------------------------ |
 | pre-commit | npm run precommit | Runs format, lint, sass, and gitleaks before commit |
-| pre-push   | npm run prepush | Runs tests and JSDoc linting before push |
-
+| pre-push   | npm run prepush | Runs npm audit --audit-level=high --omit=dev, tests and JSDoc linting before push |
 
 ### CI/CD Pipeline
 
@@ -117,34 +116,52 @@ The deployment process consists of two stages:
 
 ##### 1. Build and Scan
 - Builds Docker image with the commit SHA as the tag
-- Runs Trivy security scanning:
+- Runs Snyk security scanning:
   - **Breaking scan**: Fails on CRITICAL/HIGH vulnerabilities
-  - **Informative scan**: Reports all vulnerabilities without failing
+  - **Informational monitor**: Sends the container image snapshot to Snyk for ongoing monitoring (does not fail the workflow)
 - Pushes image to Amazon ECR
 
 ##### 2. Deploy
 - Templates Kubernetes manifests with the built image
-- Deploys to the specified environment (dev/prod)
+- Deploys to the specified environment (dev/uat)
 
 ##### Manual Deployment
 Deployments can be triggered manually via workflow dispatch:
-- Select environment (dev/prod)
+- Select environment (dev/uat)
 - Specify branch/ref to deploy
 - Optional: Skip security scan for emergency deployments (not recommended)
 
-##### Security Scanning
-Uses Trivy to scan for vulnerabilities. See `.trivyignore` for suppressed CVEs.
+###### Security Scanning
 
-Snyk scans in deployment CI use `.snyk` via `--policy-path=.snyk`.
-Keep `.snyk` as a valid YAML policy file at all times, even when no ignores are active:
+The project includes automated security scanning during deployment via [Snyk](https://snyk.io/).
 
+###### Snyk Policy File (`.snyk`)
+
+The `.snyk` file contains Snyk policy rules to manage vulnerability suppressions in CI/CD. It must remain a valid YAML file at all times, even when no suppressions are active.
+
+When suppressing vulnerabilities, always include:
+- **reason**: Clear explanation for the suppression
+- **expires**: Expiry date (ISO 8601 format)
+
+Example:
 ```yaml
 version: v1.25.0
-ignore: {}
+ignore:
+  SNYK-ID-123:
+    - "*":
+        reason: "Non-fixable in current base image, tracked for remediation"
+        expires: "2026-12-31T23:59:59.000Z"
 ```
 
-When adding temporary ignores, include a clear reason and expiry date. For syntax and examples, see:
-https://docs.snyk.io/manage-risk/policies/the-.snyk-file
+For detailed syntax and policy options, see [Snyk policy documentation](https://docs.snyk.io/manage-risk/policies/the-.snyk-file).
+
+**Policy Reporting:**
+Suppressions are reported in deployment logs for transparency and audit purposes. During deployment, the workflow displays:
+- The full `.snyk` policy file content
+- Emits GitHub Actions warning annotations
+- Clear visibility into all suppressed vulnerabilities and their reasons
+
+This ensures reviewers can audit which vulnerabilities have been intentionally ignored and verify they have appropriate expiry dates.
 
 Environment variables are substituted during CI/CD deployment.
 

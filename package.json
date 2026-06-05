@@ -27,7 +27,7 @@
         "format": "biome format --write",
         "precommit:secrets": "command -v gitleaks >/dev/null 2>&1 || { echo 'gitleaks not found on PATH; skipping secrets scan. Install gitleaks from https://github.com/gitleaks/gitleaks or disable the precommit:secrets hook if this is intentional.'; exit 1; }; gitleaks protect --staged --redact --verbose --config .gitleaks.toml",
         "precommit": "npm run format && npm run lint && npm run sass && npm run precommit:secrets",
-        "prepush": "npm run test && npm run jsdoc:check",
+        "prepush": "npm audit --audit-level=high --omit=dev && npm run test && npm run jsdoc:check",
         "jsdoc:check": "eslint .",
         "prepare": "husky"
     },
@@ -35,7 +35,7 @@
         "@apidevtools/json-schema-ref-parser": "^15.3.5",
         "@aws-sdk/client-s3": "^3.1050.0",
         "@ministryofjustice/frontend": "^9.0.0",
-        "@opensearch-project/opensearch": "^3.6.0",
+        "@opensearch-project/opensearch": "3.6.0",
         "ajv": "^8.20.0",
         "ajv-errors": "^3.0.0",
         "cookie-parser": "^1.4.7",
