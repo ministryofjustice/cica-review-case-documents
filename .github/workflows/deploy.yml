@@ -103,6 +103,13 @@ jobs:
 
                   echo "Snyk raw exit code: $EXIT_CODE"
 
+                  # Normalize JSON output so downstream cat/jq steps are deterministic.
+                  # Keep EXIT_CODE-based gating as the source of pass/fail truth.
+                  if [ ! -s snyk-test-results.json ] || ! jq -e . snyk-test-results.json >/dev/null 2>&1; then
+                      echo "::warning::snyk-test-results.json missing or invalid; writing fallback JSON"
+                      printf '{"ok":false,"error":"snyk test --json produced no valid JSON","exitCode":%s,"vulnerabilities":[],"applications":[]}\n' "$EXIT_CODE" > snyk-test-results.json
+                  fi
+
                   # Convert to SARIF (always succeeds)
                   snyk test \
                       --policy-path=.snyk \
@@ -196,6 +203,13 @@ jobs:
                   set -e
 
                   echo "Snyk raw exit code: $EXIT_CODE"
+
+                  # Normalize JSON output so downstream cat/jq steps are deterministic.
+                  # Keep EXIT_CODE-based gating as the source of pass/fail truth.
+                  if [ ! -s snyk-container-test-results.json ] || ! jq -e . snyk-container-test-results.json >/dev/null 2>&1; then
+                      echo "::warning::snyk-container-test-results.json missing or invalid; writing fallback JSON"
+                      printf '{"ok":false,"error":"snyk container test --json produced no valid JSON","exitCode":%s,"vulnerabilities":[],"applications":[]}\n' "$EXIT_CODE" > snyk-container-test-results.json
+                  fi
 
                   snyk container test "$IMAGE" \
                       --policy-path=.snyk \
