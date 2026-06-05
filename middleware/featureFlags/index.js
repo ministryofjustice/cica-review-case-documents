@@ -60,6 +60,11 @@ export function parseEnumFlagValue(value, allowedValues) {
 /**
  * Resolves where a feature flag value originated from.
  *
+ * When the middleware persists default values into the session, this function
+ * treats values equal to the defaults as 'default' source, not 'session'.
+ * This ensures the debug panel's origin indicator reflects the actual source
+ * of a user-set override, not just whether a value exists in the session.
+ *
  * @param {import('express-session').Session | undefined} session - Request session object.
  * @param {'align' | 'type' | 'debug'} flagName - Supported feature flag name.
  * @returns {'default' | 'session'} Source of the resolved value.
@@ -72,18 +77,27 @@ export function getFeatureFlagSource(session, flagName) {
         if (typeof sessionFlagValue === 'string') {
             const normalisedSessionType = sessionFlagValue.trim().toLowerCase();
             if (Object.values(SEARCH_TYPES).includes(normalisedSessionType)) {
-                return 'session';
+                // Treat persisted defaults as originating from 'default', not 'session'
+                return normalisedSessionType === defaultValue ? 'default' : 'session';
             }
         }
         return 'default';
     }
 
     if (typeof defaultValue === 'boolean') {
-        return typeof sessionFlagValue === 'boolean' ? 'session' : 'default';
+        if (typeof sessionFlagValue === 'boolean') {
+            // Treat persisted defaults as originating from 'default', not 'session'
+            return sessionFlagValue === defaultValue ? 'default' : 'session';
+        }
+        return 'default';
     }
 
     if (typeof defaultValue === 'string') {
-        return typeof sessionFlagValue === 'string' ? 'session' : 'default';
+        if (typeof sessionFlagValue === 'string') {
+            // Treat persisted defaults as originating from 'default', not 'session'
+            return sessionFlagValue === defaultValue ? 'default' : 'session';
+        }
+        return 'default';
     }
 
     return 'default';
