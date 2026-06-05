@@ -43,7 +43,12 @@ describe('search-service', () => {
         const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
         assert.equal(
             mockGetCallArguments.url,
-            `${process.env.APP_API_URL}/search/?query=${query}&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}&type=semantic`
+            `${process.env.APP_API_URL}/search/?${new URLSearchParams({
+                query,
+                pageNumber: String(pageNumber),
+                itemsPerPage: String(itemsPerPage),
+                type: 'semantic'
+            }).toString()}`
         );
         assert.equal(mockGetCallArguments.headers['On-Behalf-Of'], '12-745678');
     });
@@ -68,7 +73,39 @@ describe('search-service', () => {
         const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
         assert.equal(
             mockGetCallArguments.url,
-            `${process.env.APP_API_URL}/search/?query=${query}&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}&type=${encodeURIComponent(injectedSearchType)}`
+            `${process.env.APP_API_URL}/search/?${new URLSearchParams({
+                query,
+                pageNumber: String(pageNumber),
+                itemsPerPage: String(itemsPerPage),
+                type: injectedSearchType
+            }).toString()}`
+        );
+        assert.equal(mockGetCallArguments.url.includes('&debug=on'), false);
+    });
+
+    it('Should encode query to prevent query-string injection', async () => {
+        const fakeLogger = { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} };
+        const service = createSearchService({
+            caseReferenceNumber: '12-745678',
+            createRequestService: mockCreateRequestService,
+            logger: fakeLogger
+        });
+
+        const query = 'x&debug=on';
+
+        await service.getSearchResults(query, 1, 10, undefined, {
+            searchType: 'semantic'
+        });
+
+        const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
+        assert.equal(
+            mockGetCallArguments.url,
+            `${process.env.APP_API_URL}/search/?${new URLSearchParams({
+                query,
+                pageNumber: '1',
+                itemsPerPage: '10',
+                type: 'semantic'
+            }).toString()}`
         );
         assert.equal(mockGetCallArguments.url.includes('&debug=on'), false);
     });
