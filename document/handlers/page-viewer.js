@@ -135,6 +135,10 @@ export function createPageViewerHandler(
                 debugInfo: res.locals.debugInfo
             });
 
+            if (typeof res.locals?.finalizeDebugInfo === 'function') {
+                res.locals.finalizeDebugInfo({ responseStatus: 200 });
+            }
+
             return res.send(html);
         } catch (err) {
             next(err);

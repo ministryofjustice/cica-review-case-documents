@@ -198,9 +198,7 @@ describe('document-dal', () => {
 
         const result = await dal.getDocumentsChunksByKeyword('keyword', 1, 10);
 
-        assert.deepStrictEqual(result, {
-            hits: []
-        });
+        assert.deepStrictEqual(result, { hits: [] });
         assert.strictEqual(warnCalls.length, 1);
         assert.strictEqual(warnCalls[0].message, '[OpenSearch] No results found for query');
         assert.strictEqual(warnCalls[0].context.keyword, 'keyword');
