@@ -47,4 +47,29 @@ describe('search-service', () => {
         );
         assert.equal(mockGetCallArguments.headers['On-Behalf-Of'], '12-745678');
     });
+
+    it('Should encode searchType in URL query string', async () => {
+        const fakeLogger = { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} };
+        const service = createSearchService({
+            caseReferenceNumber: '12-745678',
+            createRequestService: mockCreateRequestService,
+            logger: fakeLogger
+        });
+
+        const query = 'example';
+        const pageNumber = 1;
+        const itemsPerPage = 10;
+        const injectedSearchType = 'semantic&debug=on';
+
+        await service.getSearchResults(query, pageNumber, itemsPerPage, undefined, {
+            searchType: injectedSearchType
+        });
+
+        const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
+        assert.equal(
+            mockGetCallArguments.url,
+            `${process.env.APP_API_URL}/search/?query=${query}&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}&type=${encodeURIComponent(injectedSearchType)}`
+        );
+        assert.equal(mockGetCallArguments.url.includes('&debug=on'), false);
+    });
 });

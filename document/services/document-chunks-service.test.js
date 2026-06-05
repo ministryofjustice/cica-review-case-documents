@@ -176,6 +176,38 @@ describe('createPageChunksService', () => {
             );
         });
 
+        it('should encode searchType to prevent query-string injection', async () => {
+            mockGet.mockResolvedValue({
+                body: {
+                    data: {
+                        type: 'page-chunks',
+                        attributes: {
+                            chunks: []
+                        }
+                    }
+                }
+            });
+
+            const injectedSearchType = 'semantic&debug=on';
+            const service = createPageChunksService({
+                documentId: mockDocumentId,
+                pageNumber: mockPageNumber,
+                crn: mockCrn,
+                searchType: injectedSearchType,
+                jwtToken: mockJwtToken,
+                logger: mockLogger,
+                createRequestService: mockCreateRequestService
+            });
+
+            await service.getPageChunks();
+
+            assert.strictEqual(
+                mockGet.calls[0].url.includes(`type=${encodeURIComponent(injectedSearchType)}`),
+                true
+            );
+            assert.strictEqual(mockGet.calls[0].url.includes('&debug=on'), false);
+        });
+
         it('should handle missing data structure gracefully', async () => {
             mockGet.mockResolvedValue({
                 body: {

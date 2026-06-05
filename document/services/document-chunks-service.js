@@ -45,7 +45,8 @@ function createPageChunksService({
         }
 
         // there's an issue with URLSearchParams encoding spaces to '+' which is breaking the api call. When encoded as %20 it works fine.
-        const baseUrl = `${process.env.APP_API_URL}/document/${documentId}/page/${pageNumber}/chunks?crn=${encodeURIComponent(crn)}&type=${searchType}`;
+        const encodedSearchType = encodeURIComponent(searchType);
+        const baseUrl = `${process.env.APP_API_URL}/document/${documentId}/page/${pageNumber}/chunks?crn=${encodeURIComponent(crn)}&type=${encodedSearchType}`;
         const url = searchTerm
             ? `${baseUrl}&searchTerm=${encodeURIComponent(searchTerm)}`
             : baseUrl;
