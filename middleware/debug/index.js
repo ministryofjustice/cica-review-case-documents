@@ -15,6 +15,21 @@ export default function debugMiddleware(req, res, next) {
     }
     const requestStartTime = Date.now();
 
+    const buildResolvedRoute = () => {
+        const baseUrl = req.baseUrl || '';
+        const routePath = req.route?.path;
+
+        if (!routePath) {
+            return null;
+        }
+
+        if (routePath === '/') {
+            return baseUrl || '/';
+        }
+
+        return `${baseUrl}${routePath}` || routePath;
+    };
+
     // Initialize debug info container on every request
     res.locals.debugInfo = {
         timestamp: new Date().toISOString(),
@@ -33,7 +48,7 @@ export default function debugMiddleware(req, res, next) {
             correlationId: req.id || req.headers['x-correlation-id'] || 'not-set',
             method: req.method,
             path: req.path,
-            route: req.route?.path || null,
+            route: buildResolvedRoute(),
             query: req.query,
             url: req.originalUrl,
             startedAt: new Date(requestStartTime).toISOString(),
@@ -64,7 +79,8 @@ export default function debugMiddleware(req, res, next) {
         }
 
         const elapsedMs = Date.now() - requestStartTime;
-        res.locals.debugInfo.request.route = req.route?.path || res.locals.debugInfo.request.route;
+        res.locals.debugInfo.request.route =
+            buildResolvedRoute() || res.locals.debugInfo.request.route;
         res.locals.debugInfo.request.responseStatus =
             responseStatus ?? res.statusCode ?? res.locals.debugInfo.request.responseStatus;
         res.locals.debugInfo.request.elapsedMs = elapsedMs;
