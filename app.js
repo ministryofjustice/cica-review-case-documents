@@ -169,16 +169,16 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
         next();
     });
 
-    // Apply General Rate Limiter GLOBALLY (Fixes CodeQL)
-    // Note: auth login exclusion is handled within the limiter configuration
+    app.use('/api', await createApi());
+
+    // Apply General Rate Limiter to web app routes.
+    // API routes are mounted before this and use their own API-specific limiter.
     app.use(generalRateLimiter);
 
     app.use('/', indexRouter);
 
     // Auth routes (login, etc.)
     app.use('/auth', authRouter);
-
-    app.use('/api', await createApi());
     // Security: enforceCrnInQuery uses an explicit allowlist of redirect-eligible paths (see middleware).
     // If you add a new route that should support internal redirects, update the allowlist and its test.
     app.use(enforceCrnInQuery);
@@ -188,7 +188,6 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     app.use(
         '/document',
         isAuthenticated,
-        generalRateLimiter,
         getCaseReferenceNumberFromQueryString,
         caseSelected,
         featureFlags,
@@ -197,7 +196,6 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     app.use(
         '/search',
         isAuthenticated,
-        generalRateLimiter,
         getCaseReferenceNumberFromQueryString,
         caseSelected,
         featureFlags,

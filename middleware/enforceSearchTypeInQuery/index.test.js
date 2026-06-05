@@ -38,7 +38,7 @@ function createMockRes() {
 }
 
 describe('enforceSearchTypeInQuery', () => {
-    it('redirects with default type when type is absent from query', () => {
+    it('redirects with default type when type is missing from query', () => {
         const req = createMockReq({ query: { query: 'acute', crn: '26-711111' } });
         const res = createMockRes();
         let nextCalled = false;
@@ -54,7 +54,20 @@ describe('enforceSearchTypeInQuery', () => {
         assert.strictEqual(nextCalled, false);
     });
 
-    it('redirects with session type when set and type absent from query', () => {
+    it('redirects to canonical type when type is valid but not canonical (e.g., uppercase)', () => {
+        const req = createMockReq({ query: { query: 'acute', type: 'KEYWORD' } });
+        const res = createMockRes();
+        let nextCalled = false;
+
+        enforceSearchTypeInQuery(req, res, () => {
+            nextCalled = true;
+        });
+
+        assert.strictEqual(res.redirectedUrl, '/search?query=acute&type=keyword');
+        assert.strictEqual(nextCalled, false);
+    });
+
+    it('redirects with session type when set and type is missing from query', () => {
         const req = createMockReq({
             query: { query: 'acute' },
             session: { featureFlags: { type: 'keyword' } }
@@ -188,7 +201,7 @@ describe('enforceSearchTypeInQuery', () => {
 
     it('redirects with session/default type when type is present but invalid', () => {
         const req = createMockReq({
-            query: { query: 'acute', type: 'keyword,semantic' },
+            query: { query: 'acute', type: 'not-a-real-type' },
             session: { featureFlags: { type: 'keyword' } }
         });
         const res = createMockRes();
