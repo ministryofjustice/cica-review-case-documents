@@ -8,7 +8,7 @@ Runtime feature flags are stored in the Express session (`req.session.featureFla
 |---|---|---|---|
 | `align` | `boolean` | `true` | Enable alignment of image highlight bounding boxes to prevent overlaps |
 | `type` | `string` | `hybrid-dates` | Search mode - controls which OpenSearch query strategy is used |
-| `debug` | `boolean` | `false` | Show debug panel with diagnostic info, DSL queries, feature flags, and API calls |
+| `debug` | `boolean` | `false` | Show debug panel with diagnostic info, DSL queries, feature flags, and request details |
 
 ## Toggling flags via URL
 
@@ -83,7 +83,6 @@ The panel displays:
 - **Current Request** — HTTP method, path, query parameters
 - **Search Info** — search query, execution time, generated DSL, previous DSL queries
 - **Document Info** — document ID, current page, highlights count, alignment status
-- **API Calls** — traced API requests with method, path, status code, timestamp
 
 The debug panel is implemented through:
 1. **middleware/debug/index.js** — Collects diagnostic data into `res.locals.debugInfo` so route handlers can attach request/search/document metadata.

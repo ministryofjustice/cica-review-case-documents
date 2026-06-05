@@ -176,6 +176,9 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     // API routes are mounted before this and use their own API-specific limiter.
     app.use(generalRateLimiter);
 
+    // Apply feature flags middleware globally so all routes and templates have access
+    app.use(featureFlags);
+
     app.use('/', indexRouter);
 
     // Auth routes (login, etc.)
@@ -186,9 +189,6 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     // Reinstates non-default feature flags into the URL so they persist across navigation
     // and can be bookmarked. Mirrors the pattern of enforceCrnInQuery.
     app.use(enforceFeatureFlagsInQuery);
-
-    // Apply feature flags middleware globally so all routes and templates have access
-    app.use(featureFlags);
 
     app.use(
         '/document',
