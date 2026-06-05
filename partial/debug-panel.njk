@@ -2,7 +2,7 @@
 {% from "govuk/components/tag/macro.njk" import govukTag %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
-{% if featureFlags and featureFlags.debug %}
+{% if featureFlags and featureFlags.debug and debugInfo %}
 <button id="debug-panel-toggle" class="debug-panel-trigger" type="button" aria-controls="debug-panel" aria-expanded="false" title="Toggle debug panel">Debug info</button>
 <div id="debug-panel" class="debug-panel" role="region" aria-label="Request debug information" aria-hidden="true" inert>
   <div class="debug-panel__header">
