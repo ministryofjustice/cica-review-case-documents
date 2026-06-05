@@ -122,7 +122,7 @@ export function getFeatureFlagValue(session, flagName) {
     }
 
     // Validate the session value matches the expected type for this flag.
-    // // Boolean flags like 'align' and 'debug' should only accept booleans; string flags like 'type'
+    // Boolean flags like 'align' and 'debug' should only accept booleans; string flags like 'type'
     // should only accept strings. Stale/corrupt sessions with mismatched types fall back
     // to the default.
     if (typeof defaultValue === 'boolean') {
