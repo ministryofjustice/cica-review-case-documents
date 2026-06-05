@@ -75,7 +75,6 @@ function buildQueryJson({
     const queryTypeBuilders = queryDslConfig
         ? createQueryTypeBuilders({ queryDslConfig })
         : defaultQueryTypeBuilders;
-
     // dispatch to the appropriate mode-specific builder. Each builder handles
     // its own date preprocessing (keyword and hybrid extract dates, semantic
     // skips preprocessing entirely for efficiency).

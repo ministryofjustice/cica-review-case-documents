@@ -169,8 +169,10 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
         next();
     });
 
-    // Apply General Rate Limiter GLOBALLY (Fixes CodeQL)
-    // Note: auth login exclusion is handled within the limiter configuration
+    app.use('/api', await createApi());
+
+    // Apply General Rate Limiter to web app routes.
+    // API routes are mounted before this and use their own API-specific limiter.
     app.use(generalRateLimiter);
 
     app.use('/', indexRouter);

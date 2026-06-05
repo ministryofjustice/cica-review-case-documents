@@ -63,15 +63,28 @@ describe('resolveSearchType', () => {
             assert.strictEqual(resolveSearchType('foo,bar'), DEFAULT_SEARCH_TYPE);
         });
 
-        it('returns the session feature-flag value when the type is not recognised and a session override is set', () => {
+        it('returns the normalised session feature-flag value when the type is not recognised and a session override is set', () => {
             const session = { featureFlags: { type: 'semantic' } };
             assert.strictEqual(resolveSearchType('unknown', session), 'semantic');
         });
 
-        it('returns DEFAULT_SEARCH_TYPE when the session feature-flag value is falsy', () => {
+        it('normalises session feature-flag fallback values before validation', () => {
+            const session = { featureFlags: { type: ' KEYWORD-DATES ' } };
+            assert.strictEqual(resolveSearchType('unknown', session), 'keyword-dates');
+        });
+
+        it('returns DEFAULT_SEARCH_TYPE when the session feature-flag value is missing or invalid', () => {
             assert.strictEqual(resolveSearchType('unknown', {}), DEFAULT_SEARCH_TYPE);
             assert.strictEqual(
                 resolveSearchType('unknown', { featureFlags: {} }),
+                DEFAULT_SEARCH_TYPE
+            );
+            assert.strictEqual(
+                resolveSearchType('unknown', { featureFlags: { type: 'not-a-type' } }),
+                DEFAULT_SEARCH_TYPE
+            );
+            assert.strictEqual(
+                resolveSearchType('unknown', { featureFlags: { type: '   ' } }),
                 DEFAULT_SEARCH_TYPE
             );
         });
