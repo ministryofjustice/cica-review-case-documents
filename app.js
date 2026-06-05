@@ -190,13 +190,19 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     // Apply feature flags middleware globally so all routes and templates have access
     app.use(featureFlags);
 
-    app.use('/document', isAuthenticated, generalRateLimiter, caseSelected, getCaseReferenceNumberFromQueryString, debugMiddleware, createDocumentRouter());
+    app.use(
+        '/document',
+        isAuthenticated,
+        getCaseReferenceNumberFromQueryString,
+        caseSelected,
+        debugMiddleware,
+        createDocumentRouter()
+    );
     app.use(
         '/search',
         isAuthenticated,
-        generalRateLimiter,
-        caseSelected,
         getCaseReferenceNumberFromQueryString,
+        caseSelected,
         debugMiddleware,
         enforceSearchTypeInQuery,
         searchRouter({ createTemplateEngineService, createSearchService })

@@ -3,8 +3,8 @@
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% if featureFlags and featureFlags.debug %}
-<button id="debug-panel-toggle" class="debug-panel-trigger" type="button" aria-expanded="false" title="Toggle debug panel">Debug info</button>
-<div class="debug-panel" role="region" aria-label="Request debug information">
+<button id="debug-panel-toggle" class="debug-panel-trigger" type="button" aria-controls="debug-panel" aria-expanded="false" title="Toggle debug panel">Debug info</button>
+<div id="debug-panel" class="debug-panel" role="region" aria-label="Request debug information" aria-hidden="true" inert>
   <div class="debug-panel__header">
     <h2 class="debug-panel__title govuk-heading-s">Debug panel</h2>
     <div class="debug-panel__header-actions">
@@ -17,7 +17,7 @@
         },
         type: 'button'
       }) }}
-      <button class="debug-panel__toggle govuk-!-margin-bottom-0" aria-expanded="false" aria-controls="debug-content" type="button">Show</button>
+      <button class="debug-panel__toggle govuk-!-margin-bottom-0" aria-expanded="false" aria-controls="debug-panel" type="button">Show</button>
     </div>
     <span id="debug-copy-status" class="govuk-visually-hidden" aria-live="polite"></span>
   </div>
