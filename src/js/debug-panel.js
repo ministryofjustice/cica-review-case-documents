@@ -46,8 +46,12 @@ function initializeDebugPanel() {
     const togglePanel = (show) => {
         if (show) {
             panel.classList.add('debug-panel--visible');
+            panel.removeAttribute('aria-hidden');
+            panel.inert = false;
         } else {
             panel.classList.remove('debug-panel--visible');
+            panel.setAttribute('aria-hidden', 'true');
+            panel.inert = true;
         }
 
         if (triggerButton) {
@@ -62,6 +66,10 @@ function initializeDebugPanel() {
             localStorage.setItem('debug-panel-visible', String(show));
         } catch {
             // Ignore storage errors (e.g. blocked/disabled storage)
+        }
+
+        if (!show && panel.contains(document.activeElement) && triggerButton) {
+            triggerButton.focus();
         }
     };
 
