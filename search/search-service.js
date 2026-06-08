@@ -43,8 +43,11 @@ function createSearchService({
             itemsPerPage: String(itemsPerPage),
             type: searchType
         });
+        const strictQueryString = Array.from(searchParams.entries())
+            .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+            .join('&');
         const opts = {
-            url: `${process.env.APP_API_URL}/search/?${searchParams.toString()}`,
+            url: `${process.env.APP_API_URL}/search/?${strictQueryString}`,
             headers: {
                 'On-Behalf-Of': caseReferenceNumber
             }
