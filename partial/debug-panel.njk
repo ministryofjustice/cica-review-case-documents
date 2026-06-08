@@ -176,6 +176,12 @@
                   </div>
                 {% endif %}
               {% endif %}
+              {% if debugInfo.request.queryDsl %}
+                <div class="debug-panel__info-item debug-panel__info-item--full">
+                  <span class="debug-panel__label">OpenSearch Query DSL:</span>
+                  <pre class="debug-panel__value debug-panel__value--mono">{{ debugInfo.request.queryDsl | dump(2) }}</pre>
+                </div>
+              {% endif %}
             </div>
           </div>
         </div>

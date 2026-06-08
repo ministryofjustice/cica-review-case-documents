@@ -53,7 +53,8 @@ export default function debugMiddleware(req, res, next) {
             url: req.originalUrl,
             startedAt: new Date(requestStartTime).toISOString(),
             responseStatus: null,
-            elapsedMs: null
+            elapsedMs: null,
+            queryDsl: null
         },
         // Search-specific data (populated by route handlers)
         search: {
