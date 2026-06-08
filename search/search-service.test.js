@@ -109,4 +109,24 @@ describe('search-service', () => {
         );
         assert.equal(mockGetCallArguments.url.includes('&debug=on'), false);
     });
+
+    it('Should encode spaces in query as %20 for API compatibility', async () => {
+        const fakeLogger = { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} };
+        const service = createSearchService({
+            caseReferenceNumber: '12-745678',
+            createRequestService: mockCreateRequestService,
+            logger: fakeLogger
+        });
+
+        await service.getSearchResults('acute november 2022', 1, 10, undefined, {
+            searchType: 'hybrid-dates'
+        });
+
+        const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
+        assert.equal(
+            mockGetCallArguments.url,
+            `${process.env.APP_API_URL}/search/?query=acute%20november%202022&pageNumber=1&itemsPerPage=10&type=hybrid-dates`
+        );
+        assert.equal(mockGetCallArguments.url.includes('acute+november+2022'), false);
+    });
 });

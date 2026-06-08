@@ -136,6 +136,30 @@ describe('OpenAPI Validator Middleware', () => {
         assert.match(res.body.errors[0].message, /must NOT have fewer than 2 characters/);
     });
 
+    it('responds with 400 for plus-encoded spaces in "query" parameter', async () => {
+        const res = await request(app)
+            .get(
+                '/api/search?query=acute+november+2022&pageNumber=1&itemsPerPage=10&type=hybrid-dates'
+            )
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('On-Behalf-Of', '25-711111');
+
+        assert.strictEqual(res.statusCode, 400);
+        assert.ok(res.body.errors, 'Response should have errors');
+        assert.match(res.body.errors[0].message, /must be url encoded/i);
+    });
+
+    it('accepts percent-encoded spaces in "query" parameter', async () => {
+        const res = await request(app)
+            .get(
+                '/api/search?query=acute%20november%202022&pageNumber=1&itemsPerPage=10&type=hybrid-dates'
+            )
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('On-Behalf-Of', '25-711111');
+
+        assert.strictEqual(res.statusCode, 200);
+    });
+
     it('responds with 400 for invalid "On-Behalf-Of" header', async () => {
         const res = await request(app)
             .get('/api/search?query=test')
