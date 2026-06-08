@@ -3,6 +3,7 @@ import express from 'express';
 import { resolveSearchType } from '../api/search/constants/searchTypes.js';
 import { finalizeDebugInfo } from '../middleware/debug/index.js';
 import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
+import buildQueryJson from '../api/DAL/utils/buildQueryJson/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 
 /**
@@ -131,6 +132,13 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
 
             // Populate debug info with search results if debug is enabled
             if (res.locals.featureFlags?.debug && res.locals.debugInfo) {
+                res.locals.debugInfo.request.queryDsl = buildQueryJson({
+                    keyword: query,
+                    caseReferenceNumber: req.session?.caseReferenceNumber,
+                    pageNumber,
+                    itemsPerPage,
+                    options: { searchType, logger: req.log }
+                });
                 const queryHash = crypto
                     .createHash('sha256')
                     .update(String(query))
@@ -139,7 +147,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
 
                 res.locals.debugInfo.search = {
                     lastQuery: query,
-                    lastDSL: body?.data?.attributes?.dsl || null,
+                    lastDSL: null,
                     previousDSLs: [],
                     lastResults: {
                         totalHits: totalItemCount,
