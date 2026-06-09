@@ -63,6 +63,7 @@ export default function searchRouter({ searchService }) {
             // when absent or invalid. This ensures downstream consumers always receive
             // a valid type string, not an array or enum object.
             const searchType = resolveSearchType(rawSearchType);
+            const includeNamedQueries = req.get('X-Debug-Context') === 'true';
 
             const searchResults = await searchService.getSearchResultsByKeyword(
                 query,
@@ -71,7 +72,9 @@ export default function searchRouter({ searchService }) {
                 {
                     caseReferenceNumber: req.get('On-Behalf-Of'),
                     logger: req.log,
-                    searchType
+                    searchType,
+                    res,
+                    includeNamedQueries
                 }
             );
 

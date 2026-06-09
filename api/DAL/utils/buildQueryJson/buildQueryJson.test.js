@@ -15,7 +15,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 10,
-            options: { searchType: 'keyword-dates' }
+            options: { searchType: 'keyword-dates' , includeNamedQueries: true }
         };
 
         const expected = {
@@ -55,7 +55,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 5,
-            options: { searchType: 'keyword-dates' }
+            options: { searchType: 'keyword-dates', includeNamedQueries: true }
         };
 
         const expected = {
@@ -76,13 +76,33 @@ describe('buildQueryJson', () => {
         assert.deepStrictEqual(result, expected);
     });
 
+    it('Should omit named query metadata by default', () => {
+        const result = buildQueryJson({
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 5,
+            options: { searchType: 'keyword-dates' }
+        });
+
+        const clauses = result.query.bool.should || [];
+        for (const clause of clauses) {
+            if (clause.match?.chunk_text) {
+                assert.strictEqual(clause.match.chunk_text._name, undefined);
+            }
+            if (clause.match_phrase?.chunk_text) {
+                assert.strictEqual(clause.match_phrase.chunk_text._name, undefined);
+            }
+        }
+    });
+
     it('Should build query with multiple numeric dates and remaining text', () => {
         const params = {
             keyword: 'Event dates: 12/01/2024, 13-02-24 in the calendar',
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: { searchType: 'keyword-dates' }
+            options: { searchType: 'keyword-dates' , includeNamedQueries: true }
         };
 
         const expected = {
@@ -162,7 +182,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: { searchType: 'keyword-dates' }
+            options: { searchType: 'keyword-dates' , includeNamedQueries: true }
         };
 
         const expected = {
@@ -205,7 +225,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: { searchType: 'keyword-dates' }
+            options: { searchType: 'keyword-dates' , includeNamedQueries: true }
         };
 
         const expected = {
@@ -259,7 +279,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: { searchType: 'keyword-dates' }
+            options: { searchType: 'keyword-dates' , includeNamedQueries: true }
         };
 
         const expected = {
@@ -307,7 +327,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: { searchType: 'keyword-dates' }
+            options: { searchType: 'keyword-dates' , includeNamedQueries: true }
         };
 
         const expected = {
@@ -332,7 +352,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: { searchType: 'keyword' }
+            options: { searchType: 'keyword' , includeNamedQueries: true }
         };
 
         const expected = {
@@ -372,7 +392,7 @@ describe('buildQueryJson', () => {
                     caseReferenceNumber: '26-711111',
                     pageNumber: 1,
                     itemsPerPage: 10,
-                    options: { searchType: 'invalid' }
+                    options: { searchType: 'invalid' , includeNamedQueries: true }
                 }),
             {
                 message:
@@ -396,7 +416,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            options: { searchType: 'hybrid', queryDslConfig: testQueryDslConfig }
+            options: { searchType: 'hybrid', includeNamedQueries: true, queryDslConfig: testQueryDslConfig  }
         };
 
         const expected = {
@@ -443,8 +463,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            options: {
-                searchType: 'semantic',
+            options: { searchType: 'semantic', includeNamedQueries: true,
                 queryDslConfig: {
                     // Pure semantic mode uses semanticOnlyMinScore (cosine 0..1).
                     semanticOnlyMinScore: 0.5,
@@ -452,7 +471,7 @@ describe('buildQueryJson', () => {
                     lexicalBoost: 20,
                     dateBoost: 1,
                     neuralBoost: 4
-                }
+                 }
             }
         };
 
@@ -500,7 +519,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 5,
-            options: { searchType: 'hybrid-dates', queryDslConfig: testQueryDslConfig }
+            options: { searchType: 'hybrid-dates', includeNamedQueries: true, queryDslConfig: testQueryDslConfig  }
         };
 
         const result = buildQueryJson(params);
@@ -526,7 +545,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: '2',
             itemsPerPage: '5',
-            options: { searchType: 'hybrid' }
+            options: { searchType: 'hybrid' , includeNamedQueries: true }
         });
 
         assert.strictEqual(result.from, 5);
@@ -541,7 +560,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: { searchType: 'semantic' }
+            options: { searchType: 'semantic' , includeNamedQueries: true }
         };
 
         const expected = {
@@ -564,7 +583,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: { searchType: 'keyword-dates' }
+            options: { searchType: 'keyword-dates' , includeNamedQueries: true }
         };
 
         const expected = {
@@ -738,7 +757,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: { searchType: 'keyword-dates' }
+            options: { searchType: 'keyword-dates' , includeNamedQueries: true }
         };
 
         const expected = {
@@ -804,7 +823,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: { searchType: 'keyword-dates' }
+            options: { searchType: 'keyword-dates' , includeNamedQueries: true }
         };
 
         const expected = {
@@ -838,7 +857,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: { searchType: 'keyword-dates' }
+            options: { searchType: 'keyword-dates' , includeNamedQueries: true }
         };
         const result = buildQueryJson(params);
         assert.strictEqual(result.from, 0);
@@ -857,7 +876,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: { searchType: 'keyword-dates' }
+            options: { searchType: 'keyword-dates' , includeNamedQueries: true }
         };
         const result = buildQueryJson(params);
         assert.strictEqual(result.from, 0);
@@ -876,7 +895,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: { searchType: 'keyword-dates' }
+            options: { searchType: 'keyword-dates' , includeNamedQueries: true }
         };
         const result = buildQueryJson(params);
         assert.strictEqual(result.from, 0);
@@ -895,7 +914,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: { searchType: 'keyword-dates' }
+            options: { searchType: 'keyword-dates' , includeNamedQueries: true }
         };
         const result = buildQueryJson(params);
         assert.strictEqual(result.from, 0);
@@ -931,7 +950,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 2,
             itemsPerPage: 5,
-            options: { searchType: 'semantic', includePagination: false }
+            options: { searchType: 'semantic', includeNamedQueries: true, includePagination: false  }
         };
 
         const result = buildQueryJson(params);
@@ -950,15 +969,14 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 5,
-            options: {
-                searchType: 'hybrid-dates',
+            options: { searchType: 'hybrid-dates', includeNamedQueries: true,
                 queryDslConfig: {
                     semanticMinScore: 0.91,
                     semanticK: 7,
                     lexicalBoost: 31,
                     dateBoost: 2,
                     neuralBoost: 9
-                }
+                 }
             }
         });
 
@@ -1033,7 +1051,8 @@ describe('buildQueryJson', () => {
     it('Should fallback to original extracted phrase when no date variants are produced', () => {
         const result = buildDateAwareShouldClauses({
             keyword: '31/02/2024',
-            enableDateExtraction: true
+            enableDateExtraction: true,
+            includeNamedQueries: true
         });
 
         assert.deepStrictEqual(result.phrases, ['31/02/2024']);
@@ -1134,6 +1153,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             safePageNumber: 4,
             documentId: 'doc-123',
+            includeNamedQueries: true,
             matchPhraseClauses: [
                 { match_phrase: { chunk_text: { query: '12 May 2024', _name: 'dates' } } }
             ],
@@ -1210,10 +1230,9 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: {
-                searchType: SEARCH_TYPES.HYBRID,
+            options: { searchType: SEARCH_TYPES.HYBRID, includeNamedQueries: true,
                 documentId: 'doc-789'
-            }
+             }
         });
 
         assert.deepStrictEqual(result.query.bool.filter, [
@@ -1231,9 +1250,8 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: {
-                searchType: SEARCH_TYPES.SEMANTIC
-            }
+            options: { searchType: SEARCH_TYPES.SEMANTIC
+            , includeNamedQueries: true }
         });
 
         const result = buildQueryJson({
@@ -1241,13 +1259,12 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: {
-                searchType: SEARCH_TYPES.SEMANTIC,
+            options: { searchType: SEARCH_TYPES.SEMANTIC, includeNamedQueries: true,
                 queryDslConfig: {
                     semanticK: undefined,
                     semanticMinScore: undefined
                     // other fields omitted to test partial override
-                }
+                 }
             }
         });
 
@@ -1265,7 +1282,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: { searchType: SEARCH_TYPES.HYBRID }
+            options: { searchType: SEARCH_TYPES.HYBRID , includeNamedQueries: true }
         });
 
         const expected = {
@@ -1291,7 +1308,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: { searchType: SEARCH_TYPES.HYBRID_DATES }
+            options: { searchType: SEARCH_TYPES.HYBRID_DATES , includeNamedQueries: true }
         });
 
         const expected = {
@@ -1317,7 +1334,7 @@ describe('buildQueryJson', () => {
             caseReferenceNumber: '26-711111',
             pageNumber: 1,
             itemsPerPage: 10,
-            options: { searchType: SEARCH_TYPES.HYBRID_DATES }
+            options: { searchType: SEARCH_TYPES.HYBRID_DATES , includeNamedQueries: true }
         });
 
         // min_score should be present since there are date phrase clauses

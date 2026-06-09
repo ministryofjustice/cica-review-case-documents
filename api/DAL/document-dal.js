@@ -3,6 +3,7 @@ import VError from 'verror';
 import createDBQueryDefault from '../../db/index.js';
 import { DEFAULT_SEARCH_TYPE } from '../search/constants/searchTypes.js';
 import buildQueryJson from './utils/buildQueryJson/index.js';
+import { hasDebugContext } from '../../middleware/debug/index.js';
 
 /**
  * @typedef {object} Logger
@@ -60,7 +61,9 @@ function createDocumentDAL({
     caseReferenceNumber,
     createDBQuery = createDBQueryDefault,
     logger,
-    searchType = DEFAULT_SEARCH_TYPE
+    searchType = DEFAULT_SEARCH_TYPE,
+    res,
+    includeNamedQueries
 }) {
     if (process.env.OPENSEARCH_INDEX_CHUNKS_NAME === undefined) {
         throw new VError(
@@ -71,6 +74,7 @@ function createDocumentDAL({
         );
     }
     const db = createDBQuery({ logger });
+    const shouldIncludeNamedQueries = includeNamedQueries ?? hasDebugContext(res);
 
     // TODO: implements documents retrieval.
     /**
@@ -120,7 +124,8 @@ function createDocumentDAL({
                 itemsPerPage,
                 options: {
                     logger,
-                    searchType
+                    searchType,
+                    includeNamedQueries: shouldIncludeNamedQueries
                 }
             });
             const buildEnd = Date.now();
@@ -258,7 +263,8 @@ function createDocumentDAL({
                     searchType,
                     includePagination: false,
                     documentId,
-                    logger
+                    logger,
+                    includeNamedQueries: shouldIncludeNamedQueries
                 }
             });
 

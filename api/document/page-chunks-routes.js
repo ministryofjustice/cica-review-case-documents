@@ -73,7 +73,7 @@ function createPageChunksRouter(options = {}) {
                 pageNumber,
                 crn,
                 searchTerm,
-                { logger: req.log, searchType }
+                { logger: req.log, searchType, res }
             );
 
             return res.json({

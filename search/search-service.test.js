@@ -129,4 +129,21 @@ describe('search-service', () => {
         );
         assert.equal(mockGetCallArguments.url.includes('acute+november+2022'), false);
     });
+
+    it('Should include X-Debug-Context header when includeNamedQueries is true', async () => {
+        const fakeLogger = { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} };
+        const service = createSearchService({
+            caseReferenceNumber: '12-745678',
+            createRequestService: mockCreateRequestService,
+            logger: fakeLogger
+        });
+
+        await service.getSearchResults('example', 1, 10, undefined, {
+            searchType: 'hybrid',
+            includeNamedQueries: true
+        });
+
+        const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
+        assert.equal(mockGetCallArguments.headers['X-Debug-Context'], 'true');
+    });
 });

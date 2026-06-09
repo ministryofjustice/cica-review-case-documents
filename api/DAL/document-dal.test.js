@@ -148,6 +148,41 @@ describe('document-dal', () => {
         assert.ok(neuralClause.neural.embedding.boost > 0);
     });
 
+    it('Should include named query metadata when includeNamedQueries override is true', async () => {
+        let queryArgs;
+        const mockQuery = async (args) => {
+            queryArgs = args;
+            return {
+                body: {
+                    hits: {
+                        hits: [
+                            {
+                                _id: '1',
+                                matched_queries: ['keyword'],
+                                _source: { text: 'hit1' }
+                            }
+                        ],
+                        total: { value: 1 }
+                    }
+                }
+            };
+        };
+
+        const dal = createDocumentDAL({
+            caseReferenceNumber: '26-711111',
+            createDBQuery: () => ({ query: mockQuery }),
+            logger: mockLogger,
+            includeNamedQueries: true
+        });
+
+        await dal.getDocumentsChunksByKeyword('keyword', 1, 10);
+
+        assert.ok(
+            JSON.stringify(queryArgs.body).includes('"_name"'),
+            'Expected query JSON to include named-query metadata when override is true'
+        );
+    });
+
     it('Should rethrow if an error if db.query throws', async () => {
         const dal = createDocumentDAL({
             caseReferenceNumber: '12-745678',
