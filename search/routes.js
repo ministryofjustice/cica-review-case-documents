@@ -1,9 +1,13 @@
 import crypto from 'node:crypto';
 import express from 'express';
-import { resolveSearchType } from '../api/search/constants/searchTypes.js';
-import { finalizeDebugInfo } from '../middleware/debug/index.js';
-import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
 import buildQueryJson from '../api/DAL/utils/buildQueryJson/index.js';
+import { resolveSearchType } from '../api/search/constants/searchTypes.js';
+import {
+    finalizeDebugInfo,
+    hasDebugContext,
+    ifDebugContext
+} from '../middleware/debug/index.js';
+import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 
 /**
@@ -105,12 +109,16 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             });
 
             const token = createApiJwtToken(userName);
+            const searchOptions = { searchType };
+            if (hasDebugContext(res)) {
+                searchOptions.includeNamedQueries = true;
+            }
             const response = await searchService.getSearchResults(
                 query,
                 pageNumber,
                 itemsPerPage,
                 token,
-                { searchType }
+                searchOptions
             );
 
             const { body } = response || {};
@@ -130,14 +138,18 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             const hits = searchResults?.hits || [];
             const totalItemCount = Number(searchResults?.total?.value || 0);
 
-            // Populate debug info with search results if debug is enabled
-            if (res.locals.featureFlags?.debug && res.locals.debugInfo) {
-                res.locals.debugInfo.request.queryDsl = buildQueryJson({
+            // Populate debug info with search results when debug context is present.
+            ifDebugContext(res, (debugInfo) => {
+                debugInfo.request.queryDsl = buildQueryJson({
                     keyword: query,
                     caseReferenceNumber: req.session?.caseReferenceNumber,
                     pageNumber,
                     itemsPerPage,
-                    options: { searchType, logger: req.log }
+                    options: {
+                        searchType,
+                        logger: req.log,
+                        includeNamedQueries: hasDebugContext(res)
+                    }
                 });
                 const queryHash = crypto
                     .createHash('sha256')
@@ -145,7 +157,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                     .digest('hex')
                     .slice(0, 12);
 
-                res.locals.debugInfo.search = {
+                debugInfo.search = {
                     lastQuery: query,
                     lastDSL: null,
                     previousDSLs: [],
@@ -162,7 +174,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                         returnedHits: hits.length
                     }
                 };
-            }
+            });
 
             // Enrich each result with docUuid, searchTerm, and caseReferenceNumber (crn)
             const searchResultsWithDocUuid = hits.map((hit) => ({

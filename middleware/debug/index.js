@@ -91,6 +91,31 @@ export default function debugMiddleware(req, res, next) {
 }
 
 /**
+ * Returns true when request-scoped debug context is available.
+ *
+ * @param {import('express').Response} res - Express response object.
+ * @returns {boolean} Whether debug mode is active and debugInfo is initialized.
+ */
+export function hasDebugContext(res) {
+    return Boolean(res?.locals?.featureFlags?.debug && res?.locals?.debugInfo);
+}
+
+/**
+ * Executes a callback only when request-scoped debug context is available.
+ *
+ * @param {import('express').Response} res - Express response object.
+ * @param {(debugInfo: object) => void} updater - Callback that mutates debugInfo.
+ * @returns {void}
+ */
+export function ifDebugContext(res, updater) {
+    if (!hasDebugContext(res) || typeof updater !== 'function') {
+        return;
+    }
+
+    updater(res.locals.debugInfo);
+}
+
+/**
  * Finalizes request-scoped debug information with the outbound response status.
  *
  * @param {import('express').Response} res - Express response object.

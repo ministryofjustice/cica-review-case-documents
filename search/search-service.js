@@ -27,6 +27,7 @@ function createSearchService({
      * @param {string} token - The authentication token.
      * @param {Object} [options] - Additional request options.
      * @param {string} [options.searchType=DEFAULT_SEARCH_TYPE] - Search mode (one of SEARCH_TYPES: keyword, keyword-dates, semantic, hybrid, hybrid-dates).
+     * @param {boolean} [options.includeNamedQueries=false] - Whether API should include query `_name` metadata for matched query sources.
      * @returns {Promise<object>} A promise that resolves to the search results.
      */
     async function getSearchResults(
@@ -34,7 +35,7 @@ function createSearchService({
         pageNumber,
         itemsPerPage,
         token,
-        { searchType = DEFAULT_SEARCH_TYPE } = {}
+        { searchType = DEFAULT_SEARCH_TYPE, includeNamedQueries = false } = {}
     ) {
         logger.info({ query, pageNumber, itemsPerPage }, 'Fetching search results');
         const searchParams = new URLSearchParams({
@@ -55,6 +56,11 @@ function createSearchService({
         if (token) {
             // Include Authorization header if token is provided
             opts.headers.Authorization = `Bearer ${token}`;
+        }
+        // enables inclusion of query metadata in API response for
+        // debugging purposes when debug context is active.
+        if (includeNamedQueries === true) {
+            opts.headers['X-Debug-Context'] = 'true';
         }
         return get(opts);
     }

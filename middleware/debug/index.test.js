@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { describe, it } from 'node:test';
-import debugMiddleware, { finalizeDebugInfo } from './index.js';
+import debugMiddleware, { finalizeDebugInfo, hasDebugContext, ifDebugContext } from './index.js';
 
 describe('debugMiddleware', () => {
     it('should skip setup when debug flag is disabled', () => {
@@ -171,5 +171,73 @@ describe('finalizeDebugInfo', () => {
         const res = { locals: {} };
 
         assert.doesNotThrow(() => finalizeDebugInfo(res, 200));
+    });
+});
+
+describe('hasDebugContext', () => {
+    it('returns true when debug flag is on and debugInfo exists', () => {
+        const res = {
+            locals: {
+                featureFlags: { debug: true },
+                debugInfo: {}
+            }
+        };
+
+        assert.equal(hasDebugContext(res), true);
+    });
+
+    it('returns false when debug flag is off', () => {
+        const res = {
+            locals: {
+                featureFlags: { debug: false },
+                debugInfo: {}
+            }
+        };
+
+        assert.equal(hasDebugContext(res), false);
+    });
+
+    it('returns false when debugInfo is missing', () => {
+        const res = {
+            locals: {
+                featureFlags: { debug: true }
+            }
+        };
+
+        assert.equal(hasDebugContext(res), false);
+    });
+});
+
+describe('ifDebugContext', () => {
+    it('invokes updater when debug context exists', () => {
+        const res = {
+            locals: {
+                featureFlags: { debug: true },
+                debugInfo: { request: { route: '/search' } }
+            }
+        };
+
+        ifDebugContext(res, (debugInfo) => {
+            debugInfo.request.route = '/search/results';
+        });
+
+        assert.equal(res.locals.debugInfo.request.route, '/search/results');
+    });
+
+    it('does not invoke updater when debug context is absent', () => {
+        const res = {
+            locals: {
+                featureFlags: { debug: false },
+                debugInfo: { touched: false }
+            }
+        };
+        let called = false;
+
+        ifDebugContext(res, () => {
+            called = true;
+        });
+
+        assert.equal(called, false);
+        assert.equal(res.locals.debugInfo.touched, false);
     });
 });

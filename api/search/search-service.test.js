@@ -166,4 +166,21 @@ describe('Search Service', () => {
         const args = mockDAL.getDocumentsChunksByKeyword.mock.calls[0].arguments;
         assert.deepEqual(args, ['test', 3, 50]);
     });
+
+    it('should pass includeNamedQueries to DAL factory when provided', async () => {
+        const searchService = createSearchService({
+            createDocumentDAL: mockDALFactory
+        });
+
+        mockDAL.getDocumentsChunksByKeyword = mock.fn(async () => []);
+
+        await searchService.getSearchResultsByKeyword('test', 1, 10, {
+            caseReferenceNumber: '12-745678',
+            logger: { info: () => {} },
+            includeNamedQueries: true
+        });
+
+        const [dalOptions] = mockDALFactory.mock.calls[0].arguments;
+        assert.equal(dalOptions.includeNamedQueries, true);
+    });
 });

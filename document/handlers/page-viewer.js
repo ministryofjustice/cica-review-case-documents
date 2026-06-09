@@ -1,4 +1,5 @@
 import { getFeatureFlagValue } from '../../middleware/featureFlags/index.js';
+import { ifDebugContext } from '../../middleware/debug/index.js';
 import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
@@ -102,9 +103,9 @@ export function createPageViewerHandler(
                 pageChunks
             );
 
-            // Populate debug info with document data if debug is enabled
-            if (res.locals.featureFlags?.debug && res.locals.debugInfo) {
-                res.locals.debugInfo.document = {
+            // Populate debug info with document data when debug context is present.
+            ifDebugContext(res, (debugInfo) => {
+                debugInfo.document = {
                     documentId,
                     pageNumber,
                     pageMetadata: {
@@ -114,7 +115,7 @@ export function createPageViewerHandler(
                     highlightsCount: pageChunks?.length || 0,
                     chunksAligned: alignFlag
                 };
-            }
+            });
 
             const html = render('document/page/imageview.njk', {
                 documentId,

@@ -51,6 +51,7 @@ function normalisePagination(pageNumber, itemsPerPage) {
  * @param {object} [params.options.logger] - Optional structured logger instance.
  * @param {string} [params.options.searchType=DEFAULT_SEARCH_TYPE] - Search mode. One of SEARCH_TYPES.KEYWORD, SEARCH_TYPES.KEYWORD_DATES, SEARCH_TYPES.SEMANTIC, SEARCH_TYPES.HYBRID, or SEARCH_TYPES.HYBRID_DATES.
  * @param {boolean} [params.options.includePagination=true] - Whether to include pagination fields in the query.
+ * @param {boolean} [params.options.includeNamedQueries=false] - Whether to include named-query `_name` metadata in the generated DSL.
  * @param {object} [params.options.queryDslConfig] - Optional tuning overrides for semantic thresholds, ANN k, and default boosts.
  * @param {string} [params.options.documentId] - Document UUID to scope results to a single document and page.
  * @returns {object} OpenSearch query DSL JSON object.
@@ -64,6 +65,7 @@ function buildQueryJson({
         logger,
         searchType = DEFAULT_SEARCH_TYPE,
         includePagination = true,
+        includeNamedQueries = false,
         documentId,
         queryDslConfig
     } = {}
@@ -92,7 +94,8 @@ function buildQueryJson({
         caseReferenceNumber,
         safePageNumber,
         documentId,
-        logger
+        logger,
+        includeNamedQueries
     };
 
     const { queryJson, phrases, phrasesVariants, shouldClauses, extractMs, variantMs } =
@@ -129,6 +132,7 @@ function buildQueryJson({
         caseReferenceNumber,
         safePageNumber,
         documentId,
+        includeNamedQueries,
         queryDslConfig
     };
     const prettyJsonEnabled = process.env.APP_LOG_PRETTY_JSON === 'true';
