@@ -12,7 +12,7 @@
 
 {% block innerContent %}
 
-    {% if featureFlags and featureFlags.debug and debugInfo%}
+    {% if isDebugMode %}
         {{ govukInsetText({
             text: "Because semantic search is probabilistic, tags may appear or disappear between refreshes while in debug mode"
         }) }}
