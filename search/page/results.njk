@@ -5,11 +5,18 @@
 {% from "govuk/components/input/macro.njk" import govukInput %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/error-summary/macro.njk" import govukErrorSummary %}
+{% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
 {% from "moj/components/pagination/macro.njk" import mojPagination %}
 {% from "search/macro/search-result-item/macro.njk" import searchResultItem %}
 {% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 
 {% block innerContent %}
+
+    {% if featureFlags and featureFlags.debug and debugInfo%}
+        {{ govukInsetText({
+            text: "Because semantic search is probabilistic, tags may appear or disappear between refreshes while in debug mode"
+        }) }}
+    {% endif %}
 
 {{ govukBackLink({
   text: "Back",

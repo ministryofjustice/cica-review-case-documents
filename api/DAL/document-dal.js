@@ -12,10 +12,8 @@ import buildQueryJson from './utils/buildQueryJson/index.js';
  * @property {(error: object, message?: string) => void} [error]
  *   Optionally logs error messages for debugging or monitoring.
  *
- * The logger can be an instance of a structured logging tool such as `pino` or `p    return (
-        statusCode === 403 && message.includes('security token included in the request is expired')
-    );
-ly.
+ * The logger can be an instance of a structured logging tool such as `pino` or `pino-http`.
+ * When provided, query execution time, row counts, and query metadata are logged automatically.
  */
 
 /**
