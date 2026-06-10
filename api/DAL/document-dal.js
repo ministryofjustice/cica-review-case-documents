@@ -1,9 +1,9 @@
 import crypto from 'node:crypto';
 import VError from 'verror';
 import createDBQueryDefault from '../../db/index.js';
+import { hasDebugContext } from '../../middleware/debug/index.js';
 import { DEFAULT_SEARCH_TYPE } from '../search/constants/searchTypes.js';
 import buildQueryJson from './utils/buildQueryJson/index.js';
-import { hasDebugContext } from '../../middleware/debug/index.js';
 
 /**
  * @typedef {object} Logger
@@ -12,8 +12,10 @@ import { hasDebugContext } from '../../middleware/debug/index.js';
  * @property {(error: object, message?: string) => void} [error]
  *   Optionally logs error messages for debugging or monitoring.
  *
- * The logger can be an instance of a structured logging tool such as `pino` or `pino-http`.
- * When provided, query execution time, row counts, and query metadata are logged automatically.
+ * The logger can be an instance of a structured logging tool such as `pino` or `p    return (
+        statusCode === 403 && message.includes('security token included in the request is expired')
+    );
+ly.
  */
 
 /**

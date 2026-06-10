@@ -11,8 +11,8 @@
  * 3. Import and wire it up in `index.js`.
  */
 
-import SEARCH_TYPES from '../../../search/constants/searchTypes.js';
 import { hasDebugContext } from '../../../../middleware/debug/index.js';
+import SEARCH_TYPES from '../../../search/constants/searchTypes.js';
 import extractDatesFromSearchString from '../extractDatesFromSearchString/index.js';
 import generateDateFormatVariants from '../generateDateFormatVariants/index.js';
 
