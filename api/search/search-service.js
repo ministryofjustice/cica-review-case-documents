@@ -36,13 +36,7 @@ function createSearchService({ createDocumentDAL: dalFactory = createDocumentDAL
         keyword,
         pageNumber,
         itemsPerPage,
-        {
-            caseReferenceNumber,
-            logger,
-            searchType = DEFAULT_SEARCH_TYPE,
-            res,
-            includeNamedQueries
-        }
+        { caseReferenceNumber, logger, searchType = DEFAULT_SEARCH_TYPE, res, includeNamedQueries }
     ) {
         const db = dalFactory({
             caseReferenceNumber,

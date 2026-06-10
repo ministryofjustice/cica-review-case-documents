@@ -2,11 +2,7 @@ import crypto from 'node:crypto';
 import express from 'express';
 import buildQueryJson from '../api/DAL/utils/buildQueryJson/index.js';
 import { resolveSearchType } from '../api/search/constants/searchTypes.js';
-import {
-    finalizeDebugInfo,
-    hasDebugContext,
-    ifDebugContext
-} from '../middleware/debug/index.js';
+import { finalizeDebugInfo, hasDebugContext, ifDebugContext } from '../middleware/debug/index.js';
 import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 
@@ -183,7 +179,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 matchSources: Array.from(
                     new Set(
                         (hit?.matched_queries || []).filter(
-                            (name) => name === 'keyword' || name === 'semantic' || name === 'dates'
+                            (name) => name === 'keyword' || name === 'dates' || name === 'semantic'
                         )
                     )
                 ),
