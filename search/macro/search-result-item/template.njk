@@ -4,7 +4,7 @@
 
 <p class="govuk-body"><strong>Found on:</strong> <a href="/document/{{ params.docUuid }}/view/page/{{ params._source.page_number or '0' }}?crn={{ params.caseReferenceNumber | urlencode }}&searchTerm={{ params.searchTerm | urlencode }}&type={{ params.searchType | urlencode }}" class="govuk-link">Page {{ params._source.page_number }}</a></p>
 
-{% if params.featureFlags and params.featureFlags.debug %}
+{% if params.isDebugMode %}
   <div class="search-result-debug">
     {% if params.matchSources and params.matchSources | length > 0 %}
       {% for name in params.matchSources %}

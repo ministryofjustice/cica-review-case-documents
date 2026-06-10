@@ -91,6 +91,7 @@ describe('search page templates', () => {
                     docUuid: 'doc-123',
                     searchTerm: 'jaw fracture',
                     searchType: 'semantic',
+                    isDebugMode: true,
                     caseReferenceNumber: '12-745678',
                     featureFlags: {
                         debug: true
@@ -124,6 +125,7 @@ describe('search page templates', () => {
                     docUuid: 'doc-123',
                     searchTerm: 'jaw fracture',
                     searchType: 'semantic',
+                    isDebugMode: false,
                     caseReferenceNumber: '12-745678',
                     featureFlags: {
                         debug: false

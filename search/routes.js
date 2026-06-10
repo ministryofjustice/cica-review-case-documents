@@ -62,6 +62,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             const { query, pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.query;
             const userName = req.session?.username;
             const searchType = getFeatureFlagValue(req.session, 'type');
+            const isDebugMode = hasDebugContext(res);
 
             if (!query) {
                 finalizeDebugInfo(res, 200);
@@ -73,6 +74,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                     cspNonce: res.locals.cspNonce,
                     userName,
                     searchType,
+                    isDebugMode,
                     featureFlags: res.locals.featureFlags,
                     debugInfo: res.locals.debugInfo
                 });
@@ -94,6 +96,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 userName,
                 query,
                 searchType,
+                isDebugMode,
                 featureFlags: res.locals.featureFlags,
                 debugInfo: res.locals.debugInfo
             };
@@ -106,7 +109,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
 
             const token = createApiJwtToken(userName);
             const searchOptions = { searchType };
-            if (hasDebugContext(res)) {
+            if (isDebugMode) {
                 searchOptions.includeNamedQueries = true;
             }
             const response = await searchService.getSearchResults(
@@ -144,7 +147,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                     options: {
                         searchType,
                         logger: req.log,
-                        includeNamedQueries: hasDebugContext(res)
+                        includeNamedQueries: isDebugMode
                     }
                 });
                 const queryHash = crypto
@@ -187,6 +190,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 docUuid: hit._source?.source_doc_id || 0,
                 searchTerm: query,
                 searchType,
+                isDebugMode,
                 caseReferenceNumber: req.session?.caseReferenceNumber,
                 featureFlags: res.locals.featureFlags
             }));
