@@ -28,6 +28,7 @@ function createSearchService({
      * @param {Object} [options] - Additional request options.
      * @param {string} [options.searchType=DEFAULT_SEARCH_TYPE] - Search mode (one of SEARCH_TYPES: keyword, keyword-dates, semantic, hybrid, hybrid-dates).
      * @param {boolean} [options.includeNamedQueries=false] - Whether API should include query `_name` metadata for matched query sources.
+     * @param {object} [options.queryDslConfig] - Optional debug-only DSL tuning overrides.
      * @returns {Promise<object>} A promise that resolves to the search results.
      */
     async function getSearchResults(
@@ -35,7 +36,7 @@ function createSearchService({
         pageNumber,
         itemsPerPage,
         token,
-        { searchType = DEFAULT_SEARCH_TYPE, includeNamedQueries = false } = {}
+        { searchType = DEFAULT_SEARCH_TYPE, includeNamedQueries = false, queryDslConfig } = {}
     ) {
         logger.info({ query, pageNumber, itemsPerPage }, 'Fetching search results');
         const searchParams = new URLSearchParams({
@@ -61,6 +62,9 @@ function createSearchService({
         // debugging purposes when debug context is active.
         if (includeNamedQueries === true) {
             opts.headers['X-Debug-Context'] = 'true';
+        }
+        if (queryDslConfig && Object.keys(queryDslConfig).length > 0) {
+            opts.headers['X-Query-DSL-Config'] = JSON.stringify(queryDslConfig);
         }
         return get(opts);
     }

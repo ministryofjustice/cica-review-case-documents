@@ -213,12 +213,38 @@
 }
 
 .debug-panel__control-group > .debug-panel__fieldset,
-.debug-panel__control-group > .govuk-form-group {
+.debug-panel__control-group > .govuk-form-group,
+.debug-panel__control-group > .debug-panel__tuning-form {
     margin: 0;
     padding: 12px;
     background: #ffffff;
     border: 1px solid #d8dde0;
     border-left: 3px solid var(--debug-accent);
+}
+
+.debug-panel__tuning-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.debug-panel__tuning-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 12px;
+    align-items: center;
+}
+
+.debug-panel__tuning-grid .govuk-input {
+    width: 100%;
+    max-width: none;
+    margin-bottom: 0;
+}
+
+.debug-panel__tuning-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .debug-panel__request-box {

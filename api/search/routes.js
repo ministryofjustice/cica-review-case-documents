@@ -1,6 +1,6 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-
+import { parseQueryDslConfigFromHeader } from '../../utils/queryDslConfigOverrides.js';
 import { resolveSearchType } from './constants/searchTypes.js';
 
 /**
@@ -64,6 +64,9 @@ export default function searchRouter({ searchService }) {
             // a valid type string, not an array or enum object.
             const searchType = resolveSearchType(rawSearchType);
             const includeNamedQueries = req.get('X-Debug-Context') === 'true';
+            const queryDslConfig = includeNamedQueries
+                ? parseQueryDslConfigFromHeader(req.get('X-Query-DSL-Config'))
+                : undefined;
 
             const searchResults = await searchService.getSearchResultsByKeyword(
                 query,
@@ -74,7 +77,8 @@ export default function searchRouter({ searchService }) {
                     logger: req.log,
                     searchType,
                     res,
-                    includeNamedQueries
+                    includeNamedQueries,
+                    queryDslConfig
                 }
             );
 
