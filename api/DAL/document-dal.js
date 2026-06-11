@@ -63,7 +63,8 @@ function createDocumentDAL({
     logger,
     searchType = DEFAULT_SEARCH_TYPE,
     res,
-    includeNamedQueries
+    includeNamedQueries,
+    queryDslConfig
 }) {
     if (process.env.OPENSEARCH_INDEX_CHUNKS_NAME === undefined) {
         throw new VError(
@@ -125,7 +126,8 @@ function createDocumentDAL({
                 options: {
                     logger,
                     searchType,
-                    includeNamedQueries: shouldIncludeNamedQueries
+                    includeNamedQueries: shouldIncludeNamedQueries,
+                    queryDslConfig
                 }
             });
             const buildEnd = Date.now();
@@ -264,7 +266,8 @@ function createDocumentDAL({
                     includePagination: false,
                     documentId,
                     logger,
-                    includeNamedQueries: shouldIncludeNamedQueries
+                    includeNamedQueries: shouldIncludeNamedQueries,
+                    queryDslConfig
                 }
             });
 

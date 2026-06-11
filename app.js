@@ -12,7 +12,9 @@ import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
 import debugMiddleware from './middleware/debug/index.js';
+import debugVariablesMiddleware from './middleware/debugVariables/index.js';
 import enforceCrnInQuery from './middleware/enforceCrnInQuery/index.js';
+import enforceDebugQueryDslInQuery from './middleware/enforceDebugQueryDslInQuery/index.js';
 import enforceFeatureFlagsInQuery from './middleware/enforceFeatureFlagsInQuery/index.js';
 import enforceSearchTypeInQuery from './middleware/enforceSearchTypeInQuery/index.js';
 import {
@@ -179,6 +181,9 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     // Apply feature flags middleware globally so all routes and templates have access
     app.use(featureFlags);
 
+    // Apply debug variables middleware to parse and store debug tuning parameters in session
+    app.use(debugVariablesMiddleware);
+
     app.use('/', indexRouter);
 
     // Auth routes (login, etc.)
@@ -189,6 +194,9 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     // Reinstates non-default feature flags into the URL so they persist across navigation
     // and can be bookmarked. Mirrors the pattern of enforceCrnInQuery.
     app.use(enforceFeatureFlagsInQuery);
+    // Reinstates non-default query DSL debug tuning values into URL query params
+    // when debug mode is enabled, keeping tuning state bookmarkable.
+    app.use(enforceDebugQueryDslInQuery);
 
     app.use(
         '/document',

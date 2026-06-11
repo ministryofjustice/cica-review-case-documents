@@ -24,6 +24,7 @@ function createPageChunksService({
      * @param {Object} [context.logger] - Logger instance.
      * @param {string} [context.searchType='hybrid-dates'] - Search mode (one of SEARCH_TYPES).
      * @param {import('express').Response} [context.res] - Optional Express response used to derive debug context.
+     * @param {object} [context.queryDslConfig] - Optional debug-only DSL tuning overrides.
      * @returns {Promise<Array<Object>>} Array of chunks with bounding boxes.
      */
     async function getPageChunks(
@@ -31,12 +32,13 @@ function createPageChunksService({
         pageNumber,
         crn,
         searchTerm,
-        { logger, searchType = DEFAULT_SEARCH_TYPE, res } = {}
+        { logger, searchType = DEFAULT_SEARCH_TYPE, res, queryDslConfig } = {}
     ) {
         const dal = createDocumentDALFactory({
             caseReferenceNumber: crn,
             logger,
-            res
+            res,
+            queryDslConfig
         });
 
         let chunks;

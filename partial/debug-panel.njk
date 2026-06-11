@@ -2,6 +2,7 @@
 {% from "govuk/components/tag/macro.njk" import govukTag %}
 {% from "govuk/components/select/macro.njk" import govukSelect %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
+{% set debugQueryDslConfig = debugQueryDslConfig if debugQueryDslConfig is defined else { defaults: {}, overrides: {}, effective: {} } %}
 {% if isDebugMode %}
 <button id="debug-panel-toggle" class="debug-panel-trigger" type="button" aria-controls="debug-panel" aria-expanded="false" title="Toggle debug panel">Debug info</button>
 <div id="debug-panel" class="debug-panel" role="region" aria-label="Request debug information" aria-hidden="true" inert>
@@ -94,6 +95,7 @@
             }
           ]
         }) }}
+
       </div>
 
       <table class="debug-panel__table">
@@ -130,8 +132,111 @@
       </table>
     </section>
 
+    {# Query DSL Tuning #}
+    <section class="debug-panel__section">
+      <h3 class="debug-panel__section-title govuk-heading-s">Query DSL Tuning</h3>
+      <div class="debug-panel__control-group">
+        <form id="debug-query-dsl-form" class="debug-panel__tuning-form" novalidate>
+          <div class="debug-panel__tuning-grid">
+            <label class="govuk-label govuk-label--s" for="debug-qc-semantic-min-score">
+              semanticMinScore
+            </label>
+            <input
+              id="debug-qc-semantic-min-score"
+              name="semanticMinScore"
+              type="number"
+              step="0.01"
+              min="0"
+              class="govuk-input govuk-input--width-10"
+              value="{{ debugQueryDslConfig.overrides.semanticMinScore | default('', true) }}"
+              placeholder="{{ debugQueryDslConfig.defaults.semanticMinScore | default('2.25', true) }}"
+            />
 
-    
+            <label class="govuk-label govuk-label--s" for="debug-qc-semantic-only-min-score">
+              semanticOnlyMinScore
+            </label>
+            <input
+              id="debug-qc-semantic-only-min-score"
+              name="semanticOnlyMinScore"
+              type="number"
+              step="0.01"
+              min="0"
+              class="govuk-input govuk-input--width-10"
+              value="{{ debugQueryDslConfig.overrides.semanticOnlyMinScore | default('', true) }}"
+              placeholder="{{ debugQueryDslConfig.defaults.semanticOnlyMinScore | default('0.5', true) }}"
+            />
+
+            <label class="govuk-label govuk-label--s" for="debug-qc-semantic-k">
+              semanticK
+            </label>
+            <input
+              id="debug-qc-semantic-k"
+              name="semanticK"
+              type="number"
+              step="1"
+              min="1"
+              class="govuk-input govuk-input--width-10"
+              value="{{ debugQueryDslConfig.overrides.semanticK | default('', true) }}"
+              placeholder="{{ debugQueryDslConfig.defaults.semanticK | default('250', true) }}"
+            />
+
+            <label class="govuk-label govuk-label--s" for="debug-qc-lexical-boost">
+              lexicalBoost
+            </label>
+            <input
+              id="debug-qc-lexical-boost"
+              name="lexicalBoost"
+              type="number"
+              step="0.01"
+              min="0"
+              class="govuk-input govuk-input--width-10"
+              value="{{ debugQueryDslConfig.overrides.lexicalBoost | default('', true) }}"
+              placeholder="{{ debugQueryDslConfig.defaults.lexicalBoost | default('20', true) }}"
+            />
+
+            <label class="govuk-label govuk-label--s" for="debug-qc-date-boost">
+              dateBoost
+            </label>
+            <input
+              id="debug-qc-date-boost"
+              name="dateBoost"
+              type="number"
+              step="0.01"
+              min="0"
+              class="govuk-input govuk-input--width-10"
+              value="{{ debugQueryDslConfig.overrides.dateBoost | default('', true) }}"
+              placeholder="{{ debugQueryDslConfig.defaults.dateBoost | default('4', true) }}"
+            />
+
+            <label class="govuk-label govuk-label--s" for="debug-qc-neural-boost">
+              neuralBoost
+            </label>
+            <input
+              id="debug-qc-neural-boost"
+              name="neuralBoost"
+              type="number"
+              step="0.01"
+              min="0"
+              class="govuk-input govuk-input--width-10"
+              value="{{ debugQueryDslConfig.overrides.neuralBoost | default('', true) }}"
+              placeholder="{{ debugQueryDslConfig.defaults.neuralBoost | default('4', true) }}"
+            />
+          </div>
+          <div class="debug-panel__tuning-actions">
+            <button class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0" type="submit">
+              Apply tuning
+            </button>
+            <button
+              id="debug-query-dsl-reset"
+              class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
+              type="button"
+            >
+              Reset to defaults
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
 
     {# Search Info (if available) #}
     {% if debugInfo.search.lastQuery or debugInfo.search.lastDSL or debugInfo.search.opensearch %}

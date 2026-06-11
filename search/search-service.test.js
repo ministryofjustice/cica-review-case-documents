@@ -146,4 +146,34 @@ describe('search-service', () => {
         const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
         assert.equal(mockGetCallArguments.headers['X-Debug-Context'], 'true');
     });
+
+    it('Should include X-Query-DSL-Config header when queryDslConfig is provided', async () => {
+        const fakeLogger = { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} };
+        const service = createSearchService({
+            caseReferenceNumber: '12-745678',
+            createRequestService: mockCreateRequestService,
+            logger: fakeLogger
+        });
+
+        const queryDslConfig = {
+            semanticMinScore: 0.8,
+            semanticOnlyMinScore: 0.35,
+            semanticK: 120,
+            lexicalBoost: 12,
+            dateBoost: 2,
+            neuralBoost: 3
+        };
+
+        await service.getSearchResults('example', 1, 10, undefined, {
+            searchType: 'hybrid',
+            includeNamedQueries: true,
+            queryDslConfig
+        });
+
+        const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
+        assert.equal(
+            mockGetCallArguments.headers['X-Query-DSL-Config'],
+            JSON.stringify(queryDslConfig)
+        );
+    });
 });

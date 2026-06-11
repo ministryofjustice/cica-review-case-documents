@@ -1,4 +1,5 @@
 import express from 'express';
+import { parseQueryDslConfigFromHeader } from '../../utils/queryDslConfigOverrides.js';
 import { resolveSearchType } from '../search/constants/searchTypes.js';
 import createPageChunksService from './services/page-chunks-service.js';
 
@@ -55,6 +56,9 @@ function createPageChunksRouter(options = {}) {
             const { documentId, pageNumber } = req.params;
             const { crn, searchTerm } = req.query;
             const searchType = resolveSearchType(req.query.type, req.session);
+            const queryDslConfig = parseQueryDslConfigFromHeader(
+                typeof req.get === 'function' ? req.get('X-Query-DSL-Config') : undefined
+            );
 
             if (!crn) {
                 const err = new Error('Case reference number (crn) is required');
@@ -73,7 +77,7 @@ function createPageChunksRouter(options = {}) {
                 pageNumber,
                 crn,
                 searchTerm,
-                { logger: req.log, searchType, res }
+                { logger: req.log, searchType, res, queryDslConfig }
             );
 
             return res.json({

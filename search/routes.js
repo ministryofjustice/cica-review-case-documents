@@ -5,6 +5,7 @@ import { resolveSearchType } from '../api/search/constants/searchTypes.js';
 import { finalizeDebugInfo, hasDebugContext, ifDebugContext } from '../middleware/debug/index.js';
 import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
+import buildViewModel from '../templateEngine/buildViewModel.js';
 
 /**
  * Creates an Express router for handling search functionality.
@@ -63,21 +64,21 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             const userName = req.session?.username;
             const searchType = getFeatureFlagValue(req.session, 'type');
             const isDebugMode = hasDebugContext(res);
+            const debugQueryDslOverrides = isDebugMode
+                ? res.locals.debugQueryDslOverrides || {}
+                : {};
+            const debugQueryDslConfig = res.locals.debugQueryDslConfig;
 
             if (!query) {
                 finalizeDebugInfo(res, 200);
-                const html = render('search/page/index.njk', {
-                    caseSelected: req.session.caseSelected,
-                    caseReferenceNumber: req.session.caseReferenceNumber,
-                    pageType: 'search',
-                    csrfToken: res.locals.csrfToken,
-                    cspNonce: res.locals.cspNonce,
-                    userName,
-                    searchType,
-                    isDebugMode,
-                    featureFlags: res.locals.featureFlags,
-                    debugInfo: res.locals.debugInfo
-                });
+                const html = render(
+                    'search/page/index.njk',
+                    buildViewModel(req, res, {
+                        pageType: 'search',
+                        searchType,
+                        isDebugMode
+                    })
+                );
                 return res.send(html);
             }
 
@@ -87,19 +88,12 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 1
             );
 
-            const templateParams = {
-                caseSelected: req.session.caseSelected,
-                caseReferenceNumber: req.session.caseReferenceNumber,
+            const templateParams = buildViewModel(req, res, {
                 pageType: 'search',
-                csrfToken: res.locals.csrfToken,
-                cspNonce: res.locals.cspNonce,
-                userName,
                 query,
                 searchType,
-                isDebugMode,
-                featureFlags: res.locals.featureFlags,
-                debugInfo: res.locals.debugInfo
-            };
+                isDebugMode
+            });
 
             req.log?.debug?.({ query, pageNumber, itemsPerPage }, 'Creating search service');
             const searchService = createSearchService({
@@ -111,6 +105,9 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             const searchOptions = { searchType };
             if (isDebugMode) {
                 searchOptions.includeNamedQueries = true;
+                if (Object.keys(debugQueryDslOverrides).length > 0) {
+                    searchOptions.queryDslConfig = debugQueryDslOverrides;
+                }
             }
             const response = await searchService.getSearchResults(
                 query,
@@ -147,7 +144,10 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                     options: {
                         searchType,
                         logger: req.log,
-                        includeNamedQueries: isDebugMode
+                        includeNamedQueries: isDebugMode,
+                        ...(Object.keys(debugQueryDslOverrides).length > 0
+                            ? { queryDslConfig: debugQueryDslOverrides }
+                            : {})
                     }
                 });
                 const queryHash = crypto
@@ -166,6 +166,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                         searchType
                     },
                     executionTime: body?.data?.attributes?.executionTime || null,
+                    queryDslConfig: debugQueryDslConfig,
                     opensearch: {
                         index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME || 'unknown',
                         queryHash,

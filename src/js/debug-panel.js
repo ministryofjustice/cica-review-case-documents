@@ -34,8 +34,18 @@ function initializeDebugPanel() {
     const alignRadios = panel.querySelectorAll('input[name="debug-flag-align"]');
     const debugRadios = panel.querySelectorAll('input[name="debug-flag-debug"]');
     const typeSelect = panel.querySelector('#debug-feature-type-select');
+    const queryDslForm = panel.querySelector('#debug-query-dsl-form');
+    const queryDslResetButton = panel.querySelector('#debug-query-dsl-reset');
     const copySnapshotButton = panel.querySelector('#debug-copy-snapshot');
     const copyStatus = panel.querySelector('#debug-copy-status');
+    const queryDslParamNames = [
+        'semanticMinScore',
+        'semanticOnlyMinScore',
+        'semanticK',
+        'lexicalBoost',
+        'dateBoost',
+        'neuralBoost'
+    ];
 
     /**
      * Shows or hides the panel and synchronizes persisted/ARIA state.
@@ -117,6 +127,31 @@ function initializeDebugPanel() {
         window.location.assign(url.toString());
     };
 
+    /**
+     * Applies multiple query params in one redirect while preserving unrelated URL state.
+     *
+     * @param {Record<string, string | null>} updates - Map of params to set/remove.
+     * @param {boolean} [resetPage=false] - Whether to reset pagination to first page.
+     * @returns {void}
+     */
+    const applyQueryParams = (updates, resetPage = false) => {
+        const url = new URL(window.location.href);
+
+        Object.entries(updates).forEach(([key, value]) => {
+            if (value === null || value === undefined || value === '') {
+                url.searchParams.delete(key);
+            } else {
+                url.searchParams.set(key, value);
+            }
+        });
+
+        if (resetPage) {
+            url.searchParams.set('pageNumber', '1');
+        }
+
+        window.location.assign(url.toString());
+    };
+
     if (alignRadios.length > 0) {
         alignRadios.forEach((radio) => {
             radio.addEventListener('change', () => {
@@ -140,6 +175,42 @@ function initializeDebugPanel() {
     if (typeSelect) {
         typeSelect.addEventListener('change', () => {
             applyFeatureFlag('type', typeSelect.value, true);
+        });
+    }
+
+    if (queryDslForm) {
+        queryDslForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const updates = Object.fromEntries(
+                queryDslParamNames.map((paramName) => {
+                    const input = queryDslForm.elements.namedItem(paramName);
+                    const value =
+                        input && 'value' in input && typeof input.value === 'string'
+                            ? input.value.trim()
+                            : '';
+                    return [paramName, value === '' ? null : value];
+                })
+            );
+
+            applyQueryParams(updates, true);
+        });
+    }
+
+    if (queryDslResetButton) {
+        queryDslResetButton.addEventListener('click', () => {
+            const updates = Object.fromEntries(
+                queryDslParamNames.map((paramName) => {
+                    const input = queryDslForm?.elements.namedItem(paramName);
+                    const defaultValue =
+                        input && 'placeholder' in input && typeof input.placeholder === 'string'
+                            ? input.placeholder.trim()
+                            : '';
+
+                    return [paramName, defaultValue === '' ? null : defaultValue];
+                })
+            );
+            applyQueryParams(updates, true);
         });
     }
 

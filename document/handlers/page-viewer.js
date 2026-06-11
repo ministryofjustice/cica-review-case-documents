@@ -1,6 +1,7 @@
 import { ifDebugContext } from '../../middleware/debug/index.js';
 import { getFeatureFlagValue } from '../../middleware/featureFlags/index.js';
 import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
+import buildViewModel from '../../templateEngine/buildViewModel.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
 import { formatPageTitle } from '../utils/formatters/index.js';
@@ -35,6 +36,7 @@ export function createPageViewerHandler(
             const alignFlag = getFeatureFlagValue(req.session, 'align');
             const userName = req.session?.username;
             const apiJwtToken = createApiJwtToken(userName);
+            const debugQueryDslOverrides = res.locals.debugQueryDslOverrides || {};
 
             // Fetch document page metadata from API (which queries OpenSearch)
             let pageMetadata;
@@ -86,6 +88,9 @@ export function createPageViewerHandler(
                     searchTerm,
                     searchType,
                     jwtToken: apiJwtToken,
+                    ...(Object.keys(debugQueryDslOverrides).length > 0
+                        ? { queryDslConfig: debugQueryDslOverrides }
+                        : {}),
                     logger: req.log
                 });
                 pageChunks = await pageChunksServiceInstance.getPageChunks();
@@ -117,24 +122,20 @@ export function createPageViewerHandler(
                 };
             });
 
-            const html = render('document/page/imageview.njk', {
-                documentId,
-                pageNumber,
-                imageUrl,
-                caseReferenceNumber: crn,
-                caseSelected: req.session?.caseSelected,
-                pageType: ['document'],
-                csrfToken: res.locals.csrfToken,
-                cspNonce: res.locals.cspNonce,
-                userName,
-                textPageLink,
-                pageTitle,
-                pageChunks: alignedPageHighlights,
-                showPagination: paginationData?.results?.count > 1,
-                paginationData,
-                featureFlags: res.locals.featureFlags,
-                debugInfo: res.locals.debugInfo
-            });
+            const html = render(
+                'document/page/imageview.njk',
+                buildViewModel(req, res, {
+                    documentId,
+                    pageNumber,
+                    imageUrl,
+                    pageType: ['document'],
+                    textPageLink,
+                    pageTitle,
+                    pageChunks: alignedPageHighlights,
+                    showPagination: paginationData?.results?.count > 1,
+                    paginationData
+                })
+            );
 
             if (typeof res.locals?.finalizeDebugInfo === 'function') {
                 res.locals.finalizeDebugInfo({ responseStatus: 200 });
