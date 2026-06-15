@@ -58,12 +58,14 @@ function createSearchService({
             // Include Authorization header if token is provided
             opts.headers.Authorization = `Bearer ${token}`;
         }
-        // enables inclusion of query metadata in API response for
-        // debugging purposes when debug context is active.
-        if (includeNamedQueries === true) {
+        // Enable debug context when either includeNamedQueries is requested
+        // or when queryDslConfig is provided (DSL tuning requires debug context).
+        const hasQueryDslConfig = queryDslConfig && Object.keys(queryDslConfig).length > 0;
+        if (includeNamedQueries === true || hasQueryDslConfig) {
             opts.headers['X-Debug-Context'] = 'true';
         }
-        if (queryDslConfig && Object.keys(queryDslConfig).length > 0) {
+        // Only send DSL config header when non-empty and debug context is enabled.
+        if (hasQueryDslConfig) {
             opts.headers['X-Query-DSL-Config'] = JSON.stringify(queryDslConfig);
         }
         return get(opts);
