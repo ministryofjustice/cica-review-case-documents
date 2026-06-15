@@ -171,6 +171,7 @@ export function buildNeuralFilter({ caseReferenceNumber, documentId, safePageNum
  * @param {object} params - Date processing options.
  * @param {string} params.keyword - Raw search string.
  * @param {boolean} [params.enableDateExtraction=true] - Whether to extract and expand dates.
+ * @param {boolean} [params.includeNamedQueries=false] - Whether to include query `_name` metadata on generated clauses.
  * @returns {{ shouldClauses: Array<object>, phrases: Array<string>, phrasesVariants: Array<string>, timings: { extractMs: number, variantMs: number } }} Lexical clauses and date-processing metrics.
  */
 export function buildDateAwareShouldClauses({
@@ -293,6 +294,8 @@ function buildKeywordQuery({ caseReferenceNumber, shouldClauses, safePageNumber,
  * @param {number} params.safePageNumber - Normalised page number for document scoping.
  * @param {string} [params.documentId] - Optional document UUID to scope results to a single page.
  * @param {Array<object>} [params.matchPhraseClauses=[]] - Date match_phrase clauses to include alongside the neural clause.
+ * @param {typeof DEFAULT_QUERY_DSL_CONFIG} [params.queryDslConfig=DEFAULT_QUERY_DSL_CONFIG] - Effective DSL tuning config (semantic thresholds and ANN `k`).
+ * @param {boolean} [params.includeNamedQueries=false] - Whether to include query `_name` metadata for semantic/date branches.
  * @returns {object} Assembled semantic (or semantic + dates) query DSL object.
  */
 export function buildSemanticQuery({

@@ -52,6 +52,33 @@ function resolveSafeRedirectPath(path) {
 }
 
 /**
+ * Builds a redirect query string while preserving repeated query parameters.
+ *
+ * Express can provide array-valued query entries for repeated params
+ * (e.g. `?x=a&x=b` -> `{ x: ['a', 'b'] }`). Appending each value keeps
+ * semantics intact instead of collapsing to `x=a,b`.
+ *
+ * @param {Record<string, unknown>} query - Query object.
+ * @returns {string} Encoded query string.
+ */
+function buildRedirectQueryString(query) {
+    const searchParams = new URLSearchParams();
+
+    for (const [key, value] of Object.entries(query)) {
+        if (Array.isArray(value)) {
+            value.forEach((item) => {
+                searchParams.append(key, String(item));
+            });
+            continue;
+        }
+
+        searchParams.append(key, String(value));
+    }
+
+    return searchParams.toString();
+}
+
+/**
  * Ensures query DSL tuning values in session are present in URL query params.
  * Mirrors feature-flag URL persistence so tuning state remains bookmarkable and visible.
  *
@@ -108,6 +135,6 @@ export default function enforceDebugQueryDslInQuery(req, res, next) {
         newQuery[key] = String(value);
     }
 
-    const queryString = new URLSearchParams(newQuery).toString();
+    const queryString = buildRedirectQueryString(newQuery);
     return res.redirect(`${safePath}?${queryString}`);
 }
