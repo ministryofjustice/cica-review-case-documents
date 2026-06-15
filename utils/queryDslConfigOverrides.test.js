@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import {
     parseQueryDslConfigFromHeader,
     parseQueryDslConfigFromQuery,
+    serializeQueryDslConfigOverrides,
     resolveEffectiveQueryDslConfig
 } from './queryDslConfigOverrides.js';
 
@@ -91,5 +92,21 @@ describe('queryDslConfigOverrides', () => {
         assert.ok(effective.semanticK >= 1);
         assert.ok(effective.semanticMinScore >= 0);
         assert.ok(effective.lexicalBoost >= 0);
+    });
+
+    it('should serialize only sanitized numeric overrides as query params', () => {
+        const serialized = serializeQueryDslConfigOverrides({
+            semanticMinScore: '0.75',
+            semanticOnlyMinScore: -1,
+            semanticK: '101',
+            lexicalBoost: '2.5',
+            dateBoost: 'x',
+            neuralBoost: 0
+        });
+
+        assert.equal(
+            serialized,
+            'semanticMinScore=0.75&semanticK=101&lexicalBoost=2.5&neuralBoost=0'
+        );
     });
 });

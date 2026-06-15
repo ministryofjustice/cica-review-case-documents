@@ -153,6 +153,7 @@ export function getFeatureFlagValue(session, flagName) {
  */
 export default function featureFlags(req, res, next) {
     const flags = {};
+    /** @type {Record<string, 'default' | 'session' | 'query'>} */
     const provenance = {};
 
     if (req.session) {
