@@ -176,4 +176,18 @@ describe('search-service', () => {
             JSON.stringify(queryDslConfig)
         );
     });
+
+    it('Should not throw when logger is not provided', async () => {
+        const service = createSearchService({
+            caseReferenceNumber: '12-745678',
+            createRequestService: mockCreateRequestService
+        });
+
+        const result = await service.getSearchResults('example', 1, 10, undefined, {
+            searchType: 'semantic'
+        });
+
+        assert.deepEqual(result, { body: { data: 'fake results' } });
+        assert.equal(mockGet.mock.callCount(), 1);
+    });
 });

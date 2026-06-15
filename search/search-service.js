@@ -38,7 +38,7 @@ function createSearchService({
         token,
         { searchType = DEFAULT_SEARCH_TYPE, includeNamedQueries = false, queryDslConfig } = {}
     ) {
-        logger.info({ query, pageNumber, itemsPerPage }, 'Fetching search results');
+        logger?.info?.({ query, pageNumber, itemsPerPage }, 'Fetching search results');
         const searchParams = new URLSearchParams({
             query: String(query),
             pageNumber: String(pageNumber),
