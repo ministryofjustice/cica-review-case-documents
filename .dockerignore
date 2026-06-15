@@ -26,6 +26,7 @@
 !src
 !templateEngine
 !auth
+!utils
 
 !app.js
 !package.json

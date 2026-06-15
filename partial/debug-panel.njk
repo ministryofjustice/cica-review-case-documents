@@ -258,22 +258,36 @@
                 </div>
               {% endif %}
               {% if debugInfo.search.opensearch %}
-                <div class="debug-panel__info-item">
-                  <span class="debug-panel__label">OpenSearch Index:</span>
-                  <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.search.opensearch.index }}</span>
-                </div>
-                <div class="debug-panel__info-item">
-                  <span class="debug-panel__label">Query Hash:</span>
-                  <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.search.opensearch.queryHash }}</span>
-                </div>
-                <div class="debug-panel__info-item">
-                  <span class="debug-panel__label">Returned Hits:</span>
-                  <span class="debug-panel__value">{{ debugInfo.search.opensearch.returnedHits }}</span>
-                </div>
-                <div class="debug-panel__info-item">
-                  <span class="debug-panel__label">Total Hits:</span>
-                  <span class="debug-panel__value">{{ debugInfo.search.opensearch.totalHits }}</span>
-                </div>
+                {% if debugInfo.search.opensearch.index %}
+                  <div class="debug-panel__info-item">
+                    <span class="debug-panel__label">OpenSearch Index:</span>
+                    <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.search.opensearch.index }}</span>
+                  </div>
+                {% endif %}
+                {% if debugInfo.search.opensearch.queryHash %}
+                  <div class="debug-panel__info-item">
+                    <span class="debug-panel__label">Query Hash:</span>
+                    <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.search.opensearch.queryHash }}</span>
+                  </div>
+                {% endif %}
+                {% if debugInfo.search.opensearch.preference %}
+                  <div class="debug-panel__info-item debug-panel__info-item--full">
+                    <span class="debug-panel__label">Session Preference:</span>
+                    <span class="debug-panel__value debug-panel__value--mono">{{ debugInfo.search.opensearch.preference }}</span>
+                  </div>
+                {% endif %}
+                {% if debugInfo.search.opensearch.returnedHits is not undefined %}
+                  <div class="debug-panel__info-item">
+                    <span class="debug-panel__label">Returned Hits:</span>
+                    <span class="debug-panel__value">{{ debugInfo.search.opensearch.returnedHits }}</span>
+                  </div>
+                {% endif %}
+                {% if debugInfo.search.opensearch.totalHits is not undefined %}
+                  <div class="debug-panel__info-item">
+                    <span class="debug-panel__label">Total Hits:</span>
+                    <span class="debug-panel__value">{{ debugInfo.search.opensearch.totalHits }}</span>
+                  </div>
+                {% endif %}
                 {% if debugInfo.search.opensearch.apiDurationMs %}
                   <div class="debug-panel__info-item">
                     <span class="debug-panel__label">API Duration:</span>

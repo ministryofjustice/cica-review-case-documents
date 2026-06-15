@@ -6,6 +6,7 @@ import { finalizeDebugInfo, hasDebugContext, ifDebugContext } from '../middlewar
 import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 import buildViewModel from '../templateEngine/buildViewModel.js';
+import buildSearchSessionPreference from '../utils/buildSearchSessionPreference.js';
 
 /**
  * Creates an Express router for handling search functionality.
@@ -155,6 +156,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                     .update(String(query))
                     .digest('hex')
                     .slice(0, 12);
+                const sessionPreference = buildSearchSessionPreference(String(query));
 
                 debugInfo.search = {
                     lastQuery: query,
@@ -168,7 +170,9 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                     executionTime: body?.data?.attributes?.executionTime || null,
                     queryDslConfig: debugQueryDslConfig,
                     opensearch: {
+                        ...(debugInfo.search?.opensearch || {}),
                         index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME || 'unknown',
+                        preference: sessionPreference,
                         queryHash,
                         totalHits: totalItemCount,
                         returnedHits: hits.length
