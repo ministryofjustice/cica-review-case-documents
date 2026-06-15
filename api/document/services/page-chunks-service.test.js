@@ -109,6 +109,25 @@ describe('page-chunks-service', () => {
             assert.strictEqual(capturedSearchType, 'semantic');
         });
 
+        it('should pass includeNamedQueries to DAL factory when provided', async () => {
+            let capturedDalOptions;
+            const service = createPageChunksService({
+                createDocumentDAL: (options) => {
+                    capturedDalOptions = options;
+                    return mockDAL;
+                }
+            });
+
+            mockDAL.getPageChunksByDocumentIdAndPageNumber = async () => [];
+
+            await service.getPageChunks('doc-123', 1, '12-745678', 'keyword', {
+                logger: mockLogger,
+                includeNamedQueries: true
+            });
+
+            assert.strictEqual(capturedDalOptions.includeNamedQueries, true);
+        });
+
         it('should handle DAL errors and throw with status code', async () => {
             const dalError = new Error('OpenSearch connection failed');
             dalError.status = 503;

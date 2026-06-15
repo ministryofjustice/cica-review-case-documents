@@ -1,7 +1,6 @@
 import crypto from 'node:crypto';
 import VError from 'verror';
 import createDBQueryDefault from '../../db/index.js';
-import { hasDebugContext } from '../../middleware/debug/index.js';
 import buildSearchSessionPreference from '../../utils/buildSearchSessionPreference.js';
 import { DEFAULT_SEARCH_TYPE } from '../search/constants/searchTypes.js';
 import buildQueryJson from './utils/buildQueryJson/index.js';
@@ -63,7 +62,6 @@ function createDocumentDAL({
     createDBQuery = createDBQueryDefault,
     logger,
     searchType = DEFAULT_SEARCH_TYPE,
-    res,
     includeNamedQueries,
     queryDslConfig
 }) {
@@ -76,7 +74,7 @@ function createDocumentDAL({
         );
     }
     const db = createDBQuery({ logger });
-    const shouldIncludeNamedQueries = includeNamedQueries ?? hasDebugContext(res);
+    const shouldIncludeNamedQueries = includeNamedQueries === true;
 
     // TODO: implements documents retrieval.
     /**

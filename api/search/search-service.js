@@ -28,7 +28,6 @@ function createSearchService({ createDocumentDAL: dalFactory = createDocumentDAL
      * @param {string} context.caseReferenceNumber - The case reference number.
      * @param {Object} context.logger - The logger instance.
      * @param {string} [context.searchType=DEFAULT_SEARCH_TYPE] - Search mode. One of SEARCH_TYPES.KEYWORD, SEARCH_TYPES.KEYWORD_DATES, SEARCH_TYPES.SEMANTIC, SEARCH_TYPES.HYBRID, or SEARCH_TYPES.HYBRID_DATES.
-     * @param {import('express').Response} [context.res] - Optional Express response used to derive debug context.
      * @param {boolean} [context.includeNamedQueries] - Optional explicit override for named query metadata.
      * @param {object} [context.queryDslConfig] - Optional debug-only DSL tuning overrides.
      * @returns {Promise<Object[]>} A promise that resolves to an array of document results.
@@ -41,7 +40,6 @@ function createSearchService({ createDocumentDAL: dalFactory = createDocumentDAL
             caseReferenceNumber,
             logger,
             searchType = DEFAULT_SEARCH_TYPE,
-            res,
             includeNamedQueries,
             queryDslConfig
         }
@@ -50,7 +48,6 @@ function createSearchService({ createDocumentDAL: dalFactory = createDocumentDAL
             caseReferenceNumber,
             logger,
             searchType,
-            res,
             includeNamedQueries,
             queryDslConfig
         });
