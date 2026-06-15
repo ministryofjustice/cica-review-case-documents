@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
     DEBUG_VARIABLES,
+    default as debugVariablesMiddleware,
     getDebugVariableDefaults,
     getDebugVariableNames,
     getQueryDslOverrides,
@@ -165,5 +166,28 @@ describe('getQueryDslOverrides', () => {
         assert.deepStrictEqual(overrides, {
             neuralBoost: 3
         });
+    });
+});
+
+describe('debugVariablesMiddleware', () => {
+    it('should set mutable res.locals.debugVariables in non-debug mode', () => {
+        const req = {
+            session: {
+                debugVariables: { semanticK: 999 }
+            },
+            query: {}
+        };
+        const res = {
+            locals: {
+                featureFlags: { debug: false }
+            }
+        };
+
+        debugVariablesMiddleware(req, res, () => {});
+
+        assert.equal(res.locals.debugVariables.semanticK, getDebugVariableDefaults().semanticK);
+        res.locals.debugVariables.someExtraField = 'ok';
+        assert.equal(res.locals.debugVariables.someExtraField, 'ok');
+        assert.deepEqual(req.session.debugVariables, { semanticK: 999 });
     });
 });
