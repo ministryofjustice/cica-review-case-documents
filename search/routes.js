@@ -182,6 +182,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
 
             // Enrich each result with docUuid, searchTerm, and caseReferenceNumber (crn)
             const searchResultsWithDocUuid = hits.map((hit) => ({
+                ...hit,
                 // OpenSearch may return repeated or unknown matched query names.
                 // Keep only the constituent labels we expose in debug UI.
                 matchSources: Array.from(
@@ -191,7 +192,6 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                         )
                     )
                 ),
-                ...hit,
                 docUuid: hit._source?.source_doc_id || 0,
                 searchTerm: query,
                 searchType,
