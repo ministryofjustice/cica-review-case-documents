@@ -209,11 +209,11 @@ export default function debugVariablesMiddleware(req, res, next) {
 
     // Only process debug variables when in debug context
     const featureFlags = res.locals?.featureFlags;
-    const isDebugMode = featureFlags && featureFlags.debug === true;
+    const isDebugMode = !!(featureFlags && featureFlags.debug === true);
 
     if (!isDebugMode) {
-        // Initialize empty debug variables for non-debug mode
-        req.session.debugVariables = {};
+        // Non-debug mode: set res.locals defaults only, do NOT mutate session
+        // This preserves tuning values in the session when debug is re-enabled
         res.locals.debugVariables = getDebugVariableDefaults();
         res.locals.debugQueryDslOverrides = {};
         res.locals.debugQueryDslConfig = buildDebugQueryDslConfig();
