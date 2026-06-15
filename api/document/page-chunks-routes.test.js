@@ -229,6 +229,7 @@ describe('page-chunks-routes', () => {
             await handler(mockRequest, mockResponse, () => {});
 
             assert.strictEqual(capturedContext.searchType, 'semantic');
+            assert.strictEqual(capturedContext.includeNamedQueries, false);
         });
 
         it('should ignore X-Query-DSL-Config when X-Debug-Context is not true', async () => {
@@ -247,6 +248,7 @@ describe('page-chunks-routes', () => {
             const handler = router.stack[0].route.stack[0].handle;
             await handler(mockRequest, mockResponse, () => {});
 
+            assert.strictEqual(capturedContext.includeNamedQueries, false);
             assert.strictEqual(capturedContext.queryDslConfig, undefined);
         });
 
@@ -266,6 +268,7 @@ describe('page-chunks-routes', () => {
             const handler = router.stack[0].route.stack[0].handle;
             await handler(mockRequest, mockResponse, () => {});
 
+            assert.strictEqual(capturedContext.includeNamedQueries, true);
             assert.deepStrictEqual(capturedContext.queryDslConfig, { semanticK: 77 });
         });
 

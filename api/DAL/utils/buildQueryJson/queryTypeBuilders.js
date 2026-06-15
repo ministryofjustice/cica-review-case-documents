@@ -11,7 +11,6 @@
  * 3. Import and wire it up in `index.js`.
  */
 
-import { hasDebugContext } from '../../../../middleware/debug/index.js';
 import SEARCH_TYPES from '../../../search/constants/searchTypes.js';
 import extractDatesFromSearchString from '../extractDatesFromSearchString/index.js';
 import generateDateFormatVariants from '../generateDateFormatVariants/index.js';
@@ -301,10 +300,9 @@ export function buildSemanticQuery({
     caseReferenceNumber,
     safePageNumber,
     documentId,
-    res,
     matchPhraseClauses = [],
     queryDslConfig = DEFAULT_QUERY_DSL_CONFIG,
-    includeNamedQueries = res ? hasDebugContext(res) : false
+    includeNamedQueries = false
 }) {
     const { semanticK, semanticMinScore, semanticOnlyMinScore } = queryDslConfig;
 
@@ -567,10 +565,9 @@ export function createQueryTypeBuilders({ queryDslConfig = {} } = {}) {
             caseReferenceNumber,
             safePageNumber,
             documentId, // ,
-            res,
             // enableDateExtraction
             logger,
-            includeNamedQueries = res ? hasDebugContext(res) : false
+            includeNamedQueries = false
         }) => {
             const phrases = [];
             const phrasesVariants = [];
@@ -601,7 +598,6 @@ export function createQueryTypeBuilders({ queryDslConfig = {} } = {}) {
                 caseReferenceNumber,
                 safePageNumber,
                 documentId,
-                res,
                 matchPhraseClauses,
                 queryDslConfig: resolvedQueryDslConfig,
                 includeNamedQueries

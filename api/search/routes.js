@@ -76,7 +76,6 @@ export default function searchRouter({ searchService }) {
                     caseReferenceNumber: req.get('On-Behalf-Of'),
                     logger: req.log,
                     searchType,
-                    res,
                     includeNamedQueries,
                     queryDslConfig
                 }
