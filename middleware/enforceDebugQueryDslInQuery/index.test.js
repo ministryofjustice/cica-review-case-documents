@@ -179,7 +179,7 @@ test('applies to document view page path', () => {
     );
 });
 
-test('blocks redirect for non-allowed paths', () => {
+test('skips enforcement for non-allowed paths', () => {
     const req = createMockReq({
         path: '/admin/secret',
         session: {
@@ -187,13 +187,15 @@ test('blocks redirect for non-allowed paths', () => {
         }
     });
     const res = createMockRes({ featureFlagsDebug: true });
+    let nextCalled = false;
     let nextArg;
 
     enforceDebugQueryDslInQuery(req, res, (err) => {
+        nextCalled = true;
         nextArg = err;
     });
 
-    assert(nextArg instanceof Error);
-    assert.strictEqual(nextArg.message, 'Redirect not allowed for this path');
-    assert.strictEqual(nextArg.status, 400);
+    assert.strictEqual(nextCalled, true);
+    assert.strictEqual(nextArg, undefined);
+    assert.strictEqual(res.redirectedUrl, null);
 });

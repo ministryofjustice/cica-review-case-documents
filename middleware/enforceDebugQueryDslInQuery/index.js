@@ -98,9 +98,9 @@ export default function enforceDebugQueryDslInQuery(req, res, next) {
 
     const safePath = resolveSafeRedirectPath(req.path);
     if (!safePath) {
-        const err = new Error('Redirect not allowed for this path');
-        err.status = 400;
-        return next(err);
+        // For unknown/non-allowlisted routes, skip enforcement and let normal
+        // routing (including 404 handling) proceed.
+        return next();
     }
 
     const newQuery = { ...req.query };

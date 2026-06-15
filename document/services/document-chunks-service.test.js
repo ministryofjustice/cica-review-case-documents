@@ -338,6 +338,7 @@ describe('createPageChunksService', () => {
 
             assert.strictEqual(mockGet.calls.length, 1);
             assert.deepStrictEqual(mockGet.calls[0].headers, {
+                'X-Debug-Context': 'true',
                 'X-Query-DSL-Config': JSON.stringify(queryDslConfig)
             });
         });
