@@ -56,9 +56,11 @@ function createPageChunksRouter(options = {}) {
             const { documentId, pageNumber } = req.params;
             const { crn, searchTerm } = req.query;
             const searchType = resolveSearchType(req.query.type, req.session);
-            const queryDslConfig = parseQueryDslConfigFromHeader(
-                typeof req.get === 'function' ? req.get('X-Query-DSL-Config') : undefined
-            );
+            const includeDebugContext =
+                typeof req.get === 'function' ? req.get('X-Debug-Context') === 'true' : false;
+            const queryDslConfig = includeDebugContext
+                ? parseQueryDslConfigFromHeader(req.get('X-Query-DSL-Config'))
+                : undefined;
 
             if (!crn) {
                 const err = new Error('Case reference number (crn) is required');

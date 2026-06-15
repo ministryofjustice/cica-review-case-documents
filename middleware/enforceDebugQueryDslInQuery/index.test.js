@@ -26,11 +26,15 @@ function createMockReq({ method = 'GET', path = '/search', query = {}, session =
 /**
  * Creates a minimal mock Express response object that captures redirect calls.
  *
- * @returns {{ redirect: (url: string) => void, redirectedUrl: string | null }} Mock response.
+ * @param {{ featureFlagsDebug?: boolean }} [options] - Response options.
+ * @returns {{ locals: { featureFlags: { debug: boolean } }, redirect: (url: string) => void, redirectedUrl: string | null }} Mock response.
  */
-function createMockRes() {
+function createMockRes({ featureFlagsDebug = true } = {}) {
     let redirectedUrl = null;
     return {
+        locals: {
+            featureFlags: { debug: featureFlagsDebug }
+        },
         redirect: (url) => {
             redirectedUrl = url;
         },
@@ -103,11 +107,10 @@ test('preserves existing query params and appends missing DSL params', () => {
 test('does not redirect when debug mode is off', () => {
     const req = createMockReq({
         session: {
-            featureFlags: { debug: false },
             debugVariables: { dateBoost: 60 }
         }
     });
-    const res = createMockRes();
+    const res = createMockRes({ featureFlagsDebug: false });
     let nextCalled = false;
 
     enforceDebugQueryDslInQuery(req, res, () => {
@@ -180,13 +183,13 @@ test('blocks redirect for non-allowed paths', () => {
     const req = createMockReq({
         path: '/admin/secret',
         session: {
-            featureFlags: { debug: true },
             debugVariables: { dateBoost: 60 }
         }
     });
+    const res = createMockRes({ featureFlagsDebug: true });
     let nextArg;
 
-    enforceDebugQueryDslInQuery(req, {}, (err) => {
+    enforceDebugQueryDslInQuery(req, res, (err) => {
         nextArg = err;
     });
 
