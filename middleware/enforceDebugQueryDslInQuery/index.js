@@ -68,8 +68,8 @@ export default function enforceDebugQueryDslInQuery(req, res, next) {
         return next();
     }
 
-    // Only persist tuning values when debug mode is enabled.
-    if (req.session?.featureFlags?.debug !== true) {
+    // Only persist tuning values when debug mode is enabled via validated feature flags.
+    if (res?.locals?.featureFlags?.debug !== true) {
         return next();
     }
 
