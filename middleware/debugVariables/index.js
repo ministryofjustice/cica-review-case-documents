@@ -213,7 +213,7 @@ export default function debugVariablesMiddleware(req, res, next) {
     if (!isDebugMode) {
         // Non-debug mode: set res.locals defaults only, do NOT mutate session
         // This preserves tuning values in the session when debug is re-enabled
-        res.locals.debugVariables = getDebugVariableDefaults();
+        res.locals.debugVariables = { ...getDebugVariableDefaults() };
         res.locals.debugQueryDslOverrides = {};
         res.locals.debugQueryDslConfig = buildDebugQueryDslConfig();
         return next();
