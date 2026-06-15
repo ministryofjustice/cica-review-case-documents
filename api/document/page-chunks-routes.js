@@ -56,8 +56,12 @@ function createPageChunksRouter(options = {}) {
             const { documentId, pageNumber } = req.params;
             const { crn, searchTerm } = req.query;
             const searchType = resolveSearchType(req.query.type, req.session);
+            // Ignore debug headers in production as a defense-in-depth measure,
+            // even though the UI layer already prevents them from being sent.
+            const isProduction = process.env.DEPLOY_ENV === 'production';
             const includeDebugContext =
-                typeof req.get === 'function' ? req.get('X-Debug-Context') === 'true' : false;
+                !isProduction &&
+                (typeof req.get === 'function' ? req.get('X-Debug-Context') === 'true' : false);
             const queryDslConfig = includeDebugContext
                 ? parseQueryDslConfigFromHeader(req.get('X-Query-DSL-Config'))
                 : undefined;

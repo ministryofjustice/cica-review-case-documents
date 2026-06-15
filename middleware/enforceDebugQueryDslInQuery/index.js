@@ -78,7 +78,6 @@ function buildRedirectQueryString(query) {
     return searchParams.toString();
 }
 
-
 /**
  * Ensures query DSL tuning values in session are present and valid in URL query params.
  * Mirrors feature-flag URL persistence so tuning state remains bookmarkable and visible.

@@ -272,6 +272,34 @@ describe('page-chunks-routes', () => {
             assert.deepStrictEqual(capturedContext.queryDslConfig, { semanticK: 77 });
         });
 
+        it('should ignore debug headers in production environment', async () => {
+            const originalEnv = process.env.DEPLOY_ENV;
+            process.env.DEPLOY_ENV = 'production';
+
+            try {
+                let capturedContext;
+                mockRequest.get = (headerName) => {
+                    if (headerName === 'X-Debug-Context') return 'true';
+                    if (headerName === 'X-Query-DSL-Config') return '{"semanticK": 77}';
+                    return undefined;
+                };
+
+                mockPageChunksService.getPageChunks = async (_, __, ___, ____, context) => {
+                    capturedContext = context;
+                    return [];
+                };
+
+                const handler = router.stack[0].route.stack[0].handle;
+                await handler(mockRequest, mockResponse, () => {});
+
+                // Debug headers should be ignored in production
+                assert.strictEqual(capturedContext.includeNamedQueries, false);
+                assert.strictEqual(capturedContext.queryDslConfig, undefined);
+            } finally {
+                process.env.DEPLOY_ENV = originalEnv;
+            }
+        });
+
         it('should handle service errors via next middleware', async () => {
             const serviceError = new Error('Service failed');
             mockPageChunksService.getPageChunks = async () => {
