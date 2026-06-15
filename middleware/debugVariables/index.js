@@ -208,8 +208,7 @@ export default function debugVariablesMiddleware(req, res, next) {
     }
 
     // Only process debug variables when in debug context
-    const featureFlags = res.locals?.featureFlags;
-    const isDebugMode = !!(featureFlags && featureFlags.debug === true);
+    const isDebugMode = res.locals?.featureFlags?.debug === true;
 
     if (!isDebugMode) {
         // Non-debug mode: set res.locals defaults only, do NOT mutate session
