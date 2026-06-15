@@ -104,6 +104,34 @@ test('preserves existing query params and appends missing DSL params', () => {
     assert.strictEqual(params.get('neuralBoost'), '4');
 });
 
+test('preserves repeated query params when redirecting', () => {
+    const req = createMockReq({
+        query: {
+            query: 'acute',
+            tag: ['a', 'b']
+        },
+        session: {
+            featureFlags: { debug: true },
+            debugVariables: {
+                semanticMinScore: 2.25,
+                semanticOnlyMinScore: 0.5,
+                semanticK: 120,
+                lexicalBoost: 20,
+                dateBoost: 60,
+                neuralBoost: 4
+            }
+        }
+    });
+    const res = createMockRes();
+
+    enforceDebugQueryDslInQuery(req, res, () => {});
+
+    const params = getRedirectQueryParams(res.redirectedUrl);
+    assert.deepStrictEqual(params.getAll('tag'), ['a', 'b']);
+    assert.strictEqual(params.get('semanticK'), '120');
+    assert.strictEqual(params.get('dateBoost'), '60');
+});
+
 test('does not redirect when debug mode is off', () => {
     const req = createMockReq({
         session: {
