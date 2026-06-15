@@ -3,6 +3,7 @@ import { getFeatureFlagValue } from '../../middleware/featureFlags/index.js';
 import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
 import buildViewModel from '../../templateEngine/buildViewModel.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
+import buildSearchSessionPreference from '../../utils/buildSearchSessionPreference.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
 import { formatPageTitle } from '../utils/formatters/index.js';
 import { buildTextHighlightSegments } from '../utils/highlight/index.js';
@@ -126,6 +127,17 @@ export function createTextViewerHandler(
                     highlightsCount: pageChunks?.length || 0,
                     chunksAligned: false // text view doesn't use alignment
                 };
+
+                if (safeSearchTerm !== '') {
+                    debugInfo.search = {
+                        ...debugInfo.search,
+                        opensearch: {
+                            ...(debugInfo.search?.opensearch || {}),
+                            index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME || 'unknown',
+                            preference: buildSearchSessionPreference(safeSearchTerm)
+                        }
+                    };
+                }
             });
 
             const html = render(
