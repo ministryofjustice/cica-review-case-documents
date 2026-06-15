@@ -226,6 +226,73 @@ test('treats array of empty DSL params as missing and restores session value', (
     assert.strictEqual(params.get('semanticK'), '120');
 });
 
+test('corrects invalid DSL param values and restores valid session value', () => {
+    const req = createMockReq({
+        query: {
+            query: 'acute',
+            semanticK: '0'
+        },
+        session: {
+            featureFlags: { debug: true },
+            debugVariables: {
+                semanticK: 120
+            }
+        }
+    });
+    const res = createMockRes();
+
+    enforceDebugQueryDslInQuery(req, res, () => {});
+
+    assert.ok(res.redirectedUrl?.startsWith('/search?'));
+    const params = getRedirectQueryParams(res.redirectedUrl);
+    assert.strictEqual(params.get('query'), 'acute');
+    assert.strictEqual(params.get('semanticK'), '120');
+});
+
+test('does not redirect when DSL param values are valid and match session', () => {
+    const req = createMockReq({
+        query: {
+            semanticK: '120'
+        },
+        session: {
+            featureFlags: { debug: true },
+            debugVariables: {
+                semanticK: 120
+            }
+        }
+    });
+    const res = createMockRes();
+    let nextCalled = false;
+
+    enforceDebugQueryDslInQuery(req, res, () => {
+        nextCalled = true;
+    });
+
+    assert.strictEqual(res.redirectedUrl, null);
+    assert.strictEqual(nextCalled, true);
+});
+
+test('corrects negative DSL param values', () => {
+    const req = createMockReq({
+        query: {
+            semanticMinScore: '-1.5'
+        },
+        session: {
+            featureFlags: { debug: true },
+            debugVariables: {
+                semanticMinScore: 2.5
+            }
+        }
+    });
+    const res = createMockRes();
+
+    enforceDebugQueryDslInQuery(req, res, () => {});
+
+    assert.ok(res.redirectedUrl?.startsWith('/search?'));
+    const params = getRedirectQueryParams(res.redirectedUrl);
+    assert.strictEqual(params.get('semanticMinScore'), '2.5');
+});
+
 test('applies to document view page path', () => {
     const req = createMockReq({
         path: '/document/123e4567-e89b-12d3-a456-426614174000/view/page/1',

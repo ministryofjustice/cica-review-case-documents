@@ -1,4 +1,4 @@
-import { getQueryDslOverrides } from '../debugVariables/index.js';
+import { getQueryDslOverrides, parseDebugVariablesFromQuery } from '../debugVariables/index.js';
 
 const ALLOWED_PATHS = ['/search'];
 
@@ -78,31 +78,13 @@ function buildRedirectQueryString(query) {
     return searchParams.toString();
 }
 
-/**
- * Determines whether a query param should be treated as missing.
- *
- * @param {unknown} value - Raw query value.
- * @returns {boolean} True when missing/empty.
- */
-function isMissingQueryValue(value) {
-    if (value === undefined) {
-        return true;
-    }
-
-    if (typeof value === 'string') {
-        return value.trim().length === 0;
-    }
-
-    if (Array.isArray(value)) {
-        return value.length === 0 || value.every((item) => typeof item === 'string' && item.trim().length === 0);
-    }
-
-    return false;
-}
 
 /**
- * Ensures query DSL tuning values in session are present in URL query params.
+ * Ensures query DSL tuning values in session are present and valid in URL query params.
  * Mirrors feature-flag URL persistence so tuning state remains bookmarkable and visible.
+ *
+ * This middleware catches both missing values and invalid values that failed validation,
+ * redirecting to sync the URL with the effective session configuration.
  *
  * @param {import('express').Request} req - Express request object.
  * @param {import('express').Response} res - Express response object.
@@ -122,13 +104,25 @@ export default function enforceDebugQueryDslInQuery(req, res, next) {
         return next();
     }
 
-    const queryDslOverrides = getQueryDslOverrides(req.session?.debugVariables || {});
+    const sessionQueryDslOverrides = getQueryDslOverrides(req.session?.debugVariables || {});
 
-    const paramsToAdd = Object.entries(queryDslOverrides).filter(([key]) =>
-        isMissingQueryValue(req.query[key])
+    // Parse and validate query params the same way debugVariablesMiddleware does.
+    // This catches both missing values AND invalid values that fail validation.
+    const parsedQueryDslOverrides = parseDebugVariablesFromQuery(req.query);
+
+    // Determine if any DSL params need correction:
+    // - Missing/empty values that should be filled from session
+    // - Invalid values that were rejected and should be replaced with session values
+    const paramsToCorrect = Object.entries(sessionQueryDslOverrides).filter(
+        ([key, sessionValue]) => {
+            const queryValue = parsedQueryDslOverrides[key];
+            // Redirect if: value is missing from parsed (invalid or empty in query),
+            // OR value differs from session (invalid input was sanitized)
+            return queryValue === undefined || queryValue !== sessionValue;
+        }
     );
 
-    if (paramsToAdd.length === 0) {
+    if (paramsToCorrect.length === 0) {
         return next();
     }
 
@@ -153,7 +147,7 @@ export default function enforceDebugQueryDslInQuery(req, res, next) {
     }
 
     const newQuery = { ...req.query };
-    for (const [key, value] of paramsToAdd) {
+    for (const [key, value] of paramsToCorrect) {
         newQuery[key] = String(value);
     }
 
