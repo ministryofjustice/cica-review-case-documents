@@ -62,6 +62,8 @@ const QUERY_DSL_DEBUG_VARIABLE_NAMES = Object.freeze([
     'neuralBoost'
 ]);
 
+const DEBUG_VARIABLE_NAME_SET = new Set(getDebugVariableNames());
+
 /**
  * Gets the names of all debug variables.
  *
@@ -235,8 +237,20 @@ export default function debugVariablesMiddleware(req, res, next) {
     // Validate final state
     const validated = validateDebugVariables(mergedVars);
 
-    // Store in session and response locals
-    req.session.debugVariables = validated;
+    // Only persist when values actually changed (or when stale keys exist)
+    // to reduce unnecessary writes in external session stores.
+    const existingDebugVars = req.session.debugVariables || {};
+    const hasStaleKeys = Object.keys(existingDebugVars).some(
+        (key) => !DEBUG_VARIABLE_NAME_SET.has(key)
+    );
+    const hasChanges =
+        hasStaleKeys ||
+        getDebugVariableNames().some((name) => existingDebugVars[name] !== validated[name]);
+
+    if (hasChanges) {
+        req.session.debugVariables = validated;
+    }
+
     res.locals.debugVariables = validated;
     // Derived from validated session state, so this often includes defaults.
     const queryDslOverrides = getQueryDslOverrides(validated);

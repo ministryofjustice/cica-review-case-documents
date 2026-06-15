@@ -3,8 +3,8 @@ import { describe, it } from 'node:test';
 import {
     parseQueryDslConfigFromHeader,
     parseQueryDslConfigFromQuery,
-    serializeQueryDslConfigOverrides,
-    resolveEffectiveQueryDslConfig
+    resolveEffectiveQueryDslConfig,
+    serializeQueryDslConfigOverrides
 } from './queryDslConfigOverrides.js';
 
 describe('queryDslConfigOverrides', () => {

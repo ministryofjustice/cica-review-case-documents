@@ -106,9 +106,8 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             const searchOptions = { searchType };
             if (isDebugMode) {
                 searchOptions.includeNamedQueries = true;
-                if (Object.keys(debugQueryDslOverrides).length > 0) {
-                    searchOptions.queryDslConfig = debugQueryDslOverrides;
-                }
+                // In debug mode, pass the effective DSL tuning bag consistently.
+                searchOptions.queryDslConfig = debugQueryDslOverrides;
             }
             const response = await searchService.getSearchResults(
                 query,
@@ -146,9 +145,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                         searchType,
                         logger: req.log,
                         includeNamedQueries: isDebugMode,
-                        ...(Object.keys(debugQueryDslOverrides).length > 0
-                            ? { queryDslConfig: debugQueryDslOverrides }
-                            : {})
+                        queryDslConfig: debugQueryDslOverrides
                     }
                 });
                 const queryHash = crypto

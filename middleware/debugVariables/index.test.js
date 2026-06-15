@@ -190,4 +190,52 @@ describe('debugVariablesMiddleware', () => {
         assert.equal(res.locals.debugVariables.someExtraField, 'ok');
         assert.deepEqual(req.session.debugVariables, { semanticK: 999 });
     });
+
+    it('should not rewrite session debugVariables when validated values are unchanged', () => {
+        const existingDebugVariables = validateDebugVariables({
+            semanticK: 150,
+            lexicalBoost: 15
+        });
+
+        const req = {
+            session: {
+                debugVariables: existingDebugVariables
+            },
+            query: {}
+        };
+        const res = {
+            locals: {
+                featureFlags: { debug: true }
+            }
+        };
+
+        debugVariablesMiddleware(req, res, () => {});
+
+        assert.strictEqual(req.session.debugVariables, existingDebugVariables);
+        assert.deepStrictEqual(res.locals.debugVariables, existingDebugVariables);
+    });
+
+    it('should persist debugVariables when query overrides change validated values', () => {
+        const existingDebugVariables = validateDebugVariables({ semanticK: 120 });
+
+        const req = {
+            session: {
+                debugVariables: existingDebugVariables
+            },
+            query: {
+                semanticK: '200'
+            }
+        };
+        const res = {
+            locals: {
+                featureFlags: { debug: true }
+            }
+        };
+
+        debugVariablesMiddleware(req, res, () => {});
+
+        assert.notStrictEqual(req.session.debugVariables, existingDebugVariables);
+        assert.strictEqual(req.session.debugVariables.semanticK, 200);
+        assert.strictEqual(res.locals.debugVariables.semanticK, 200);
+    });
 });
