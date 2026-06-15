@@ -147,12 +147,14 @@ export function parseQueryDslConfigFromHeader(headerValue) {
 /**
  * Resolves effective config for display/debugging by merging defaults and overrides.
  *
- * @param {Partial<typeof DEFAULT_QUERY_DSL_CONFIG>} [overrides={}] - Sanitized overrides.
+ * @param {Partial<typeof DEFAULT_QUERY_DSL_CONFIG>} [overrides={}] - Override values (sanitized defensively before merge).
  * @returns {typeof DEFAULT_QUERY_DSL_CONFIG} Effective config values.
  */
 export function resolveEffectiveQueryDslConfig(overrides = {}) {
+    const sanitized = normalizeQueryDslConfigOverrides(overrides);
+
     return {
         ...DEFAULT_QUERY_DSL_CONFIG,
-        ...overrides
+        ...sanitized
     };
 }

@@ -194,8 +194,8 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     // Reinstates non-default feature flags into the URL so they persist across navigation
     // and can be bookmarked. Mirrors the pattern of enforceCrnInQuery.
     app.use(enforceFeatureFlagsInQuery);
-    // Reinstates non-default query DSL debug tuning values into URL query params
-    // when debug mode is enabled, keeping tuning state bookmarkable.
+    // Reinstates query DSL debug tuning values into URL query params when
+    // debug mode is enabled, keeping tuning state bookmarkable.
     app.use(enforceDebugQueryDslInQuery);
 
     app.use(

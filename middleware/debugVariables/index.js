@@ -103,10 +103,10 @@ export function buildDebugQueryDslConfig(overrides = {}) {
 }
 
 /**
- * Extracts only query-DSL-related debug variables from the full debug variable bag.
+ * Extracts query-DSL-related numeric values from the full debug variable bag.
  *
  * @param {Record<string, unknown>} [debugVariables={}] - Full debug variables object.
- * @returns {Record<string, number>} Query DSL override values only.
+ * @returns {Record<string, number>} Finite query DSL values present in the bag.
  */
 export function getQueryDslOverrides(debugVariables = {}) {
     const overrides = {};
@@ -238,6 +238,7 @@ export default function debugVariablesMiddleware(req, res, next) {
     // Store in session and response locals
     req.session.debugVariables = validated;
     res.locals.debugVariables = validated;
+    // Derived from validated session state, so this often includes defaults.
     const queryDslOverrides = getQueryDslOverrides(validated);
     res.locals.debugQueryDslOverrides = queryDslOverrides;
     res.locals.debugQueryDslConfig = buildDebugQueryDslConfig(queryDslOverrides);
