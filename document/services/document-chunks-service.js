@@ -67,6 +67,7 @@ function createPageChunksService({
         if (queryDslConfig && Object.keys(queryDslConfig).length > 0) {
             opts.headers = {
                 ...(opts.headers || {}),
+                'X-Debug-Context': 'true',
                 'X-Query-DSL-Config': JSON.stringify(queryDslConfig)
             };
         }
