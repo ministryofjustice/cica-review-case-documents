@@ -306,6 +306,41 @@ describe('createPageChunksService', () => {
             assert.strictEqual(mockGet.calls.length, 1);
             assert.strictEqual(mockGet.calls[0].headers, undefined);
         });
+
+        it('should set query DSL header without Authorization when queryDslConfig is provided without jwtToken', async () => {
+            mockGet.mockResolvedValue({
+                body: {
+                    data: {
+                        type: 'page-chunks',
+                        attributes: {
+                            chunks: []
+                        }
+                    }
+                }
+            });
+
+            const queryDslConfig = {
+                semanticK: 80,
+                lexicalBoost: 2
+            };
+
+            const service = createPageChunksService({
+                documentId: mockDocumentId,
+                pageNumber: mockPageNumber,
+                crn: mockCrn,
+                searchTerm: 'test search',
+                queryDslConfig,
+                logger: mockLogger,
+                createRequestService: mockCreateRequestService
+            });
+
+            await service.getPageChunks();
+
+            assert.strictEqual(mockGet.calls.length, 1);
+            assert.deepStrictEqual(mockGet.calls[0].headers, {
+                'X-Query-DSL-Config': JSON.stringify(queryDslConfig)
+            });
+        });
     });
 
     describe('service creation', () => {
