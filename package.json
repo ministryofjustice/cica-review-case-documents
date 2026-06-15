@@ -28,7 +28,7 @@
         "lint:fix": "biome check --write",
         "lint:fix:unsafe": "biome check --write --unsafe",
         "format": "biome format --write",
-        "precommit:secrets": "command -v gitleaks >/dev/null 2>&1 || { echo 'gitleaks not found on PATH; skipping secrets scan. Install gitleaks from https://github.com/gitleaks/gitleaks or disable the precommit:secrets hook if this is intentional.'; exit 1; }; gitleaks protect --staged --redact --verbose --config .gitleaks.toml",
+        "precommit:secrets": "command -v gitleaks >/dev/null 2>&1 || { echo 'gitleaks not found on PATH; failing commit. Install gitleaks from https://github.com/gitleaks/gitleaks or disable the precommit:secrets hook if this is intentional.'; exit 1; }; gitleaks protect --staged --redact --verbose --config .gitleaks.toml",
         "quality": "npm run quality:verify",
         "quality:fix": "npm run format && npm run lint:fix && npm run sass && npm run precommit:secrets && npm run openapi:build",
         "quality:verify": "npm run lint:check && npm run precommit:secrets",
