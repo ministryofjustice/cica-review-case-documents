@@ -286,6 +286,7 @@ describe('Text Viewer Handler', () => {
                 crn: '26-745678',
                 searchTerm: '12/12/1995',
                 searchType: 'hybrid-dates',
+                queryDslConfig: {},
                 jwtToken: undefined,
                 logger: req.log
             }

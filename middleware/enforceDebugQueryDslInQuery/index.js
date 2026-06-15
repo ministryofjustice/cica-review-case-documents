@@ -79,6 +79,28 @@ function buildRedirectQueryString(query) {
 }
 
 /**
+ * Determines whether a query param should be treated as missing.
+ *
+ * @param {unknown} value - Raw query value.
+ * @returns {boolean} True when missing/empty.
+ */
+function isMissingQueryValue(value) {
+    if (value === undefined) {
+        return true;
+    }
+
+    if (typeof value === 'string') {
+        return value.trim().length === 0;
+    }
+
+    if (Array.isArray(value)) {
+        return value.length === 0 || value.every((item) => typeof item === 'string' && item.trim().length === 0);
+    }
+
+    return false;
+}
+
+/**
  * Ensures query DSL tuning values in session are present in URL query params.
  * Mirrors feature-flag URL persistence so tuning state remains bookmarkable and visible.
  *
@@ -102,8 +124,8 @@ export default function enforceDebugQueryDslInQuery(req, res, next) {
 
     const queryDslOverrides = getQueryDslOverrides(req.session?.debugVariables || {});
 
-    const paramsToAdd = Object.entries(queryDslOverrides).filter(
-        ([key]) => req.query[key] === undefined
+    const paramsToAdd = Object.entries(queryDslOverrides).filter(([key]) =>
+        isMissingQueryValue(req.query[key])
     );
 
     if (paramsToAdd.length === 0) {

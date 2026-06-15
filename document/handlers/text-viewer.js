@@ -92,9 +92,7 @@ export function createTextViewerHandler(
                         searchTerm: safeSearchTerm,
                         searchType,
                         jwtToken: apiJwtToken,
-                        ...(Object.keys(debugQueryDslOverrides).length > 0
-                            ? { queryDslConfig: debugQueryDslOverrides }
-                            : {}),
+                        queryDslConfig: debugQueryDslOverrides,
                         logger: req.log
                     });
 

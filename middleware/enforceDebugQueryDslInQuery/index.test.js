@@ -182,6 +182,50 @@ test('does not redirect when all DSL params are already in query', () => {
     assert.strictEqual(nextCalled, true);
 });
 
+test('treats empty string DSL param as missing and restores session value', () => {
+    const req = createMockReq({
+        query: {
+            query: 'acute',
+            semanticK: ''
+        },
+        session: {
+            featureFlags: { debug: true },
+            debugVariables: {
+                semanticK: 120
+            }
+        }
+    });
+    const res = createMockRes();
+
+    enforceDebugQueryDslInQuery(req, res, () => {});
+
+    assert.ok(res.redirectedUrl?.startsWith('/search?'));
+    const params = getRedirectQueryParams(res.redirectedUrl);
+    assert.strictEqual(params.get('query'), 'acute');
+    assert.strictEqual(params.get('semanticK'), '120');
+});
+
+test('treats array of empty DSL params as missing and restores session value', () => {
+    const req = createMockReq({
+        query: {
+            semanticK: ['', '']
+        },
+        session: {
+            featureFlags: { debug: true },
+            debugVariables: {
+                semanticK: 120
+            }
+        }
+    });
+    const res = createMockRes();
+
+    enforceDebugQueryDslInQuery(req, res, () => {});
+
+    assert.ok(res.redirectedUrl?.startsWith('/search?'));
+    const params = getRedirectQueryParams(res.redirectedUrl);
+    assert.strictEqual(params.get('semanticK'), '120');
+});
+
 test('applies to document view page path', () => {
     const req = createMockReq({
         path: '/document/123e4567-e89b-12d3-a456-426614174000/view/page/1',
