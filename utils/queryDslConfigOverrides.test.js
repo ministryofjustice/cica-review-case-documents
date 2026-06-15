@@ -74,4 +74,22 @@ describe('queryDslConfigOverrides', () => {
         assert.equal(effective.neuralBoost, 6);
         assert.equal(typeof effective.semanticMinScore, 'number');
     });
+
+    it('should ignore undefined and invalid overrides when resolving effective config', () => {
+        const effective = resolveEffectiveQueryDslConfig({
+            semanticK: undefined,
+            semanticMinScore: -1,
+            lexicalBoost: 'not-a-number',
+            neuralBoost: 8
+        });
+
+        // Only valid/sanitized overrides should win.
+        assert.equal(effective.neuralBoost, 8);
+        // Invalid/undefined values should not clobber defaults.
+        assert.equal(typeof effective.semanticK, 'number');
+        assert.ok(Number.isInteger(effective.semanticK));
+        assert.ok(effective.semanticK >= 1);
+        assert.ok(effective.semanticMinScore >= 0);
+        assert.ok(effective.lexicalBoost >= 0);
+    });
 });
