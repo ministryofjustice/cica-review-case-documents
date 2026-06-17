@@ -111,7 +111,9 @@ describe('page-chunks-routes', () => {
             let errorThrown = false;
             try {
                 await handler(mockRequest, mockResponse, (err) => {
-                    if (err) errorThrown = true;
+                    if (err) {
+                        errorThrown = true;
+                    }
                 });
             } catch {
                 errorThrown = true;
@@ -127,7 +129,9 @@ describe('page-chunks-routes', () => {
             let errorThrown = false;
             try {
                 await handler(mockRequest, mockResponse, (err) => {
-                    if (err) errorThrown = true;
+                    if (err) {
+                        errorThrown = true;
+                    }
                 });
             } catch {
                 errorThrown = true;
@@ -143,7 +147,9 @@ describe('page-chunks-routes', () => {
             let errorThrown = false;
             try {
                 await handler(mockRequest, mockResponse, (err) => {
-                    if (err) errorThrown = true;
+                    if (err) {
+                        errorThrown = true;
+                    }
                 });
             } catch {
                 errorThrown = true;

@@ -9,7 +9,9 @@
  * @returns {boolean} True if the object is recognized as a logger, false otherwise.
  */
 function isLogger(logger) {
-    if (!logger) return false;
+    if (!logger) {
+        return false;
+    }
 
     // pino-http middleware is a function with .logger property.
     const isPinoHttp =
