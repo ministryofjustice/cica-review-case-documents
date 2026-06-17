@@ -54,6 +54,7 @@ export function buildRedactConfig() {
 function createLogger(options = {}) {
     const { stream, ...pinoOptions } = options;
     const useTransport = !isProd && !stream;
+    const prettyJsonEnabled = process.env.APP_LOG_PRETTY_JSON === 'true';
     const logger = pinoHttp({
         logger: pino(
             {
@@ -67,7 +68,9 @@ function createLogger(options = {}) {
                                   levelFirst: true,
                                   translateTime: 'SYS:standard',
                                   ignore: 'pid,hostname',
-                                  singleLine: true
+                                  // Keep normal logs compact, but allow multiline blocks
+                                  // when explicitly debugging pretty JSON payloads.
+                                  singleLine: !prettyJsonEnabled
                               }
                           }
                       }

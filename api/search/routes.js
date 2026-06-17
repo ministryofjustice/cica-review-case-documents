@@ -1,6 +1,8 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
+import { resolveSearchType } from './constants/searchTypes.js';
+
 /**
  * @module routes/searchRouter
  * @description
@@ -55,14 +57,21 @@ export default function searchRouter({ searchService }) {
 
     router.get('/', async (req, res, next) => {
         try {
-            const { query, pageNumber, itemsPerPage } = req.query;
+            const { query, pageNumber, itemsPerPage, type: rawSearchType } = req.query;
+
+            // Resolve and validate the search type, falling back to DEFAULT_SEARCH_TYPE
+            // when absent or invalid. This ensures downstream consumers always receive
+            // a valid type string, not an array or enum object.
+            const searchType = resolveSearchType(rawSearchType);
+
             const searchResults = await searchService.getSearchResultsByKeyword(
                 query,
                 pageNumber,
                 itemsPerPage,
                 {
                     caseReferenceNumber: req.get('On-Behalf-Of'),
-                    logger: req.log
+                    logger: req.log,
+                    searchType
                 }
             );
 

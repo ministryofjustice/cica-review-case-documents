@@ -1,137 +1,152 @@
-import crypto from 'node:crypto';
-import extractDatesFromSearchString from '../extractDatesFromSearchString/index.js';
-import generateDateFormatVariants from '../generateDateFormatVariants/index.js';
+import SEARCH_TYPES, { DEFAULT_SEARCH_TYPE } from '../../../search/constants/searchTypes.js';
+import logQueryMetrics from '../logQueryMetrics/index.js';
+import {
+    createQueryTypeBuilders,
+    queryTypeBuilders as defaultQueryTypeBuilders
+} from './queryTypeBuilders.js';
 
 /**
- * Builds an OpenSearch  query JSON object based on the provided search parameters.
+ * Normalises raw pageNumber and itemsPerPage inputs to safe integer values.
  *
- * The query:
- * - Filters by an exact `case_ref` using a `term` query.
- * - Extracts date phrases from the keyword and adds them as `match_phrase` queries.
- * - Adds remaining keyword text as a `match` query against `chunk_text`.
- * - Applies pagination using `from` and `size`.
+ * @param {number} pageNumber - Raw page number (1-based).
+ * @param {number} itemsPerPage - Raw items-per-page value.
+ * @returns {{ safePageNumber: number, safeItemsPerPage: number }} Normalised pagination values.
+ */
+function normalisePagination(pageNumber, itemsPerPage) {
+    const normalizedPageNumber = Number.parseInt(pageNumber, 10);
+    const normalizedItemsPerPage = Number.parseInt(itemsPerPage, 10);
+    return {
+        safePageNumber:
+            Number.isFinite(normalizedPageNumber) && normalizedPageNumber > 0
+                ? normalizedPageNumber
+                : 1,
+        safeItemsPerPage:
+            Number.isFinite(normalizedItemsPerPage) && normalizedItemsPerPage > 0
+                ? normalizedItemsPerPage
+                : 10
+    };
+}
+
+/**
+ * Assembles an OpenSearch query DSL object for the given search mode.
  *
- * @param {Object} params - Search parameters.
+ * Dispatches to the appropriate mode-specific builder based on `searchType` and
+ * applies pagination, optional document scoping, and structured logging.
+ *
+ * Valid search modes:
+ * | searchType                    | Effective mode     |
+ * |-------------------------------|--------------------|
+ * | SEARCH_TYPES.KEYWORD          | keyword only       |
+ * | SEARCH_TYPES.KEYWORD_DATES    | keyword + dates    |
+ * | SEARCH_TYPES.SEMANTIC         | semantic only      |
+ * | SEARCH_TYPES.HYBRID           | hybrid             |
+ * | SEARCH_TYPES.HYBRID_DATES     | hybrid + dates     |
+ *
+ * @param {object} params - Search parameters.
  * @param {string} params.keyword - Raw search string entered by the user. May contain date phrases and free text.
  * @param {string} params.caseReferenceNumber - Exact case reference number to filter results by.
  * @param {number} params.pageNumber - The current page number (1-based).
  * @param {number} params.itemsPerPage - Number of results to return per page.
- * @param {Logger} [params.logger] - Optional structured logger instance.
- *
- * @returns {Object} OpenSearch query DSL JSON object.
+ * @param {object} [params.options] - Optional behavioural overrides.
+ * @param {object} [params.options.logger] - Optional structured logger instance.
+ * @param {string} [params.options.searchType=DEFAULT_SEARCH_TYPE] - Search mode. One of SEARCH_TYPES.KEYWORD, SEARCH_TYPES.KEYWORD_DATES, SEARCH_TYPES.SEMANTIC, SEARCH_TYPES.HYBRID, or SEARCH_TYPES.HYBRID_DATES.
+ * @param {boolean} [params.options.includePagination=true] - Whether to include pagination fields in the query.
+ * @param {object} [params.options.queryDslConfig] - Optional tuning overrides for semantic thresholds, ANN k, and default boosts.
+ * @param {string} [params.options.documentId] - Document UUID to scope results to a single document and page.
+ * @returns {object} OpenSearch query DSL JSON object.
  */
-function buildQueryJson({ keyword, caseReferenceNumber, pageNumber, itemsPerPage, logger }) {
-    const startBuild = Date.now();
-    const queryJson = {
-        from: itemsPerPage * (pageNumber - 1),
-        size: itemsPerPage,
-        query: {
-            bool: {
-                // `term` is used for exact matching of the case reference
-                // number, otherwise it will be tokenised.
-                must: [{ term: { case_ref: caseReferenceNumber } }]
-            }
-        }
+function buildQueryJson({
+    keyword,
+    caseReferenceNumber,
+    pageNumber,
+    itemsPerPage,
+    options: {
+        logger,
+        searchType = DEFAULT_SEARCH_TYPE,
+        includePagination = true,
+        documentId,
+        queryDslConfig
+    } = {}
+}) {
+    const buildStart = Date.now();
+
+    // Re-use the module-level default builder map when no config overrides are
+    // provided — avoids rebuilding the map and re-merging config on every request.
+    const queryTypeBuilders = queryDslConfig
+        ? createQueryTypeBuilders({ queryDslConfig })
+        : defaultQueryTypeBuilders;
+    // dispatch to the appropriate mode-specific builder. Each builder handles
+    // its own date preprocessing (keyword and hybrid extract dates, semantic
+    // skips preprocessing entirely for efficiency).
+    const queryTypeBuilder = queryTypeBuilders[searchType];
+    if (!queryTypeBuilder) {
+        throw new Error(
+            `Invalid searchType "${searchType}". Must be one of: ${Object.values(SEARCH_TYPES).join(', ')}`
+        );
+    }
+
+    const { safePageNumber, safeItemsPerPage } = normalisePagination(pageNumber, itemsPerPage);
+
+    const builderParams = {
+        keyword,
+        caseReferenceNumber,
+        safePageNumber,
+        documentId,
+        logger
     };
 
-    const extractStart = Date.now();
-    const {
-        dates: phrases,
-        remainingText,
-        matchedPatterns
-    } = extractDatesFromSearchString(keyword);
-    const extractEnd = Date.now();
+    const { queryJson, phrases, phrasesVariants, shouldClauses, extractMs, variantMs } =
+        queryTypeBuilder(builderParams);
 
-    const shouldClauses = [];
-
-    const variantStart = Date.now();
-    // build variants for each extracted phrase, falling back to the
-    // original phrase if no variants are produced, and then
-    // deduplicate (via the new Set) across all phrases.
-    const phrasesVariants = Array.from(
-        new Set(
-            phrases.flatMap((phrase, index) => {
-                const variants = generateDateFormatVariants(phrase, matchedPatterns[index]);
-                if (!variants || variants.length === 0) {
-                    return [phrase];
-                }
-                return variants;
-            })
-        )
-    );
-    const variantEnd = Date.now();
-
-    // add match_phrase queries for each extracted date phrase.
-    if (phrasesVariants.length !== 0) {
-        phrasesVariants.forEach((phrase) => {
-            shouldClauses.push({
-                match_phrase: {
-                    chunk_text: phrase
-                }
-            });
-        });
+    if (includePagination === true) {
+        queryJson.from = safeItemsPerPage * (safePageNumber - 1);
+        queryJson.size = safeItemsPerPage;
     }
 
-    // add match query for remaining text.
-    if (remainingText) {
-        shouldClauses.push({
-            match: {
-                chunk_text: {
-                    query: remainingText,
-                    operator: 'or'
-                }
-            }
-        });
+    if (queryJson?.query?.bool?.should?.length === 0) {
+        delete queryJson.query.bool.should;
+        delete queryJson.query.bool.minimum_should_match;
     }
 
-    if (shouldClauses.length > 0) {
-        queryJson.query.bool.should = shouldClauses;
-        queryJson.query.bool.minimum_should_match = 1;
-    }
-
-    // metrics.
     const buildEnd = Date.now();
-    const phraseCount = phrases.length;
-    const variantCount = phrasesVariants.length;
-    const shouldClauseCount = shouldClauses.length;
-    const payloadSize = JSON.stringify(queryJson).length;
-    const extractMs = extractEnd - extractStart;
-    const variantMs = variantEnd - variantStart;
-    const buildMs = buildEnd - startBuild;
 
-    // thresholds.
-    const VARIANT_THRESHOLD = 50;
-    const SHOULD_THRESHOLD = 50;
+    logQueryMetrics({
+        queryJson,
+        keyword,
+        phrases,
+        phrasesVariants,
+        shouldClauses,
+        buildMs: buildEnd - buildStart,
+        extractMs,
+        variantMs,
+        logger,
+        caseReferenceNumber,
+        searchType
+    });
 
-    // safe query hash for correlation, not raw text.
-    const queryHash = crypto.createHash('sha256').update(keyword).digest('hex').slice(0, 8);
-    if (logger) {
-        logger.info(
-            {
-                caseReferenceNumber,
-                queryHash,
-                phraseCount,
-                variantCount,
-                shouldClauseCount,
-                payloadSize,
-                extractMs,
-                variantMs,
-                buildMs
-            },
-            '[QueryBuilder] Query metrics'
-        );
-        if (variantCount > VARIANT_THRESHOLD || shouldClauseCount > SHOULD_THRESHOLD) {
-            logger.warn(
-                {
-                    caseReferenceNumber,
-                    queryHash,
-                    variantCount,
-                    shouldClauseCount
-                },
-                '[QueryBuilder] Variant/clause count exceeds safe threshold'
-            );
-        }
-    }
+    const queryTypeBuilderParamsLog = {
+        keyword,
+        caseReferenceNumber,
+        safePageNumber,
+        documentId,
+        queryDslConfig
+    };
+    const prettyJsonEnabled = process.env.APP_LOG_PRETTY_JSON === 'true';
+    const paramsPrettyJson = prettyJsonEnabled
+        ? `\n${JSON.stringify(queryTypeBuilderParamsLog, null, 2)}`
+        : '';
+    const outputPrettyJson = prettyJsonEnabled ? `\n${JSON.stringify(queryJson, null, 2)}` : '';
+
+    logger?.debug?.({ queryJson }, 'Built query JSON');
+
+    logger?.debug?.(
+        queryTypeBuilderParamsLog,
+        `[BuildQueryJson] ${searchType} queryTypeBuilder parameters${paramsPrettyJson}`
+    );
+    logger?.debug?.(
+        { queryJson },
+        `[BuildQueryJson] ${searchType} queryTypeBuilder output${outputPrettyJson}`
+    );
 
     return queryJson;
 }

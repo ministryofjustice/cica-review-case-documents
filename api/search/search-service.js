@@ -1,4 +1,5 @@
 import createDocumentDAL from '../DAL/document-dal.js';
+import { DEFAULT_SEARCH_TYPE } from './constants/searchTypes.js';
 
 /**
  * Factory function that creates a Search Service for retrieving documents
@@ -26,17 +27,19 @@ function createSearchService({ createDocumentDAL: dalFactory = createDocumentDAL
      * @param {Object} context - The context for the search operation.
      * @param {string} context.caseReferenceNumber - The case reference number.
      * @param {Object} context.logger - The logger instance.
+     * @param {string} [context.searchType=DEFAULT_SEARCH_TYPE] - Search mode. One of SEARCH_TYPES.KEYWORD, SEARCH_TYPES.KEYWORD_DATES, SEARCH_TYPES.SEMANTIC, SEARCH_TYPES.HYBRID, or SEARCH_TYPES.HYBRID_DATES.
      * @returns {Promise<Object[]>} A promise that resolves to an array of document results.
      */
     async function getSearchResultsByKeyword(
         keyword,
         pageNumber,
         itemsPerPage,
-        { caseReferenceNumber, logger }
+        { caseReferenceNumber, logger, searchType = DEFAULT_SEARCH_TYPE }
     ) {
         const db = dalFactory({
             caseReferenceNumber,
-            logger
+            logger,
+            searchType
         });
         return db.getDocumentsChunksByKeyword(keyword, pageNumber, itemsPerPage);
     }

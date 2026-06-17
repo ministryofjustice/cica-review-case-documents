@@ -101,6 +101,53 @@ describe('document-dal', () => {
         assert.equal(results[0]._source.chunk_text, 'foo');
     });
 
+    it('Should include a hybrid query when search type is hybrid', async () => {
+        let queryArgs;
+        const mockDB = {
+            query: async (args) => {
+                queryArgs = args;
+                return {
+                    body: {
+                        hits: {
+                            hits: []
+                        }
+                    }
+                };
+            }
+        };
+
+        const dal = createDocumentDAL({
+            caseReferenceNumber: '12-745678',
+            createDBQuery: () => mockDB,
+            logger: mockLogger,
+            searchType: 'hybrid'
+        });
+
+        await dal.getDocumentsChunksByKeyword('keyword', 2, 10);
+
+        // Assertions are structural so the test does not couple to production tuning
+        // constants in DEFAULT_QUERY_DSL_CONFIG (min_score, boosts, k may change).
+        assert.equal(typeof queryArgs.body.min_score, 'number');
+        assert.ok(queryArgs.body.min_score >= 0);
+        assert.deepStrictEqual(queryArgs.body.query.bool.filter, [
+            { term: { case_ref: '12-745678' } }
+        ]);
+        assert.equal(queryArgs.body.query.bool.minimum_should_match, 1);
+        const keywordClause = queryArgs.body.query.bool.should.find(
+            (clause) => clause.match?.chunk_text
+        );
+        const neuralClause = queryArgs.body.query.bool.should.find(
+            (clause) => clause.neural?.embedding
+        );
+        assert.equal(keywordClause.match.chunk_text.query, 'keyword');
+        assert.equal(typeof keywordClause.match.chunk_text.boost, 'number');
+        assert.ok(keywordClause.match.chunk_text.boost > 0);
+        assert.equal(typeof neuralClause.neural.embedding.k, 'number');
+        assert.ok(neuralClause.neural.embedding.k > 0);
+        assert.equal(typeof neuralClause.neural.embedding.boost, 'number');
+        assert.ok(neuralClause.neural.embedding.boost > 0);
+    });
+
     it('Should rethrow if an error if db.query throws', async () => {
         const dal = createDocumentDAL({
             caseReferenceNumber: '12-745678',
@@ -488,10 +535,9 @@ describe('document-dal', () => {
             });
 
             await dal.getPageChunksByDocumentIdAndPageNumber('doc-123', 1, 'search term');
-
             assert.ok(
-                queryArgs.body.query.bool.must.some(
-                    (clause) => clause.match?.chunk_text === 'search term'
+                queryArgs.body.query.bool.should.some(
+                    (clause) => clause.match?.chunk_text?.query === 'search term'
                 )
             );
         });
@@ -519,9 +565,9 @@ describe('document-dal', () => {
 
             await dal.getPageChunksByDocumentIdAndPageNumber('doc-123', 1, '');
 
-            const mustClauses = queryArgs.body.query.bool.must;
+            const filterClauses = queryArgs.body.query.bool.filter;
             assert.strictEqual(
-                mustClauses.some((clause) => clause.match?.chunk_text),
+                filterClauses.some((clause) => clause.match?.chunk_text),
                 false
             );
         });
@@ -542,10 +588,9 @@ describe('document-dal', () => {
             });
 
             await dal.getPageChunksByDocumentIdAndPageNumber('doc-456', 1);
-
             assert.ok(
-                queryArgs.body.query.bool.must.some(
-                    (clause) => clause.match?.source_doc_id === 'doc-456'
+                queryArgs.body.query.bool.filter.some(
+                    (clause) => clause.term?.source_doc_id === 'doc-456'
                 )
             );
         });
@@ -568,7 +613,7 @@ describe('document-dal', () => {
             await dal.getPageChunksByDocumentIdAndPageNumber('doc-123', '5');
 
             assert.ok(
-                queryArgs.body.query.bool.must.some((clause) => clause.match?.page_number === 5)
+                queryArgs.body.query.bool.filter.some((clause) => clause.term?.page_number === 5)
             );
         });
 
@@ -590,8 +635,8 @@ describe('document-dal', () => {
             await dal.getPageChunksByDocumentIdAndPageNumber('doc-123', 1);
 
             assert.ok(
-                queryArgs.body.query.bool.must.some(
-                    (clause) => clause.match?.case_ref === '12-745678'
+                queryArgs.body.query.bool.filter.some(
+                    (clause) => clause.term?.case_ref === '12-745678'
                 )
             );
         });
@@ -614,10 +659,47 @@ describe('document-dal', () => {
             await dal.getPageChunksByDocumentIdAndPageNumber('doc-123', 1, 'needle');
 
             assert.ok(
-                queryArgs.body.query.bool.must.some(
-                    (clause) => clause.match?.chunk_text === 'needle'
+                queryArgs.body.query.bool.should.some(
+                    (clause) => clause.match?.chunk_text?.query === 'needle'
                 )
             );
+        });
+
+        it('should build semantic page chunks query with term filters and min_score', async () => {
+            let queryArgs;
+            const mockDB = {
+                query: async (args) => {
+                    queryArgs = args;
+                    return { body: { hits: { hits: [] } } };
+                }
+            };
+
+            const dal = createDocumentDAL({
+                caseReferenceNumber: '12-745678',
+                createDBQuery: () => mockDB,
+                logger: mockLogger
+            });
+
+            await dal.getPageChunksByDocumentIdAndPageNumber(
+                'doc-123',
+                1,
+                'needle',
+                'semantic',
+                true
+            );
+
+            assert.equal(typeof queryArgs.body.min_score, 'number');
+            assert.ok(queryArgs.body.min_score >= 0);
+            assert.equal(queryArgs.body.query.neural.embedding.query_text, 'needle');
+            assert.deepStrictEqual(queryArgs.body.query.neural.embedding.filter, {
+                bool: {
+                    filter: [
+                        { term: { case_ref: '12-745678' } },
+                        { term: { source_doc_id: 'doc-123' } },
+                        { term: { page_number: 1 } }
+                    ]
+                }
+            });
         });
 
         it('should return empty array when no chunks found', async () => {

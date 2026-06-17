@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, describe, it } from 'node:test';
+import request from 'supertest';
 import createApp from './app.js';
 
 describe('App', () => {
@@ -107,6 +108,17 @@ describe('App', () => {
                     return true;
                 }
             );
+        });
+
+        it('should set short-lived cache headers for /assets responses', async () => {
+            process.env.NODE_ENV = 'development';
+            process.env.APP_LOG_LEVEL = 'silent';
+
+            const app = await createApp();
+            const response = await request(app).get('/assets/images/govuk-crest.svg');
+
+            assert.equal(response.status, 200);
+            assert.equal(response.headers['cache-control'], 'public, max-age=3600');
         });
     });
 });

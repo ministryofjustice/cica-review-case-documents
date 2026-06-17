@@ -1,3 +1,4 @@
+import { DEFAULT_SEARCH_TYPE } from '../api/search/constants/searchTypes.js';
 import createRequestServiceDefault from '../service/request/index.js';
 
 /**
@@ -24,12 +25,23 @@ function createSearchService({
      * @param {number} pageNumber - The page number of results to fetch.
      * @param {number} itemsPerPage - Number of items per page.
      * @param {string} token - The authentication token.
+     * @param {Object} [options] - Additional request options.
+     * @param {string} [options.searchType=DEFAULT_SEARCH_TYPE] - Search mode (one of SEARCH_TYPES: keyword, keyword-dates, semantic, hybrid, hybrid-dates).
      * @returns {Promise<object>} A promise that resolves to the search results.
      */
-    async function getSearchResults(query, pageNumber, itemsPerPage, token) {
-        logger.info({ query, pageNumber, itemsPerPage }, 'Fetching search results');
+    async function getSearchResults(
+        query,
+        pageNumber,
+        itemsPerPage,
+        token,
+        { searchType = DEFAULT_SEARCH_TYPE } = {}
+    ) {
+        logger?.debug?.({ query, pageNumber, itemsPerPage }, 'Fetching search results');
         const opts = {
-            url: `${process.env.APP_API_URL}/search/?query=${query}&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}`,
+            url:
+                `${process.env.APP_API_URL}/search/?query=${query}` +
+                `&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}` +
+                `&type=${searchType}`,
             headers: {
                 'On-Behalf-Of': caseReferenceNumber
             }

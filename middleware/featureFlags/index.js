@@ -1,6 +1,8 @@
+import { DEFAULT_SEARCH_TYPE, resolveSearchType } from '../../api/search/constants/searchTypes.js';
+
 export const FEATURE_FLAG_DEFAULTS = Object.freeze({
     align: true, // toggle alignment of image highlighting to prevent or show overlapping
-    hybrid: false // toggle hybrid search on and off
+    type: DEFAULT_SEARCH_TYPE // search mode: keyword, keyword-dates, semantic, hybrid, or hybrid-dates
 });
 
 /**
@@ -29,24 +31,64 @@ export function parseFeatureFlagValue(value) {
 }
 
 /**
+ * Parses a query-string string feature flag value.
+ *
+ * Returns the trimmed string value when provided, otherwise undefined.
+ *
+ * @param {unknown} value - Raw query-string value.
+ * @param {readonly string[] | undefined} allowedValues - Optional allowlist; if omitted any non-empty string is accepted.
+ * @returns {string | undefined} Matched value when valid, otherwise undefined.
+ */
+export function parseEnumFlagValue(value, allowedValues) {
+    const flagValue = Array.isArray(value) ? value.at(-1) : value;
+
+    if (typeof flagValue !== 'string') {
+        return undefined;
+    }
+
+    const normalized = flagValue.trim().toLowerCase();
+    if (!normalized) return undefined;
+    return allowedValues === undefined || allowedValues.includes(normalized)
+        ? normalized
+        : undefined;
+}
+
+/**
  * Resolves a feature flag value from session state, with repo defaults.
  *
  * @param {import('express-session').Session | undefined} session - Request session object.
- * @param {'align' | 'hybrid'} flagName - Supported feature flag name.
- * @returns {boolean} The active feature flag value.
+ * @param {'align' | 'type'} flagName - Supported feature flag name.
+ * @returns {boolean | string} The active feature flag value.
  */
 export function getFeatureFlagValue(session, flagName) {
     const sessionFlagValue = session?.featureFlags?.[flagName];
+    const defaultValue = FEATURE_FLAG_DEFAULTS[flagName];
 
-    if (typeof sessionFlagValue === 'boolean') {
-        return sessionFlagValue;
+    // Validate the session value matches the expected type for this flag.
+    // Boolean flags like 'align' should only accept booleans; string flags like 'type'
+    // should only accept strings. Stale/corrupt sessions with mismatched types fall back
+    // to the default.
+    if (typeof defaultValue === 'boolean') {
+        // align flag expects a boolean
+        if (typeof sessionFlagValue === 'boolean') {
+            return sessionFlagValue;
+        }
+    } else if (typeof defaultValue === 'string') {
+        // type flag expects a string
+        if (typeof sessionFlagValue === 'string') {
+            return sessionFlagValue;
+        }
     }
 
-    return FEATURE_FLAG_DEFAULTS[flagName];
+    return defaultValue;
 }
 
 /**
  * Persists supported feature flags from query-string params into the session.
+ *
+ * Boolean flags (`align`) accept `on` / `off` query-string values.
+ * The `type` flag is resolved to a supported search type. Unrecognised values fall back to
+ * the current session value or the default search type.
  *
  * @param {import('express').Request} req - Express request object.
  * @param {import('express').Response} res - Express response object.
@@ -57,16 +99,45 @@ export default function featureFlags(req, res, next) {
 
     if (req.session) {
         for (const flagName of Object.keys(FEATURE_FLAG_DEFAULTS)) {
-            flags[flagName] = getFeatureFlagValue(req.session, flagName);
+            // Initialize with session value or default, but validate the type flag.
+            // This ensures an invalid existing session type doesn't persist and
+            // get re-added to URLs or exposed through res.locals.featureFlags.
+            if (flagName === 'type') {
+                flags[flagName] = resolveSearchType(req.session?.featureFlags?.type, req.session);
+            } else {
+                flags[flagName] = getFeatureFlagValue(req.session, flagName);
+            }
 
-            const queryFlagValue = parseFeatureFlagValue(req.query?.[flagName]);
-            if (typeof queryFlagValue === 'boolean') {
-                flags[flagName] = queryFlagValue;
+            if (typeof FEATURE_FLAG_DEFAULTS[flagName] === 'boolean') {
+                const queryFlagValue = parseFeatureFlagValue(req.query?.[flagName]);
+                if (typeof queryFlagValue === 'boolean') {
+                    flags[flagName] = queryFlagValue;
+                }
+            } else if (flagName === 'type') {
+                // Express parses repeated query params (e.g. ?type=a&type=b) as an array.
+                // Normalize to the last entry first, consistent with parseFeatureFlagValue /
+                // parseEnumFlagValue.
+                const queryType = Array.isArray(req.query?.type)
+                    ? req.query.type.at(-1)
+                    : req.query?.type;
+
+                if (typeof queryType === 'string' && queryType.trim().length > 0) {
+                    // Only process a non-empty type value. An empty or whitespace-only
+                    // ?type= query param is treated as absent so the session value is preserved.
+                    const searchType = resolveSearchType(queryType, req.session);
+                    if (typeof searchType === 'string') {
+                        flags[flagName] = searchType;
+                    }
+                }
+            } else {
+                const queryFlagValue = parseEnumFlagValue(req.query?.[flagName]);
+                if (typeof queryFlagValue === 'string') {
+                    flags[flagName] = queryFlagValue;
+                }
             }
         }
         req.session.featureFlags = flags;
         res.locals.featureFlags = flags;
     }
-
     next();
 }

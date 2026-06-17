@@ -2,16 +2,30 @@
  * Utility functions for building navigation and document URLs.
  */
 
+import {
+    DEFAULT_SEARCH_TYPE,
+    resolveSearchType
+} from '../../../api/search/constants/searchTypes.js';
+
 /**
  * Builds the image streaming URL for a document page.
  *
  * @param {string} documentId - The document UUID
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
- * @returns {string} The image URL path
+ * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - The active search type value
+ * @param {Object} [session={}] - The session object
+ * @returns {string} The image streaming URL
  */
-export function buildImageUrl(documentId, pageNumber, crn) {
-    return `/document/${documentId}/page/${pageNumber}?crn=${crn}`;
+export function buildImageUrl(
+    documentId,
+    pageNumber,
+    crn,
+    searchType = DEFAULT_SEARCH_TYPE,
+    session = {}
+) {
+    const base = `/document/${documentId}/page/${pageNumber}?crn=${crn}`;
+    return `${base}&type=${encodeURIComponent(resolveSearchType(searchType, session))}`;
 }
 
 /**
@@ -21,10 +35,20 @@ export function buildImageUrl(documentId, pageNumber, crn) {
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
+ * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - The active search type value
+ * @param {Object} [session={}] - The session object
  * @returns {string} The text view URL
  */
-export function buildTextPageLink(documentId, pageNumber, crn, searchTerm = '') {
-    return `/document/${documentId}/view/text/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
+export function buildTextPageLink(
+    documentId,
+    pageNumber,
+    crn,
+    searchTerm = '',
+    searchType = DEFAULT_SEARCH_TYPE,
+    session = {}
+) {
+    const base = `/document/${documentId}/view/text/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
+    return `${base}&type=${encodeURIComponent(resolveSearchType(searchType, session))}`;
 }
 
 /**
@@ -34,8 +58,18 @@ export function buildTextPageLink(documentId, pageNumber, crn, searchTerm = '') 
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
  * @param {string} [searchTerm=''] - The search term
+ * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - The active search type value
+ * @param {Object} [session={}] - The session object
  * @returns {string} The image view URL
  */
-export function buildImagePageLink(documentId, pageNumber, crn, searchTerm = '') {
-    return `/document/${documentId}/view/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
+export function buildImagePageLink(
+    documentId,
+    pageNumber,
+    crn,
+    searchTerm = '',
+    searchType = DEFAULT_SEARCH_TYPE,
+    session = {}
+) {
+    const base = `/document/${documentId}/view/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
+    return `${base}&type=${encodeURIComponent(resolveSearchType(searchType, session))}`;
 }

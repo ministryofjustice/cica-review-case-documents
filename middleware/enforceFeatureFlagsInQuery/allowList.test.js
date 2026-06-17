@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { ALLOWED_PATH_PATTERNS, ALLOWED_PATHS } from '../enforceCrnInQuery/index.js';
+import { ALLOWED_PATH_PATTERNS, ALLOWED_PATHS } from './index.js';
 
 // --- Static allowlist test ---
 const EXPECTED_ALLOWED_PATHS = ['/search'];
@@ -23,10 +23,6 @@ const invalidPaths = [
     '/document/123e4567-e89b-12d3-a456-426614174000/view/page/notanumber',
     '/document/123e4567-e89b-12d3-a456-426614174000/view/page/',
     '/document/123e4567-e89b-12d3-a456-426614174000/view/page/1/extra',
-    '/document/not-a-uuid/view/text/page/1',
-    '/document/123e4567-e89b-12d3-a456-426614174000/view/text/page/notanumber',
-    '/document/123e4567-e89b-12d3-a456-426614174000/view/text/page/',
-    '/document/123e4567-e89b-12d3-a456-426614174000/view/text/page/1/extra',
     '/document/not-a-uuid/page/1',
     '/document/123e4567-e89b-12d3-a456-426614174000/page/notanumber'
 ];

@@ -80,6 +80,23 @@
                         "example": 2
                     },
                     {
+                        "name": "type",
+                        "in": "query",
+                        "required": false,
+                        "description": "Search mode. Controls whether lexical (BM25), neural (semantic), or combined (hybrid) search is used, and whether date phrase extraction is applied.",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "keyword",
+                                "keyword-dates",
+                                "semantic",
+                                "hybrid",
+                                "hybrid-dates"
+                            ]
+                        },
+                        "example": "hybrid"
+                    },
+                    {
                         "name": "On-Behalf-Of",
                         "in": "header",
                         "required": true,
@@ -476,7 +493,7 @@
                         "name": "pageNumber",
                         "in": "path",
                         "required": true,
-                        "description": "The page number to retrieve metadata for",
+                        "description": "The page number within the document",
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -759,7 +776,7 @@
                         "name": "pageNumber",
                         "in": "path",
                         "required": true,
-                        "description": "The page number to retrieve chunks for",
+                        "description": "The page number within the document",
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -786,6 +803,23 @@
                             "type": "string"
                         },
                         "example": "acute"
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "required": false,
+                        "description": "Search mode. Controls whether lexical (BM25), neural (semantic), or combined (hybrid) search is used, and whether date phrase extraction is applied.",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "keyword",
+                                "keyword-dates",
+                                "semantic",
+                                "hybrid",
+                                "hybrid-dates"
+                            ]
+                        },
+                        "example": "hybrid"
                     }
                 ],
                 "responses": {
@@ -1098,6 +1132,39 @@
             }
         },
         "parameters": {
+            "documentId": {
+                "name": "documentId",
+                "in": "path",
+                "required": true,
+                "description": "The UUID of the document",
+                "schema": {
+                    "type": "string",
+                    "format": "uuid"
+                },
+                "example": "55b2ea3c-3eae-54f7-b81d-292db7c84be7"
+            },
+            "documentPageNumber": {
+                "name": "pageNumber",
+                "in": "path",
+                "required": true,
+                "description": "The page number within the document",
+                "schema": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "example": 6
+            },
+            "crn": {
+                "name": "crn",
+                "in": "query",
+                "required": true,
+                "description": "Case reference number",
+                "schema": {
+                    "type": "string",
+                    "pattern": "^\\d{2}-[78]\\d{5}$"
+                },
+                "example": "26-711111"
+            },
             "query": {
                 "name": "query",
                 "in": "query",
@@ -1136,6 +1203,23 @@
                     "max": 100
                 },
                 "example": 2
+            },
+            "type": {
+                "name": "type",
+                "in": "query",
+                "required": false,
+                "description": "Search mode. Controls whether lexical (BM25), neural (semantic), or combined (hybrid) search is used, and whether date phrase extraction is applied.",
+                "schema": {
+                    "type": "string",
+                    "enum": [
+                        "keyword",
+                        "keyword-dates",
+                        "semantic",
+                        "hybrid",
+                        "hybrid-dates"
+                    ]
+                },
+                "example": "hybrid"
             },
             "onBehalfOf": {
                 "name": "On-Behalf-Of",

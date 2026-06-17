@@ -12,6 +12,8 @@ import indexRouter from './index/routes.js';
 import { caseSelected } from './middleware/caseSelected/index.js';
 import createCsrf from './middleware/csrf/index.js';
 import enforceCrnInQuery from './middleware/enforceCrnInQuery/index.js';
+import enforceFeatureFlagsInQuery from './middleware/enforceFeatureFlagsInQuery/index.js';
+import enforceSearchTypeInQuery from './middleware/enforceSearchTypeInQuery/index.js';
 import {
     checkEnvVars,
     getMandatoryEnvVars,
@@ -56,16 +58,6 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
 
     // Use the middleware for request logging
     app.use(loggerMiddleware);
-
-    app.use((req, res, next) => {
-        res.set({
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-            Pragma: 'no-cache',
-            Expires: '0',
-            'Surrogate-Control': 'no-store'
-        });
-        next();
-    });
 
     // https://expressjs.com/en/api.html#express.json
     app.use(express.json());
@@ -152,30 +144,50 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     const templateEngineService = createTemplateEngineService(app);
     templateEngineService.init();
 
-    app.use(express.static(path.join(__dirname, 'public')));
+    app.use(
+        express.static(path.join(__dirname, 'public'), {
+            maxAge: '1h'
+        })
+    );
 
     app.use(
         '/assets',
-        express.static(path.join(__dirname, '/node_modules/govuk-frontend/dist/govuk/assets'))
+        express.static(path.join(__dirname, '/node_modules/govuk-frontend/dist/govuk/assets'), {
+            maxAge: '1h'
+        })
     );
 
-    // Apply General Rate Limiter GLOBALLY (Fixes CodeQL)
-    // Note: auth login exclusion is handled within the limiter configuration
+    // Prevent caching of dynamic responses while allowing static handlers above
+    // to set long-lived cache headers for fingerprinted assets.
+    app.use((req, res, next) => {
+        res.set({
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            Pragma: 'no-cache',
+            Expires: '0',
+            'Surrogate-Control': 'no-store'
+        });
+        next();
+    });
+
+    app.use('/api', await createApi());
+
+    // Apply General Rate Limiter to web app routes.
+    // API routes are mounted before this and use their own API-specific limiter.
     app.use(generalRateLimiter);
 
     app.use('/', indexRouter);
 
     // Auth routes (login, etc.)
     app.use('/auth', authRouter);
-
-    app.use('/api', await createApi());
     // Security: enforceCrnInQuery uses an explicit allowlist of redirect-eligible paths (see middleware).
     // If you add a new route that should support internal redirects, update the allowlist and its test.
     app.use(enforceCrnInQuery);
+    // Reinstates non-default feature flags into the URL so they persist across navigation
+    // and can be bookmarked. Mirrors the pattern of enforceCrnInQuery.
+    app.use(enforceFeatureFlagsInQuery);
     app.use(
         '/document',
         isAuthenticated,
-        generalRateLimiter,
         getCaseReferenceNumberFromQueryString,
         caseSelected,
         featureFlags,
@@ -184,10 +196,10 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
     app.use(
         '/search',
         isAuthenticated,
-        generalRateLimiter,
         getCaseReferenceNumberFromQueryString,
         caseSelected,
         featureFlags,
+        enforceSearchTypeInQuery,
         searchRouter({ createTemplateEngineService, createSearchService })
     );
 

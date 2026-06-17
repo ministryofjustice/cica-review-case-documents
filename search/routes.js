@@ -1,4 +1,5 @@
 import express from 'express';
+import { resolveSearchType } from '../api/search/constants/searchTypes.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 
 /**
@@ -19,10 +20,15 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
         try {
             const { query } = req.body;
             const { pageNumber = 1 } = req.query;
+            const searchType = resolveSearchType(req.body?.type, req.session);
 
-            return res.redirect(
-                `/search?query=${encodeURIComponent(query.trim())}&pageNumber=${pageNumber}`
-            );
+            const redirectParams = new URLSearchParams({
+                query: query.trim(),
+                pageNumber: String(pageNumber),
+                type: searchType
+            });
+
+            return res.redirect(`/search?${redirectParams.toString()}`);
         } catch (err) {
             next(err);
         }
@@ -35,6 +41,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
 
             const { query, pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.query;
             const userName = req.session?.username;
+            const searchType = resolveSearchType(req.session?.featureFlags?.type, req.session);
 
             if (!query) {
                 const html = render('search/page/index.njk', {
@@ -43,7 +50,8 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                     pageType: 'search',
                     csrfToken: res.locals.csrfToken,
                     cspNonce: res.locals.cspNonce,
-                    userName
+                    userName,
+                    searchType
                 });
                 return res.send(html);
             }
@@ -61,10 +69,11 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 csrfToken: res.locals.csrfToken,
                 cspNonce: res.locals.cspNonce,
                 userName,
-                query
+                query,
+                searchType
             };
 
-            req.log.info({ query, pageNumber, itemsPerPage }, 'Creating search service');
+            req.log?.debug?.({ query, pageNumber, itemsPerPage }, 'Creating search service');
             const searchService = createSearchService({
                 caseReferenceNumber: req.session?.caseReferenceNumber,
                 logger: req.log
@@ -75,7 +84,8 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 encodeURIComponent(query),
                 pageNumber,
                 itemsPerPage,
-                token
+                token,
+                { searchType }
             );
             const { body } = response || {};
 
@@ -98,6 +108,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 ...hit,
                 docUuid: hit._source?.source_doc_id || 0,
                 searchTerm: query,
+                searchType,
                 caseReferenceNumber: req.session?.caseReferenceNumber
             }));
 

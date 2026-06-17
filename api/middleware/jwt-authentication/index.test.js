@@ -160,3 +160,45 @@ test('authenticateToken returns 500 when auth configuration is invalid', async (
         'Authentication service is not configured correctly'
     );
 });
+
+test('authenticateToken normalizes to username when userId is null', async () => {
+    const token = jwt.sign({ userId: null, username: 'fallback-user' }, SECRET, {
+        issuer: process.env.APP_API_JWT_ISSUER,
+        audience: process.env.APP_API_JWT_AUDIENCE,
+        algorithm: 'HS256'
+    });
+    const req = createMockReq({ token });
+    const res = createMockRes();
+    let calledNext = false;
+
+    await authenticateToken(req, res, () => {
+        calledNext = true;
+    });
+
+    assert.equal(req.user.id, 'fallback-user');
+    assert.equal(req.user.username, 'fallback-user');
+    assert.ok(calledNext);
+});
+
+test('authenticateToken returns 403 when token has no usable identity claims', async () => {
+    const token = jwt.sign({ email: 'test@example.com' }, SECRET, {
+        issuer: process.env.APP_API_JWT_ISSUER,
+        audience: process.env.APP_API_JWT_AUDIENCE,
+        algorithm: 'HS256'
+    });
+    const req = createMockReq({ token });
+    const res = createMockRes();
+    let calledNext = false;
+
+    await authenticateToken(req, res, () => {
+        calledNext = true;
+    });
+
+    assert.equal(res.statusCode, 403);
+    assert.ok(res.jsonBody);
+    assert.equal(
+        res.jsonBody.errors[0].detail,
+        'Authentication token is missing required identity claims'
+    );
+    assert.equal(calledNext, false);
+});

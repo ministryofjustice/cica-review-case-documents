@@ -1,3 +1,4 @@
+import { resolveSearchType } from '../../api/search/constants/searchTypes.js';
 import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
@@ -29,6 +30,7 @@ export function createTextViewerHandler(
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
             const { searchTerm = '' } = req.query;
+            const searchType = resolveSearchType(req.session?.featureFlags?.type, req.session);
             const apiJwtToken = createApiJwtToken(req.session?.username);
 
             // Fetch document page metadata from OpenSearch via API
@@ -48,18 +50,27 @@ export function createTextViewerHandler(
 
             const viewMode = VIEW_MODES.TEXT;
 
-            // work out the pagination data from the metadata and values needed to construct the URLs for the pagination links
+            // work out the pagination data from the metadata and values needed to
+            // construct the URLs for the pagination links.
             const paginationData = paginationDataFromMetadata(
                 pageMetadata,
                 req.query,
                 req.validatedParams,
-                viewMode
+                viewMode,
+                searchType
             );
 
             const pageTitle = formatPageTitle(pageMetadata.correspondence_type);
 
             // Provide a link for sub-navigation back to the image page
-            const imagePageLink = buildImagePageLink(documentId, pageNumber, crn, searchTerm);
+            const imagePageLink = buildImagePageLink(
+                documentId,
+                pageNumber,
+                crn,
+                searchTerm,
+                searchType,
+                req.session
+            );
 
             const { text } = pageMetadata;
 
@@ -76,6 +87,7 @@ export function createTextViewerHandler(
                         pageNumber,
                         crn,
                         searchTerm: safeSearchTerm,
+                        searchType,
                         jwtToken: apiJwtToken,
                         logger: req.log
                     });

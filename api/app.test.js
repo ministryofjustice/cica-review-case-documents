@@ -6,11 +6,14 @@ import createApi from './app.js';
 
 const API_ENV_VARS = [
     'APP_LOG_LEVEL',
+    'NODE_ENV',
     'DEPLOY_ENV',
     'npm_package_version',
     'APP_JWT_SECRET',
     'APP_API_JWT_ISSUER',
-    'APP_API_JWT_AUDIENCE'
+    'APP_API_JWT_AUDIENCE',
+    'API_RATE_LIMIT_MAX_AUTH',
+    'API_RATE_LIMIT_MAX_UNAUTH'
 ];
 
 /**
@@ -274,6 +277,116 @@ describe('API Application', () => {
 
             assert.match(res.headers['content-type'], /application\/vnd\.api\+json/);
             assert.strictEqual(res.headers['application-version'], '1.0.0-test');
+        });
+
+        test('rate limits authenticated API requests in production using API_RATE_LIMIT_MAX_AUTH', async () => {
+            process.env.NODE_ENV = 'production';
+            process.env.API_RATE_LIMIT_MAX_AUTH = '2';
+            process.env.API_RATE_LIMIT_MAX_UNAUTH = '1';
+
+            const prodLikeApp = await createApi({
+                createSearchService: mockCreateSearchService
+            });
+
+            const token = signApiToken({ userId: 'auth-rate-limit-user' });
+
+            const first = await request(prodLikeApp)
+                .get('/search?query=test&pageNumber=1&itemsPerPage=1')
+                .set('Authorization', `Bearer ${token}`)
+                .set('On-Behalf-Of', '25-711111');
+
+            const second = await request(prodLikeApp)
+                .get('/search?query=test&pageNumber=1&itemsPerPage=1')
+                .set('Authorization', `Bearer ${token}`)
+                .set('On-Behalf-Of', '25-711111');
+
+            const third = await request(prodLikeApp)
+                .get('/search?query=test&pageNumber=1&itemsPerPage=1')
+                .set('Authorization', `Bearer ${token}`)
+                .set('On-Behalf-Of', '25-711111');
+
+            assert.strictEqual(first.statusCode, 200);
+            assert.strictEqual(second.statusCode, 200);
+            assert.strictEqual(third.statusCode, 429);
+        });
+
+        test('applies authenticated rate limits independently for different JWT users', async () => {
+            process.env.NODE_ENV = 'production';
+            process.env.API_RATE_LIMIT_MAX_AUTH = '1';
+            process.env.API_RATE_LIMIT_MAX_UNAUTH = '1';
+
+            const prodLikeApp = await createApi({
+                createSearchService: mockCreateSearchService
+            });
+
+            const firstUserToken = signApiToken({ userId: 'rate-user-1' });
+            const secondUserToken = signApiToken({ userId: 'rate-user-2' });
+
+            const firstUserFirstRequest = await request(prodLikeApp)
+                .get('/search?query=test&pageNumber=1&itemsPerPage=1')
+                .set('Authorization', `Bearer ${firstUserToken}`)
+                .set('On-Behalf-Of', '25-711111');
+
+            const firstUserSecondRequest = await request(prodLikeApp)
+                .get('/search?query=test&pageNumber=1&itemsPerPage=1')
+                .set('Authorization', `Bearer ${firstUserToken}`)
+                .set('On-Behalf-Of', '25-711111');
+
+            const secondUserFirstRequest = await request(prodLikeApp)
+                .get('/search?query=test&pageNumber=1&itemsPerPage=1')
+                .set('Authorization', `Bearer ${secondUserToken}`)
+                .set('On-Behalf-Of', '25-711111');
+
+            assert.strictEqual(firstUserFirstRequest.statusCode, 200);
+            assert.strictEqual(firstUserSecondRequest.statusCode, 429);
+            assert.strictEqual(secondUserFirstRequest.statusCode, 200);
+        });
+
+        test('applies authenticated rate limits independently when JWT identity is username', async () => {
+            process.env.NODE_ENV = 'production';
+            process.env.API_RATE_LIMIT_MAX_AUTH = '1';
+            process.env.API_RATE_LIMIT_MAX_UNAUTH = '1';
+
+            const prodLikeApp = await createApi({
+                createSearchService: mockCreateSearchService
+            });
+
+            const firstUsernameToken = signApiToken({ username: 'username-user-1' });
+            const secondUsernameToken = signApiToken({ username: 'username-user-2' });
+
+            const firstUserFirstRequest = await request(prodLikeApp)
+                .get('/search?query=test&pageNumber=1&itemsPerPage=1')
+                .set('Authorization', `Bearer ${firstUsernameToken}`)
+                .set('On-Behalf-Of', '25-711111');
+
+            const firstUserSecondRequest = await request(prodLikeApp)
+                .get('/search?query=test&pageNumber=1&itemsPerPage=1')
+                .set('Authorization', `Bearer ${firstUsernameToken}`)
+                .set('On-Behalf-Of', '25-711111');
+
+            const secondUserFirstRequest = await request(prodLikeApp)
+                .get('/search?query=test&pageNumber=1&itemsPerPage=1')
+                .set('Authorization', `Bearer ${secondUsernameToken}`)
+                .set('On-Behalf-Of', '25-711111');
+
+            assert.strictEqual(firstUserFirstRequest.statusCode, 200);
+            assert.strictEqual(firstUserSecondRequest.statusCode, 429);
+            assert.strictEqual(secondUserFirstRequest.statusCode, 200);
+        });
+
+        test('returns 403 when JWT is valid but missing required identity claims', async () => {
+            const identitylessToken = signApiToken({ email: 'missing-identity@example.com' });
+
+            const res = await request(app)
+                .get('/search?query=test&pageNumber=1&itemsPerPage=1')
+                .set('Authorization', `Bearer ${identitylessToken}`)
+                .set('On-Behalf-Of', '25-711111');
+
+            assert.strictEqual(res.statusCode, 403);
+            assert.strictEqual(
+                res.body.errors[0].detail,
+                'Authentication token is missing required identity claims'
+            );
         });
     });
 

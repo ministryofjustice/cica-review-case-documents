@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 import express from 'express';
 import request from 'supertest';
+import { DEFAULT_SEARCH_TYPE } from '../api/search/constants/searchTypes.js';
 import createSearchRouter from './routes.js';
 
 describe('Search Routes', () => {
@@ -71,17 +72,127 @@ describe('Search Routes', () => {
 
     describe('GET /', () => {
         it('should render the search index page if no query is provided', async () => {
-            const res = await request(app).get('/search');
+            const res = await request(app).get(`/search?type=${DEFAULT_SEARCH_TYPE}`);
             assert.strictEqual(res.statusCode, 200);
             assert.match(res.text, /search\/page\/index.njk/);
             assert.strictEqual(lastRenderParams.userName, 'search.user@example.com');
+            assert.strictEqual(lastRenderParams.searchType, DEFAULT_SEARCH_TYPE);
         });
 
         it('should call search service and render results when a query is provided', async () => {
-            const res = await request(app).get('/search?query=test');
+            const res = await request(app).get(`/search?query=test&type=${DEFAULT_SEARCH_TYPE}`);
             assert.strictEqual(res.statusCode, 200);
             assert.match(res.text, /search\/page\/results.njk/);
             assert.strictEqual(lastRenderParams.userName, 'search.user@example.com');
+            assert.strictEqual(lastRenderParams.searchType, DEFAULT_SEARCH_TYPE);
+        });
+
+        it('should pass the search type to the search service when set in session', async () => {
+            let serviceCallArgs;
+            mockCreateSearchService = () => ({
+                getSearchResults: async (...args) => {
+                    serviceCallArgs = args;
+                    return {
+                        body: {
+                            data: {
+                                attributes: {
+                                    results: {
+                                        hits: [],
+                                        total: { value: 0 }
+                                    }
+                                }
+                            }
+                        }
+                    };
+                }
+            });
+
+            const searchRouter = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: mockCreateSearchService
+            });
+
+            const testApp = express();
+            testApp.use(express.json());
+            testApp.use(express.urlencoded({ extended: true }));
+            testApp.use((req, res, next) => {
+                req.session = {
+                    caseSelected: true,
+                    caseReferenceNumber: '12345',
+                    username: 'search.user@example.com',
+                    featureFlags: {
+                        type: 'semantic'
+                    }
+                };
+                req.log = { info: () => {}, error: () => {} };
+                res.locals.csrfToken = 'test-csrf-token';
+                res.locals.cspNonce = 'test-csp-nonce';
+                next();
+            });
+            testApp.use('/search', searchRouter);
+
+            const res = await request(testApp).get('/search?query=test&type=semantic');
+
+            assert.strictEqual(res.statusCode, 200);
+            assert.deepStrictEqual(serviceCallArgs[4], {
+                searchType: 'semantic'
+            });
+        });
+
+        it('should fall back to default search type when session type is invalid', async () => {
+            const testApp = express();
+            const captured = { searchType: undefined };
+
+            const router = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: () => ({
+                    getSearchResults: async (
+                        _query,
+                        _pageNumber,
+                        _itemsPerPage,
+                        _token,
+                        options
+                    ) => {
+                        captured.searchType = options.searchType;
+                        return {
+                            body: {
+                                data: {
+                                    attributes: {
+                                        results: {
+                                            hits: [],
+                                            total: { value: 0 }
+                                        }
+                                    }
+                                }
+                            }
+                        };
+                    }
+                })
+            });
+
+            testApp.use(express.json());
+            testApp.use(express.urlencoded({ extended: true }));
+            testApp.use((req, res, next) => {
+                req.session = {
+                    caseSelected: true,
+                    caseReferenceNumber: '12345',
+                    username: 'search.user@example.com',
+                    featureFlags: {
+                        type: 'old-value'
+                    }
+                };
+                req.log = { info: () => {}, error: () => {} };
+                res.locals.csrfToken = 'test-csrf-token';
+                res.locals.cspNonce = 'test-csp-nonce';
+                next();
+            });
+            testApp.use('/search', router);
+
+            const res = await request(testApp).get('/search?query=test&type=old-value');
+
+            assert.strictEqual(res.statusCode, 200);
+            assert.strictEqual(captured.searchType, DEFAULT_SEARCH_TYPE);
+            assert.strictEqual(lastRenderParams.searchType, DEFAULT_SEARCH_TYPE);
         });
 
         it('should handle errors from the search service', async () => {
@@ -110,7 +221,9 @@ describe('Search Routes', () => {
                 res.status(500).send('Internal Server Error');
             });
 
-            const res = await request(testApp).get('/search?query=error');
+            const res = await request(testApp).get(
+                `/search?query=error&type=${DEFAULT_SEARCH_TYPE}`
+            );
             assert.strictEqual(res.statusCode, 500);
             assert.strictEqual(res.text, 'Internal Server Error');
         });
@@ -141,7 +254,7 @@ describe('Search Routes', () => {
             });
             testApp.use('/search', routerWithErrorService);
 
-            const res = await request(testApp).get('/search?query=bad');
+            const res = await request(testApp).get(`/search?query=bad&type=${DEFAULT_SEARCH_TYPE}`);
             assert.strictEqual(res.statusCode, 400);
         });
 
@@ -171,7 +284,7 @@ describe('Search Routes', () => {
             });
             testApp.use('/search', routerWithErrorService);
 
-            const res = await request(testApp).get('/search?query=bad');
+            const res = await request(testApp).get(`/search?query=bad&type=${DEFAULT_SEARCH_TYPE}`);
             assert.strictEqual(res.statusCode, 400);
         });
 
@@ -201,7 +314,7 @@ describe('Search Routes', () => {
             });
             testApp.use('/search', routerWithErrorService);
 
-            const res = await request(testApp).get('/search?query=a');
+            const res = await request(testApp).get(`/search?query=a&type=${DEFAULT_SEARCH_TYPE}`);
             assert.strictEqual(res.statusCode, 400);
             // Should use default anchor #error
             assert.ok(res.text.includes('error') || res.statusCode === 400);
@@ -236,7 +349,9 @@ describe('Search Routes', () => {
             });
             testApp.use('/search', routerWithErrorService);
 
-            const res = await request(testApp).get('/search?query=test');
+            const res = await request(testApp).get(
+                `/search?query=test&type=${DEFAULT_SEARCH_TYPE}`
+            );
             assert.strictEqual(res.statusCode, 400);
         });
 
@@ -282,23 +397,55 @@ describe('Search Routes', () => {
             });
             testApp.use('/search', routerWithResults);
 
-            const res = await request(testApp).get('/search?query=test');
+            const res = await request(testApp).get(
+                `/search?query=test&type=${DEFAULT_SEARCH_TYPE}`
+            );
             assert.strictEqual(res.statusCode, 200);
             assert.match(res.text, /search\/page\/results.njk/);
         });
     });
 
     describe('POST /', () => {
-        it('should redirect to the GET route with the query parameter', async () => {
+        it('should redirect to the GET route with the query parameter and default type', async () => {
             const res = await request(app).post('/search').send({ query: ' search term ' });
             assert.strictEqual(res.statusCode, 302);
-            assert.strictEqual(res.headers.location, '/search?query=search%20term&pageNumber=1');
+            assert.strictEqual(
+                res.headers.location,
+                `/search?query=search+term&pageNumber=1&type=${DEFAULT_SEARCH_TYPE}`
+            );
         });
 
-        it('should redirect with pageNumber when provided', async () => {
+        it('should preserve pageNumber and type in the redirect when provided', async () => {
             const res = await request(app).post('/search?pageNumber=5').send({ query: 'test' });
             assert.strictEqual(res.statusCode, 302);
-            assert.strictEqual(res.headers.location, '/search?query=test&pageNumber=5');
+            assert.strictEqual(
+                res.headers.location,
+                `/search?query=test&pageNumber=5&type=${DEFAULT_SEARCH_TYPE}`
+            );
+        });
+
+        it('uses a valid type field in POST body so subsequent requests keep the current search mode', async () => {
+            const res = await request(app)
+                .post('/search?pageNumber=2')
+                .send({ query: 'test', type: 'semantic' });
+
+            assert.strictEqual(res.statusCode, 302);
+            assert.strictEqual(
+                res.headers.location,
+                '/search?query=test&pageNumber=2&type=semantic'
+            );
+        });
+
+        it('falls back to the session/default type when the POST body type is invalid', async () => {
+            const res = await request(app)
+                .post('/search?pageNumber=2')
+                .send({ query: 'test', type: 'keyword,semantic' });
+
+            assert.strictEqual(res.statusCode, 302);
+            assert.strictEqual(
+                res.headers.location,
+                `/search?query=test&pageNumber=2&type=${DEFAULT_SEARCH_TYPE}`
+            );
         });
 
         it('handles errors in POST /search route', async () => {
