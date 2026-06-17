@@ -71,7 +71,7 @@ jobs:
                   audience: sts.amazonaws.com
 
             - name: Login to Amazon ECR
-              uses: aws-actions/amazon-ecr-login@fa648b43de3d4d023bcb3f89ed6940096949c419 #v2.1.5
+              uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 #v2.1.6
 
               id: login-ecr
 
@@ -150,7 +150,7 @@ jobs:
 
             - name: Upload dependency SARIF to GitHub
               if: ${{ inputs.skip_security_scan != true  && hashFiles('snyk-test-results.sarif') != '' }}
-              uses: github/codeql-action/upload-sarif@eda5730a8bfb740e03a28087a958444c646e5842 #v4.36.0
+              uses: github/codeql-action/upload-sarif@0337b99474cc604cc1c4737c1b419e6fb618172e #v4.36.0
               with:
                   sarif_file: snyk-test-results.sarif
 
@@ -258,7 +258,7 @@ jobs:
 
             - name: Upload container SARIF to GitHub
               if: ${{ inputs.skip_security_scan != true  && hashFiles('snyk-container-test-results.sarif') != '' }}
-              uses: github/codeql-action/upload-sarif@eda5730a8bfb740e03a28087a958444c646e5842 #v4.36.0
+              uses: github/codeql-action/upload-sarif@0337b99474cc604cc1c4737c1b419e6fb618172e #v4.36.0
               with:
                   sarif_file: snyk-container-test-results.sarif
 
@@ -488,7 +488,7 @@ jobs:
                   audience: sts.amazonaws.com
 
             - name: Login to Amazon ECR
-              uses: aws-actions/amazon-ecr-login@fa648b43de3d4d023bcb3f89ed6940096949c419 #v2.1.5
+              uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 #v2.1.6
               id: login-ecr
 
             - name: Template Kubernetes manifests
