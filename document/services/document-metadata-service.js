@@ -1,6 +1,64 @@
 import createRequestServiceDefault from '../../service/request/index.js';
 
 const CRN_REGEX = /^\d{2}-[78]\d{5}$/;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function validateDocumentId(documentId) {
+    if (!UUID_REGEX.test(documentId)) {
+        throw new Error('Invalid document ID format');
+    }
+}
+
+function normalizePageNumber(pageNumber) {
+    const pageNum = Number(pageNumber);
+    if (!Number.isInteger(pageNum) || pageNum < 1) {
+        throw new Error('Invalid page number');
+    }
+
+    return pageNum;
+}
+
+function validateCrn(crn) {
+    if (!crn || !CRN_REGEX.test(crn)) {
+        throw new Error('Invalid case reference number format');
+    }
+}
+
+function getApiBaseUrl() {
+    const apiBaseUrl = process.env.APP_API_URL;
+    if (!apiBaseUrl) {
+        throw new Error('APP_API_URL environment variable is not set');
+    }
+
+    return apiBaseUrl;
+}
+
+function toRequestOptions(url, jwtToken) {
+    if (!jwtToken) {
+        return { url };
+    }
+
+    return {
+        url,
+        headers: {
+            Authorization: `Bearer ${jwtToken}`
+        }
+    };
+}
+
+function extractMetadataOrThrow(response) {
+    if (!response.body) {
+        throw new Error('No response body received from API');
+    }
+
+    if (response.body.errors) {
+        const error = new Error(response.body.errors[0]?.detail || 'Failed to fetch page metadata');
+        error.status = response.statusCode || 500;
+        throw error;
+    }
+
+    return response.body.data;
+}
 
 /**
  * Creates a document metadata service for fetching page metadata from the API.
@@ -32,29 +90,10 @@ function createDocumentMetadataService({
      * @throws {Error} If input validation fails, API is unreachable, or response is malformed.
      */
     async function getPageMetadata() {
-        // Validate inputs before constructing URL (defense in depth)
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(documentId)) {
-            throw new Error('Invalid document ID format');
-        }
-
-        const pageNum = Number(pageNumber);
-        if (!Number.isInteger(pageNum) || pageNum < 1) {
-            throw new Error('Invalid page number');
-        }
-
-        // Validate CRN format (case reference number)
-        // Format: YY-7NNNNN or YY-8NNNNN (e.g. 26-711111, 36-873423)
-        // where YY = year, 7 = Personal Injury, 8 = Bereavement, NNNNN = 5-digit case ID
-        if (!crn || !CRN_REGEX.test(crn)) {
-            throw new Error('Invalid case reference number format');
-        }
-
-        // Get API base URL from environment (trusted configuration)
-        const apiBaseUrl = process.env.APP_API_URL;
-        if (!apiBaseUrl) {
-            throw new Error('APP_API_URL environment variable is not set');
-        }
+        validateDocumentId(documentId);
+        const pageNum = normalizePageNumber(pageNumber);
+        validateCrn(crn);
+        const apiBaseUrl = getApiBaseUrl();
 
         if (logger) {
             logger.info({ documentId, pageNumber: pageNum, crn }, 'Fetching page metadata');
@@ -63,32 +102,11 @@ function createDocumentMetadataService({
         // Construct URL with validated inputs
         const url = `${apiBaseUrl}/document/${documentId}/page/${pageNum}/metadata?crn=${encodeURIComponent(crn)}`;
 
-        const opts = {
-            url
-        };
-
-        if (jwtToken) {
-            // Only include Authorization header if jwtToken is provided, do not send undefined or empty token
-            opts.headers = {
-                Authorization: `Bearer ${jwtToken}`
-            };
-        }
+        const opts = toRequestOptions(url, jwtToken);
 
         const response = await get(opts);
 
-        if (!response.body) {
-            throw new Error('No response body received from API');
-        }
-
-        if (response.body.errors) {
-            const error = new Error(
-                response.body.errors[0]?.detail || 'Failed to fetch page metadata'
-            );
-            error.status = response.statusCode || 500;
-            throw error;
-        }
-
-        return response.body.data;
+        return extractMetadataOrThrow(response);
     }
 
     return Object.freeze({
