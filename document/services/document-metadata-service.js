@@ -3,12 +3,26 @@ import createRequestServiceDefault from '../../service/request/index.js';
 const CRN_REGEX = /^\d{2}-[78]\d{5}$/;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/**
+ * Validates that the document identifier matches UUID format.
+ *
+ * @param {string} documentId - Document identifier to validate.
+ * @returns {void}
+ * @throws {Error} When the document identifier is not a valid UUID.
+ */
 function validateDocumentId(documentId) {
     if (!UUID_REGEX.test(documentId)) {
         throw new Error('Invalid document ID format');
     }
 }
 
+/**
+ * Converts and validates a page number input.
+ *
+ * @param {number|string} pageNumber - Page number candidate.
+ * @returns {number} Normalized integer page number.
+ * @throws {Error} When the page number is not a positive integer.
+ */
 function normalizePageNumber(pageNumber) {
     const pageNum = Number(pageNumber);
     if (!Number.isInteger(pageNum) || pageNum < 1) {
@@ -18,12 +32,25 @@ function normalizePageNumber(pageNumber) {
     return pageNum;
 }
 
+/**
+ * Validates case reference number format.
+ *
+ * @param {string} crn - Case reference number candidate.
+ * @returns {void}
+ * @throws {Error} When the CRN is missing or malformed.
+ */
 function validateCrn(crn) {
     if (!crn || !CRN_REGEX.test(crn)) {
         throw new Error('Invalid case reference number format');
     }
 }
 
+/**
+ * Retrieves API base URL from trusted environment configuration.
+ *
+ * @returns {string} API base URL.
+ * @throws {Error} When APP_API_URL is not configured.
+ */
 function getApiBaseUrl() {
     const apiBaseUrl = process.env.APP_API_URL;
     if (!apiBaseUrl) {
@@ -33,6 +60,13 @@ function getApiBaseUrl() {
     return apiBaseUrl;
 }
 
+/**
+ * Builds request options for the metadata API call.
+ *
+ * @param {string} url - Fully qualified API URL.
+ * @param {string|undefined} jwtToken - Optional JWT token.
+ * @returns {{url: string, headers?: {Authorization: string}}} Request options for the request service.
+ */
 function toRequestOptions(url, jwtToken) {
     if (!jwtToken) {
         return { url };
@@ -46,6 +80,13 @@ function toRequestOptions(url, jwtToken) {
     };
 }
 
+/**
+ * Validates API response and returns metadata payload.
+ *
+ * @param {{statusCode?: number, body?: {data?: object, errors?: Array<{detail?: string}>}}} response - API response object.
+ * @returns {object|undefined} Metadata payload from the response.
+ * @throws {Error} When response is missing a body or includes API errors.
+ */
 function extractMetadataOrThrow(response) {
     if (!response.body) {
         throw new Error('No response body received from API');

@@ -45,11 +45,24 @@ const isVerticallyContained = (inner, outer) =>
  */
 export const hasHorizontalOverlap = (a, b) => a.left < b.right && a.right > b.left;
 
+/**
+ * Clones a highlight chunk and its bounding box to avoid mutating original input.
+ *
+ * @param {{bounding_box?: {top?: number, left?: number, width?: number, height?: number}}} highlight - Highlight chunk to clone.
+ * @returns {{bounding_box?: {top?: number, left?: number, width?: number, height?: number}} & object} Cloned highlight chunk.
+ */
 const cloneHighlightChunk = (highlight) => ({
     ...highlight,
     bounding_box: highlight?.bounding_box ? { ...highlight.bounding_box } : highlight?.bounding_box
 });
 
+/**
+ * Applies overlap rules for one current chunk against previously accepted chunks.
+ *
+ * @param {{bounding_box: {top?: number, left?: number, width?: number, height?: number}} & object} currentChunk - Current highlight chunk being processed.
+ * @param {Array<{bounding_box?: {top?: number, left?: number, width?: number, height?: number}} & object>} output - Previously accepted highlight chunks.
+ * @returns {{shouldHideChunk: boolean, currentEdges: {top: number, left: number, height: number, width: number, bottom: number, right: number}}} Rule evaluation result.
+ */
 function applyOverlapRules(currentChunk, output) {
     let currentEdges = getBoxEdges(currentChunk.bounding_box);
 
