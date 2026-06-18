@@ -65,6 +65,7 @@ describe('API Application', () => {
         process.env.APP_JWT_SECRET = 'test-secret-for-api';
         process.env.APP_API_JWT_ISSUER = 'test-ui';
         process.env.APP_API_JWT_AUDIENCE = 'test-api';
+        process.env.DOCS_RATE_LIMIT_MAX_UNAUTH = '2';
 
         // Create the Express app instance for testing
         //app = await createApi({ createSearchService: mockCreateSearchService });
@@ -159,7 +160,7 @@ describe('API Application', () => {
                 createSearchService: mockCreateSearchService
             });
 
-            const token = signApiToken({ userId: 'test' });
+            const token = signApiToken({ username: 'test' });
 
             const res = await request(devApp).get('/docs/').set('Authorization', `Bearer ${token}`);
 
@@ -176,7 +177,7 @@ describe('API Application', () => {
                 createSearchService: mockCreateSearchService
             });
 
-            const token = signApiToken({ userId: 'test' });
+            const token = signApiToken({ username: 'test' });
 
             const res = await request(prodApp)
                 .get('/docs/')
@@ -192,6 +193,23 @@ describe('API Application', () => {
             const res = await request(app).get('/docs/');
             assert.strictEqual(res.statusCode, 401);
             assert.match(res.body.errors[0].detail, /Missing authentication token/);
+        });
+
+        test('responds with 401 unauthorised for ALL openapi requests in production', async () => {
+            process.env.NODE_ENV = 'production';
+
+            const prodLikeApp = await createApi({
+                createSearchService: mockCreateSearchService
+            });
+
+            const first = await request(prodLikeApp).get('/docs/');
+            const second = await request(prodLikeApp).get('/docs/');
+            const third = await request(prodLikeApp).get('/docs/');
+
+            // ALL requests should return 401.
+            assert.strictEqual(first.statusCode, 401);
+            assert.strictEqual(second.statusCode, 401);
+            assert.strictEqual(third.statusCode, 401);
         });
 
         test('responds with 401 for OpenAPI spec', async () => {
@@ -218,7 +236,7 @@ describe('API Application', () => {
 
         beforeEach(() => {
             // Create a fresh token for each test
-            validToken = signApiToken({ userId: 'test-user-123', email: 'test@example.com' });
+            validToken = signApiToken({ username: 'test@example.com' });
         });
 
         test('responds with 200 for Swagger UI docs', async () => {
@@ -236,7 +254,7 @@ describe('API Application', () => {
             assert.strictEqual(res.type, 'application/json');
         });
 
-        test('responds with 200 for docs OpenAPI spec route', async () => {
+        test('responds with 404 for docs OpenAPI spec route in production', async () => {
             process.env.DEPLOY_ENV = 'production';
             process.env.APP_LOG_LEVEL = 'silent';
             process.env.APP_JWT_SECRET = 'test-secret';
@@ -245,14 +263,14 @@ describe('API Application', () => {
                 createSearchService: mockCreateSearchService
             });
 
-            const prodToken = signApiToken({ userId: 'test-user-123' });
+            const prodToken = signApiToken({ username: 'test-user-123' });
 
             const res = await request(prodApp)
-                .get('/docs/openapi.json')
+                .get('/openapi.json')
                 .set('Authorization', `Bearer ${prodToken}`);
 
-            assert.strictEqual(res.statusCode, 200);
-            assert.strictEqual(res.type, 'application/json');
+            assert.strictEqual(res.statusCode, 404);
+            assert.strictEqual(res.type, 'application/vnd.api+json');
             assert.ok(res.body && typeof res.body === 'object');
         });
 
@@ -282,13 +300,12 @@ describe('API Application', () => {
         test('rate limits authenticated API requests in production using API_RATE_LIMIT_MAX_AUTH', async () => {
             process.env.NODE_ENV = 'production';
             process.env.API_RATE_LIMIT_MAX_AUTH = '2';
-            process.env.API_RATE_LIMIT_MAX_UNAUTH = '1';
 
             const prodLikeApp = await createApi({
                 createSearchService: mockCreateSearchService
             });
 
-            const token = signApiToken({ userId: 'auth-rate-limit-user' });
+            var token = signApiToken({ username: 'auth-rate-limit-user' });
 
             const first = await request(prodLikeApp)
                 .get('/search?query=test&pageNumber=1&itemsPerPage=1')
@@ -319,13 +336,15 @@ describe('API Application', () => {
                 createSearchService: mockCreateSearchService
             });
 
-            const firstUserToken = signApiToken({ userId: 'rate-user-1' });
-            const secondUserToken = signApiToken({ userId: 'rate-user-2' });
+            var firstUserToken = signApiToken({ username: 'rate-user-1' });
+            const secondUserToken = signApiToken({ username: 'rate-user-2' });
 
             const firstUserFirstRequest = await request(prodLikeApp)
                 .get('/search?query=test&pageNumber=1&itemsPerPage=1')
                 .set('Authorization', `Bearer ${firstUserToken}`)
                 .set('On-Behalf-Of', '25-711111');
+
+            firstUserToken = signApiToken({ username: 'rate-user-1' });
 
             const firstUserSecondRequest = await request(prodLikeApp)
                 .get('/search?query=test&pageNumber=1&itemsPerPage=1')
@@ -351,13 +370,15 @@ describe('API Application', () => {
                 createSearchService: mockCreateSearchService
             });
 
-            const firstUsernameToken = signApiToken({ username: 'username-user-1' });
+            var firstUsernameToken = signApiToken({ username: 'username-user-1' });
             const secondUsernameToken = signApiToken({ username: 'username-user-2' });
 
             const firstUserFirstRequest = await request(prodLikeApp)
                 .get('/search?query=test&pageNumber=1&itemsPerPage=1')
                 .set('Authorization', `Bearer ${firstUsernameToken}`)
                 .set('On-Behalf-Of', '25-711111');
+
+            firstUsernameToken = signApiToken({ username: 'username-user-1' });
 
             const firstUserSecondRequest = await request(prodLikeApp)
                 .get('/search?query=test&pageNumber=1&itemsPerPage=1')
@@ -394,7 +415,7 @@ describe('API Application', () => {
         let validToken;
 
         beforeEach(() => {
-            validToken = signApiToken({ id: 'test' });
+            validToken = signApiToken({ username: 'test' });
         });
 
         test('responds with 404 for an unknown route when authenticated', async () => {

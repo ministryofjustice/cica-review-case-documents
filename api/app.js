@@ -4,12 +4,11 @@ import { fileURLToPath } from 'node:url';
 import Ajv from 'ajv';
 import ajvErrors from 'ajv-errors';
 import express from 'express';
-import helmet from 'helmet';
 import pinoHttp from 'pino-http';
-import swaggerUi from 'swagger-ui-express';
 import createApiRouter from './document/routes.js';
 import errorHandler from './middleware/errorHandler/index.js';
 import authenticateJWTToken from './middleware/jwt-authentication/index.js';
+import createDocsRouter from './middleware/openapi/index.js';
 import dynamicRateLimiter from './middleware/rateLimiter/index.js';
 import createOpenApiValidatorMiddleware from './middleware/validator/index.js';
 import createSearchService from './search/search-service.js';
@@ -41,45 +40,23 @@ export default async function createApi(options = {}) {
     app.use(express.json({ type: 'application/vnd.api+json' }));
     app.use(express.urlencoded({ extended: true }));
 
-    const openApiPath = path.join(__dirname, 'openapi', 'openapi-dist.json');
-    const readOpenApiFile = options.readOpenApiFile || readFile; // DI to allow the try/catch to be tested
-    let openApiSpec = {};
-    try {
-        openApiSpec = JSON.parse(await readOpenApiFile(openApiPath, 'utf-8'));
-    } catch (err) {
-        // Use the app's logger instance if available
-        (app.get('logger') || console).error({ err }, 'Failed to load OpenAPI spec');
-    }
-
-    // --- API Routes (Protected and Validated) ---
-    const docsRouter = express.Router();
-    docsRouter.use(authenticateJWTToken);
     if (process.env.DEPLOY_ENV !== 'production') {
-        // Serve Swagger UI only in non-production environments
-        docsRouter.use(
-            '/',
-            helmet({
-                contentSecurityPolicy: {
-                    directives: {
-                        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-                        'script-src': ["'self'", "'unsafe-inline'"],
-                        'style-src': ["'self'", "'unsafe-inline'"]
-                    }
-                }
-            }),
-            swaggerUi.serve,
-            swaggerUi.setup(openApiSpec)
-        );
-    }
-    docsRouter.get('/openapi.json', (req, res) => {
-        res.json(openApiSpec);
-    });
+        const docsRouter = await createDocsRouter({ readOpenApiFile: options.readOpenApiFile });
+        app.use('/docs', docsRouter);
 
-    // Mount docsRouter at /docs and /openapi.json
-    app.use('/docs', docsRouter);
-    app.use('/openapi.json', authenticateJWTToken, (req, res) => {
-        res.json(openApiSpec);
-    });
+        // Also serve the spec at root for standard location
+        app.use('/openapi.json', authenticateJWTToken, async (req, res) => {
+            const readOpenApiFile = options.readOpenApiFile || readFile;
+            try {
+                const openApiPath = path.resolve(__dirname, 'openapi/openapi-dist.json');
+                const openApiSpec = JSON.parse(await readOpenApiFile(openApiPath, 'utf-8'));
+                res.json(openApiSpec);
+            } catch (err) {
+                (req.log || console).error({ err }, 'Failed to load OpenAPI spec');
+                res.status(500).json({ error: 'Failed to load OpenAPI spec' });
+            }
+        });
+    }
 
     // This middleware sets the content type and version for all subsequent API routes.
     const apiSetupMiddleware = (req, res, next) => {
@@ -98,7 +75,7 @@ export default async function createApi(options = {}) {
     app.use(
         '/',
         authenticateJWTToken,
-        // Rate limit authenticated users by user ID after successful auth
+        // Rate limit authenticated users by username after successful auth
         dynamicRateLimiter,
         apiSetupMiddleware,
         openApiValidator,

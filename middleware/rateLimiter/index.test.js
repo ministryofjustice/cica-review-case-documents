@@ -42,9 +42,11 @@ test('generateRateLimitKey falls back to ipKeyGenerator when no session or user 
     assert.strictEqual(generateRateLimitKey(req), ipKeyGenerator(req.ip));
 });
 
-test('skip function returns true in non-production mode', async () => {
+test('rate limiter remains active in non-production mode', async () => {
     const originalEnv = process.env.NODE_ENV;
+    const originalUnauth = process.env.APP_RATE_LIMIT_MAX_UNAUTH;
     process.env.NODE_ENV = 'development';
+    process.env.APP_RATE_LIMIT_MAX_UNAUTH = '1';
 
     try {
         const app = express();
@@ -52,13 +54,15 @@ test('skip function returns true in non-production mode', async () => {
         app.use(generalRateLimiter);
         app.get('/test', (req, res) => res.send('OK'));
 
-        // Should allow unlimited requests in dev mode
-        for (let i = 0; i < 100; i++) {
-            const res = await request(app).get('/test');
-            assert.strictEqual(res.status, 200);
-        }
+        const res1 = await request(app).get('/test');
+        const res2 = await request(app).get('/test');
+
+        assert.strictEqual(res1.status, 200);
+        assert.strictEqual(res2.status, 429);
     } finally {
         process.env.NODE_ENV = originalEnv;
+        if (originalUnauth) process.env.APP_RATE_LIMIT_MAX_UNAUTH = originalUnauth;
+        else delete process.env.APP_RATE_LIMIT_MAX_UNAUTH;
     }
 });
 

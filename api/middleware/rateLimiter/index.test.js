@@ -1,6 +1,7 @@
 import assert from 'node:assert';
 import { afterEach, beforeEach, test } from 'node:test';
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import dynamicRateLimiter from './index.js';
 
@@ -28,7 +29,7 @@ function createTestApp() {
     app.use((req, res, next) => {
         const authHeader = req.headers.authorization;
         if (authHeader?.startsWith('Bearer ')) {
-            req.user = { id: authHeader.substring(7) };
+            req.user = { username: authHeader.substring(7) };
         }
         next();
     });
@@ -43,6 +44,21 @@ function createTestApp() {
 }
 
 const app = createTestApp();
+
+/**
+ * Signs a JWT token with the given payload using the secret and options from environment variables.
+ *
+ * @param {Object} payload - The payload to include in the JWT token.
+ * @returns {string} The signed JWT token.
+ */
+function signApiToken(payload) {
+    return jwt.sign(payload, process.env.APP_JWT_SECRET, {
+        expiresIn: '1h',
+        issuer: process.env.APP_API_JWT_ISSUER,
+        audience: process.env.APP_API_JWT_AUDIENCE,
+        algorithm: 'HS256'
+    });
+}
 
 beforeEach(() => {
     originalEnv = process.env.NODE_ENV;
@@ -64,61 +80,33 @@ afterEach(() => {
     }
 });
 
-test('allows requests under the authenticated rate limit', async () => {
+test('Blocks requests over the authenticated rate limit', async () => {
     process.env.NODE_ENV = 'production';
     process.env.API_RATE_LIMIT_MAX_AUTH = '5';
-    const token = 'user-123';
+    const token = signApiToken({ username: 'rate-user-1' });
 
     for (let i = 0; i < 5; i++) {
         const res = await request(app).get('/api/test').set('Authorization', `Bearer ${token}`);
         assert.strictEqual(res.status, 200, `Request ${i + 1} should succeed`);
     }
+
+    const blocked = await request(app).get('/api/test').set('Authorization', `Bearer ${token}`);
+    assert.strictEqual(blocked.status, 429, 'Request should be blocked');
 });
 
-test('blocks requests over the authenticated rate limit', async () => {
+test('returns 429 status with correct error message on rate limit', async () => {
     process.env.NODE_ENV = 'production';
-    process.env.API_RATE_LIMIT_MAX_AUTH = '3';
-    const token = 'user-456';
+    process.env.API_RATE_LIMIT_MAX_UNAUTH = '1';
 
-    // First 3 requests succeed
-    for (let i = 0; i < 3; i++) {
-        const res = await request(app).get('/api/test').set('Authorization', `Bearer ${token}`);
-        assert.strictEqual(res.status, 200, `Request ${i + 1} should succeed`);
-    }
+    // First request succeeds
+    const res1 = await request(app).get('/api/test');
+    assert.strictEqual(res1.status, 200);
 
-    // 4th and 5th requests should be blocked
-    for (let i = 0; i < 2; i++) {
-        const res = await request(app).get('/api/test').set('Authorization', `Bearer ${token}`);
-        assert.strictEqual(res.status, 429, `Request ${3 + i + 1} should be blocked`);
-        assert.match(res.body.error, /Too many requests/i);
-    }
+    // Second request should return 429 with error message
+    const res2 = await request(app).get('/api/test');
+    assert.strictEqual(res2.status, 429);
+    assert.match(res2.body.error, /Too many requests/);
 });
-
-test('allows requests under the unauthenticated rate limit', async () => {
-    process.env.NODE_ENV = 'production';
-    process.env.API_RATE_LIMIT_MAX_UNAUTH = '2';
-
-    for (let i = 0; i < 2; i++) {
-        const res = await request(app).get('/api/test');
-        assert.strictEqual(res.status, 200, `Request ${i + 1} should succeed`);
-    }
-});
-
-// TODO: This is proving impossible to reliably test due to rate limiter state persisting across tests
-// It should be tested when a suitable strategy has been found
-// test('returns 429 status with correct error message on rate limit', async () => {
-//     process.env.NODE_ENV = 'production';
-//     process.env.API_RATE_LIMIT_MAX_UNAUTH = '1';
-
-//     // First request succeeds
-//     const res1 = await request(app).get('/api/test');
-//     assert.strictEqual(res1.status, 200);
-
-//     // Second request should return 429 with error message
-//     const res2 = await request(app).get('/api/test');
-//     assert.strictEqual(res2.status, 429);
-//     assert.match(res2.body.error, /Too many requests/);
-// });
 
 test('different authenticated users have separate rate limits', async () => {
     process.env.NODE_ENV = 'production';
