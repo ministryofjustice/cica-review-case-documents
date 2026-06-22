@@ -298,7 +298,7 @@ describe('Text Viewer Handler', () => {
         assert.ok(header);
         assert.ok(payload);
         assert.deepEqual(JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')), {
-            username: 'app-ui',
+            id: 'app-ui',
             iat: JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')).iat,
             exp: JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')).exp,
             aud: getApiJwtAudience(),

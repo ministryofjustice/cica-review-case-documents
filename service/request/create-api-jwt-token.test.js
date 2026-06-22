@@ -4,24 +4,39 @@ import jwt from 'jsonwebtoken';
 import createApiJwtToken from './create-api-jwt-token.js';
 
 describe('createApiJwtToken', () => {
-    it('creates a signed token with provided username', () => {
+    it('creates a signed token with provided oid as id', () => {
         process.env.APP_JWT_SECRET = 'test-secret';
         process.env.APP_API_JWT_EXPIRES_IN = '60s';
         process.env.APP_API_JWT_ISSUER = 'test-ui';
         process.env.APP_API_JWT_AUDIENCE = 'test-api';
 
-        const token = createApiJwtToken('user@example.com');
+        const token = createApiJwtToken('entra-oid-123');
         const payload = jwt.verify(token, process.env.APP_JWT_SECRET, {
             issuer: 'test-ui',
             audience: 'test-api'
         });
 
-        assert.equal(payload.username, 'user@example.com');
+        assert.equal(payload.id, 'entra-oid-123');
         assert.equal(payload.iss, 'test-ui');
         assert.equal(payload.aud, 'test-api');
     });
 
-    it('falls back to app-ui when username is missing', () => {
+    it('includes id in payload when provided', () => {
+        process.env.APP_JWT_SECRET = 'test-secret';
+        process.env.APP_API_JWT_EXPIRES_IN = '60s';
+        process.env.APP_API_JWT_ISSUER = 'test-ui';
+        process.env.APP_API_JWT_AUDIENCE = 'test-api';
+
+        const token = createApiJwtToken('entra-oid-123');
+        const payload = jwt.verify(token, process.env.APP_JWT_SECRET, {
+            issuer: 'test-ui',
+            audience: 'test-api'
+        });
+
+        assert.equal(payload.id, 'entra-oid-123');
+    });
+
+    it('falls back to app-ui when oid is missing', () => {
         process.env.APP_JWT_SECRET = 'test-secret';
         process.env.APP_API_JWT_EXPIRES_IN = '60s';
         process.env.APP_API_JWT_ISSUER = 'test-ui';
@@ -33,7 +48,7 @@ describe('createApiJwtToken', () => {
             audience: 'test-api'
         });
 
-        assert.equal(payload.username, 'app-ui');
+        assert.equal(payload.id, 'app-ui');
     });
 
     it('throws if APP_JWT_SECRET is not set', () => {
