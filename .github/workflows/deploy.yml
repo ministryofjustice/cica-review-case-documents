@@ -45,7 +45,7 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
+              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
               with:
                   ref: ${{ inputs.ref || github.sha }}
 
@@ -150,7 +150,7 @@ jobs:
 
             - name: Upload dependency SARIF to GitHub
               if: ${{ inputs.skip_security_scan != true  && hashFiles('snyk-test-results.sarif') != '' }}
-              uses: github/codeql-action/upload-sarif@0337b99474cc604cc1c4737c1b419e6fb618172e #v4.36.0
+              uses: github/codeql-action/upload-sarif@ee70cd5210be4f326974d7381701e5b148c6a6a3 #v4.36.0
               with:
                   sarif_file: snyk-test-results.sarif
 
@@ -258,7 +258,7 @@ jobs:
 
             - name: Upload container SARIF to GitHub
               if: ${{ inputs.skip_security_scan != true  && hashFiles('snyk-container-test-results.sarif') != '' }}
-              uses: github/codeql-action/upload-sarif@0337b99474cc604cc1c4737c1b419e6fb618172e #v4.36.0
+              uses: github/codeql-action/upload-sarif@ee70cd5210be4f326974d7381701e5b148c6a6a3 #v4.36.0
               with:
                   sarif_file: snyk-container-test-results.sarif
 
@@ -476,7 +476,7 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 #v6.0.3
+              uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
               with:
                   ref: ${{ inputs.ref || github.sha }}
 
