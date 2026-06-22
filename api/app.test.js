@@ -305,7 +305,7 @@ describe('API Application', () => {
                 createSearchService: mockCreateSearchService
             });
 
-            var token = signApiToken({ username: 'auth-rate-limit-user' });
+            const token = signApiToken({ username: 'auth-rate-limit-user' });
 
             const first = await request(prodLikeApp)
                 .get('/search?query=test&pageNumber=1&itemsPerPage=1')
@@ -336,7 +336,7 @@ describe('API Application', () => {
                 createSearchService: mockCreateSearchService
             });
 
-            var firstUserToken = signApiToken({ username: 'rate-user-1' });
+            let firstUserToken = signApiToken({ username: 'rate-user-1' });
             const secondUserToken = signApiToken({ username: 'rate-user-2' });
 
             const firstUserFirstRequest = await request(prodLikeApp)
@@ -370,7 +370,7 @@ describe('API Application', () => {
                 createSearchService: mockCreateSearchService
             });
 
-            var firstUsernameToken = signApiToken({ username: 'username-user-1' });
+            let firstUsernameToken = signApiToken({ username: 'username-user-1' });
             const secondUsernameToken = signApiToken({ username: 'username-user-2' });
 
             const firstUserFirstRequest = await request(prodLikeApp)

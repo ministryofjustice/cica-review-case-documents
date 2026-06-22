@@ -26,12 +26,19 @@ const WINDOW_MS = Number(process.env.API_RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000
 /**
  * Dynamic rate limiter for API requests based on authentication status.
  *
- * NOTE: This middleware is placed AFTER authenticateJWTToken. While CodeQL flags auth-before-ratelimit,
- * JWT validation is lightweight (signature check, not DB/filesystem operations). The expensive operations
+ * Supports both JWT-based authentication (req.user) and session-based authentication (req.session.loggedIn).
+ * Uses username-based keying for authenticated requests and IP-based keying for unauthenticated requests.
+ *
+ * NOTE: This middleware is placed AFTER authentication for API Requests. While CodeQL flags auth-before-ratelimit,
+ * authentication validation is lightweight (signature check, not DB/filesystem operations). The expensive operations
  * occur downstream. User-based rate limiting (after auth) prevents VPN/NAT blocking issues.
  *
+ * NOTE: This middleware is placed BEFORE authentication for OpenAPI docs requests,
+ * matching the main app's global rate limiting strategy. Docs access is protected by auth middleware,
+ * and rate limiting is applied first to mitigate brute-force attacks on the auth endpoint.
+ *
  * @type {*} - Express middleware that applies different rate limits for authenticated and unauthenticated requests.
- * Authenticated requests (with a valid API JWT) have a higher limit than unauthenticated requests.
+ * Authenticated requests (with a valid JWT or session) have a higher limit than unauthenticated requests.
  * The limits and window duration are configurable via environment variables.
  * Responds with HTTP 429 and a JSON error message when the limit is exceeded.
  */
@@ -41,13 +48,23 @@ const dynamicRateLimiter = rateLimit({
     limit: (req, res) => {
         const authenticatedLimit = Number(process.env.API_RATE_LIMIT_MAX_AUTH) || 1000;
         const unauthenticatedLimit = Number(process.env.API_RATE_LIMIT_MAX_UNAUTH) || 50;
-        return req.user ? authenticatedLimit : unauthenticatedLimit;
+        // Support both JWT auth (req.user) and session auth (req.session.loggedIn)
+        return req.user || req.session?.loggedIn ? authenticatedLimit : unauthenticatedLimit;
     },
     keyGenerator: (req) => {
+        // JWT auth: extract username from normalized user object
         const user = normalizeApiJwtUser(req.user);
-        return user?.username != null && user.username !== ''
-            ? String(user.username)
-            : ipKeyGenerator(req.ip);
+        if (user?.username != null && user.username !== '') {
+            return String(user.username);
+        }
+
+        // Session auth: use session username (set by Entra callback handler)
+        if (req.session?.username) {
+            return String(req.session.username);
+        }
+
+        // Fallback to IP-based keying for unauthenticated requests
+        return ipKeyGenerator(req.ip);
     },
     handler: (req, res) => {
         res.status(429).json({ error: 'Too many requests, please try again later' });

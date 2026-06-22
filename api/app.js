@@ -22,6 +22,8 @@ const __dirname = path.dirname(__filename);
  * @param {object} [options.logger] - An optional logger instance.
  * @param {Function} [options.createSearchService] - A factory function to create the search service.
  * @param {Function} [options.readOpenApiFile] - Optional file reader for loading OpenAPI spec (used by tests).
+ * @param {import('express').RequestHandler} [options.docsAuthMiddleware] - Optional auth middleware for docs protection.
+ *        Passed through to createDocsRouter. Defaults to JWT if not provided.
  * @returns {Promise<import('express').Application>} A promise that resolves to the configured Express app.
  */
 export default async function createApi(options = {}) {
@@ -41,7 +43,10 @@ export default async function createApi(options = {}) {
     app.use(express.urlencoded({ extended: true }));
 
     if (process.env.DEPLOY_ENV !== 'production') {
-        const docsRouter = await createDocsRouter({ readOpenApiFile: options.readOpenApiFile });
+        const docsRouter = await createDocsRouter({
+            readOpenApiFile: options.readOpenApiFile,
+            docsAuthMiddleware: options.docsAuthMiddleware || authenticateJWTToken
+        });
         app.use('/docs', docsRouter);
 
         // Also serve the spec at root for standard location
@@ -75,7 +80,6 @@ export default async function createApi(options = {}) {
     app.use(
         '/',
         authenticateJWTToken,
-        // Rate limit authenticated users by username after successful auth
         dynamicRateLimiter,
         apiSetupMiddleware,
         openApiValidator,

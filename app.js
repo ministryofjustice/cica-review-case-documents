@@ -172,7 +172,7 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
         next();
     });
 
-    app.use('/api', await createApi());
+    app.use('/api', await createApi({ docsAuthMiddleware: isAuthenticated }));
 
     // Apply General Rate Limiter to web app routes.
     // API routes are mounted before this and use their own API-specific limiter.
