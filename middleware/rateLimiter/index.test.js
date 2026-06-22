@@ -83,8 +83,11 @@ test('skip function does not bypass limiter in production for /api paths', async
         assert.strictEqual(res2.status, 429);
     } finally {
         process.env.NODE_ENV = originalEnv;
-        if (originalUnauth) process.env.APP_RATE_LIMIT_MAX_UNAUTH = originalUnauth;
-        else delete process.env.APP_RATE_LIMIT_MAX_UNAUTH;
+        if (originalUnauth) {
+            process.env.APP_RATE_LIMIT_MAX_UNAUTH = originalUnauth;
+        } else {
+            delete process.env.APP_RATE_LIMIT_MAX_UNAUTH;
+        }
     }
 });
 

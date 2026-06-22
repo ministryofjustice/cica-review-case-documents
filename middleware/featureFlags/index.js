@@ -51,7 +51,9 @@ export function parseEnumFlagValue(value, allowedValues) {
     }
 
     const normalized = flagValue.trim().toLowerCase();
-    if (!normalized) return undefined;
+    if (!normalized) {
+        return undefined;
+    }
     return allowedValues === undefined || allowedValues.includes(normalized)
         ? normalized
         : undefined;
