@@ -44,7 +44,8 @@
                 "useConst": "error",
                 "useBlockStatements": "error",
                 "noParameterAssign": "warn",
-                "noNestedTernary": "warn"
+                "noNestedTernary": "warn",
+                "noImplicitBoolean": "warn"
             },
             "a11y": {
                 "recommended": true

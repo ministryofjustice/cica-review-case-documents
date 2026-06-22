@@ -43,6 +43,15 @@ A web application for searching and reviewing case documents for the Criminal In
 
 ## Quick Start
 
+### 0. VS Code Extensions (Optional)
+
+When you open the project in VS Code, you'll be prompted to install recommended extensions. The project recommends **Biome** for code formatting and linting with automatic format-on-save.
+
+To manually install:
+```bash
+code --install-extension biomejs.biome
+```
+
 ### 1. Install Dependencies
 
 ```bash
