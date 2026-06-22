@@ -143,6 +143,80 @@ export function getFeatureFlagValue(session, flagName) {
 }
 
 /**
+ * Initializes a feature flag from session state with repository defaults.
+ *
+ * @param {string} flagName - The flag name to initialize.
+ * @param {import('express-session').Session | undefined} session - Request session object.
+ * @returns {boolean | string} The initialized flag value.
+ */
+function initializeFlag(flagName, session) {
+    if (flagName === 'type') {
+        return resolveSearchType(session?.featureFlags?.type, session);
+    }
+    return getFeatureFlagValue(session, flagName);
+}
+
+/**
+ * Processes a query override for a boolean flag.
+ *
+ * @param {boolean} currentValue - Current flag value.
+ * @param {unknown} queryValue - Query string value.
+ * @returns {boolean} Updated flag value.
+ */
+function processBooleanFlag(currentValue, queryValue) {
+    const parsed = parseFeatureFlagValue(queryValue);
+    return typeof parsed === 'boolean' ? parsed : currentValue;
+}
+
+/**
+ * Processes a query override for the type flag.
+ *
+ * @param {import('express-session').Session | undefined} session - Request session object.
+ * @param {unknown} queryValue - Query string value.
+ * @returns {string | undefined} Updated flag value or undefined if no valid override.
+ */
+function processTypeFlag(session, queryValue) {
+    const queryType = Array.isArray(queryValue) ? queryValue.at(-1) : queryValue;
+    if (typeof queryType === 'string' && queryType.trim().length > 0) {
+        const searchType = resolveSearchType(queryType, session);
+        return typeof searchType === 'string' ? searchType : undefined;
+    }
+    return undefined;
+}
+
+/**
+ * Processes a query override for an enum flag.
+ *
+ * @param {string} currentValue - Current flag value.
+ * @param {unknown} queryValue - Query string value.
+ * @returns {string} Updated flag value.
+ */
+function processEnumFlag(currentValue, queryValue) {
+    const parsed = parseEnumFlagValue(queryValue);
+    return typeof parsed === 'string' ? parsed : currentValue;
+}
+
+/**
+ * Applies query string overrides to a feature flag based on its type.
+ *
+ * @param {string} flagName - The flag name.
+ * @param {boolean | string} currentValue - Current flag value.
+ * @param {unknown} queryValue - Query string value.
+ * @param {import('express-session').Session | undefined} session - Request session object.
+ * @returns {boolean | string} Final flag value after applying overrides.
+ */
+function applyQueryOverride(flagName, currentValue, queryValue, session) {
+    if (flagName === 'type') {
+        const override = processTypeFlag(session, queryValue);
+        return override !== undefined ? override : currentValue;
+    }
+    if (typeof FEATURE_FLAG_DEFAULTS[flagName] === 'boolean') {
+        return processBooleanFlag(currentValue, queryValue);
+    }
+    return processEnumFlag(currentValue, queryValue);
+}
+
+/**
  * Persists supported feature flags from query-string params into the session.
  *
  * Boolean flags (`align`, `debug`) accept `on` / `off` query-string values.
@@ -160,46 +234,13 @@ export default function featureFlags(req, res, next) {
 
     if (req.session) {
         for (const flagName of Object.keys(FEATURE_FLAG_DEFAULTS)) {
-            // Initialize from validated session values with repo defaults.
-            flags[flagName] = getFeatureFlagValue(req.session, flagName);
-            provenance[flagName] = getFeatureFlagSource(req.session, flagName);
-
-            if (typeof FEATURE_FLAG_DEFAULTS[flagName] === 'boolean') {
-                const queryFlagValue = parseFeatureFlagValue(req.query?.[flagName]);
-                // Block query-string override for debug flag in production
-                if (
-                    typeof queryFlagValue === 'boolean' &&
-                    !(flagName === 'debug' && process.env.DEPLOY_ENV === 'production')
-                ) {
-                    flags[flagName] = queryFlagValue;
-                    provenance[flagName] = 'query';
-                }
-            } else if (flagName === 'type') {
-                // Express parses repeated query params (e.g. ?type=a&type=b) as an array.
-                // Normalize to the last entry first, consistent with parseFeatureFlagValue /
-                // parseEnumFlagValue.
-                const queryType = Array.isArray(req.query?.type)
-                    ? req.query.type.at(-1)
-                    : req.query?.type;
-
-                if (typeof queryType === 'string' && queryType.trim().length > 0) {
-                    // Only process a non-empty type value. An empty or whitespace-only
-                    // ?type= query param is treated as absent so the session value is preserved.
-                    const normalizedQueryType = queryType.trim().toLowerCase();
-                    if (Object.values(SEARCH_TYPES).includes(normalizedQueryType)) {
-                        flags[flagName] = normalizedQueryType;
-                        provenance[flagName] = 'query';
-                    } else {
-                        flags[flagName] = resolveSearchType(queryType, req.session);
-                    }
-                }
-            } else {
-                const queryFlagValue = parseEnumFlagValue(req.query?.[flagName]);
-                if (typeof queryFlagValue === 'string') {
-                    flags[flagName] = queryFlagValue;
-                    provenance[flagName] = 'query';
-                }
-            }
+            flags[flagName] = initializeFlag(flagName, req.session);
+            flags[flagName] = applyQueryOverride(
+                flagName,
+                flags[flagName],
+                req.query?.[flagName],
+                req.session
+            );
         }
         // Only update the session if there are changes to prevent unnecessary
         // session writes and churn in session stores.
