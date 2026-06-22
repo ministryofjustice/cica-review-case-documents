@@ -69,7 +69,7 @@ pre-commit
 pre-push
 ```
 
- > pre-commit runs `npm run precommit` (format, lint, sass build, and gitleaks secret scan via `npm run precommit:secrets`) and pre-push runs `npm run prepush`.
+ > pre-commit runs `npm run precommit` (quick checks via `npm run checks:quality`: format, lint, sass build, gitleaks secret scan, and OpenAPI build). pre-push runs `npm run prepush` (comprehensive: npm audit, full quality checks, plus tests and JSDoc linting).
 
 Install the `gitleaks` CLI locally so pre-commit secret scanning can run: https://github.com/gitleaks/gitleaks#installing
 The installer for a Ubuntu WSL console is `sudo apt install gitleaks` for example.
@@ -89,11 +89,10 @@ The secret scan uses `.gitleaks.toml` as the configuration file.
    ```
 2. Make your changes
 3. Run pre-commit checks: `npm run precommit` (enforced by pre-commit hook)
-4. Run pre-push checks: `npm run prepush` (enforced by pre-push hook)
-5. Commit your changes with descriptive messages
-6. Push to your branch
-7. Create a Pull Request to merge into `main`
-8. After review and approval, merge to `main`
+4. Commit your changes with descriptive messages
+5. Push to your branch (pre-push hook enforces comprehensive checks automatically)
+6. Create a Pull Request to merge into `main`
+7. After review and approval, merge to `main`
 
 ### Git Hooks (Husky)
 
@@ -101,8 +100,8 @@ The project uses Husky for Git hooks:
 
 | Hook Name  | Action       | Description                          |
 | ---------- | ------------ | ------------------------------------ |
-| pre-commit | npm run precommit | Runs format, lint, sass, and gitleaks before commit |
-| pre-push   | npm run prepush | Runs npm audit --audit-level=high --omit=dev, tests and JSDoc linting before push |
+| pre-commit | npm run precommit | Runs quick checks before commit: format, lint, sass, gitleaks, and OpenAPI build |
+| pre-push   | npm run prepush | Runs npm audit, full checks (format/lint/sass/gitleaks/OpenAPI), tests, and JSDoc linting before push |
 
 ### CI/CD Pipeline
 
