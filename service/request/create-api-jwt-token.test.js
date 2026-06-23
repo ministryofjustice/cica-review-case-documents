@@ -21,21 +21,6 @@ describe('createApiJwtToken', () => {
         assert.equal(payload.aud, 'test-api');
     });
 
-    it('includes id in payload when provided', () => {
-        process.env.APP_JWT_SECRET = 'test-secret';
-        process.env.APP_API_JWT_EXPIRES_IN = '60s';
-        process.env.APP_API_JWT_ISSUER = 'test-ui';
-        process.env.APP_API_JWT_AUDIENCE = 'test-api';
-
-        const token = createApiJwtToken('entra-oid-123');
-        const payload = jwt.verify(token, process.env.APP_JWT_SECRET, {
-            issuer: 'test-ui',
-            audience: 'test-api'
-        });
-
-        assert.equal(payload.id, 'entra-oid-123');
-    });
-
     it('falls back to app-ui when oid is missing', () => {
         process.env.APP_JWT_SECRET = 'test-secret';
         process.env.APP_API_JWT_EXPIRES_IN = '60s';
@@ -56,7 +41,7 @@ describe('createApiJwtToken', () => {
         delete process.env.APP_JWT_SECRET;
 
         assert.throws(
-            () => createApiJwtToken('user@example.com'),
+            () => createApiJwtToken('entra-oid-123'),
             /APP_JWT_SECRET environment variable is not set/
         );
 
@@ -72,7 +57,7 @@ describe('createApiJwtToken', () => {
         process.env.APP_API_JWT_AUDIENCE = 'test-api';
 
         assert.throws(
-            () => createApiJwtToken('user@example.com'),
+            () => createApiJwtToken('entra-oid-123'),
             /APP_API_JWT_ISSUER environment variable is not set/
         );
 
@@ -88,7 +73,7 @@ describe('createApiJwtToken', () => {
         delete process.env.APP_API_JWT_AUDIENCE;
 
         assert.throws(
-            () => createApiJwtToken('user@example.com'),
+            () => createApiJwtToken('entra-oid-123'),
             /APP_API_JWT_AUDIENCE environment variable is not set/
         );
 

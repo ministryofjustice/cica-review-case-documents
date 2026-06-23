@@ -62,7 +62,6 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             const { render } = templateEngineService;
 
             const { query, pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.query;
-            const userName = req.session?.username;
             const searchType = getFeatureFlagValue(req.session, 'type');
             const isDebugMode = Boolean(hasDebugContext(res));
             const debugQueryDslOverrides = isDebugMode

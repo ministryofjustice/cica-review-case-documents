@@ -1,6 +1,5 @@
 import jwt from 'jsonwebtoken';
 import { getApiJwtAudience, getApiJwtIssuer } from '../../auth/apiJwtClaims/index.js';
-import normalizeApiJwtUser from '../utils/normalizeApiJwtUser.js';
 
 /**
  * Extracts a bearer token from the Authorization header.
@@ -22,7 +21,7 @@ function getTokenFromRequest(req) {
 
 /**
  * Middleware to authenticate JWT tokens from Authorization headers.
- * If a valid token is found, attaches the decoded user object to `req.user`.
+ * If a valid token is found, attaches the decoded token object to `req.decodedToken`.
  * Responds with 401 if no token is provided, or 403 if the token is invalid.
  *
  * @param {import('express').Request} req - Express request object.
@@ -30,7 +29,7 @@ function getTokenFromRequest(req) {
  * @param {Function} next - Express next middleware function.
  */
 function authenticateJWTToken(req, res, next) {
-    if (req.apiJwtVerified === true && req.user) {
+    if (req.apiJwtVerified === true && req.decodedToken) {
         return next();
     }
 
@@ -77,9 +76,10 @@ function authenticateJWTToken(req, res, next) {
     }
 
     try {
-        const user = jwt.verify(token, process.env.APP_JWT_SECRET, jwtVerificationOptions);
-        req.user = normalizeApiJwtUser(user);
-        if (req.user?.id == null || req.user.id === '') {
+        // Verify the token and attach the decoded payload to the request object for downstream middleware and route handlers.
+        req.decodedToken = jwt.verify(token, process.env.APP_JWT_SECRET, jwtVerificationOptions);
+        const identity = req.decodedToken?.id;
+        if (identity == null || identity === '') {
             req.log?.warn(
                 { url: req.originalUrl },
                 'Authentication token is missing a usable identity claim'
@@ -94,6 +94,7 @@ function authenticateJWTToken(req, res, next) {
                 ]
             });
         }
+        req.apiJwtVerified = true;
         next();
     } catch (err) {
         req.log?.warn({ url: req.originalUrl, error: err.message }, 'Invalid authentication token');

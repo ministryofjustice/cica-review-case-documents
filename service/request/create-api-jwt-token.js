@@ -4,7 +4,6 @@ import { getApiJwtAudience, getApiJwtIssuer } from '../../auth/utils/apiJwtClaim
 /**
  * Creates a short-lived JWT for APP -> API communication.
  *
- * @param {string | undefined} username - Optional username from session.
  * @param {string | undefined} id - Optional stable user ID (Entra oid) for rate limiting.
  * @returns {string} A signed JWT token.
  */

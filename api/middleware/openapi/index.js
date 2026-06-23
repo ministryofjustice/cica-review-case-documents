@@ -5,7 +5,6 @@ import express from 'express';
 
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
-import dynamicRateLimiter from '../rateLimiter/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,15 +14,18 @@ const __dirname = path.dirname(__filename);
  * This is only used in non-production environments.
  * @param {object} [options] - Optional configuration.
  * @param {Function} [options.readOpenApiFile] - Optional file reader for DI in tests.
- * @param {import('express').RequestHandler} options.docsAuthMiddleware - Auth middleware for docs protection.
- *        Required parameter. Should be either JWT authentication (standalone API) or
- *        session-based authentication (e.g., isAuthenticated from the web app).
+ * @param {() => import('express').RequestHandler} options.docsRateLimiter - Factory that returns a fresh rate limiter instance.
+ * @param {import('express').RequestHandler} options.docsAuthMiddleware - Auth middleware for docs protection (JWT or session-based).
  * @returns {Promise<import('express').Router>} A configured Express Router.
- * @throws {Error} If docsAuthMiddleware is not provided.
+ * @throws {Error}  If docsAuthMiddleware/docsRateLimiter are not provided.
  */
 export default async function createDocsRouter(options = {}) {
     if (!options.docsAuthMiddleware) {
         throw new Error('createDocsRouter requires options.docsAuthMiddleware to be provided');
+    }
+
+    if (!options.docsRateLimiter) {
+        throw new Error('createDocsRouter requires options.docsRateLimiter to be provided');
     }
 
     const openApiPath = path.resolve(__dirname, '../../openapi/openapi-dist.json');
@@ -39,7 +41,7 @@ export default async function createDocsRouter(options = {}) {
     const docsRouter = express.Router();
     // Rate limit first (before auth) to protect against brute-force on auth endpoint
     // Matches the main app's global rate limiting strategy
-    docsRouter.use(dynamicRateLimiter);
+    docsRouter.use(options.docsRateLimiter());
     // Then authenticate to gate access to docs
     docsRouter.use(authMiddleware);
 
