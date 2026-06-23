@@ -150,7 +150,7 @@ jobs:
 
             - name: Upload dependency SARIF to GitHub
               if: ${{ inputs.skip_security_scan != true  && hashFiles('snyk-test-results.sarif') != '' }}
-              uses: github/codeql-action/upload-sarif@ee70cd5210be4f326974d7381701e5b148c6a6a3 #v4.36.0
+              uses: github/codeql-action/upload-sarif@09dec6cc8c147fd5737df267d90a7d19cd5ff9ea #v4.36.0
               with:
                   sarif_file: snyk-test-results.sarif
 
@@ -258,7 +258,7 @@ jobs:
 
             - name: Upload container SARIF to GitHub
               if: ${{ inputs.skip_security_scan != true  && hashFiles('snyk-container-test-results.sarif') != '' }}
-              uses: github/codeql-action/upload-sarif@ee70cd5210be4f326974d7381701e5b148c6a6a3 #v4.36.0
+              uses: github/codeql-action/upload-sarif@09dec6cc8c147fd5737df267d90a7d19cd5ff9ea #v4.36.0
               with:
                   sarif_file: snyk-container-test-results.sarif
 
