@@ -4,6 +4,23 @@
 
 <p class="govuk-body"><strong>Found on:</strong> <a href="/document/{{ params.docUuid }}/view/page/{{ params._source.page_number or '0' }}?crn={{ params.caseReferenceNumber | urlencode }}&searchTerm={{ params.searchTerm | urlencode }}&type={{ params.searchType | urlencode }}" class="govuk-link">Page {{ params._source.page_number }}</a></p>
 
+{% if params.isDebugMode %}
+  <div class="search-result-debug">
+    {% if params.matchSources and params.matchSources | length > 0 %}
+      {% for name in params.matchSources %}
+        {% if name == 'keyword' %}
+          <strong class="govuk-tag govuk-tag--blue">Keyword</strong>
+        {% elif name == 'semantic' %}
+          <strong class="govuk-tag govuk-tag--turquoise">Semantic</strong>
+        {% elif name == 'dates' %}
+          <strong class="govuk-tag govuk-tag--red">Dates</strong>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    <span class="search-result-debug__score govuk-hint govuk-!-margin-bottom-0" title="OpenSearch relevance score">Relevance score: {{ params._score }}</span>
+  </div>
+{% endif %}
+
 {% if caller %}
     {{ caller() }}
 {% endif %}

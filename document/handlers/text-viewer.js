@@ -1,6 +1,9 @@
-import { resolveSearchType } from '../../api/search/constants/searchTypes.js';
+import { ifDebugContext } from '../../middleware/debug/index.js';
+import { getFeatureFlagValue } from '../../middleware/featureFlags/index.js';
 import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
+import buildViewModel from '../../templateEngine/buildViewModel.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
+import buildSearchSessionPreference from '../../utils/buildSearchSessionPreference.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
 import { formatPageTitle } from '../utils/formatters/index.js';
 import { buildTextHighlightSegments } from '../utils/highlight/index.js';
@@ -30,8 +33,9 @@ export function createTextViewerHandler(
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
             const { searchTerm = '' } = req.query;
-            const searchType = resolveSearchType(req.session?.featureFlags?.type, req.session);
+            const searchType = getFeatureFlagValue(req.session, 'type');
             const apiJwtToken = createApiJwtToken(req.session?.username);
+            const debugQueryDslOverrides = res.locals.debugQueryDslOverrides || {};
 
             // Fetch document page metadata from OpenSearch via API
             let pageMetadata;
@@ -75,7 +79,6 @@ export function createTextViewerHandler(
             const { text } = pageMetadata;
 
             const pageText = text || 'No text content available for this page.'; // TODO: confirm with content team whether this is the desired fallback text when no OCR text is available
-            const userName = req.session?.username;
 
             const safeSearchTerm = typeof searchTerm === 'string' ? searchTerm.trim() : '';
             let pageChunks = [];
@@ -89,6 +92,7 @@ export function createTextViewerHandler(
                         searchTerm: safeSearchTerm,
                         searchType,
                         jwtToken: apiJwtToken,
+                        queryDslConfig: debugQueryDslOverrides,
                         logger: req.log
                     });
 
@@ -109,22 +113,49 @@ export function createTextViewerHandler(
 
             const pageTextSegments = buildTextHighlightSegments(pageText, pageChunks);
 
-            const html = render('document/page/textview.njk', {
-                documentId,
-                pageNumber,
-                caseReferenceNumber: crn,
-                caseSelected: req.session?.caseSelected,
-                pageType: ['document'],
-                csrfToken: res.locals.csrfToken,
-                cspNonce: res.locals.cspNonce,
-                userName,
-                imagePageLink,
-                pageTitle,
-                pageText,
-                pageTextSegments,
-                showPagination: paginationData?.results?.count > 1,
-                paginationData
+            // Populate debug info with document data when debug context is present.
+            ifDebugContext(res, (debugInfo) => {
+                debugInfo.document = {
+                    documentId,
+                    pageNumber,
+                    pageMetadata: {
+                        correspondenceType: pageMetadata?.correspondence_type,
+                        totalPages: pageMetadata?.total_pages
+                    },
+                    highlightsCount: pageChunks?.length || 0,
+                    chunksAligned: false // text view doesn't use alignment
+                };
+
+                if (safeSearchTerm !== '') {
+                    debugInfo.search = {
+                        ...debugInfo.search,
+                        opensearch: {
+                            ...(debugInfo.search?.opensearch || {}),
+                            index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME || 'unknown',
+                            preference: buildSearchSessionPreference(safeSearchTerm)
+                        }
+                    };
+                }
             });
+
+            const html = render(
+                'document/page/textview.njk',
+                buildViewModel(req, res, {
+                    documentId,
+                    pageNumber,
+                    pageType: ['document'],
+                    imagePageLink,
+                    pageTitle,
+                    pageText,
+                    pageTextSegments,
+                    showPagination: paginationData?.results?.count > 1,
+                    paginationData
+                })
+            );
+
+            if (typeof res.locals?.finalizeDebugInfo === 'function') {
+                res.locals.finalizeDebugInfo({ responseStatus: 200 });
+            }
 
             return res.send(html);
         } catch (err) {

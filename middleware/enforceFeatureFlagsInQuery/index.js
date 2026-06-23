@@ -1,4 +1,3 @@
-import { resolveSearchType } from '../../api/search/constants/searchTypes.js';
 import { FEATURE_FLAG_DEFAULTS, getFeatureFlagValue } from '../featureFlags/index.js';
 
 /**
@@ -8,15 +7,20 @@ import { FEATURE_FLAG_DEFAULTS, getFeatureFlagValue } from '../featureFlags/inde
  */
 const ALLOWED_PATHS = ['/search'];
 
+const DOCUMENT_VIEW_PAGE_PATH_PATTERN = /^\/document\/([0-9a-fA-F-]{36})\/view\/page\/(\d+)$/;
+const DOCUMENT_VIEW_TEXT_PAGE_PATH_PATTERN =
+    /^\/document\/([0-9a-fA-F-]{36})\/view\/text\/page\/(\d+)$/;
+const DOCUMENT_IMAGE_PAGE_PATH_PATTERN = /^\/document\/([0-9a-fA-F-]{36})\/page\/(\d+)$/;
+
 /**
  * An array of allowed URL patterns for which feature-flag enforcement applies.
  * @type {RegExp[]}
  * @constant
  */
 const ALLOWED_PATH_PATTERNS = [
-    /^\/document\/[0-9a-fA-F-]{36}\/view\/page\/\d+$/,
-    /^\/document\/[0-9a-fA-F-]{36}\/view\/text\/page\/\d+$/,
-    /^\/document\/[0-9a-fA-F-]{36}\/page\/\d+$/ // Image streaming endpoint
+    DOCUMENT_VIEW_PAGE_PATH_PATTERN,
+    DOCUMENT_VIEW_TEXT_PAGE_PATH_PATTERN,
+    DOCUMENT_IMAGE_PAGE_PATH_PATTERN // Image streaming endpoint
 ];
 
 /**
@@ -32,11 +36,6 @@ const EXCLUDED_PATHS = [
     /^\/assets\//,
     /^\/\.well-known\//
 ];
-
-const DOCUMENT_VIEW_PAGE_PATH_PATTERN = /^\/document\/([0-9a-fA-F-]{36})\/view\/page\/(\d+)$/;
-const DOCUMENT_VIEW_TEXT_PAGE_PATH_PATTERN =
-    /^\/document\/([0-9a-fA-F-]{36})\/view\/text\/page\/(\d+)$/;
-const DOCUMENT_IMAGE_PAGE_PATH_PATTERN = /^\/document\/([0-9a-fA-F-]{36})\/page\/(\d+)$/;
 
 /**
  * Serialises a feature-flag session value to its query-string representation.
@@ -92,24 +91,6 @@ function resolveSafeRedirectPath(path) {
 }
 
 /**
- * Resolves a supported feature flag from the session to a validated value.
- *
- * `type` values are canonicalized via `resolveSearchType`; boolean flags are
- * type-checked and fall back to defaults when stale/corrupt.
- *
- * @param {import('express-session').Session | undefined} session - Request session object.
- * @param {'align' | 'type'} flagName - Supported feature flag name.
- * @returns {boolean | string} Validated feature flag value.
- */
-function resolveSessionFeatureFlagValue(session, flagName) {
-    if (flagName === 'type') {
-        return resolveSearchType(session?.featureFlags?.type, session);
-    }
-
-    return getFeatureFlagValue(session, flagName);
-}
-
-/**
  * Middleware to ensure that non-default feature flags are present as query parameters
  * on GET requests. If a session flag differs from its default value and is absent from
  * the current query string, the request is redirected with the missing flags appended.
@@ -135,7 +116,7 @@ const enforceFeatureFlagsInQuery = (req, res, next) => {
     // Find non-default supported flags that are absent from the current query string.
     // Unknown/stale session keys are ignored so only bookmarkable flags are reflected.
     const flagsToAdd = Object.keys(FEATURE_FLAG_DEFAULTS)
-        .map((flagName) => [flagName, resolveSessionFeatureFlagValue(req.session, flagName)])
+        .map((flagName) => [flagName, getFeatureFlagValue(req.session, flagName)])
         .filter(
             ([flagName, sessionFlagValue]) =>
                 sessionFlagValue !== FEATURE_FLAG_DEFAULTS[flagName] &&

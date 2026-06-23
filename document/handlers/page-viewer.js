@@ -1,7 +1,9 @@
-import { resolveSearchType } from '../../api/search/constants/searchTypes.js';
+import { ifDebugContext } from '../../middleware/debug/index.js';
 import { getFeatureFlagValue } from '../../middleware/featureFlags/index.js';
 import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
+import buildViewModel from '../../templateEngine/buildViewModel.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
+import buildSearchSessionPreference from '../../utils/buildSearchSessionPreference.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
 import { formatPageTitle } from '../utils/formatters/index.js';
 import { buildImageUrl, buildTextPageLink } from '../utils/link-builders/index.js';
@@ -31,10 +33,11 @@ export function createPageViewerHandler(
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
             const { searchTerm = '' } = req.query;
-            const searchType = resolveSearchType(req.session?.featureFlags?.type, req.session);
+            const searchType = getFeatureFlagValue(req.session, 'type');
             const alignFlag = getFeatureFlagValue(req.session, 'align');
             const userName = req.session?.username;
             const apiJwtToken = createApiJwtToken(userName);
+            const debugQueryDslOverrides = res.locals.debugQueryDslOverrides || {};
 
             // Fetch document page metadata from API (which queries OpenSearch)
             let pageMetadata;
@@ -86,6 +89,7 @@ export function createPageViewerHandler(
                     searchTerm,
                     searchType,
                     jwtToken: apiJwtToken,
+                    queryDslConfig: debugQueryDslOverrides,
                     logger: req.log
                 });
                 pageChunks = await pageChunksServiceInstance.getPageChunks();
@@ -103,22 +107,46 @@ export function createPageViewerHandler(
                 pageChunks
             );
 
-            const html = render('document/page/imageview.njk', {
-                documentId,
-                pageNumber,
-                imageUrl,
-                caseReferenceNumber: crn,
-                caseSelected: req.session?.caseSelected,
-                pageType: ['document'],
-                csrfToken: res.locals.csrfToken,
-                cspNonce: res.locals.cspNonce,
-                userName,
-                textPageLink,
-                pageTitle,
-                pageChunks: alignedPageHighlights,
-                showPagination: paginationData?.results?.count > 1,
-                paginationData
+            // Populate debug info with document data when debug context is present.
+            ifDebugContext(res, (debugInfo) => {
+                debugInfo.document = {
+                    documentId,
+                    pageNumber,
+                    pageMetadata: {
+                        correspondenceType: pageMetadata?.correspondence_type,
+                        totalPages: pageMetadata?.total_pages
+                    },
+                    highlightsCount: pageChunks?.length || 0,
+                    chunksAligned: alignFlag
+                };
+                debugInfo.search = {
+                    ...debugInfo.search,
+                    opensearch: {
+                        ...(debugInfo.search?.opensearch || {}),
+                        index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME || 'unknown',
+                        preference: buildSearchSessionPreference(String(searchTerm))
+                    }
+                };
             });
+
+            const html = render(
+                'document/page/imageview.njk',
+                buildViewModel(req, res, {
+                    documentId,
+                    pageNumber,
+                    imageUrl,
+                    pageType: ['document'],
+                    textPageLink,
+                    pageTitle,
+                    pageChunks: alignedPageHighlights,
+                    showPagination: paginationData?.results?.count > 1,
+                    paginationData
+                })
+            );
+
+            if (typeof res.locals?.finalizeDebugInfo === 'function') {
+                res.locals.finalizeDebugInfo({ responseStatus: 200 });
+            }
 
             return res.send(html);
         } catch (err) {

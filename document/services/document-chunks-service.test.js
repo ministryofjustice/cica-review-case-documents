@@ -176,6 +176,38 @@ describe('createPageChunksService', () => {
             );
         });
 
+        it('should encode searchType to prevent query-string injection', async () => {
+            mockGet.mockResolvedValue({
+                body: {
+                    data: {
+                        type: 'page-chunks',
+                        attributes: {
+                            chunks: []
+                        }
+                    }
+                }
+            });
+
+            const injectedSearchType = 'semantic&debug=on';
+            const service = createPageChunksService({
+                documentId: mockDocumentId,
+                pageNumber: mockPageNumber,
+                crn: mockCrn,
+                searchType: injectedSearchType,
+                jwtToken: mockJwtToken,
+                logger: mockLogger,
+                createRequestService: mockCreateRequestService
+            });
+
+            await service.getPageChunks();
+
+            assert.strictEqual(
+                mockGet.calls[0].url.includes(`type=${encodeURIComponent(injectedSearchType)}`),
+                true
+            );
+            assert.strictEqual(mockGet.calls[0].url.includes('&debug=on'), false);
+        });
+
         it('should handle missing data structure gracefully', async () => {
             mockGet.mockResolvedValue({
                 body: {
@@ -273,6 +305,42 @@ describe('createPageChunksService', () => {
 
             assert.strictEqual(mockGet.calls.length, 1);
             assert.strictEqual(mockGet.calls[0].headers, undefined);
+        });
+
+        it('should set query DSL header without Authorization when queryDslConfig is provided without jwtToken', async () => {
+            mockGet.mockResolvedValue({
+                body: {
+                    data: {
+                        type: 'page-chunks',
+                        attributes: {
+                            chunks: []
+                        }
+                    }
+                }
+            });
+
+            const queryDslConfig = {
+                semanticK: 80,
+                lexicalBoost: 2
+            };
+
+            const service = createPageChunksService({
+                documentId: mockDocumentId,
+                pageNumber: mockPageNumber,
+                crn: mockCrn,
+                searchTerm: 'test search',
+                queryDslConfig,
+                logger: mockLogger,
+                createRequestService: mockCreateRequestService
+            });
+
+            await service.getPageChunks();
+
+            assert.strictEqual(mockGet.calls.length, 1);
+            assert.deepStrictEqual(mockGet.calls[0].headers, {
+                'X-Debug-Context': 'true',
+                'X-Query-DSL-Config': JSON.stringify(queryDslConfig)
+            });
         });
     });
 

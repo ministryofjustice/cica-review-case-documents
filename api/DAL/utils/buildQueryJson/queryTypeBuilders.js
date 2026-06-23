@@ -171,9 +171,14 @@ export function buildNeuralFilter({ caseReferenceNumber, documentId, safePageNum
  * @param {object} params - Date processing options.
  * @param {string} params.keyword - Raw search string.
  * @param {boolean} [params.enableDateExtraction=true] - Whether to extract and expand dates.
+ * @param {boolean} [params.includeNamedQueries=false] - Whether to include query `_name` metadata on generated clauses.
  * @returns {{ shouldClauses: Array<object>, phrases: Array<string>, phrasesVariants: Array<string>, timings: { extractMs: number, variantMs: number } }} Lexical clauses and date-processing metrics.
  */
-export function buildDateAwareShouldClauses({ keyword, enableDateExtraction = true }) {
+export function buildDateAwareShouldClauses({
+    keyword,
+    enableDateExtraction = true,
+    includeNamedQueries = false
+}) {
     const extractStart = Date.now();
 
     let phrases = [];
@@ -217,7 +222,10 @@ export function buildDateAwareShouldClauses({ keyword, enableDateExtraction = tr
         phrasesVariants.forEach((phrase) => {
             shouldClauses.push({
                 match_phrase: {
-                    chunk_text: phrase
+                    chunk_text: {
+                        query: phrase,
+                        ...(includeNamedQueries ? { _name: 'dates' } : {})
+                    }
                 }
             });
         });
@@ -227,7 +235,8 @@ export function buildDateAwareShouldClauses({ keyword, enableDateExtraction = tr
         shouldClauses.push({
             match: {
                 chunk_text: {
-                    query: remainingText
+                    query: remainingText,
+                    ...(includeNamedQueries ? { _name: 'keyword' } : {})
                 }
             }
         });
@@ -285,6 +294,8 @@ function buildKeywordQuery({ caseReferenceNumber, shouldClauses, safePageNumber,
  * @param {number} params.safePageNumber - Normalised page number for document scoping.
  * @param {string} [params.documentId] - Optional document UUID to scope results to a single page.
  * @param {Array<object>} [params.matchPhraseClauses=[]] - Date match_phrase clauses to include alongside the neural clause.
+ * @param {typeof DEFAULT_QUERY_DSL_CONFIG} [params.queryDslConfig=DEFAULT_QUERY_DSL_CONFIG] - Effective DSL tuning config (semantic thresholds and ANN `k`).
+ * @param {boolean} [params.includeNamedQueries=false] - Whether to include query `_name` metadata for semantic/date branches.
  * @returns {object} Assembled semantic (or semantic + dates) query DSL object.
  */
 export function buildSemanticQuery({
@@ -293,7 +304,8 @@ export function buildSemanticQuery({
     safePageNumber,
     documentId,
     matchPhraseClauses = [],
-    queryDslConfig = DEFAULT_QUERY_DSL_CONFIG
+    queryDslConfig = DEFAULT_QUERY_DSL_CONFIG,
+    includeNamedQueries = false
 }) {
     const { semanticK, semanticMinScore, semanticOnlyMinScore } = queryDslConfig;
 
@@ -312,6 +324,7 @@ export function buildSemanticQuery({
 
         queryJson.query.bool.should.push({
             bool: {
+                ...(includeNamedQueries ? { _name: 'dates' } : {}),
                 should: matchPhraseClauses,
                 minimum_should_match: 1
             }
@@ -323,7 +336,8 @@ export function buildSemanticQuery({
                 embedding: {
                     query_text: keyword,
                     k: semanticK,
-                    filter: neuralFilter
+                    filter: neuralFilter,
+                    ...(includeNamedQueries ? { _name: 'semantic' } : {})
                 }
             }
         });
@@ -338,6 +352,11 @@ export function buildSemanticQuery({
         semanticK,
         semanticMinScore: semanticOnlyMinScore
     });
+
+    // Name the neural query so matched_queries on each hit includes 'semantic'.
+    if (includeNamedQueries) {
+        queryJson.query.neural.embedding._name = 'semantic';
+    }
 
     if (documentId) {
         // Promote a bare term filter to a bool.filter wrapper so we can push
@@ -390,7 +409,8 @@ function buildHybridQuery({
     shouldClauses,
     safePageNumber,
     documentId,
-    queryDslConfig = DEFAULT_QUERY_DSL_CONFIG
+    queryDslConfig = DEFAULT_QUERY_DSL_CONFIG,
+    includeNamedQueries = false
 }) {
     const { semanticK, semanticMinScore, lexicalBoost, dateBoost, neuralBoost } = queryDslConfig;
 
@@ -414,7 +434,8 @@ function buildHybridQuery({
             match: {
                 chunk_text: {
                     ...matchClause.match.chunk_text,
-                    boost: lexicalBoost
+                    boost: lexicalBoost,
+                    ...(includeNamedQueries ? { _name: 'keyword' } : {})
                 }
             }
         });
@@ -424,6 +445,7 @@ function buildHybridQuery({
     if (matchPhraseClauses.length > 0) {
         queryJson.query.bool.should.push({
             bool: {
+                ...(includeNamedQueries ? { _name: 'dates' } : {}),
                 should: matchPhraseClauses,
                 minimum_should_match: 1,
                 boost: dateBoost
@@ -440,7 +462,8 @@ function buildHybridQuery({
                     query_text: keyword,
                     k: semanticK,
                     filter: neuralFilter,
-                    boost: neuralBoost
+                    boost: neuralBoost,
+                    ...(includeNamedQueries ? { _name: 'semantic' } : {})
                 }
             }
         });
@@ -474,7 +497,8 @@ export function createQueryTypeBuilders({ queryDslConfig = {} } = {}) {
             caseReferenceNumber,
             safePageNumber,
             documentId,
-            logger
+            logger,
+            includeNamedQueries = false
         }) => {
             logger?.debug?.(
                 { keyword, caseReferenceNumber, safePageNumber, documentId },
@@ -483,7 +507,8 @@ export function createQueryTypeBuilders({ queryDslConfig = {} } = {}) {
             const { shouldClauses, phrases, phrasesVariants, timings } =
                 buildDateAwareShouldClauses({
                     keyword,
-                    enableDateExtraction: false
+                    enableDateExtraction: false,
+                    includeNamedQueries
                 });
             const queryJson = buildKeywordQuery({
                 caseReferenceNumber,
@@ -507,7 +532,8 @@ export function createQueryTypeBuilders({ queryDslConfig = {} } = {}) {
             caseReferenceNumber,
             safePageNumber,
             documentId,
-            logger
+            logger,
+            includeNamedQueries = false
         }) => {
             logger?.debug?.(
                 { keyword, caseReferenceNumber, safePageNumber, documentId },
@@ -516,7 +542,8 @@ export function createQueryTypeBuilders({ queryDslConfig = {} } = {}) {
             const { shouldClauses, phrases, phrasesVariants, timings } =
                 buildDateAwareShouldClauses({
                     keyword,
-                    enableDateExtraction: true
+                    enableDateExtraction: true,
+                    includeNamedQueries
                 });
             const queryJson = buildKeywordQuery({
                 caseReferenceNumber,
@@ -542,7 +569,8 @@ export function createQueryTypeBuilders({ queryDslConfig = {} } = {}) {
             safePageNumber,
             documentId, // ,
             // enableDateExtraction
-            logger
+            logger,
+            includeNamedQueries = false
         }) => {
             const phrases = [];
             const phrasesVariants = [];
@@ -574,7 +602,8 @@ export function createQueryTypeBuilders({ queryDslConfig = {} } = {}) {
                 safePageNumber,
                 documentId,
                 matchPhraseClauses,
-                queryDslConfig: resolvedQueryDslConfig
+                queryDslConfig: resolvedQueryDslConfig,
+                includeNamedQueries
             });
             logger?.debug?.({ queryJson }, '[QueryTypeBuilder] semantic query built');
 
@@ -593,7 +622,8 @@ export function createQueryTypeBuilders({ queryDslConfig = {} } = {}) {
             caseReferenceNumber,
             safePageNumber,
             documentId,
-            logger
+            logger,
+            includeNamedQueries = false
         }) => {
             logger?.debug?.(
                 {
@@ -607,7 +637,8 @@ export function createQueryTypeBuilders({ queryDslConfig = {} } = {}) {
             const { shouldClauses, phrases, phrasesVariants, timings } =
                 buildDateAwareShouldClauses({
                     keyword,
-                    enableDateExtraction: false
+                    enableDateExtraction: false,
+                    includeNamedQueries
                 });
             const queryJson = buildHybridQuery({
                 keyword,
@@ -615,7 +646,8 @@ export function createQueryTypeBuilders({ queryDslConfig = {} } = {}) {
                 shouldClauses,
                 safePageNumber,
                 documentId,
-                queryDslConfig: resolvedQueryDslConfig
+                queryDslConfig: resolvedQueryDslConfig,
+                includeNamedQueries
             });
             logger?.debug?.({ queryJson }, '[QueryTypeBuilder] hybrid query built');
 
@@ -634,7 +666,8 @@ export function createQueryTypeBuilders({ queryDslConfig = {} } = {}) {
             caseReferenceNumber,
             safePageNumber,
             documentId,
-            logger
+            logger,
+            includeNamedQueries = false
         }) => {
             logger?.debug?.(
                 {
@@ -648,7 +681,8 @@ export function createQueryTypeBuilders({ queryDslConfig = {} } = {}) {
             const { shouldClauses, phrases, phrasesVariants, timings } =
                 buildDateAwareShouldClauses({
                     keyword,
-                    enableDateExtraction: true
+                    enableDateExtraction: true,
+                    includeNamedQueries
                 });
             const queryJson = buildHybridQuery({
                 keyword,
@@ -656,7 +690,8 @@ export function createQueryTypeBuilders({ queryDslConfig = {} } = {}) {
                 shouldClauses,
                 safePageNumber,
                 documentId,
-                queryDslConfig: resolvedQueryDslConfig
+                queryDslConfig: resolvedQueryDslConfig,
+                includeNamedQueries
             });
             logger?.debug?.({ queryJson }, '[QueryTypeBuilder] hybrid-dates query built');
 

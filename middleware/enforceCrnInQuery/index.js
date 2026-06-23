@@ -108,6 +108,7 @@ const enforceCrnInQuery = (req, res, next) => {
         delete newQuery.caseReferenceNumber;
 
         const queryString = new URLSearchParams(newQuery).toString();
+
         return res.redirect(`${safePath}?${queryString}`);
     }
     next();

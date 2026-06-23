@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import VError from 'verror';
 import createDBQueryDefault from '../../db/index.js';
+import buildSearchSessionPreference from '../../utils/buildSearchSessionPreference.js';
 import { DEFAULT_SEARCH_TYPE } from '../search/constants/searchTypes.js';
 import buildQueryJson from './utils/buildQueryJson/index.js';
 
@@ -60,7 +61,9 @@ function createDocumentDAL({
     caseReferenceNumber,
     createDBQuery = createDBQueryDefault,
     logger,
-    searchType = DEFAULT_SEARCH_TYPE
+    searchType = DEFAULT_SEARCH_TYPE,
+    includeNamedQueries,
+    queryDslConfig
 }) {
     if (process.env.OPENSEARCH_INDEX_CHUNKS_NAME === undefined) {
         throw new VError(
@@ -71,6 +74,7 @@ function createDocumentDAL({
         );
     }
     const db = createDBQuery({ logger });
+    const shouldIncludeNamedQueries = includeNamedQueries === true;
 
     // TODO: implements documents retrieval.
     /**
@@ -88,15 +92,6 @@ function createDocumentDAL({
      */
     async function getDocument() {
         return [];
-    }
-
-    /**
-     * Generates a consistent OpenSearch `preference` value based on the provided keyword.
-     * @param {string} searchTerm Keyword used to derive a deterministic preference value.
-     * @returns {string} unique preference string for this search term
-     */
-    function sessionPreference(searchTerm) {
-        return `session-${crypto.createHash('sha256').update(searchTerm).digest('hex')}`;
     }
 
     /**
@@ -120,7 +115,9 @@ function createDocumentDAL({
                 itemsPerPage,
                 options: {
                     logger,
-                    searchType
+                    searchType,
+                    includeNamedQueries: shouldIncludeNamedQueries,
+                    queryDslConfig
                 }
             });
             const buildEnd = Date.now();
@@ -141,9 +138,10 @@ function createDocumentDAL({
             );
 
             const dbStart = Date.now();
+            const sessionPreference = buildSearchSessionPreference(keyword);
             const response = await db.query({
                 index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
-                preference: sessionPreference(keyword),
+                preference: sessionPreference,
                 body: queryBody
             });
             const dbEnd = Date.now();
@@ -258,7 +256,9 @@ function createDocumentDAL({
                     searchType,
                     includePagination: false,
                     documentId,
-                    logger
+                    logger,
+                    includeNamedQueries: shouldIncludeNamedQueries,
+                    queryDslConfig
                 }
             });
 
@@ -272,9 +272,10 @@ function createDocumentDAL({
             queryBody.sort = [{ chunk_index: { order: 'asc' } }];
 
             const dbStart = Date.now();
+            const sessionPreference = buildSearchSessionPreference(keyword);
             const response = await db.query({
                 index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
-                preference: sessionPreference(keyword),
+                preference: sessionPreference,
                 body: queryBody
             });
             const dbEnd = Date.now();

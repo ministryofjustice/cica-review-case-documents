@@ -28,7 +28,7 @@ describe('featureFlags middleware', () => {
         assert.deepEqual(res.locals.featureFlags, FEATURE_FLAG_DEFAULTS);
     });
 
-    it(`defaults: align=true, type=${DEFAULT_SEARCH_TYPE}`, () => {
+    it(`defaults: align=true, type=${DEFAULT_SEARCH_TYPE}, debug=false`, () => {
         const req = { query: {}, session: {} };
         const res = { locals: {} };
 
@@ -36,6 +36,7 @@ describe('featureFlags middleware', () => {
 
         assert.equal(req.session.featureFlags.align, true);
         assert.equal(req.session.featureFlags.type, DEFAULT_SEARCH_TYPE);
+        assert.equal(req.session.featureFlags.debug, false);
     });
 
     it('ignores unknown flags from query string', () => {
@@ -59,6 +60,15 @@ describe('featureFlags middleware', () => {
         featureFlags(req, res, () => {});
 
         assert.equal(req.session.featureFlags.align, false);
+    });
+
+    it('updates debug flag from query string', () => {
+        const req = { query: { debug: 'on' }, session: {} };
+        const res = { locals: {} };
+
+        featureFlags(req, res, () => {});
+
+        assert.equal(req.session.featureFlags.debug, true);
     });
 
     it('preserves existing feature flag values when the query string is absent', () => {
@@ -232,6 +242,43 @@ describe('featureFlags middleware', () => {
         // Valid query param should override stale session type
         assert.equal(req.session.featureFlags.type, 'hybrid');
         assert.equal(res.locals.featureFlags.type, 'hybrid');
+    });
+
+    it('forces debug flag to false in production, ignoring query param', () => {
+        const originalEnv = process.env.DEPLOY_ENV;
+        try {
+            process.env.DEPLOY_ENV = 'production';
+            const req = { query: { debug: 'on' }, session: {} };
+            const res = { locals: {} };
+
+            featureFlags(req, res, () => {});
+
+            // Query param should be ignored in production
+            assert.equal(req.session.featureFlags.debug, false);
+            assert.equal(res.locals.featureFlags.debug, false);
+        } finally {
+            process.env.DEPLOY_ENV = originalEnv;
+        }
+    });
+
+    it('forces debug flag to false in production, overriding stale session', () => {
+        const originalEnv = process.env.DEPLOY_ENV;
+        try {
+            process.env.DEPLOY_ENV = 'production';
+            const req = {
+                query: {},
+                session: { featureFlags: { debug: true } }
+            };
+            const res = { locals: {} };
+
+            featureFlags(req, res, () => {});
+
+            // Stale session value should be overridden in production
+            assert.equal(req.session.featureFlags.debug, false);
+            assert.equal(res.locals.featureFlags.debug, false);
+        } finally {
+            process.env.DEPLOY_ENV = originalEnv;
+        }
     });
 });
 

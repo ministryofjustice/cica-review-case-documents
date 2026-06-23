@@ -1,5 +1,7 @@
 {% extends "template.njk" %}
 
+{% set isDebugMode = isDebugMode if isDebugMode is defined else (featureFlags and featureFlags.debug and debugInfo) %}
+
 {# Override the block to add tabindex="-1" to the main element for accessibility (enables skip link functionality) #}
 {% block main %}
   <div class="govuk-width-container {%- if containerClasses %} {{ containerClasses }}{% endif %}">
@@ -8,5 +10,6 @@
       {% block content %}{% endblock %}
     </main>
   </div>
+  {% include 'partial/debug-panel.njk' %}
 {% endblock %}
 

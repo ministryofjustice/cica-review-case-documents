@@ -1,4 +1,5 @@
 import { resolveSearchType } from '../../api/search/constants/searchTypes.js';
+import { getFeatureFlagValue } from '../featureFlags/index.js';
 
 /**
  * Middleware that ensures a `type` query parameter is always present on GET /search requests.
@@ -38,9 +39,8 @@ export default function enforceSearchTypeInQuery(req, res, next) {
 
     const redirectQuery = new URLSearchParams(req.query);
 
-    // Use the resolved canonical value when the query param is provided (even if
-    // non-canonical like "HYBRID" or " keyword-dates "). Fall back to session/default
-    // only when the query value is genuinely absent or empty.
+    // Determine canonical search type: use resolved value if provided (even if
+    // non-canonical), otherwise fall back to session/default when absent/empty.
     let searchType;
     if (Array.isArray(rawQueryType)) {
         // Canonicalize repeated params to resolved value
@@ -50,7 +50,7 @@ export default function enforceSearchTypeInQuery(req, res, next) {
         searchType = resolvedType;
     } else {
         // Query value was absent or empty - fall back to session/default
-        searchType = resolveSearchType(req.session?.featureFlags?.type, req.session);
+        searchType = getFeatureFlagValue(req.session, 'type');
     }
 
     redirectQuery.set('type', searchType);

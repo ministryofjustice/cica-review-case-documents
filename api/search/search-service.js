@@ -28,18 +28,28 @@ function createSearchService({ createDocumentDAL: dalFactory = createDocumentDAL
      * @param {string} context.caseReferenceNumber - The case reference number.
      * @param {Object} context.logger - The logger instance.
      * @param {string} [context.searchType=DEFAULT_SEARCH_TYPE] - Search mode. One of SEARCH_TYPES.KEYWORD, SEARCH_TYPES.KEYWORD_DATES, SEARCH_TYPES.SEMANTIC, SEARCH_TYPES.HYBRID, or SEARCH_TYPES.HYBRID_DATES.
+     * @param {boolean} [context.includeNamedQueries] - Optional explicit override for named query metadata.
+     * @param {object} [context.queryDslConfig] - Optional debug-only DSL tuning overrides.
      * @returns {Promise<Object[]>} A promise that resolves to an array of document results.
      */
     async function getSearchResultsByKeyword(
         keyword,
         pageNumber,
         itemsPerPage,
-        { caseReferenceNumber, logger, searchType = DEFAULT_SEARCH_TYPE }
+        {
+            caseReferenceNumber,
+            logger,
+            searchType = DEFAULT_SEARCH_TYPE,
+            includeNamedQueries,
+            queryDslConfig
+        }
     ) {
         const db = dalFactory({
             caseReferenceNumber,
             logger,
-            searchType
+            searchType,
+            includeNamedQueries,
+            queryDslConfig
         });
         return db.getDocumentsChunksByKeyword(keyword, pageNumber, itemsPerPage);
     }

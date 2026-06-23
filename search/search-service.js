@@ -27,6 +27,8 @@ function createSearchService({
      * @param {string} token - The authentication token.
      * @param {Object} [options] - Additional request options.
      * @param {string} [options.searchType=DEFAULT_SEARCH_TYPE] - Search mode (one of SEARCH_TYPES: keyword, keyword-dates, semantic, hybrid, hybrid-dates).
+     * @param {boolean} [options.includeNamedQueries=false] - Whether API should include query `_name` metadata for matched query sources.
+     * @param {object} [options.queryDslConfig] - Optional debug-only DSL tuning overrides.
      * @returns {Promise<object>} A promise that resolves to the search results.
      */
     async function getSearchResults(
@@ -34,14 +36,20 @@ function createSearchService({
         pageNumber,
         itemsPerPage,
         token,
-        { searchType = DEFAULT_SEARCH_TYPE } = {}
+        { searchType = DEFAULT_SEARCH_TYPE, includeNamedQueries = false, queryDslConfig } = {}
     ) {
-        logger?.debug?.({ query, pageNumber, itemsPerPage }, 'Fetching search results');
+        logger?.info?.({ query, pageNumber, itemsPerPage }, 'Fetching search results');
+        const searchParams = new URLSearchParams({
+            query: String(query),
+            pageNumber: String(pageNumber),
+            itemsPerPage: String(itemsPerPage),
+            type: searchType
+        });
+        const strictQueryString = Array.from(searchParams.entries())
+            .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+            .join('&');
         const opts = {
-            url:
-                `${process.env.APP_API_URL}/search/?query=${query}` +
-                `&pageNumber=${pageNumber}&itemsPerPage=${itemsPerPage}` +
-                `&type=${searchType}`,
+            url: `${process.env.APP_API_URL}/search/?${strictQueryString}`,
             headers: {
                 'On-Behalf-Of': caseReferenceNumber
             }
@@ -49,6 +57,16 @@ function createSearchService({
         if (token) {
             // Include Authorization header if token is provided
             opts.headers.Authorization = `Bearer ${token}`;
+        }
+        // Enable debug context when either includeNamedQueries is requested
+        // or when queryDslConfig is provided (DSL tuning requires debug context).
+        const hasQueryDslConfig = queryDslConfig && Object.keys(queryDslConfig).length > 0;
+        if (includeNamedQueries === true || hasQueryDslConfig) {
+            opts.headers['X-Debug-Context'] = 'true';
+        }
+        // Only send DSL config header when non-empty and debug context is enabled.
+        if (hasQueryDslConfig) {
+            opts.headers['X-Query-DSL-Config'] = JSON.stringify(queryDslConfig);
         }
         return get(opts);
     }

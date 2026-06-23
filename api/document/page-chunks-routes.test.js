@@ -47,7 +47,8 @@ describe('page-chunks-routes', () => {
                 crn: '12-745678',
                 searchTerm: 'test'
             },
-            log: mockLogger
+            log: mockLogger,
+            get: () => undefined
         };
 
         mockResponse = {
@@ -219,7 +220,6 @@ describe('page-chunks-routes', () => {
         it('should pass search flags to service context', async () => {
             let capturedContext;
             mockRequest.query.type = 'semantic';
-            mockRequest.query.dates = 'off';
             mockPageChunksService.getPageChunks = async (_, __, ___, ____, context) => {
                 capturedContext = context;
                 return [];
@@ -229,6 +229,75 @@ describe('page-chunks-routes', () => {
             await handler(mockRequest, mockResponse, () => {});
 
             assert.strictEqual(capturedContext.searchType, 'semantic');
+            assert.strictEqual(capturedContext.includeNamedQueries, false);
+        });
+
+        it('should ignore X-Query-DSL-Config when X-Debug-Context is not true', async () => {
+            let capturedContext;
+            mockRequest.get = (headerName) => {
+                if (headerName === 'X-Debug-Context') return 'false';
+                if (headerName === 'X-Query-DSL-Config') return '{"semanticK": 77}';
+                return undefined;
+            };
+
+            mockPageChunksService.getPageChunks = async (_, __, ___, ____, context) => {
+                capturedContext = context;
+                return [];
+            };
+
+            const handler = router.stack[0].route.stack[0].handle;
+            await handler(mockRequest, mockResponse, () => {});
+
+            assert.strictEqual(capturedContext.includeNamedQueries, false);
+            assert.strictEqual(capturedContext.queryDslConfig, undefined);
+        });
+
+        it('should parse X-Query-DSL-Config only when X-Debug-Context is true', async () => {
+            let capturedContext;
+            mockRequest.get = (headerName) => {
+                if (headerName === 'X-Debug-Context') return 'true';
+                if (headerName === 'X-Query-DSL-Config') return '{"semanticK": 77}';
+                return undefined;
+            };
+
+            mockPageChunksService.getPageChunks = async (_, __, ___, ____, context) => {
+                capturedContext = context;
+                return [];
+            };
+
+            const handler = router.stack[0].route.stack[0].handle;
+            await handler(mockRequest, mockResponse, () => {});
+
+            assert.strictEqual(capturedContext.includeNamedQueries, true);
+            assert.deepStrictEqual(capturedContext.queryDslConfig, { semanticK: 77 });
+        });
+
+        it('should ignore debug headers in production environment', async () => {
+            const originalEnv = process.env.DEPLOY_ENV;
+            process.env.DEPLOY_ENV = 'production';
+
+            try {
+                let capturedContext;
+                mockRequest.get = (headerName) => {
+                    if (headerName === 'X-Debug-Context') return 'true';
+                    if (headerName === 'X-Query-DSL-Config') return '{"semanticK": 77}';
+                    return undefined;
+                };
+
+                mockPageChunksService.getPageChunks = async (_, __, ___, ____, context) => {
+                    capturedContext = context;
+                    return [];
+                };
+
+                const handler = router.stack[0].route.stack[0].handle;
+                await handler(mockRequest, mockResponse, () => {});
+
+                // Debug headers should be ignored in production
+                assert.strictEqual(capturedContext.includeNamedQueries, false);
+                assert.strictEqual(capturedContext.queryDslConfig, undefined);
+            } finally {
+                process.env.DEPLOY_ENV = originalEnv;
+            }
         });
 
         it('should handle service errors via next middleware', async () => {

@@ -1,6 +1,12 @@
+import crypto from 'node:crypto';
 import express from 'express';
+import buildQueryJson from '../api/DAL/utils/buildQueryJson/index.js';
 import { resolveSearchType } from '../api/search/constants/searchTypes.js';
+import { finalizeDebugInfo, hasDebugContext, ifDebugContext } from '../middleware/debug/index.js';
+import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
+import buildViewModel from '../templateEngine/buildViewModel.js';
+import buildSearchSessionPreference from '../utils/buildSearchSessionPreference.js';
 
 /**
  * Creates an Express router for handling search functionality.
@@ -16,6 +22,14 @@ import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 function createSearchRouter({ createTemplateEngineService, createSearchService }) {
     const router = express.Router();
 
+    /**
+     * Handles search form submissions and normalizes input into query-string based navigation.
+     *
+     * @param {express.Request} req - Express request containing body fields.
+     * @param {express.Response} res - Express response used for redirects.
+     * @param {express.NextFunction} next - Express next middleware callback.
+     * @returns {void}
+     */
     router.post('/', (req, res, next) => {
         try {
             const { query } = req.body;
@@ -34,6 +48,14 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
         }
     });
 
+    /**
+     * Renders search index/results pages and coordinates API-backed search execution.
+     *
+     * @param {express.Request} req - Express request with query parameters and session context.
+     * @param {express.Response} res - Express response used to send rendered HTML.
+     * @param {express.NextFunction} next - Express next middleware callback.
+     * @returns {Promise<void>}
+     */
     router.get('/', async (req, res, next) => {
         try {
             const templateEngineService = createTemplateEngineService();
@@ -41,18 +63,23 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
 
             const { query, pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.query;
             const userName = req.session?.username;
-            const searchType = resolveSearchType(req.session?.featureFlags?.type, req.session);
+            const searchType = getFeatureFlagValue(req.session, 'type');
+            const isDebugMode = Boolean(hasDebugContext(res));
+            const debugQueryDslOverrides = isDebugMode
+                ? res.locals.debugQueryDslOverrides || {}
+                : {};
+            const debugQueryDslConfig = res.locals.debugQueryDslConfig;
 
             if (!query) {
-                const html = render('search/page/index.njk', {
-                    caseSelected: req.session.caseSelected,
-                    caseReferenceNumber: req.session.caseReferenceNumber,
-                    pageType: 'search',
-                    csrfToken: res.locals.csrfToken,
-                    cspNonce: res.locals.cspNonce,
-                    userName,
-                    searchType
-                });
+                finalizeDebugInfo(res, 200);
+                const html = render(
+                    'search/page/index.njk',
+                    buildViewModel(req, res, {
+                        pageType: 'search',
+                        searchType,
+                        isDebugMode
+                    })
+                );
                 return res.send(html);
             }
 
@@ -62,16 +89,12 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 1
             );
 
-            const templateParams = {
-                caseSelected: req.session.caseSelected,
-                caseReferenceNumber: req.session.caseReferenceNumber,
+            const templateParams = buildViewModel(req, res, {
                 pageType: 'search',
-                csrfToken: res.locals.csrfToken,
-                cspNonce: res.locals.cspNonce,
-                userName,
                 query,
-                searchType
-            };
+                searchType,
+                isDebugMode
+            });
 
             req.log?.debug?.({ query, pageNumber, itemsPerPage }, 'Creating search service');
             const searchService = createSearchService({
@@ -80,13 +103,20 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             });
 
             const token = createApiJwtToken(userName);
+            const searchOptions = { searchType };
+            if (isDebugMode) {
+                searchOptions.includeNamedQueries = true;
+                // In debug mode, pass the effective DSL tuning bag consistently.
+                searchOptions.queryDslConfig = debugQueryDslOverrides;
+            }
             const response = await searchService.getSearchResults(
-                encodeURIComponent(query),
+                query,
                 pageNumber,
                 itemsPerPage,
                 token,
-                { searchType }
+                searchOptions
             );
+
             const { body } = response || {};
 
             if (body?.errors) {
@@ -95,6 +125,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                     href: `#${error.source?.pointer?.split('/')?.pop() || 'error'}`
                 }));
 
+                finalizeDebugInfo(res, 400);
                 const html = render('search/page/results.njk', templateParams);
                 return res.status(400).send(html);
             }
@@ -103,13 +134,67 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             const hits = searchResults?.hits || [];
             const totalItemCount = Number(searchResults?.total?.value || 0);
 
+            // Populate debug info with search results when debug context is present.
+            ifDebugContext(res, (debugInfo) => {
+                debugInfo.request.queryDsl = buildQueryJson({
+                    keyword: query,
+                    caseReferenceNumber: req.session?.caseReferenceNumber,
+                    pageNumber,
+                    itemsPerPage,
+                    options: {
+                        searchType,
+                        logger: req.log,
+                        includeNamedQueries: isDebugMode,
+                        queryDslConfig: debugQueryDslOverrides
+                    }
+                });
+                const queryHash = crypto
+                    .createHash('sha256')
+                    .update(String(query))
+                    .digest('hex')
+                    .slice(0, 12);
+                const sessionPreference = buildSearchSessionPreference(String(query));
+
+                debugInfo.search = {
+                    lastQuery: query,
+                    lastDSL: null,
+                    previousDSLs: [],
+                    lastResults: {
+                        totalHits: totalItemCount,
+                        returnedHits: hits.length,
+                        searchType
+                    },
+                    executionTime: body?.data?.attributes?.executionTime || null,
+                    queryDslConfig: debugQueryDslConfig,
+                    opensearch: {
+                        ...(debugInfo.search?.opensearch || {}),
+                        index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME || 'unknown',
+                        preference: sessionPreference,
+                        queryHash,
+                        totalHits: totalItemCount,
+                        returnedHits: hits.length
+                    }
+                };
+            });
+
             // Enrich each result with docUuid, searchTerm, and caseReferenceNumber (crn)
             const searchResultsWithDocUuid = hits.map((hit) => ({
                 ...hit,
+                // OpenSearch may return repeated or unknown matched query names.
+                // Keep only the constituent labels we expose in debug UI.
+                matchSources: Array.from(
+                    new Set(
+                        (hit?.matched_queries || []).filter(
+                            (name) => name === 'keyword' || name === 'dates' || name === 'semantic'
+                        )
+                    )
+                ),
                 docUuid: hit._source?.source_doc_id || 0,
                 searchTerm: query,
                 searchType,
-                caseReferenceNumber: req.session?.caseReferenceNumber
+                isDebugMode,
+                caseReferenceNumber: req.session?.caseReferenceNumber,
+                featureFlags: res.locals.featureFlags
             }));
 
             templateParams.searchResults = searchResultsWithDocUuid;
@@ -131,6 +216,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 isLastPage: currentPageIndex >= totalPageCount
             };
 
+            finalizeDebugInfo(res, 200);
             const html = render('search/page/results.njk', templateParams);
             return res.status(200).send(html);
         } catch (error) {

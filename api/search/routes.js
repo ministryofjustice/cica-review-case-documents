@@ -1,6 +1,6 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-
+import { parseQueryDslConfigFromHeader } from '../../utils/queryDslConfigOverrides.js';
 import { resolveSearchType } from './constants/searchTypes.js';
 
 /**
@@ -63,6 +63,13 @@ export default function searchRouter({ searchService }) {
             // when absent or invalid. This ensures downstream consumers always receive
             // a valid type string, not an array or enum object.
             const searchType = resolveSearchType(rawSearchType);
+            // Ignore debug headers in production as a defense-in-depth measure,
+            // even though the UI layer already prevents them from being sent.
+            const isProduction = process.env.DEPLOY_ENV === 'production';
+            const includeNamedQueries = !isProduction && req.get('X-Debug-Context') === 'true';
+            const queryDslConfig = includeNamedQueries
+                ? parseQueryDslConfigFromHeader(req.get('X-Query-DSL-Config'))
+                : undefined;
 
             const searchResults = await searchService.getSearchResultsByKeyword(
                 query,
@@ -71,7 +78,9 @@ export default function searchRouter({ searchService }) {
                 {
                     caseReferenceNumber: req.get('On-Behalf-Of'),
                     logger: req.log,
-                    searchType
+                    searchType,
+                    includeNamedQueries,
+                    queryDslConfig
                 }
             );
 
