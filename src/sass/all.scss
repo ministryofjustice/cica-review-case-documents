@@ -1,5 +1,6 @@
 // core CSS (immutable).
-@use "node_modules/govuk-frontend/dist/govuk/index";
+// Note: govuk-frontend/dist/govuk/index is imported internally by @ministryofjustice/frontend
+// with proper configuration. Direct import was removed to avoid "module already loaded" errors.
 @use "node_modules/@ministryofjustice/frontend/moj/components/all";
 
 // custom components.
