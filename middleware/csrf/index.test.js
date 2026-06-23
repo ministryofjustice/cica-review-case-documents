@@ -72,8 +72,10 @@ describe('csrf module', () => {
                 message: 'Environment variable "APP_COOKIE_SECRET" must be set'
             });
         } finally {
-            if (originalSecret) {
+            if (originalSecret !== undefined) {
                 process.env.APP_COOKIE_SECRET = originalSecret;
+            } else {
+                delete process.env.APP_COOKIE_SECRET;
             }
         }
     });
@@ -95,7 +97,7 @@ describe('csrf module', () => {
             const [callArgs] = doubleCsrfSpy.mock.calls[0].arguments;
             assert.equal(callArgs.getSecret(), 'test-secret-key');
         } finally {
-            if (originalSecret) {
+            if (originalSecret !== undefined) {
                 process.env.APP_COOKIE_SECRET = originalSecret;
             } else {
                 delete process.env.APP_COOKIE_SECRET;

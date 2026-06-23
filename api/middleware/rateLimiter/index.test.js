@@ -52,8 +52,16 @@ beforeEach(() => {
 
 afterEach(() => {
     process.env.NODE_ENV = originalEnv;
-    process.env.API_RATE_LIMIT_MAX_AUTH = originalAuthLimit;
-    process.env.API_RATE_LIMIT_MAX_UNAUTH = originalUnauthLimit;
+    if (originalAuthLimit !== undefined) {
+        process.env.API_RATE_LIMIT_MAX_AUTH = originalAuthLimit;
+    } else {
+        delete process.env.API_RATE_LIMIT_MAX_AUTH;
+    }
+    if (originalUnauthLimit !== undefined) {
+        process.env.API_RATE_LIMIT_MAX_UNAUTH = originalUnauthLimit;
+    } else {
+        delete process.env.API_RATE_LIMIT_MAX_UNAUTH;
+    }
 });
 
 test('allows requests under the authenticated rate limit', async () => {

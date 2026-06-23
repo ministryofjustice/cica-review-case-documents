@@ -83,7 +83,7 @@ test('skip function does not bypass limiter in production for /api paths', async
         assert.strictEqual(res2.status, 429);
     } finally {
         process.env.NODE_ENV = originalEnv;
-        if (originalUnauth) {
+        if (originalUnauth !== undefined) {
             process.env.APP_RATE_LIMIT_MAX_UNAUTH = originalUnauth;
         } else {
             delete process.env.APP_RATE_LIMIT_MAX_UNAUTH;
@@ -121,12 +121,12 @@ test('limit function returns AUTHENTICATED_LIMIT when session.loggedIn is true',
         assert.strictEqual(res3.status, 429);
     } finally {
         process.env.NODE_ENV = originalEnv;
-        if (originalAuth) {
+        if (originalAuth !== undefined) {
             process.env.APP_RATE_LIMIT_MAX_AUTH = originalAuth;
         } else {
             delete process.env.APP_RATE_LIMIT_MAX_AUTH;
         }
-        if (originalUnauth) {
+        if (originalUnauth !== undefined) {
             process.env.APP_RATE_LIMIT_MAX_UNAUTH = originalUnauth;
         } else {
             delete process.env.APP_RATE_LIMIT_MAX_UNAUTH;
@@ -163,12 +163,12 @@ test('limit function returns AUTHENTICATED_LIMIT when req.user exists', async ()
         assert.strictEqual(res3.status, 429);
     } finally {
         process.env.NODE_ENV = originalEnv;
-        if (originalAuth) {
+        if (originalAuth !== undefined) {
             process.env.APP_RATE_LIMIT_MAX_AUTH = originalAuth;
         } else {
             delete process.env.APP_RATE_LIMIT_MAX_AUTH;
         }
-        if (originalUnauth) {
+        if (originalUnauth !== undefined) {
             process.env.APP_RATE_LIMIT_MAX_UNAUTH = originalUnauth;
         } else {
             delete process.env.APP_RATE_LIMIT_MAX_UNAUTH;
@@ -235,7 +235,7 @@ test('keyGenerator returns session.id when session.loggedIn and session.id exist
         assert.strictEqual(res3.status, 200);
     } finally {
         process.env.NODE_ENV = originalEnv;
-        if (originalAuth) {
+        if (originalAuth !== undefined) {
             process.env.APP_RATE_LIMIT_MAX_AUTH = originalAuth;
         } else {
             delete process.env.APP_RATE_LIMIT_MAX_AUTH;
@@ -270,7 +270,7 @@ test('keyGenerator returns user.id when no session.loggedIn but user.id exists',
         assert.strictEqual(res3.status, 200);
     } finally {
         process.env.NODE_ENV = originalEnv;
-        if (originalAuth) {
+        if (originalAuth !== undefined) {
             process.env.APP_RATE_LIMIT_MAX_AUTH = originalAuth;
         } else {
             delete process.env.APP_RATE_LIMIT_MAX_AUTH;
@@ -363,7 +363,7 @@ test('uses default WINDOW_MS when APP_RATE_LIMIT_WINDOW_MS is not set', async ()
         const res = await request(app).get('/test');
         assert.strictEqual(res.status, 200);
     } finally {
-        if (originalWindowMs) {
+        if (originalWindowMs !== undefined) {
             process.env.APP_RATE_LIMIT_WINDOW_MS = originalWindowMs;
         }
         process.env.NODE_ENV = originalEnv;

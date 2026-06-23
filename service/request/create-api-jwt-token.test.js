@@ -45,7 +45,9 @@ describe('createApiJwtToken', () => {
             /APP_JWT_SECRET environment variable is not set/
         );
 
-        process.env.APP_JWT_SECRET = originalSecret;
+        if (originalSecret !== undefined) {
+            process.env.APP_JWT_SECRET = originalSecret;
+        }
     });
 
     it('throws if APP_API_JWT_ISSUER is not set', () => {
@@ -59,7 +61,9 @@ describe('createApiJwtToken', () => {
             /APP_API_JWT_ISSUER environment variable is not set/
         );
 
-        process.env.APP_API_JWT_ISSUER = originalIssuer;
+        if (originalIssuer !== undefined) {
+            process.env.APP_API_JWT_ISSUER = originalIssuer;
+        }
     });
 
     it('throws if APP_API_JWT_AUDIENCE is not set', () => {
@@ -73,6 +77,8 @@ describe('createApiJwtToken', () => {
             /APP_API_JWT_AUDIENCE environment variable is not set/
         );
 
-        process.env.APP_API_JWT_AUDIENCE = originalAudience;
+        if (originalAudience !== undefined) {
+            process.env.APP_API_JWT_AUDIENCE = originalAudience;
+        }
     });
 });
