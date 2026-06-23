@@ -163,7 +163,7 @@ function initializeFlag(flagName, session) {
  * @param {unknown} queryValue - Query string value.
  * @returns {boolean} Updated flag value.
  */
-function processBooleanFlag(currentValue, queryValue) {
+function _processBooleanFlag(currentValue, queryValue) {
     const parsed = parseFeatureFlagValue(queryValue);
     return typeof parsed === 'boolean' ? parsed : currentValue;
 }
@@ -191,7 +191,7 @@ function processTypeFlag(session, queryValue) {
  * @param {unknown} queryValue - Query string value.
  * @returns {string} Updated flag value.
  */
-function processEnumFlag(currentValue, queryValue) {
+function _processEnumFlag(currentValue, queryValue) {
     const parsed = parseEnumFlagValue(queryValue);
     return typeof parsed === 'string' ? parsed : currentValue;
 }
