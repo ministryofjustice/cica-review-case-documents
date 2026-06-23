@@ -241,8 +241,12 @@ describe('page-chunks-routes', () => {
         it('should ignore X-Query-DSL-Config when X-Debug-Context is not true', async () => {
             let capturedContext;
             mockRequest.get = (headerName) => {
-                if (headerName === 'X-Debug-Context') return 'false';
-                if (headerName === 'X-Query-DSL-Config') return '{"semanticK": 77}';
+                if (headerName === 'X-Debug-Context') {
+                    return 'false';
+                }
+                if (headerName === 'X-Query-DSL-Config') {
+                    return '{"semanticK": 77}';
+                }
                 return undefined;
             };
 
@@ -261,8 +265,12 @@ describe('page-chunks-routes', () => {
         it('should parse X-Query-DSL-Config only when X-Debug-Context is true', async () => {
             let capturedContext;
             mockRequest.get = (headerName) => {
-                if (headerName === 'X-Debug-Context') return 'true';
-                if (headerName === 'X-Query-DSL-Config') return '{"semanticK": 77}';
+                if (headerName === 'X-Debug-Context') {
+                    return 'true';
+                }
+                if (headerName === 'X-Query-DSL-Config') {
+                    return '{"semanticK": 77}';
+                }
                 return undefined;
             };
 
@@ -285,8 +293,12 @@ describe('page-chunks-routes', () => {
             try {
                 let capturedContext;
                 mockRequest.get = (headerName) => {
-                    if (headerName === 'X-Debug-Context') return 'true';
-                    if (headerName === 'X-Query-DSL-Config') return '{"semanticK": 77}';
+                    if (headerName === 'X-Debug-Context') {
+                        return 'true';
+                    }
+                    if (headerName === 'X-Query-DSL-Config') {
+                        return '{"semanticK": 77}';
+                    }
                     return undefined;
                 };
 

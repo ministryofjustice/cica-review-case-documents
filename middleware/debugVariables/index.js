@@ -132,7 +132,9 @@ export function getQueryDslOverrides(debugVariables = {}) {
  */
 function convertDebugVariableValue(varName, rawValue) {
     const varDef = DEBUG_VARIABLES.find((v) => v.name === varName);
-    if (!varDef) return undefined;
+    if (!varDef) {
+        return undefined;
+    }
 
     if (varDef.type === 'number') {
         const normalized = Array.isArray(rawValue) ? rawValue.at(-1) : rawValue;
@@ -143,7 +145,9 @@ function convertDebugVariableValue(varName, rawValue) {
 
         if (typeof normalized === 'string') {
             const trimmed = normalized.trim();
-            if (trimmed.length === 0) return undefined;
+            if (trimmed.length === 0) {
+                return undefined;
+            }
             const parsed = Number(trimmed);
             return varDef.validator(parsed) ? parsed : undefined;
         }
