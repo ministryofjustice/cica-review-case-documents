@@ -211,6 +211,10 @@ function applyQueryOverride(flagName, currentValue, queryValue, session) {
         return override !== undefined ? override : currentValue;
     }
     if (typeof FEATURE_FLAG_DEFAULTS[flagName] === 'boolean') {
+        // Prevent debug flag query overrides in production
+        if (flagName === 'debug' && process.env.DEPLOY_ENV === 'production') {
+            return currentValue;
+        }
         return processBooleanFlag(currentValue, queryValue);
     }
     return processEnumFlag(currentValue, queryValue);
