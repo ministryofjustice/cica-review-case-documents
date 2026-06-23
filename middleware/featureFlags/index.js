@@ -203,21 +203,26 @@ function processEnumFlag(currentValue, queryValue) {
  * @param {boolean | string} currentValue - Current flag value.
  * @param {unknown} queryValue - Query string value.
  * @param {import('express-session').Session | undefined} session - Request session object.
- * @returns {boolean | string} Final flag value after applying overrides.
+ * @returns {{value: boolean | string, wasOverridden: boolean}} Final flag value and whether it was overridden.
  */
 function applyQueryOverride(flagName, currentValue, queryValue, session) {
     if (flagName === 'type') {
         const override = processTypeFlag(session, queryValue);
-        return override !== undefined ? override : currentValue;
+        const wasOverridden = override !== undefined;
+        return { value: wasOverridden ? override : currentValue, wasOverridden };
     }
     if (typeof FEATURE_FLAG_DEFAULTS[flagName] === 'boolean') {
         // Prevent debug flag query overrides in production
         if (flagName === 'debug' && process.env.DEPLOY_ENV === 'production') {
-            return currentValue;
+            return { value: currentValue, wasOverridden: false };
         }
-        return processBooleanFlag(currentValue, queryValue);
+        const parsed = parseFeatureFlagValue(queryValue);
+        const wasOverridden = typeof parsed === 'boolean';
+        return { value: wasOverridden ? parsed : currentValue, wasOverridden };
     }
-    return processEnumFlag(currentValue, queryValue);
+    const parsed = parseEnumFlagValue(queryValue);
+    const wasOverridden = typeof parsed === 'string';
+    return { value: wasOverridden ? parsed : currentValue, wasOverridden };
 }
 
 /**
@@ -239,12 +244,19 @@ export default function featureFlags(req, res, next) {
     if (req.session) {
         for (const flagName of Object.keys(FEATURE_FLAG_DEFAULTS)) {
             flags[flagName] = initializeFlag(flagName, req.session);
-            flags[flagName] = applyQueryOverride(
+            const override = applyQueryOverride(
                 flagName,
                 flags[flagName],
                 req.query?.[flagName],
                 req.session
             );
+            flags[flagName] = override.value;
+            // Determine provenance: query override > session/default
+            if (override.wasOverridden) {
+                provenance[flagName] = 'query';
+            } else {
+                provenance[flagName] = getFeatureFlagSource(req.session, flagName);
+            }
         }
         // Only update the session if there are changes to prevent unnecessary
         // session writes and churn in session stores.
