@@ -166,8 +166,10 @@ function initializeFlag(flagName, session) {
 function processTypeFlag(session, queryValue) {
     const queryType = Array.isArray(queryValue) ? queryValue.at(-1) : queryValue;
     if (typeof queryType === 'string' && queryType.trim().length > 0) {
-        const searchType = resolveSearchType(queryType, session);
-        return typeof searchType === 'string' ? searchType : undefined;
+        const normalizedQueryType = queryType.trim().toLowerCase();
+        if (Object.values(SEARCH_TYPES).includes(normalizedQueryType)) {
+            return resolveSearchType(normalizedQueryType, session);
+        }
     }
     return undefined;
 }
