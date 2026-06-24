@@ -450,7 +450,6 @@ npm run format
 
 ```json
 {
-    "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnSave": true,
     "prettier.enable": false,
     "eslint.enable": false,
