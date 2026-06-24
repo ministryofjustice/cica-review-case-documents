@@ -452,7 +452,8 @@ npm run format
 ### VS Code Setup
 
 1. Install the [Biome VS Code extension](https://marketplace.visualstudio.com/items?itemName=biomejs.biome)
-2. Update `.vscode/settings.json`:
+2. The repository already provides workspace defaults in `.vscode/settings.json` and extension recommendations in `.vscode/extensions.json`.
+3. Use the following settings as a reference for the expected VS Code workspace configuration:
 
 ```json
 {
@@ -467,10 +468,10 @@ npm run format
     "[json]": {
         "editor.tabSize": 4,
         "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[css]": {
-    "editor.tabSize": 4,
-    "editor.defaultFormatter": "biomejs.biome"
+    },
+    "[css]": {
+        "editor.tabSize": 4,
+        "editor.defaultFormatter": "biomejs.biome"
     }
 }
 ```
