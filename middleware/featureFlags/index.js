@@ -157,18 +157,6 @@ function initializeFlag(flagName, session) {
 }
 
 /**
- * Processes a query override for a boolean flag.
- *
- * @param {boolean} currentValue - Current flag value.
- * @param {unknown} queryValue - Query string value.
- * @returns {boolean} Updated flag value.
- */
-function _processBooleanFlag(currentValue, queryValue) {
-    const parsed = parseFeatureFlagValue(queryValue);
-    return typeof parsed === 'boolean' ? parsed : currentValue;
-}
-
-/**
  * Processes a query override for the type flag.
  *
  * @param {import('express-session').Session | undefined} session - Request session object.
@@ -182,18 +170,6 @@ function processTypeFlag(session, queryValue) {
         return typeof searchType === 'string' ? searchType : undefined;
     }
     return undefined;
-}
-
-/**
- * Processes a query override for an enum flag.
- *
- * @param {string} currentValue - Current flag value.
- * @param {unknown} queryValue - Query string value.
- * @returns {string} Updated flag value.
- */
-function _processEnumFlag(currentValue, queryValue) {
-    const parsed = parseEnumFlagValue(queryValue);
-    return typeof parsed === 'string' ? parsed : currentValue;
 }
 
 /**
