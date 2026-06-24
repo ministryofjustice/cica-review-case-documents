@@ -69,7 +69,13 @@ pre-commit
 pre-push
 ```
 
- > pre-commit runs `npm run precommit` (mutating checks via `npm run quality:fix`: format, lint auto-fix, Sass build, gitleaks secret scan, and OpenAPI build). pre-push runs `npm run prepush` in this order: `npm audit` (high severity, prod deps), `npm run quality:verify` (lint check + gitleaks), then tests and JSDoc linting. Pre-push does not run formatting fixes, Sass compilation, or OpenAPI builds.
+ > pre-commit runs `npm run precommit` (mutating checks via `npm run quality:fix`: format, lint safe auto-fix, Sass build, gitleaks secret scan, and OpenAPI build). pre-push runs `npm run prepush` in this order: `npm audit` (high severity, prod deps), `npm run quality:verify` (lint check + gitleaks), then tests and JSDoc linting. Pre-push does not run formatting fixes, Sass compilation, or OpenAPI builds.
+
+If you explicitly want Biome unsafe transformations (for example, automatic brace insertion from `useBlockStatements`), run:
+
+```bash
+npm run lint:fix:unsafe
+```
 
 Install the `gitleaks` CLI locally so pre-commit secret scanning can run: https://github.com/gitleaks/gitleaks#installing
 The installer for a Ubuntu WSL console is `sudo apt install gitleaks` for example.
