@@ -69,7 +69,7 @@ pre-commit
 pre-push
 ```
 
- > pre-commit runs `npm run precommit` (quick checks via `npm run checks:quality`: format, lint, sass build, gitleaks secret scan, and OpenAPI build). pre-push runs `npm run prepush` (comprehensive: npm audit, full quality checks, plus tests and JSDoc linting).
+ > pre-commit runs `npm run precommit` (mutating checks via `npm run quality:fix`: format, lint auto-fix, Sass build, gitleaks secret scan, and OpenAPI build). pre-push runs `npm run prepush` in this order: `npm audit` (high severity, prod deps), `npm run quality:verify` (lint check + gitleaks), then tests and JSDoc linting. Pre-push does not run formatting fixes, Sass compilation, or OpenAPI builds.
 
 Install the `gitleaks` CLI locally so pre-commit secret scanning can run: https://github.com/gitleaks/gitleaks#installing
 The installer for a Ubuntu WSL console is `sudo apt install gitleaks` for example.
@@ -90,7 +90,7 @@ The secret scan uses `.gitleaks.toml` as the configuration file.
 2. Make your changes
 3. Run pre-commit checks: `npm run precommit` (enforced by pre-commit hook)
 4. Commit your changes with descriptive messages
-5. Push to your branch (pre-push hook enforces comprehensive checks automatically)
+5. Push to your branch (pre-push hook enforces non-mutating verification checks automatically)
 6. Create a Pull Request to merge into `main`
 7. After review and approval, merge to `main`
 
@@ -101,7 +101,7 @@ The project uses Husky for Git hooks:
 | Hook Name  | Action       | Description                          |
 | ---------- | ------------ | ------------------------------------ |
 | pre-commit | npm run precommit | Runs quick checks before commit: format, lint, sass, gitleaks, and OpenAPI build |
-| pre-push   | npm run prepush | Runs npm audit, full checks (format/lint/sass/gitleaks/OpenAPI), tests, and JSDoc linting before push |
+| pre-push   | npm run prepush | Runs npm audit, non-mutating quality checks (`quality:verify`), tests, and JSDoc linting before push |
 
 ### CI/CD Pipeline
 
