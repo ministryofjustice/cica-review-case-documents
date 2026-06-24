@@ -467,6 +467,10 @@ npm run format
     "[json]": {
         "editor.tabSize": 4,
         "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[css]": {
+    "editor.tabSize": 4,
+    "editor.defaultFormatter": "biomejs.biome"
     }
 }
 ```
