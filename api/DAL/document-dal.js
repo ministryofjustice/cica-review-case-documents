@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import VError from 'verror';
 import createDBQueryDefault from '../../db/index.js';
-import buildSearchSessionPreference from '../../utils/buildSearchSessionPreference.js';
+import buildSearchSessionPreference from '../../utils/buildSearchSessionPreference/index.js';
 import { DEFAULT_SEARCH_TYPE } from '../search/constants/searchTypes.js';
 import buildQueryJson from './utils/buildQueryJson/index.js';
 

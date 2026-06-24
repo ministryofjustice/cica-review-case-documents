@@ -1,6 +1,6 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { parseQueryDslConfigFromHeader } from '../../utils/queryDslConfigOverrides.js';
+import { parseQueryDslConfigFromHeader } from '../../utils/queryDslConfigOverrides/index.js';
 import { resolveSearchType } from './constants/searchTypes.js';
 
 /**

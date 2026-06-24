@@ -3,7 +3,7 @@ import { getFeatureFlagValue } from '../../middleware/featureFlags/index.js';
 import createApiJwtToken from '../../service/request/create-api-jwt-token.js';
 import buildViewModel from '../../templateEngine/buildViewModel.js';
 import createTemplateEngineService from '../../templateEngine/index.js';
-import buildSearchSessionPreference from '../../utils/buildSearchSessionPreference.js';
+import buildSearchSessionPreference from '../../utils/buildSearchSessionPreference/index.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
 import { formatPageTitle } from '../utils/formatters/index.js';
 import { buildTextHighlightSegments } from '../utils/highlight/index.js';

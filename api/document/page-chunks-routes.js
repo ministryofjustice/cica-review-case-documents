@@ -1,5 +1,5 @@
 import express from 'express';
-import { parseQueryDslConfigFromHeader } from '../../utils/queryDslConfigOverrides.js';
+import { parseQueryDslConfigFromHeader } from '../../utils/queryDslConfigOverrides/index.js';
 import { resolveSearchType } from '../search/constants/searchTypes.js';
 import createPageChunksService from './services/page-chunks-service.js';
 

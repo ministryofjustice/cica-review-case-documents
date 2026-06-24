@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import buildSearchSessionPreference from './buildSearchSessionPreference.js';
+import buildSearchSessionPreference from './index.js';
 
 describe('buildSearchSessionPreference', () => {
     it('returns the expected deterministic preference for a known search term', () => {
