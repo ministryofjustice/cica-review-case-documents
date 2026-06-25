@@ -5,7 +5,7 @@ import {
     parseQueryDslConfigFromQuery,
     resolveEffectiveQueryDslConfig,
     serializeQueryDslConfigOverrides
-} from './queryDslConfigOverrides.js';
+} from './index.js';
 
 describe('queryDslConfigOverrides', () => {
     it('should parse and sanitize valid query params', () => {

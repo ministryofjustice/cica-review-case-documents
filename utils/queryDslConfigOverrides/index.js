@@ -1,4 +1,4 @@
-import { DEFAULT_QUERY_DSL_CONFIG } from '../api/DAL/utils/buildQueryJson/queryTypeBuilders.js';
+import { DEFAULT_QUERY_DSL_CONFIG } from '../../api/DAL/utils/buildQueryJson/queryTypeBuilders.js';
 
 export const QUERY_DSL_CONFIG_INPUT_KEYS = Object.freeze([
     'semanticMinScore',
