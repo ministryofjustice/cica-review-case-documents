@@ -1,0 +1,48 @@
+graph TD
+    Request["Incoming Request"]
+    
+    Request -->|Auth Routes| AuthCheck{"Auth<br/>Endpoint?"}
+    Request -->|API Routes| ApiCheck{"API<br/>Endpoint?"}
+    Request -->|Web Routes| WebCheck{"Web Route<br/>Endpoint?"}
+
+    AuthCheck -->|/auth/login| LoginLimiter["Entra Login Limiter<br/>20 req/15min<br/>Key: IP"]
+    AuthCheck -->|/auth/callback| CallbackLimiter["Entra Callback Limiter<br/>40 req/15min<br/>Key: IP"]
+
+    ApiCheck -->|After JWT Auth| ApiAuth{"Authenticated?"}
+    ApiAuth -->|Yes| ApiAuthLimiter["API Auth Limiter<br/>1000 req/15min<br/>Key: JWT ID or OID"]
+    ApiAuth -->|No| ApiUnauthLimiter["API Unauth Limiter<br/>50 req/15min<br/>Key: IP"]
+
+    WebCheck -->|After Session| WebAuth{"Session<br/>Authenticated?"}
+    WebAuth -->|Yes| WebAuthLimiter["Web Auth Limiter<br/>1000 req/15min<br/>Key: OID"]
+    WebAuth -->|No| WebUnauthLimiter["Web Unauth Limiter<br/>500 req/15min<br/>Key: IP"]
+
+    LoginLimiter -->|429| Block["Rate Limited<br/>HTTP 429"]
+    CallbackLimiter -->|429| Block
+    ApiAuthLimiter -->|429| Block
+    ApiUnauthLimiter -->|429| Block
+    WebAuthLimiter -->|429| Block
+    WebUnauthLimiter -->|429| Block
+
+    LoginLimiter -->|Pass| Continue["Continue to Handler"]
+    CallbackLimiter -->|Pass| Continue
+    ApiAuthLimiter -->|Pass| Continue
+    ApiUnauthLimiter -->|Pass| Continue
+    WebAuthLimiter -->|Pass| Continue
+    WebUnauthLimiter -->|Pass| Continue
+
+    classDef entry fill:#e2e8f0,stroke:#475569,color:#0f172a,stroke-width:1.4px;
+    classDef decision fill:#dbeafe,stroke:#2563eb,color:#1e3a8a,stroke-width:1.4px;
+    classDef auth fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.4px;
+    classDef unauth fill:#ffedd5,stroke:#ea580c,color:#7c2d12,stroke-width:1.4px;
+    classDef blocked fill:#fee2e2,stroke:#dc2626,color:#7f1d1d,stroke-width:1.6px;
+    classDef pass fill:#ccfbf1,stroke:#0d9488,color:#134e4a,stroke-width:1.4px;
+
+    class Request entry;
+    class AuthCheck,ApiCheck,WebCheck,ApiAuth,WebAuth decision;
+    class ApiAuthLimiter,WebAuthLimiter auth;
+    class LoginLimiter,CallbackLimiter,ApiUnauthLimiter,WebUnauthLimiter unauth;
+    class Block blocked;
+    class Continue pass;
+
+    linkStyle 9,10,11,12,13,14 stroke:#dc2626,stroke-width:2px;
+    linkStyle 15,16,17,18,19,20 stroke:#0d9488,stroke-width:2px;

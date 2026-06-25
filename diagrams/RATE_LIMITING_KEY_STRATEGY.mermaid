@@ -1,0 +1,35 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"ui-sans-serif, system-ui, Segoe UI, Roboto","fontSize":"14px","primaryTextColor":"#0f172a","lineColor":"#334155","tertiaryColor":"#f8fafc","background":"#ffffff"}}}%%
+graph LR
+    A["Request"]
+
+    A -->|Authenticated| AuthKey["Key Strategy"]
+    A -->|Unauthenticated| UnauthKey["Key Strategy"]
+
+    AuthKey --> AuthWeb["Web Auth<br/>oid:&lt;entra-oid&gt;"]
+    AuthKey --> AuthApi["API Auth<br/>jwt.id OR<br/>oid:&lt;entra-oid&gt;"]
+
+    UnauthKey --> UnauthWeb["Web Unauth<br/>IP Address"]
+    UnauthKey --> UnauthEntra["Entra Auth<br/>IP Address"]
+    UnauthKey --> UnauthApi["API Unauth<br/>IP Address"]
+
+    AuthWeb -->|Isolated Bucket| Bucket1["1000 req/15min<br/>Per User"]
+    AuthApi -->|Isolated Bucket| Bucket2["1000 req/15min<br/>Per API Consumer"]
+
+    UnauthWeb -->|Shared by VPN IP| Bucket3["500 req/15min<br/>Shared IP"]
+    UnauthEntra -->|IP-based| Bucket4["20-40 req/15min<br/>Per IP"]
+    UnauthApi -->|IP-based| Bucket5["50 req/15min<br/>Per IP"]
+
+    classDef entry fill:#e2e8f0,stroke:#475569,color:#0f172a,stroke-width:1.4px;
+    classDef strategy fill:#dbeafe,stroke:#2563eb,color:#1e3a8a,stroke-width:1.4px;
+    classDef auth fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.4px;
+    classDef unauth fill:#ffedd5,stroke:#ea580c,color:#7c2d12,stroke-width:1.4px;
+    classDef bucket fill:#f1f5f9,stroke:#64748b,color:#0f172a,stroke-width:1.2px;
+
+    class A entry;
+    class AuthKey,UnauthKey strategy;
+    class AuthWeb,AuthApi auth;
+    class UnauthWeb,UnauthEntra,UnauthApi unauth;
+    class Bucket1,Bucket2,Bucket3,Bucket4,Bucket5 bucket;
+
+    linkStyle 1,2 stroke:#16a34a,stroke-width:2px;
+    linkStyle 3,4,5 stroke:#ea580c,stroke-width:2px;

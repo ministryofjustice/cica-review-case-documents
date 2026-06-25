@@ -666,6 +666,10 @@ The application connects to an OpenSearch database. The connection URL is config
 
 see [local docker desktop kube deployments](/deployments/local/README.md)
 
+ ### Rate Limiting
+
+see [RATE_LIMITING](RATE_LIMITING.md)
+
 ## Additional Resources
 
 - [Express.js Documentation](https://expressjs.com/)
