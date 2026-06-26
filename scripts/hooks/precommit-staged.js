@@ -79,7 +79,9 @@ const biomeFiles = stagedFiles.filter((file) => {
 const hasScssChanges = stagedFiles.some((file) => file.endsWith('.scss'));
 
 if (biomeFiles.length > 0) {
-    run('biome', ['check', '--write', ...biomeFiles]);
+    // Prefix paths with `./` so Biome never interprets them as CLI options.
+    const biomePaths = biomeFiles.map((f) => `./${f}`);
+    run('biome', ['check', '--write', ...biomePaths]);
 }
 
 if (hasScssChanges) {
