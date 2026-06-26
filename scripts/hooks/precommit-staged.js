@@ -79,10 +79,10 @@ if (hasScssChanges) {
     run('npm', ['run', 'sass']);
 }
 
-// Re-stage staged files that may have been modified by Biome.
-run('git', ['add', ...stagedFiles]);
+// Use `--` so path-like arguments are never parsed as git options.
+run('git', ['add', '--', ...stagedFiles]);
 
 // Ensure generated stylesheet is included when Sass sources changed.
 if (hasScssChanges) {
-    run('git', ['add', 'public/stylesheets/all.css']);
+    run('git', ['add', '--', 'public/stylesheets/all.css']);
 }
