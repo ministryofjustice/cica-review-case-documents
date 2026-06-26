@@ -79,7 +79,7 @@ const biomeFiles = stagedFiles.filter((file) => {
 const hasScssChanges = stagedFiles.some((file) => file.endsWith('.scss'));
 
 if (biomeFiles.length > 0) {
-    run('npx', ['--no-install', 'biome', 'check', '--write', ...biomeFiles]);
+    run('biome', ['check', '--write', ...biomeFiles]);
 }
 
 if (hasScssChanges) {
