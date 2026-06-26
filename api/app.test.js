@@ -34,10 +34,10 @@ function signApiToken(payload) {
 
 /**
  * Middleware to simulate authentication for testing purposes.
- * @param {express.Request} req - The Express request object.
- * @param {express.Response} res - The Express response object.
- * @param {express.NextFunction} next - The next middleware function.
- * @returns {any}
+ * @param {import('express').Request} req - The Express request object.
+ * @param {import('express').Response} res - The Express response object.
+ * @param {import('express').NextFunction} next - The next middleware function.
+ * @returns {void}
  */
 function docsAuthMiddleware(req, res, next) {
     req.session ??= {};
@@ -71,9 +71,8 @@ const mockCreateSearchService = () => ({
 
 /**
  * Sets the JWT environment variables for testing purposes.
- * @param {string} secret - The JWT secret.
- * @param {string} issuer - The JWT issuer.
- * @param {string} audience - The JWT audience.
+ * @param {import('express').RequestHandler} [limiter=generalRateLimiter] - Rate limiter middleware to apply.
+ * @returns {import('express').Express} Configured Express application instance.
  * @returns {void}
  */
 function setJwtEnv({

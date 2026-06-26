@@ -74,7 +74,7 @@ Applied globally after session middleware but before route handlers.
 | **Auth Status** | **Limit** | **Window** | **Key**         | **Purpose**              |
 |-----------------|-----------|------------|-----------------|--------------------------|
 | Authenticated	  | 1000 req  |	15 min	   | oid:<entra-oid> | Per authenticated user   |
-| Unauthenticated | 50 req    |	15 min	   | IP	             | VPN users share IP       |
+| Unauthenticated | 500 req   |	15 min	   | IP	             | VPN users share IP       |
 
 Key Strategy:
 

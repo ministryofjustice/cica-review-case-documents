@@ -23,9 +23,9 @@ afterEach(() => {
 });
 
 /**
- * Description
- * @param {any} [limiter=generalRateLimiter] - Optional rate limiter to apply
- * @returns {Express.Application} - Express app with optional rate limiter applied
+ * Creates an Express app configured with session support and the provided rate limiter.
+ * @param {import('express').RequestHandler} [limiter=generalRateLimiter] - Rate limiter middleware to apply.
+ * @returns {import('express').Express} Configured Express application instance.
  */
 function createTestApp(limiter = generalRateLimiter) {
     const app = express();

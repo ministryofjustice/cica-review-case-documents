@@ -39,8 +39,10 @@ export default async function createDocsRouter(options = {}) {
     }
 
     const docsRouter = express.Router();
-    // Rate limit first (before auth) to protect against brute-force on auth endpoint
-    // Matches the main app's global rate limiting strategy
+    // Rate limit first (before auth) to protect against brute-force on auth endpoint.
+    // This is appropriate for session-based auth: the session is established in the main app's
+    // auth handlers, and IP-based rate limiting protects the docs endpoint itself.
+    // Note: docs authentication is session-based (not JWT), so identity is not available at this stage.
     docsRouter.use(options.docsRateLimiter());
     // Then authenticate to gate access to docs
     docsRouter.use(authMiddleware);
