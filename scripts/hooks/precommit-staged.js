@@ -68,7 +68,14 @@ if (pathsWithUnstagedChanges.length > 0) {
     process.exit(1);
 }
 
-const biomeFiles = stagedFiles.filter((file) => /\.(js|json)$/.test(file));
+const biomeFiles = stagedFiles.filter((file) => {
+    if (!/\.(js|json)$/.test(file)) {
+        return false;
+    }
+
+    // Keep npm-generated lockfile formatting stable.
+    return !/(^|\/)package-lock\.json$/.test(file);
+});
 const hasScssChanges = stagedFiles.some((file) => file.endsWith('.scss'));
 
 if (biomeFiles.length > 0) {
