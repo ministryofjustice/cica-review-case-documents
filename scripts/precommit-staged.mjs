@@ -17,10 +17,36 @@ function getStagedFiles() {
     return output ? output.split('\n').filter(Boolean) : [];
 }
 
+function getPathsWithUnstagedChanges(paths) {
+    if (paths.length === 0) {
+        return [];
+    }
+
+    const output = execFileSync('git', ['diff', '--name-only', '--', ...paths], {
+        encoding: 'utf8'
+    }).trim();
+
+    return output ? output.split('\n').filter(Boolean) : [];
+}
+
 const stagedFiles = getStagedFiles();
 
 if (stagedFiles.length === 0) {
     process.exit(0);
+}
+
+const pathsWithUnstagedChanges = getPathsWithUnstagedChanges(stagedFiles);
+
+if (pathsWithUnstagedChanges.length > 0) {
+    console.error('Pre-commit aborted: staged files contain unstaged changes.');
+    console.error('Please commit fully staged files only, then retry.');
+    console.error('Files:');
+
+    for (const file of pathsWithUnstagedChanges) {
+        console.error(`  - ${file}`);
+    }
+
+    process.exit(1);
 }
 
 const biomeFiles = stagedFiles.filter((file) => /\.(js|json)$/.test(file));
