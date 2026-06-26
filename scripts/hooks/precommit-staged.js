@@ -2,6 +2,12 @@
 
 import { execFileSync } from 'node:child_process';
 
+/**
+ * Run a command and inherit stdio.
+ * @param {string} command Executable to run.
+ * @param {string[]} args Arguments to pass to the executable.
+ * @param {import('node:child_process').ExecFileSyncOptions} [options] Optional exec settings.
+ */
 function run(command, args, options = {}) {
     execFileSync(command, args, {
         stdio: 'inherit',
@@ -9,6 +15,10 @@ function run(command, args, options = {}) {
     });
 }
 
+/**
+ * Get staged file paths for added/copied/modified/renamed files.
+ * @returns {string[]}
+ */
 function getStagedFiles() {
     const output = execFileSync(
         'git',
@@ -21,6 +31,11 @@ function getStagedFiles() {
     return output ? output.split('\0').filter(Boolean) : [];
 }
 
+/**
+ * Get paths that currently have unstaged working tree changes.
+ * @param {string[]} paths Paths to check.
+ * @returns {string[]}
+ */
 function getPathsWithUnstagedChanges(paths) {
     if (paths.length === 0) {
         return [];
@@ -57,7 +72,7 @@ const biomeFiles = stagedFiles.filter((file) => /\.(js|json)$/.test(file));
 const hasScssChanges = stagedFiles.some((file) => file.endsWith('.scss'));
 
 if (biomeFiles.length > 0) {
-    run('npx', ['biome', 'check', '--write', ...biomeFiles]);
+    run('npx', ['--no-install', 'biome', 'check', '--write', ...biomeFiles]);
 }
 
 if (hasScssChanges) {
