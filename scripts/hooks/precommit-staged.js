@@ -10,11 +10,15 @@ function run(command, args, options = {}) {
 }
 
 function getStagedFiles() {
-    const output = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], {
-        encoding: 'utf8'
-    }).trim();
+    const output = execFileSync(
+        'git',
+        ['diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z'],
+        {
+            encoding: 'utf8'
+        }
+    );
 
-    return output ? output.split('\n').filter(Boolean) : [];
+    return output ? output.split('\0').filter(Boolean) : [];
 }
 
 function getPathsWithUnstagedChanges(paths) {
@@ -22,11 +26,11 @@ function getPathsWithUnstagedChanges(paths) {
         return [];
     }
 
-    const output = execFileSync('git', ['diff', '--name-only', '--', ...paths], {
+    const output = execFileSync('git', ['diff', '--name-only', '-z', '--', ...paths], {
         encoding: 'utf8'
-    }).trim();
+    });
 
-    return output ? output.split('\n').filter(Boolean) : [];
+    return output ? output.split('\0').filter(Boolean) : [];
 }
 
 const stagedFiles = getStagedFiles();
