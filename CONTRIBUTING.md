@@ -69,7 +69,7 @@ pre-commit
 pre-push
 ```
 
- > pre-commit runs `npm run precommit` (mutating checks via `npm run quality:fix`: format, lint safe auto-fix, Sass build, gitleaks secret scan, and OpenAPI build). pre-push runs `npm run prepush` in this order: `npm audit` (high severity, prod deps), `npm run quality:verify` (lint check + gitleaks), then tests and JSDoc linting. Pre-push does not run formatting fixes, Sass compilation, or OpenAPI builds.
+ > pre-commit runs `npm run precommit` in this order: `npm run precommit:staged` (staged-file Biome checks/fixes, conditional Sass build for staged `.scss` changes), then mutating checks via `npm run quality:fix` (format, lint safe auto-fix, Sass build, gitleaks secret scan, and OpenAPI build). pre-push runs `npm run prepush` in this order: `npm audit` (high severity, prod deps), `npm run quality:verify` (lint check + gitleaks), then tests and JSDoc linting. Pre-push does not run formatting fixes, Sass compilation, or OpenAPI builds.
 
 If you explicitly want Biome unsafe transformations (for example, automatic brace insertion from `useBlockStatements`), run:
 
@@ -106,7 +106,7 @@ The project uses Husky for Git hooks:
 
 | Hook Name  | Action       | Description                          |
 | ---------- | ------------ | ------------------------------------ |
-| pre-commit | npm run precommit | Runs quick checks before commit: format, lint, sass, gitleaks, and OpenAPI build |
+| pre-commit | npm run precommit | Runs staged-file Biome checks/fixes and conditional Sass build, then format, lint, sass, gitleaks, and OpenAPI build |
 | pre-push   | npm run prepush | Runs npm audit, non-mutating quality checks (`quality:verify`), tests, and JSDoc linting before push |
 
 ### CI/CD Pipeline
@@ -114,7 +114,7 @@ The project uses Husky for Git hooks:
 #### Automated Tests (`tests.yml`)
 - **Triggers**: Runs on every push and pull request
 - **Actions**: Linting, JSDoc validation, and unit tests
-- **Node.js version**: 22.8.0
+- **Node.js version**: 24.15.0
 
 #### Deployment Workflow (`deploy.yml`)
 The deployment process consists of two stages:
@@ -173,7 +173,7 @@ Environment variables are substituted during CI/CD deployment.
 ## Technology Stack
 
 ### Core Technologies
-- **Runtime**: Node.js v22.8.0+
+- **Runtime**: Node.js v24.15.0+
 - **Framework**: Express.js v5
 - **Template Engine**: Nunjucks
 - **Search**: OpenSearch (AWS)
