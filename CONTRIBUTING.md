@@ -109,6 +109,10 @@ The project uses Husky for Git hooks:
 | pre-commit | npm run precommit | Runs staged-file Biome checks/fixes and conditional Sass build, then format, lint, sass, gitleaks, and OpenAPI build |
 | pre-push   | npm run prepush | Runs npm audit, non-mutating quality checks (`quality:verify`), tests, and JSDoc linting before push |
 
+Notes for pre-commit:
+- The staged helper aborts when a staged file also has unstaged edits (partial staging).
+- This is intentional to keep staged-only checks deterministic and avoid unstaged changes being pulled into the commit.
+
 ### CI/CD Pipeline
 
 #### Automated Tests (`tests.yml`)
