@@ -28,12 +28,10 @@ function createTestApp(preMiddleware) {
     // Allow tests to inject middleware that runs before auth/rate-limiter
     // (e.g. to simulate a session store setting `req.session.entraUser`)
     if (preMiddleware) {
-        if (Array.isArray(preMiddleware)) {
-            preMiddleware.forEach((m) => {
-                app.use(m);
-            });
-        } else {
-            app.use(preMiddleware);
+        const middleware = Array.isArray(preMiddleware) ? preMiddleware : [preMiddleware];
+
+        for (const m of middleware) {
+            app.use(m);
         }
     }
 
