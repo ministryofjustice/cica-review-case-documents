@@ -63,19 +63,49 @@ Run `npm install` as expected, then run:
 ```
 npx husky init
 ```
-Husky will now use the scripts defined in the `/.husky` folder, which are currently:
+Husky will now use the scripts defined in the `/.husky` folder:
 ```
-pre-commit
-pre-push
+Pre-commit runs `npm run precommit`.
+Pre-push runs `npm run prepush`.
 ```
 
- > pre-commit runs `npm run precommit` in this order: `npm run precommit:staged` (staged-file Biome checks/fixes, conditional Sass build for staged `.scss` changes), then mutating checks via `npm run quality:fix` (format, lint safe auto-fix, Sass build, gitleaks secret scan, and OpenAPI build). pre-push runs `npm run prepush` in this order: `npm audit` (high severity, prod deps), `npm run quality:verify` (lint check + gitleaks), then tests and JSDoc linting. Pre-push does not run formatting fixes, Sass compilation, or OpenAPI builds.
+## Pre-commit
+
+`npm run precommit` runs in this order:
+
+1. `npm run precommit:staged`
+   - Runs staged-file Biome checks/fixes.
+   - Runs a conditional Sass build when staged `.scss` files are present.
+2. `npm run quality:fix`
+   - Runs format.
+   - Runs lint safe auto-fix.
+   - Runs Sass build.
+   - Runs gitleaks secret scan.
+   - Runs OpenAPI build.
 
 If you explicitly want Biome unsafe transformations (for example, automatic brace insertion from `useBlockStatements`), run:
 
 ```bash
 npm run lint:fix:unsafe
 ```
+
+## Pre-push
+
+`npm run prepush` runs in this order:
+
+1. `npm audit --audit-level=high --omit=dev` (high severity, production dependencies)
+2. `npm run quality:verify` (lint check + gitleaks)
+3. `npm run test`
+4. `npm run jsdoc:check`
+
+Pre-push does not run formatting fixes, Sass compilation, or OpenAPI builds.
+
+## Staged Helper Safety Rules
+
+- The staged helper fails fast if any staged path also has unstaged changes (for example, partial staging in the same file).
+- When staged `.scss` changes trigger `npm run sass`, the helper also checks tracked `.scss` files for unstaged edits before compiling.
+- This keeps `public/stylesheets/all.css` deterministic and prevents generated CSS from picking up unstaged SCSS changes.
+- If this happens, stage the full file, or stash/commit unstaged edits, then retry.
 
 Install the `gitleaks` CLI locally so pre-commit secret scanning can run: https://github.com/gitleaks/gitleaks#installing
 The installer for a Ubuntu WSL console is `sudo apt install gitleaks` for example.
@@ -111,6 +141,7 @@ The project uses Husky for Git hooks:
 
 Notes for pre-commit:
 - The staged helper aborts when a staged file also has unstaged edits (partial staging).
+- If staged `.scss` files are present, the helper also aborts when any tracked `.scss` file has unstaged edits.
 - This is intentional to keep staged-only checks deterministic and avoid unstaged changes being pulled into the commit.
 
 ### CI/CD Pipeline
