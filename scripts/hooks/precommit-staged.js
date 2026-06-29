@@ -48,6 +48,18 @@ function getPathsWithUnstagedChanges(paths) {
     return output ? output.split('\0').filter(Boolean) : [];
 }
 
+/**
+ * Get all tracked SCSS file paths.
+ * @returns {string[]}
+ */
+function getTrackedScssFiles() {
+    const output = execFileSync('git', ['ls-files', '-z', '--', '*.scss'], {
+        encoding: 'utf8'
+    });
+
+    return output ? output.split('\0').filter(Boolean) : [];
+}
+
 const stagedFiles = getStagedFiles();
 
 if (stagedFiles.length === 0) {
@@ -85,6 +97,21 @@ if (biomeFiles.length > 0) {
 }
 
 if (hasScssChanges) {
+    const trackedScssFiles = getTrackedScssFiles();
+    const scssPathsWithUnstagedChanges = getPathsWithUnstagedChanges(trackedScssFiles);
+
+    if (scssPathsWithUnstagedChanges.length > 0) {
+        console.error('Pre-commit aborted: tracked SCSS files contain unstaged changes.');
+        console.error('Sass output must be generated from a fully staged SCSS working tree.');
+        console.error('Files:');
+
+        for (const file of scssPathsWithUnstagedChanges) {
+            console.error(`  - ${file}`);
+        }
+
+        process.exit(1);
+    }
+
     run('npm', ['run', 'sass']);
 }
 
