@@ -49,7 +49,9 @@ describe('Image Streaming Handler', () => {
                     crn: 'CASE-2024'
                 },
                 query: { crn: 'CASE-2024' },
-                session: {},
+                session: {
+                    entraUser: { oid: 'entra-oid-123' }
+                },
                 log: { info: () => {}, warn: () => {}, error: () => {} }
             };
 
@@ -97,7 +99,9 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                session: {},
+                session: {
+                    entraUser: { oid: 'entra-oid-123' }
+                },
                 log: { info: () => {}, warn: () => {}, error: () => {} }
             };
 
@@ -140,7 +144,9 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                session: {},
+                session: {
+                    entraUser: { oid: 'entra-oid-123' }
+                },
                 log: { info: () => {}, warn: () => {}, error: () => {} }
             };
 
@@ -184,7 +190,9 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                session: {},
+                session: {
+                    entraUser: { oid: 'entra-oid-123' }
+                },
                 log: { info: () => {}, warn: () => {}, error: () => {} }
             };
 
@@ -219,7 +227,9 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                session: {},
+                session: {
+                    entraUser: { oid: 'entra-oid-123' }
+                },
                 log: { info: () => {}, warn: mock.fn(), error: () => {} }
             };
 
@@ -254,7 +264,7 @@ describe('Image Streaming Handler', () => {
 
             const req = {
                 validatedParams: { documentId: docId, pageNumber, crn },
-                session: {},
+                session: { entraUser: { oid: 'entra-oid-123' } },
                 log: { warn: mock.fn(), info: () => {}, error: () => {} }
             };
 
@@ -297,7 +307,7 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                session: {},
+                session: { entraUser: { oid: 'entra-oid-123' } },
                 log: { warn: mock.fn(), info: () => {}, error: () => {} }
             };
 
@@ -331,7 +341,7 @@ describe('Image Streaming Handler', () => {
 
             const req = {
                 validatedParams: { documentId: docId, pageNumber, crn },
-                session: {},
+                session: { entraUser: { oid: 'entra-oid-123' } },
                 log: { warn: mock.fn(), info: () => {}, error: () => {} }
             };
 
@@ -376,7 +386,7 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                session: {},
+                session: { entraUser: { oid: 'entra-oid-123' } },
                 log: { info: mock.fn(), warn: () => {}, error: () => {} }
             };
 
@@ -417,7 +427,7 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                session: {},
+                session: { entraUser: { oid: 'entra-oid-123' } },
                 log: { info: mock.fn(), warn: () => {}, error: () => {} }
             };
 
@@ -456,7 +466,7 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                session: {},
+                session: { entraUser: { oid: 'entra-oid-123' } },
                 log: { info: mock.fn(), warn: () => {}, error: () => {} }
             };
 
@@ -496,7 +506,7 @@ describe('Image Streaming Handler', () => {
                     pageNumber: 1,
                     crn: 'CASE-2024'
                 },
-                session: {},
+                session: { entraUser: { oid: 'entra-oid-123' } },
                 log: { warn: mock.fn(), info: () => {}, error: () => {} }
             };
 
@@ -540,7 +550,7 @@ describe('Image Streaming Handler', () => {
                     pageNumber: pageNumber,
                     crn: 'CASE-2024'
                 },
-                session: {},
+                session: { entraUser: { oid: 'entra-oid-123' } },
                 log: { warn: mock.fn(), info: () => {}, error: () => {} }
             };
 
@@ -577,7 +587,7 @@ describe('Image Streaming Handler', () => {
                 get validatedParams() {
                     throw new Error('Unexpected error accessing validatedParams');
                 },
-                session: {},
+                session: { entraUser: { oid: 'entra-oid-123' } },
                 log: { error: mock.fn(), warn: () => {}, info: () => {} }
             };
 
@@ -638,7 +648,7 @@ describe('Image Streaming Handler', () => {
 
             const req = {
                 validatedParams: { documentId: docId, pageNumber, crn },
-                session: {},
+                session: { entraUser: { oid: 'entra-oid-123' } },
                 log: { warn: () => {}, info: () => {}, error: () => {} }
             };
 

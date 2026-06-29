@@ -21,19 +21,16 @@ describe('createApiJwtToken', () => {
         assert.equal(payload.aud, 'test-api');
     });
 
-    it('falls back to app-ui when oid is missing', () => {
+    it('throws when oid is missing', () => {
         process.env.APP_JWT_SECRET = 'test-secret';
         process.env.APP_API_JWT_EXPIRES_IN = '60s';
         process.env.APP_API_JWT_ISSUER = 'test-ui';
         process.env.APP_API_JWT_AUDIENCE = 'test-api';
 
-        const token = createApiJwtToken();
-        const payload = jwt.verify(token, process.env.APP_JWT_SECRET, {
-            issuer: 'test-ui',
-            audience: 'test-api'
-        });
-
-        assert.equal(payload.id, 'app-ui');
+        assert.throws(
+            () => createApiJwtToken(),
+            /An Entra oid is required to create an API JWT token/
+        );
     });
 
     it('throws if APP_JWT_SECRET is not set', () => {

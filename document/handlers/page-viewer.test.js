@@ -219,7 +219,8 @@ describe('Page Viewer Handler', () => {
                 },
                 session: {
                     caseSelected: 'CASE-2024-001',
-                    username: 'viewer@example.com'
+                    username: 'viewer@example.com',
+                    entraUser: { oid: 'entra-oid-123' }
                 },
                 log: { info: () => {}, error: () => {}, warn: () => {} }
             };
@@ -296,7 +297,8 @@ describe('Page Viewer Handler', () => {
                 session: {
                     featureFlags: {
                         align: false
-                    }
+                    },
+                    entraUser: { oid: 'entra-oid-123' }
                 },
                 log: { info: () => {}, error: () => {}, warn: () => {} }
             };
@@ -340,7 +342,9 @@ describe('Page Viewer Handler', () => {
                 },
                 query: {}, // Empty query params - should use defaults
                 cookies: {},
-                session: {}
+                session: {
+                    entraUser: { oid: 'entra-oid-123' }
+                }
             };
 
             let responseSent = false;
@@ -389,7 +393,9 @@ describe('Page Viewer Handler', () => {
                 },
                 query: {},
                 cookies: {},
-                session: {},
+                session: {
+                    entraUser: { oid: 'entra-oid-123' }
+                },
                 log: { error: () => {} }
             };
 

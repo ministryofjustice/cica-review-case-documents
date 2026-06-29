@@ -55,7 +55,10 @@ describe('Search Routes', () => {
             req.session = {
                 caseSelected: true,
                 caseReferenceNumber: '12345',
-                username: 'search.user@example.com'
+                username: 'search.user@example.com',
+                entraUser: {
+                    oid: 'entra-oid-123'
+                }
             };
             req.log = { info: () => {}, error: () => {} };
             res.locals.csrfToken = 'test-csrf-token';
@@ -121,6 +124,9 @@ describe('Search Routes', () => {
                     caseSelected: true,
                     caseReferenceNumber: '12345',
                     username: 'search.user@example.com',
+                    entraUser: {
+                        oid: 'entra-oid-123'
+                    },
                     featureFlags: {
                         type: 'semantic'
                     }
@@ -172,6 +178,9 @@ describe('Search Routes', () => {
                     caseSelected: true,
                     caseReferenceNumber: '12345',
                     username: 'search.user@example.com',
+                    entraUser: {
+                        oid: 'entra-oid-123'
+                    },
                     featureFlags: {
                         type: 'hybrid'
                     }
@@ -250,6 +259,9 @@ describe('Search Routes', () => {
                     caseSelected: true,
                     caseReferenceNumber: '12345',
                     username: 'search.user@example.com',
+                    entraUser: {
+                        oid: 'entra-oid-123'
+                    },
                     featureFlags: {
                         type: 'old-value'
                     }
@@ -318,7 +330,10 @@ describe('Search Routes', () => {
             testApp.use((req, res, next) => {
                 req.session = {
                     caseSelected: true,
-                    caseReferenceNumber: '12345'
+                    caseReferenceNumber: '12345',
+                    entraUser: {
+                        oid: 'entra-oid-123'
+                    }
                 };
                 req.log = { info: () => {}, error: () => {} };
                 res.locals.csrfToken = 'test-csrf-token';
@@ -348,7 +363,10 @@ describe('Search Routes', () => {
             testApp.use((req, res, next) => {
                 req.session = {
                     caseSelected: true,
-                    caseReferenceNumber: '12345'
+                    caseReferenceNumber: '12345',
+                    entraUser: {
+                        oid: 'entra-oid-123'
+                    }
                 };
                 req.log = { info: () => {}, error: () => {} };
                 res.locals.csrfToken = 'test-csrf-token';
@@ -378,7 +396,10 @@ describe('Search Routes', () => {
             testApp.use((req, res, next) => {
                 req.session = {
                     caseSelected: true,
-                    caseReferenceNumber: '12345'
+                    caseReferenceNumber: '12345',
+                    entraUser: {
+                        oid: 'entra-oid-123'
+                    }
                 };
                 req.log = { info: () => {}, error: () => {} };
                 res.locals.csrfToken = 'test-csrf-token';
@@ -413,7 +434,10 @@ describe('Search Routes', () => {
             testApp.use((req, res, next) => {
                 req.session = {
                     caseSelected: true,
-                    caseReferenceNumber: '12345'
+                    caseReferenceNumber: '12345',
+                    entraUser: {
+                        oid: 'entra-oid-123'
+                    }
                 };
                 req.log = { info: () => {}, error: () => {} };
                 res.locals.csrfToken = 'test-csrf-token';
@@ -461,7 +485,10 @@ describe('Search Routes', () => {
             testApp.use((req, res, next) => {
                 req.session = {
                     caseSelected: true,
-                    caseReferenceNumber: '12345'
+                    caseReferenceNumber: '12345',
+                    entraUser: {
+                        oid: 'entra-oid-123'
+                    }
                 };
                 req.log = { info: () => {}, error: () => {} };
                 res.locals.csrfToken = 'test-csrf-token';
@@ -519,7 +546,10 @@ describe('Search Routes', () => {
                 req.session = {
                     caseSelected: true,
                     caseReferenceNumber: '12345',
-                    username: 'search.user@example.com'
+                    username: 'search.user@example.com',
+                    entraUser: {
+                        oid: 'entra-oid-123'
+                    }
                 };
                 req.log = { info: () => {}, error: () => {} };
                 res.locals.csrfToken = 'test-csrf-token';
@@ -578,7 +608,10 @@ describe('Search Routes', () => {
                 req.session = {
                     caseSelected: true,
                     caseReferenceNumber: '12345',
-                    username: 'search.user@example.com'
+                    username: 'search.user@example.com',
+                    entraUser: {
+                        oid: 'entra-oid-123'
+                    }
                 };
                 req.log = { info: () => {}, error: () => {} };
                 res.locals.csrfToken = 'test-csrf-token';

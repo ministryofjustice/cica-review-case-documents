@@ -43,8 +43,7 @@ describe('Text Viewer Handler', () => {
                 crn: '26-745678'
             },
             query: {},
-            session: { caseSelected: true },
-            cookies: { jwtToken: 'test-jwt' },
+            session: { caseSelected: true, entraUser: { oid: 'entra-oid-123' } },
             log: {
                 error: () => {
                     errorLogged = true;
@@ -120,7 +119,7 @@ describe('Text Viewer Handler', () => {
                 crn: '26-745678'
             },
             query: {},
-            session: { caseSelected: true },
+            session: { caseSelected: true, entraUser: { oid: 'entra-oid-123' } },
             cookies: { jwtToken: 'test-jwt' },
             log: { error: () => {} }
         };
@@ -179,7 +178,7 @@ describe('Text Viewer Handler', () => {
                 crn: '26-745678'
             },
             query: {},
-            session: { caseSelected: true },
+            session: { caseSelected: true, entraUser: { oid: 'entra-oid-123' } },
             cookies: { jwtToken: 'test-jwt' },
             log: { error: () => {} }
         };
@@ -263,8 +262,7 @@ describe('Text Viewer Handler', () => {
             query: {
                 searchTerm: '12/12/1995'
             },
-            session: { caseSelected: true },
-            cookies: { jwtToken: 'test-jwt' },
+            session: { caseSelected: true, entraUser: { oid: 'entra-oid-123' } },
             log: { error: () => {} }
         };
 
@@ -298,7 +296,7 @@ describe('Text Viewer Handler', () => {
         assert.ok(header);
         assert.ok(payload);
         assert.deepEqual(JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')), {
-            id: 'app-ui',
+            id: 'entra-oid-123',
             iat: JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')).iat,
             exp: JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')).exp,
             aud: getApiJwtAudience(),
@@ -351,7 +349,7 @@ describe('Text Viewer Handler', () => {
             query: {
                 searchTerm: '  gabapentin  '
             },
-            session: { caseSelected: true },
+            session: { caseSelected: true, entraUser: { oid: 'entra-oid-123' } },
             cookies: { jwtToken: 'test-jwt' },
             log: {
                 error: (context, message) => {
@@ -509,7 +507,7 @@ describe('Text Viewer Handler', () => {
                 crn: '26-745678'
             },
             query: {},
-            session: { caseSelected: true },
+            session: { caseSelected: true, entraUser: { oid: 'entra-oid-123' } },
             cookies: { jwtToken: 'test-jwt' },
             log: {
                 error: (context, message) => {
