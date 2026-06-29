@@ -58,6 +58,7 @@ Middleware Placement:
 
 - Placed AFTER JWT authentication (validates token signature before rate limiting)
 - Lightweight auth check to avoid CodeQL auth-before-ratelimit warnings
+- Exception: `/api/docs` and `/api/openapi.json` apply the same dynamic API limiter before docs authentication, using the unauthenticated IP-based bucket until the docs auth middleware establishes identity
 
 Environment Variables:
 
@@ -254,6 +255,8 @@ For Entra-specific endpoints, the message is slightly different:
   "error": "Too many authentication requests, please try again later"
 }
 ```
+
+Docs routes also return `401 Unauthorized` when accessed without passing the docs auth middleware in non-production environments.
 
 ## Summary Table
 

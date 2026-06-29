@@ -5,10 +5,10 @@ import Ajv from 'ajv';
 import ajvErrors from 'ajv-errors';
 import express from 'express';
 import pinoHttp from 'pino-http';
+import createDocsRouter from './docs/createDocsRouter.js';
 import createApiRouter from './document/routes.js';
 import errorHandler from './middleware/errorHandler/index.js';
 import authenticateJWTToken from './middleware/jwt-authentication/index.js';
-import createDocsRouter from './middleware/openapi/index.js';
 import createDynamicRateLimiter from './middleware/rateLimiter/index.js';
 import createOpenApiValidatorMiddleware from './middleware/validator/index.js';
 import createSearchService from './search/search-service.js';
@@ -23,7 +23,7 @@ const __dirname = path.dirname(__filename);
  * @param {Function} [options.createSearchService] - A factory function to create the search service.
  * @param {Function} [options.readOpenApiFile] - Optional file reader for loading OpenAPI spec (used by tests).
  * @param {import('express').RequestHandler} [options.docsAuthMiddleware] - Auth middleware for docs protection.
- *        Required when DEPLOY_ENV !== 'production' (docs routes are only mounted in non-production).
+ *        Defaults to a deny-all handler when DEPLOY_ENV !== 'production'.
  * @returns {Promise<import('express').Application>} A promise that resolves to the configured Express app.
  */
 export default async function createApi(options = {}) {
@@ -43,16 +43,18 @@ export default async function createApi(options = {}) {
     app.use(express.urlencoded({ extended: true }));
 
     if (process.env.DEPLOY_ENV !== 'production') {
-        if (!options.docsAuthMiddleware) {
-            throw new Error('createDocsRouter requires options.docsAuthMiddleware to be provided');
-        }
+        const docsAuthMiddleware =
+            options.docsAuthMiddleware ??
+            ((req, res) => {
+                res.status(401).json({ error: 'Unauthorized' });
+            });
 
         // Provide the rate limiter factory to the docs router so it can create
         // its own limiter during initialization. Create a separate limiter
         // instance for the /openapi.json route here.
         const docsRouter = await createDocsRouter({
             readOpenApiFile: options.readOpenApiFile,
-            docsAuthMiddleware: options.docsAuthMiddleware,
+            docsAuthMiddleware,
             docsRateLimiter: createDynamicRateLimiter
         });
 
@@ -60,7 +62,7 @@ export default async function createApi(options = {}) {
 
         // Also serve the spec at root for standard location using a fresh limiter
         const openApiLimiter = createDynamicRateLimiter();
-        app.use('/openapi.json', openApiLimiter, options.docsAuthMiddleware, async (req, res) => {
+        app.use('/openapi.json', openApiLimiter, docsAuthMiddleware, async (req, res) => {
             const readOpenApiFile = options.readOpenApiFile || readFile;
             try {
                 const openApiPath = path.resolve(__dirname, 'openapi/openapi-dist.json');

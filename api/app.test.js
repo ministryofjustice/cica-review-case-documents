@@ -225,20 +225,20 @@ describe('API Application', () => {
             assert.strictEqual(res.statusCode, 200);
         });
 
-        test('throws error if docsAuthMiddleware is not provided in non-production', async () => {
+        test('defaults docs auth to deny-all when docsAuthMiddleware is not provided', async () => {
             process.env.DEPLOY_ENV = 'development';
             process.env.APP_LOG_LEVEL = 'silent';
             process.env.APP_JWT_SECRET = 'test-secret';
 
-            try {
-                await createTestApi({ docsAuthMiddleware: undefined });
-                assert.fail('Should have thrown an error');
-            } catch (err) {
-                assert.strictEqual(
-                    err.message,
-                    'createDocsRouter requires options.docsAuthMiddleware to be provided'
-                );
-            }
+            const appWithoutDocsAuth = await createTestApi({ docsAuthMiddleware: null });
+
+            const docsResponse = await request(appWithoutDocsAuth).get('/docs/');
+            const specResponse = await request(appWithoutDocsAuth).get('/openapi.json');
+
+            assert.strictEqual(docsResponse.statusCode, 401);
+            assert.deepStrictEqual(docsResponse.body, { error: 'Unauthorized' });
+            assert.strictEqual(specResponse.statusCode, 401);
+            assert.deepStrictEqual(specResponse.body, { error: 'Unauthorized' });
         });
 
         test('does NOT include Swagger UI middleware in production environment', async () => {
