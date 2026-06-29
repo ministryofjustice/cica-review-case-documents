@@ -1,7 +1,7 @@
 # If making any changes to this file, please ensure you test building and running 
 # kube deployment local
 # see deployment/local/README.md for instructions
-FROM node:26.3.1-trixie-slim@sha256:f9b8bd6c62fcd007c08ce2bb2907485b624b968fd76094445822e0ec14002cf0
+FROM node:26.4.0-trixie-slim@sha256:a1d9d671994fc2d26e297ac56b4b1522a8bc7fa71c43b14cd1b1fe6c5116f7dc
 
 WORKDIR /usr/src/app
 
