@@ -21,6 +21,23 @@ describe('createApiJwtToken', () => {
         assert.equal(payload.aud, 'test-api');
     });
 
+    it('creates a signed token with whitespace trimmed provided oid as id', () => {
+        process.env.APP_JWT_SECRET = 'test-secret';
+        process.env.APP_API_JWT_EXPIRES_IN = '60s';
+        process.env.APP_API_JWT_ISSUER = 'test-ui';
+        process.env.APP_API_JWT_AUDIENCE = 'test-api';
+
+        const token = createApiJwtToken('entra-oid-123 ');
+        const payload = jwt.verify(token, process.env.APP_JWT_SECRET, {
+            issuer: 'test-ui',
+            audience: 'test-api'
+        });
+
+        assert.equal(payload.id, 'entra-oid-123');
+        assert.equal(payload.iss, 'test-ui');
+        assert.equal(payload.aud, 'test-api');
+    });
+
     it('throws when oid is missing', () => {
         process.env.APP_JWT_SECRET = 'test-secret';
         process.env.APP_API_JWT_EXPIRES_IN = '60s';
@@ -29,6 +46,18 @@ describe('createApiJwtToken', () => {
 
         assert.throws(
             () => createApiJwtToken(),
+            /An Entra oid is required to create an API JWT token/
+        );
+    });
+
+    it('throws when oid is whitespace', () => {
+        process.env.APP_JWT_SECRET = 'test-secret';
+        process.env.APP_API_JWT_EXPIRES_IN = '60s';
+        process.env.APP_API_JWT_ISSUER = 'test-ui';
+        process.env.APP_API_JWT_AUDIENCE = 'test-api';
+
+        assert.throws(
+            () => createApiJwtToken(' '),
             /An Entra oid is required to create an API JWT token/
         );
     });

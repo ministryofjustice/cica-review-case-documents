@@ -12,12 +12,9 @@ export default function createApiJwtToken(id) {
         throw new Error('APP_JWT_SECRET environment variable is not set');
     }
 
-    if (typeof id !== 'string') {
-        throw new Error('An Entra oid is required to create an API JWT token');
-    }
-    const normalisedId = id.trim();
+    const normalisedId = typeof id === 'string' ? id.trim() : id;
 
-    if (normalisedId === '') {
+    if (normalisedId == null || normalisedId === '') {
         throw new Error('An Entra oid is required to create an API JWT token');
     }
     const payload = { id: normalisedId };

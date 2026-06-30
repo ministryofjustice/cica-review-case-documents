@@ -5,6 +5,8 @@ import authenticateToken from './index.js';
 
 const SECRET = 'test-secret';
 
+const TEST_GUID = '123e4567-e89b-12d3-a456-426614174000'; // Example GUID for testing
+
 beforeEach(() => {
     process.env.APP_JWT_SECRET = SECRET;
     process.env.APP_API_JWT_ISSUER = 'test-ui';
@@ -65,8 +67,8 @@ function createMockRes() {
     };
 }
 
-test('authenticateToken attaches user for valid token in header', async () => {
-    const payload = { id: 1, name: 'Test' };
+test('authenticateToken succeeds and attaches payload parameters for valid token in header', async () => {
+    const payload = { id: TEST_GUID, name: 'Test' };
     const token = jwt.sign(payload, SECRET, {
         issuer: process.env.APP_API_JWT_ISSUER,
         audience: process.env.APP_API_JWT_AUDIENCE,
@@ -82,6 +84,26 @@ test('authenticateToken attaches user for valid token in header', async () => {
 
     assert.equal(req.decodedToken.id, payload.id);
     assert.equal(req.decodedToken.name, payload.name);
+    assert.ok(calledNext);
+});
+
+test('authenticateToken succeeds when token has whitespace suffix', async () => {
+    const id_with_whitespace = `${TEST_GUID} `;
+    const payload = { id: id_with_whitespace };
+    const token = jwt.sign(payload, SECRET, {
+        issuer: process.env.APP_API_JWT_ISSUER,
+        audience: process.env.APP_API_JWT_AUDIENCE,
+        algorithm: 'HS256'
+    });
+    const req = createMockReq({ token });
+    const res = createMockRes();
+    let calledNext = false;
+
+    await authenticateToken(req, res, () => {
+        calledNext = true;
+    });
+
+    assert.equal(req.decodedToken.id, id_with_whitespace.trim());
     assert.ok(calledNext);
 });
 
@@ -108,7 +130,7 @@ test('authenticateToken returns 403 if token is invalid', async () => {
 });
 
 test('authenticateToken returns 403 if token issuer is invalid', async () => {
-    const token = jwt.sign({ id: 1 }, SECRET, {
+    const token = jwt.sign({ id: TEST_GUID }, SECRET, {
         issuer: 'wrong-issuer',
         audience: process.env.APP_API_JWT_AUDIENCE,
         algorithm: 'HS256'
@@ -124,7 +146,7 @@ test('authenticateToken returns 403 if token issuer is invalid', async () => {
 });
 
 test('authenticateToken returns 403 if token audience is invalid', async () => {
-    const token = jwt.sign({ id: 1 }, SECRET, {
+    const token = jwt.sign({ id: TEST_GUID }, SECRET, {
         issuer: process.env.APP_API_JWT_ISSUER,
         audience: 'wrong-audience',
         algorithm: 'HS256'
@@ -140,7 +162,7 @@ test('authenticateToken returns 403 if token audience is invalid', async () => {
 });
 
 test('authenticateToken returns 500 when auth configuration is invalid', async () => {
-    const token = jwt.sign({ id: 1 }, SECRET, {
+    const token = jwt.sign({ id: TEST_GUID }, SECRET, {
         issuer: process.env.APP_API_JWT_ISSUER,
         audience: process.env.APP_API_JWT_AUDIENCE,
         algorithm: 'HS256'
@@ -184,8 +206,31 @@ test('authenticateToken returns 403 when token has no usable identity claims', a
     assert.equal(calledNext, false);
 });
 
+test('authenticateToken returns 403 when token has whitespace only identity claims', async () => {
+    const token = jwt.sign({ id: '   ' }, SECRET, {
+        issuer: process.env.APP_API_JWT_ISSUER,
+        audience: process.env.APP_API_JWT_AUDIENCE,
+        algorithm: 'HS256'
+    });
+    const req = createMockReq({ token });
+    const res = createMockRes();
+    let calledNext = false;
+
+    await authenticateToken(req, res, () => {
+        calledNext = true;
+    });
+
+    assert.equal(res.statusCode, 403);
+    assert.ok(res.jsonBody);
+    assert.equal(
+        res.jsonBody.errors[0].detail,
+        'Authentication token is missing required identity claims'
+    );
+    assert.equal(calledNext, false);
+});
+
 test('authenticateToken uses fast-path when apiJwtVerified flag and decodedToken already set', async () => {
-    const payload = { id: 1, name: 'Test' };
+    const payload = { id: TEST_GUID, name: 'Test' };
     const token = jwt.sign(payload, SECRET, {
         issuer: process.env.APP_API_JWT_ISSUER,
         audience: process.env.APP_API_JWT_AUDIENCE,
@@ -210,7 +255,7 @@ test('authenticateToken uses fast-path when apiJwtVerified flag and decodedToken
 });
 
 test('authenticateToken sets apiJwtVerified flag after successful verification', async () => {
-    const payload = { id: 1, name: 'Test' };
+    const payload = { id: TEST_GUID, name: 'Test' };
     const token = jwt.sign(payload, SECRET, {
         issuer: process.env.APP_API_JWT_ISSUER,
         audience: process.env.APP_API_JWT_AUDIENCE,
