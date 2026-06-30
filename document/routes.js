@@ -6,6 +6,7 @@ import { createTextViewerHandler } from './handlers/text-viewer.js';
 import createPageChunksService from './services/document-chunks-service.js';
 import createDocumentMetadataService from './services/document-metadata-service.js';
 import { createS3Client } from './services/s3-service.js';
+import createSavedSearchStoreDefault from '../search/saved-search-store.js';
 
 /**
  * Creates an Express router for handling document viewing functionality.
@@ -13,6 +14,7 @@ import { createS3Client } from './services/s3-service.js';
  * @param {Object} [options] - Optional configuration object.
  * @param {Function} [options.createDocumentMetadataService] - Factory function to create the document metadata service (for testing).
  * @param {Function} [options.createPageChunksService] - Factory function to create the page chunks service (for testing).
+ * @param {Function} [options.createSavedSearchStore] - Factory function to create saved-search store (for testing).
  * @returns {express.Router} The configured Express router for document routes.
  *
  * @route GET /document/:documentId/page/:pageNumber - Image streaming endpoint
@@ -22,9 +24,27 @@ import { createS3Client } from './services/s3-service.js';
 function createDocumentRouter(options = {}) {
     const {
         createDocumentMetadataService: createMetadataServiceFactory = createDocumentMetadataService,
-        createPageChunksService: createPageChunksServiceFactory = createPageChunksService
+        createPageChunksService: createPageChunksServiceFactory = createPageChunksService,
+        createSavedSearchStore: createSavedSearchStore = createSavedSearchStoreDefault
     } = options;
     const router = express.Router();
+    let savedSearchStore = null;
+
+    if (typeof createSavedSearchStore === 'function') {
+        try {
+            savedSearchStore = createSavedSearchStore();
+        } catch {
+            // Keep legacy searchTerm flow when persistence is not configured.
+            savedSearchStore = null;
+        }
+    }
+
+    const findSavedSearchById = async (searchId) => {
+        if (!savedSearchStore?.getById) {
+            return null;
+        }
+        return savedSearchStore.getById(searchId);
+    };
 
     // Create S3 client
     const s3Client = createS3Client();
@@ -42,7 +62,9 @@ function createDocumentRouter(options = {}) {
     router.get(
         '/:documentId/view/page/:pageNumber',
         validateDocumentParams(),
-        createPageViewerHandler(createMetadataServiceFactory, createPageChunksServiceFactory)
+        createPageViewerHandler(createMetadataServiceFactory, createPageChunksServiceFactory, undefined, {
+            findSavedSearchById
+        })
     );
 
     // TEXT VIEWER ENDPOINT
@@ -50,7 +72,9 @@ function createDocumentRouter(options = {}) {
     router.get(
         '/:documentId/view/text/page/:pageNumber',
         validateDocumentParams(),
-        createTextViewerHandler(createMetadataServiceFactory, createPageChunksServiceFactory)
+        createTextViewerHandler(createMetadataServiceFactory, createPageChunksServiceFactory, undefined, {
+            findSavedSearchById
+        })
     );
 
     return router;

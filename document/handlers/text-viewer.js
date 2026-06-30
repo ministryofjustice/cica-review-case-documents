@@ -18,13 +18,17 @@ import { paginationDataFromMetadata } from '../utils/pagination/index.js';
  * @param {Function} createMetadataServiceFactory -  Factory that returns a metadata service, that throws an error on invalid or malformed data.
  * @param {Function} createPageChunksServiceFactory - Factory that returns a page chunks service used for text highlights.
  * @param {Function} [createTemplateEngineServiceFactory=createTemplateEngineService] - Factory that returns a template engine service with a render method
+ * @param {object} [options] - Optional dependencies.
+ * @param {(searchId: string) => Promise<object|null>} [options.findSavedSearchById] - Optional lookup for saved searches by opaque ID.
  * @returns {Function} Express route handler
  */
 export function createTextViewerHandler(
     createMetadataServiceFactory,
     createPageChunksServiceFactory,
-    createTemplateEngineServiceFactory = createTemplateEngineService
+    createTemplateEngineServiceFactory = createTemplateEngineService,
+    options = {}
 ) {
+    const { findSavedSearchById } = options;
     return async (req, res, next) => {
         try {
             const templateEngineService = createTemplateEngineServiceFactory();
@@ -32,10 +36,21 @@ export function createTextViewerHandler(
 
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
-            const { searchTerm = '' } = req.query;
+            const { searchTerm = '', searchId = '' } = req.query;
             const searchType = getFeatureFlagValue(req.session, 'type');
             const apiJwtToken = createApiJwtToken(req.session?.username);
             const debugQueryDslOverrides = res.locals.debugQueryDslOverrides || {};
+            let resolvedSearchTerm = typeof searchTerm === 'string' ? searchTerm : '';
+
+            if (typeof searchId === 'string' && searchId !== '' && typeof findSavedSearchById === 'function') {
+                const savedSearch = await findSavedSearchById(searchId);
+                if (
+                    savedSearch?.query &&
+                    savedSearch.caseReferenceNumber === req.session?.caseReferenceNumber
+                ) {
+                    resolvedSearchTerm = savedSearch.query;
+                }
+            }
 
             // Fetch document page metadata from OpenSearch via API
             let pageMetadata;
@@ -71,16 +86,18 @@ export function createTextViewerHandler(
                 documentId,
                 pageNumber,
                 crn,
-                searchTerm,
+                resolvedSearchTerm,
                 searchType,
-                req.session
+                req.session,
+                searchId
             );
 
             const { text } = pageMetadata;
 
             const pageText = text || 'No text content available for this page.'; // TODO: confirm with content team whether this is the desired fallback text when no OCR text is available
 
-            const safeSearchTerm = typeof searchTerm === 'string' ? searchTerm.trim() : '';
+            const safeSearchTerm =
+                typeof resolvedSearchTerm === 'string' ? resolvedSearchTerm.trim() : '';
             let pageChunks = [];
 
             if (safeSearchTerm !== '') {

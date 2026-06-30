@@ -18,13 +18,17 @@ import { paginationDataFromMetadata } from '../utils/pagination/index.js';
  * @param {Function} createMetadataServiceFactory - Factory function to create metadata service
  * @param {Function} createPageChunksServiceFactory - Factory function to create document page chunks service
  * @param {Function} [createTemplateEngineServiceFactory=createTemplateEngineService] - Factory that returns a template engine service with a render method
+ * @param {object} [options] - Optional dependencies.
+ * @param {(searchId: string) => Promise<object|null>} [options.findSavedSearchById] - Optional lookup for saved searches by opaque ID.
  * @returns {Function} Express route handler
  */
 export function createPageViewerHandler(
     createMetadataServiceFactory,
     createPageChunksServiceFactory,
-    createTemplateEngineServiceFactory = createTemplateEngineService
+    createTemplateEngineServiceFactory = createTemplateEngineService,
+    options = {}
 ) {
+    const { findSavedSearchById } = options;
     return async (req, res, next) => {
         try {
             const templateEngineService = createTemplateEngineServiceFactory();
@@ -32,12 +36,23 @@ export function createPageViewerHandler(
 
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
-            const { searchTerm = '' } = req.query;
+            const { searchTerm = '', searchId = '' } = req.query;
             const searchType = getFeatureFlagValue(req.session, 'type');
             const alignFlag = getFeatureFlagValue(req.session, 'align');
             const userName = req.session?.username;
             const apiJwtToken = createApiJwtToken(userName);
             const debugQueryDslOverrides = res.locals.debugQueryDslOverrides || {};
+            let resolvedSearchTerm = typeof searchTerm === 'string' ? searchTerm : '';
+
+            if (typeof searchId === 'string' && searchId !== '' && typeof findSavedSearchById === 'function') {
+                const savedSearch = await findSavedSearchById(searchId);
+                if (
+                    savedSearch?.query &&
+                    savedSearch.caseReferenceNumber === req.session?.caseReferenceNumber
+                ) {
+                    resolvedSearchTerm = savedSearch.query;
+                }
+            }
 
             // Fetch document page metadata from API (which queries OpenSearch)
             let pageMetadata;
@@ -72,9 +87,10 @@ export function createPageViewerHandler(
                 documentId,
                 pageNumber,
                 crn,
-                searchTerm,
+                resolvedSearchTerm,
                 searchType,
-                req.session
+                req.session,
+                searchId
             );
 
             const pageTitle = formatPageTitle(pageMetadata.correspondence_type);
@@ -86,7 +102,7 @@ export function createPageViewerHandler(
                     documentId,
                     pageNumber,
                     crn,
-                    searchTerm,
+                    searchTerm: resolvedSearchTerm,
                     searchType,
                     jwtToken: apiJwtToken,
                     queryDslConfig: debugQueryDslOverrides,
@@ -96,7 +112,7 @@ export function createPageViewerHandler(
             } catch (error) {
                 // Chunks are core functionality - capture error to display to user
                 req.log?.error(
-                    { error: error.message, documentId, pageNumber, searchTerm },
+                    { error: error.message, documentId, pageNumber, searchTerm: resolvedSearchTerm },
                     'Failed to retrieve document page chunks'
                 );
                 return next(error);
@@ -124,7 +140,7 @@ export function createPageViewerHandler(
                     opensearch: {
                         ...(debugInfo.search?.opensearch || {}),
                         index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME || 'unknown',
-                        preference: buildSearchSessionPreference(String(searchTerm))
+                        preference: buildSearchSessionPreference(String(resolvedSearchTerm))
                     }
                 };
             });

@@ -37,6 +37,7 @@ export function buildImageUrl(
  * @param {string} [searchTerm=''] - The search term
  * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - The active search type value
  * @param {Object} [session={}] - The session object
+ * @param {string} [searchId=''] - Optional opaque saved-search identifier
  * @returns {string} The text view URL
  */
 export function buildTextPageLink(
@@ -45,9 +46,13 @@ export function buildTextPageLink(
     crn,
     searchTerm = '',
     searchType = DEFAULT_SEARCH_TYPE,
-    session = {}
+    session = {},
+    searchId = ''
 ) {
-    const base = `/document/${documentId}/view/text/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
+    const searchContext = searchId
+        ? `searchId=${encodeURIComponent(searchId)}`
+        : `searchTerm=${encodeURIComponent(searchTerm)}`;
+    const base = `/document/${documentId}/view/text/page/${pageNumber}?crn=${encodeURIComponent(crn)}&${searchContext}`;
     return `${base}&type=${encodeURIComponent(resolveSearchType(searchType, session))}`;
 }
 
@@ -60,6 +65,7 @@ export function buildTextPageLink(
  * @param {string} [searchTerm=''] - The search term
  * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - The active search type value
  * @param {Object} [session={}] - The session object
+ * @param {string} [searchId=''] - Optional opaque saved-search identifier
  * @returns {string} The image view URL
  */
 export function buildImagePageLink(
@@ -68,8 +74,12 @@ export function buildImagePageLink(
     crn,
     searchTerm = '',
     searchType = DEFAULT_SEARCH_TYPE,
-    session = {}
+    session = {},
+    searchId = ''
 ) {
-    const base = `/document/${documentId}/view/page/${pageNumber}?crn=${encodeURIComponent(crn)}&searchTerm=${encodeURIComponent(searchTerm)}`;
+    const searchContext = searchId
+        ? `searchId=${encodeURIComponent(searchId)}`
+        : `searchTerm=${encodeURIComponent(searchTerm)}`;
+    const base = `/document/${documentId}/view/page/${pageNumber}?crn=${encodeURIComponent(crn)}&${searchContext}`;
     return `${base}&type=${encodeURIComponent(resolveSearchType(searchType, session))}`;
 }
