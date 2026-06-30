@@ -6,7 +6,7 @@
  *   - API_RATE_LIMIT_MAX_AUTH: Max requests for authenticated users/requests (default: 1000)
  *   - API_RATE_LIMIT_MAX_UNAUTH: Max requests for unauthenticated users/requests (default: 50)
  *   - API_RATE_LIMIT_WINDOW_MS: Time window in milliseconds (default: 15 minutes)
- * - Uses entra oid as the key for authenticated users, IP address otherwise.
+ * - Uses `req.decodedToken.id` (OID GUID) or `req.session.entraUser.oid` as the key for authenticated requests, IP address otherwise.
  * - Rate limiting is enforced in all environments.
  * - Responds with HTTP 429 and a JSON error message when the limit is exceeded.
  *
