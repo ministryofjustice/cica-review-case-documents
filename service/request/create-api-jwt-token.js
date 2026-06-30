@@ -12,11 +12,15 @@ export default function createApiJwtToken(id) {
         throw new Error('APP_JWT_SECRET environment variable is not set');
     }
 
-    if (typeof id !== 'string' || id.trim() === '') {
+    if (typeof id !== 'string') {
         throw new Error('An Entra oid is required to create an API JWT token');
     }
+    const normalisedId = id.trim();
 
-    const payload = { id };
+    if (normalisedId === '') {
+        throw new Error('An Entra oid is required to create an API JWT token');
+    }
+    const payload = { id: normalisedId };
 
     return jwt.sign(payload, process.env.APP_JWT_SECRET, {
         expiresIn: process.env.APP_API_JWT_EXPIRES_IN || '60s',
