@@ -17,9 +17,21 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    process.env.APP_RATE_LIMIT_MAX_AUTH = originalAuthLimit;
-    process.env.APP_RATE_LIMIT_MAX_UNAUTH = originalUnauthLimit;
-    process.env.APP_RATE_LIMIT_WINDOW_MS = originalWindowMs;
+    if (originalAuthLimit === undefined) {
+        delete process.env.APP_RATE_LIMIT_MAX_AUTH;
+    } else {
+        process.env.APP_RATE_LIMIT_MAX_AUTH = originalAuthLimit;
+    }
+    if (originalUnauthLimit === undefined) {
+        delete process.env.APP_RATE_LIMIT_MAX_UNAUTH;
+    } else {
+        process.env.APP_RATE_LIMIT_MAX_UNAUTH = originalUnauthLimit;
+    }
+    if (originalWindowMs === undefined) {
+        delete process.env.APP_RATE_LIMIT_WINDOW_MS;
+    } else {
+        process.env.APP_RATE_LIMIT_WINDOW_MS = originalWindowMs;
+    }
 });
 
 /**

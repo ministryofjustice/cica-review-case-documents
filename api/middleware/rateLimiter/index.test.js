@@ -72,16 +72,20 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    process.env.NODE_ENV = originalEnv;
-    if (originalAuthLimit !== undefined) {
-        process.env.API_RATE_LIMIT_MAX_AUTH = originalAuthLimit;
+    if (originalEnv === undefined) {
+        delete process.env.NODE_ENV;
     } else {
-        delete process.env.API_RATE_LIMIT_MAX_AUTH;
+        process.env.NODE_ENV = originalEnv;
     }
-    if (originalUnauthLimit !== undefined) {
-        process.env.API_RATE_LIMIT_MAX_UNAUTH = originalUnauthLimit;
+    if (originalAuthLimit === undefined) {
+        delete process.env.API_RATE_LIMIT_MAX_AUTH;
     } else {
+        process.env.API_RATE_LIMIT_MAX_AUTH = originalAuthLimit;
+    }
+    if (originalUnauthLimit === undefined) {
         delete process.env.API_RATE_LIMIT_MAX_UNAUTH;
+    } else {
+        process.env.API_RATE_LIMIT_MAX_UNAUTH = originalUnauthLimit;
     }
 });
 
