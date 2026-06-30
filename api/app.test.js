@@ -269,6 +269,26 @@ describe('API Application', () => {
             assert.ok(res.body.data.attributes.results.hits, 'Search results should have hits');
         });
 
+        test('returns 200 and search results for a valid POST search body', async () => {
+            const res = await request(app)
+                .post('/search')
+                .set('Authorization', `Bearer ${validToken}`)
+                .set('On-Behalf-Of', '25-711111')
+                .set('Content-Type', 'application/vnd.api+json')
+                .send({
+                    query: 'validsearch',
+                    pageNumber: 1,
+                    itemsPerPage: 5,
+                    type: 'semantic'
+                });
+
+            assert.strictEqual(res.statusCode, 200);
+            assert.ok(res.body.data, 'Response should have a data property');
+            assert.strictEqual(res.body.data.type, 'search-results');
+            assert.strictEqual(res.body.data.attributes.query, 'validsearch');
+            assert.ok(res.body.data.attributes.results.hits, 'Search results should have hits');
+        });
+
         test('sets correct content type and version headers', async () => {
             const res = await request(app)
                 .get('/search?query=test')

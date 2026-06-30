@@ -125,6 +125,19 @@ describe('OpenAPI Validator Middleware', () => {
         assert.match(res.body.errors[0].message, /must have required property 'query'/);
     });
 
+    it('responds with 400 for missing required "query" property in POST body', async () => {
+        const res = await request(app)
+            .post('/api/search')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('On-Behalf-Of', '25-711111')
+            .set('Content-Type', 'application/vnd.api+json')
+            .send({ pageNumber: 1, itemsPerPage: 10, type: 'semantic' });
+
+        assert.strictEqual(res.statusCode, 400);
+        assert.ok(res.body.errors, 'Response should have errors');
+        assert.match(res.body.errors[0].message, /must have required property 'query'/);
+    });
+
     it('responds with 400 for invalid "query" parameter (too short)', async () => {
         const res = await request(app)
             .get('/api/search?query=a')
@@ -156,6 +169,22 @@ describe('OpenAPI Validator Middleware', () => {
             )
             .set('Authorization', `Bearer ${validToken}`)
             .set('On-Behalf-Of', '25-711111');
+
+        assert.strictEqual(res.statusCode, 200);
+    });
+
+    it('accepts POST search body with valid query', async () => {
+        const res = await request(app)
+            .post('/api/search')
+            .set('Authorization', `Bearer ${validToken}`)
+            .set('On-Behalf-Of', '25-711111')
+            .set('Content-Type', 'application/vnd.api+json')
+            .send({
+                query: 'acute november 2022',
+                pageNumber: 1,
+                itemsPerPage: 10,
+                type: 'hybrid'
+            });
 
         assert.strictEqual(res.statusCode, 200);
     });
