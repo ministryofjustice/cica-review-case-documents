@@ -11,7 +11,7 @@
  * - Responds with HTTP 429 and a JSON error message when the limit is exceeded.
  *
  * @module middleware/rateLimiter
- * @type {import('express').RequestHandler}
+ * @type {() => import('express').RequestHandler}
  */
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
@@ -29,7 +29,7 @@ import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
  * matching the main app's global rate limiting strategy. Docs access is protected by auth middleware,
  * and rate limiting is applied first to mitigate brute-force attacks on the auth endpoint.
  *
- * @type {*} - Express middleware that applies different rate limits for authenticated and unauthenticated requests.
+ * @returns {import('express').RequestHandler} Express middleware with dynamic auth-aware limits.
  * Authenticated requests (with a valid JWT or session) have a higher limit than unauthenticated requests.
  * The limits and window duration are configurable via environment variables.
  * Responds with HTTP 429 and a JSON error message when the limit is exceeded.
