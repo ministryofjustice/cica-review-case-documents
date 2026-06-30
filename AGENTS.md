@@ -10,6 +10,7 @@ Keep this file limited to stable repo rules. Use [README.md](./README.md), [ARCH
 - Use kebab-case for UI component folder names under `components/cica/`.
 - Use `.js` files by default; do not introduce `.mjs` files.
 - Use Nunjucks only for templates.
+- Use British English explicitly and exclusively in all user-facing and developer-facing written content, including documentation, comments, copy, commit messages, and implementation details.
 
 ## Core Rules
 
