@@ -71,8 +71,10 @@ const mockCreateSearchService = () => ({
 
 /**
  * Sets the JWT environment variables for testing purposes.
- * @param {import('express').RequestHandler} [limiter=generalRateLimiter] - Rate limiter middleware to apply.
- * @returns {import('express').Express} Configured Express application instance.
+ * @param {object} [options] - Optional configuration for JWT environment variables.
+ * @param {string} [options.secret='test-secret-for-api'] - The secret key for signing JWT tokens.
+ * @param {string} [options.issuer='test-ui'] - The issuer claim for JWT tokens.
+ * @param {string} [options.audience='test-api'] - The audience claim for JWT tokens.
  * @returns {void}
  */
 function setJwtEnv({
