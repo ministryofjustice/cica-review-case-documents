@@ -81,9 +81,6 @@ function authenticateJWTToken(req, res, next) {
         const rawIdentity = req.decodedToken?.id;
         const identity = typeof rawIdentity === 'string' ? rawIdentity.trim() : rawIdentity;
 
-        // if (typeof rawIdentity === 'string') {
-        //     req.decodedToken.id = identity;
-        // }
         if (identity == null || identity === '') {
             req.log?.warn(
                 { url: req.originalUrl },
