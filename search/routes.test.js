@@ -648,6 +648,44 @@ describe('Search Routes', () => {
             );
         });
 
+        it('falls back to legacy search redirect when saved-search storage is unavailable', async () => {
+            const testApp = express();
+            const router = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: mockCreateSearchService,
+                createSavedSearchStore: () => ({
+                    create: async () => {
+                        throw new Error('connect ECONNREFUSED 127.0.0.1:9200');
+                    }
+                })
+            });
+
+            testApp.use(express.json());
+            testApp.use(express.urlencoded({ extended: true }));
+            testApp.use((req, res, next) => {
+                req.session = {
+                    caseSelected: true,
+                    caseReferenceNumber: '12345',
+                    username: 'search.user@example.com'
+                };
+                req.log = { info: () => {}, warn: () => {}, error: () => {} };
+                res.locals.csrfToken = 'test-csrf-token';
+                res.locals.cspNonce = 'test-csp-nonce';
+                next();
+            });
+            testApp.use('/search', router);
+
+            const res = await request(testApp)
+                .post('/search?pageNumber=3')
+                .send({ query: 'search term', type: 'semantic' });
+
+            assert.strictEqual(res.statusCode, 302);
+            assert.strictEqual(
+                res.headers.location,
+                '/search?query=search+term&pageNumber=3&type=semantic'
+            );
+        });
+
         it('should render search results for GET /search/s/:id when saved search exists', async () => {
             const testApp = express();
             const router = createSearchRouter({

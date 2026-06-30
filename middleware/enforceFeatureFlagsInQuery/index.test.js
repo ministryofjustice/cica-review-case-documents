@@ -272,7 +272,10 @@ test('redirects for saved search page path', () => {
 
     enforceFeatureFlagsInQuery(req, res, () => {});
 
-    assert.strictEqual(res.redirectedUrl, '/search/s/srch_abc123?pageNumber=2&crn=12-745678&align=off');
+    assert.strictEqual(
+        res.redirectedUrl,
+        '/search/s/srch_abc123?pageNumber=2&crn=12-745678&align=off'
+    );
 });
 
 test('normalises trailing slash before checking allowed path', () => {

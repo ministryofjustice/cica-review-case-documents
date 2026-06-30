@@ -220,6 +220,16 @@ function createSearchRouter({
             const { pageNumber = 1 } = req.query;
             const searchType = resolveSearchType(req.body?.type, req.session);
 
+            const redirectToLegacySearch = () => {
+                const redirectParams = new URLSearchParams({
+                    query: query.trim(),
+                    pageNumber: String(pageNumber),
+                    type: searchType
+                });
+
+                return res.redirect(`/search?${redirectParams.toString()}`);
+            };
+
             if (savedSearchStore?.create) {
                 return savedSearchStore
                     .create({
@@ -238,16 +248,19 @@ function createSearchRouter({
                             `/search/s/${encodeURIComponent(id)}?${redirectParams.toString()}`
                         );
                     })
-                    .catch(next);
+                    .catch((error) => {
+                        req.log?.warn?.(
+                            {
+                                error: error?.message,
+                                caseReferenceNumber: req.session?.caseReferenceNumber
+                            },
+                            'Saved search store unavailable, falling back to legacy search redirect'
+                        );
+                        return redirectToLegacySearch();
+                    });
             }
 
-            const redirectParams = new URLSearchParams({
-                query: query.trim(),
-                pageNumber: String(pageNumber),
-                type: searchType
-            });
-
-            return res.redirect(`/search?${redirectParams.toString()}`);
+            return redirectToLegacySearch();
         } catch (err) {
             next(err);
         }
