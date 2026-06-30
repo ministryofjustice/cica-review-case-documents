@@ -18,6 +18,24 @@ Keep this file limited to stable repo rules. Use [README.md](./README.md), [ARCH
 - Keep middleware and utility folders in camelCase.
 - Keep private helpers inside the owning module folder.
 
+## Commit Messages
+
+- Use Conventional Commits for every commit message.
+- Required header format: `<type>(<scope>): <subject>`.
+- Use lower-case `type` and `scope`, and write `subject` in imperative mood.
+- Keep the header concise (ideally 72 characters or fewer).
+- Use `!` before the colon for breaking changes, for example `<type>(<scope>)!: <subject>`.
+- Common `type` values: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, `revert`.
+- Use a repository namespace as `scope`, for example: `api`, `app`, `auth`, `document`, `search`, `middleware`, `components`, `deps`.
+- If a commit includes multiple changes that benefit from extra context, include a commit body.
+- Start the body with one concise descriptive sentence.
+- Leave exactly one empty line after that sentence.
+- Put additional details in an unordered list using `-`.
+- Keep each bullet short and focused on one change.
+- When writing a terminal commit command, always use separate `-m` flags instead of escaped newlines.
+- Required command shape: `git commit -m "<header>" -m "<summary>" -m "- <bullet 1>" -m "- <bullet 2>"`.
+- Do not use `\n` in commit command strings.
+
 ## Routing And Middleware
 
 - Register main-app middleware in `app.js` (API middleware is registered in `api/app.js`)
