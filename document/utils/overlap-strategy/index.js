@@ -46,6 +46,70 @@ const isVerticallyContained = (inner, outer) =>
 export const hasHorizontalOverlap = (a, b) => a.left < b.right && a.right > b.left;
 
 /**
+ * Clones a highlight chunk and its bounding box to avoid mutating original input.
+ *
+ * @param {{bounding_box?: {top?: number, left?: number, width?: number, height?: number}}} highlight - Highlight chunk to clone.
+ * @returns {{bounding_box?: {top?: number, left?: number, width?: number, height?: number}} & object} Cloned highlight chunk.
+ */
+const cloneHighlightChunk = (highlight) => ({
+    ...highlight,
+    bounding_box: highlight?.bounding_box ? { ...highlight.bounding_box } : highlight?.bounding_box
+});
+
+/**
+ * Applies overlap rules for one current chunk against previously accepted chunks.
+ *
+ * @param {{bounding_box: {top?: number, left?: number, width?: number, height?: number}} & object} currentChunk - Current highlight chunk being processed.
+ * @param {Array<{bounding_box?: {top?: number, left?: number, width?: number, height?: number}} & object>} output - Previously accepted highlight chunks.
+ * @returns {{shouldHideChunk: boolean, currentEdges: {top: number, left: number, height: number, width: number, bottom: number, right: number}}} Rule evaluation result.
+ */
+function applyOverlapRules(currentChunk, output) {
+    let currentEdges = getBoxEdges(currentChunk.bounding_box);
+
+    for (const previousChunk of output) {
+        if (!previousChunk?.bounding_box) {
+            continue;
+        }
+
+        const previousEdges = getBoxEdges(previousChunk.bounding_box);
+
+        if (isInsideBox(currentEdges, previousEdges)) {
+            return { shouldHideChunk: true, currentEdges };
+        }
+
+        if (
+            isVerticallyContained(currentEdges, previousEdges) &&
+            hasHorizontalOverlap(currentEdges, previousEdges)
+        ) {
+            const mergedLeft = Math.min(previousEdges.left, currentEdges.left);
+            const mergedRight = Math.max(previousEdges.right, currentEdges.right);
+            previousChunk.bounding_box.left = mergedLeft;
+            previousChunk.bounding_box.width = mergedRight - mergedLeft;
+            return { shouldHideChunk: true, currentEdges };
+        }
+
+        if (!hasHorizontalOverlap(currentEdges, previousEdges)) {
+            continue;
+        }
+
+        const overlapsVertically =
+            currentEdges.top < previousEdges.bottom && currentEdges.bottom > previousEdges.bottom;
+
+        if (!overlapsVertically) {
+            continue;
+        }
+
+        const nextTop = previousEdges.bottom;
+        const nextHeight = currentEdges.bottom - nextTop;
+        currentChunk.bounding_box.top = nextTop;
+        currentChunk.bounding_box.height = Math.max(0, nextHeight);
+        currentEdges = getBoxEdges(currentChunk.bounding_box);
+    }
+
+    return { shouldHideChunk: false, currentEdges };
+}
+
+/**
  * Applies overlap rules to highlighted areas before rendering overlays.
  *
  * @param {Array<{bounding_box?: {top?: number, left?: number, width?: number, height?: number}}>} [highlights=[]] - Raw highlighted areas from OCR chunks
@@ -55,62 +119,14 @@ export const alignOverlappingHighlights = (highlights = []) => {
     const output = [];
 
     for (const highlight of highlights) {
-        const currentChunk = {
-            ...highlight,
-            bounding_box: highlight?.bounding_box
-                ? { ...highlight.bounding_box }
-                : highlight?.bounding_box
-        };
+        const currentChunk = cloneHighlightChunk(highlight);
 
         if (!currentChunk?.bounding_box) {
             output.push(currentChunk);
             continue;
         }
 
-        let currentEdges = getBoxEdges(currentChunk.bounding_box);
-        let shouldHideChunk = false;
-
-        for (const previousChunk of output) {
-            if (!previousChunk?.bounding_box) {
-                continue;
-            }
-
-            const previousEdges = getBoxEdges(previousChunk.bounding_box);
-
-            if (isInsideBox(currentEdges, previousEdges)) {
-                shouldHideChunk = true;
-                break;
-            }
-
-            if (
-                isVerticallyContained(currentEdges, previousEdges) &&
-                hasHorizontalOverlap(currentEdges, previousEdges)
-            ) {
-                const mergedLeft = Math.min(previousEdges.left, currentEdges.left);
-                const mergedRight = Math.max(previousEdges.right, currentEdges.right);
-                previousChunk.bounding_box.left = mergedLeft;
-                previousChunk.bounding_box.width = mergedRight - mergedLeft;
-                shouldHideChunk = true;
-                break;
-            }
-
-            if (!hasHorizontalOverlap(currentEdges, previousEdges)) {
-                continue;
-            }
-
-            const overlapsVertically =
-                currentEdges.top < previousEdges.bottom &&
-                currentEdges.bottom > previousEdges.bottom;
-
-            if (overlapsVertically) {
-                const nextTop = previousEdges.bottom;
-                const nextHeight = currentEdges.bottom - nextTop;
-
-                currentChunk.bounding_box.top = nextTop;
-                currentChunk.bounding_box.height = Math.max(0, nextHeight);
-                currentEdges = getBoxEdges(currentChunk.bounding_box);
-            }
-        }
+        const { shouldHideChunk } = applyOverlapRules(currentChunk, output);
 
         if (shouldHideChunk) {
             continue;

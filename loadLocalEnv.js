@@ -10,6 +10,7 @@ if (process.env.DEPLOY_ENV === 'local-dev') {
     if (fs.existsSync(envFilePath)) {
         // Use require to load dotenv synchronously
         const require = createRequire(import.meta.url);
+        // biome-ignore lint/suspicious/noConsole: intentional local startup visibility when loading .env.
         console.info('Local development environment detected. Loading .env file.');
         require('dotenv').config({ quiet: true });
     }

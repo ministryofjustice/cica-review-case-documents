@@ -81,9 +81,13 @@ function createLogger(options = {}) {
         ),
         redact: buildRedactConfig(),
         customLogLevel: (req, res, err) => {
-            if (err || res.statusCode >= 500) return 'error';
-            if (res.statusCode >= 400) return 'warn';
-            // TODO consider ability to supress these logs during developemnt
+            if (err || res.statusCode >= 500) {
+                return 'error';
+            }
+            if (res.statusCode >= 400) {
+                return 'warn';
+            }
+            // TODO consider ability to suppress these logs during development
             // return process.env.SUPPRESS_200_LOGS === 'true' ? 'debug' : 'info';
             return 'info';
         },

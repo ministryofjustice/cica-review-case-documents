@@ -10,6 +10,7 @@ import { Client } from '@opensearch-project/opensearch';
  * @returns {Promise<boolean>} True if healthy, False otherwise.
  */
 export async function checkOpenSearchHealth(proxyUrl, timeout = 10, interval = 1000) {
+    // biome-ignore lint/suspicious/noConsole: intentional startup status output for healthcheck diagnostics.
     console.info(`OpenSearch ${proxyUrl} health check started`);
     const client = new Client({
         node: proxyUrl,
@@ -25,6 +26,7 @@ export async function checkOpenSearchHealth(proxyUrl, timeout = 10, interval = 1
             const { body } = await client.cluster.health();
             const status = body.status;
             if (status === 'green' || status === 'yellow') {
+                // biome-ignore lint/suspicious/noConsole: intentional success status output for healthcheck diagnostics.
                 console.info(`OpenSearch health check passed: status=${status}`);
                 return true;
             }

@@ -99,8 +99,12 @@ const buildQueryString = ({ query, params, resolvedSearchType }) => {
     const { crn } = params || {};
     const queryParams = new URLSearchParams();
 
-    if (crn) queryParams.append('crn', crn);
-    if (searchTerm) queryParams.append('searchTerm', searchTerm);
+    if (crn) {
+        queryParams.append('crn', crn);
+    }
+    if (searchTerm) {
+        queryParams.append('searchTerm', searchTerm);
+    }
     if (resolvedSearchType) {
         queryParams.append('type', resolvedSearchType);
     }

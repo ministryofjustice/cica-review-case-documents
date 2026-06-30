@@ -104,13 +104,19 @@ function getCustomOpenApiErrorDetail(fullError) {
     const { path, errorCode, message } = fullError;
 
     const pointer = QUERY_PARAM_OPENAPI_PATH_PARAMETER_MAP[path];
-    if (!pointer) return message;
+    if (!pointer) {
+        return message;
+    }
 
     const schema = resolveJsonPath(apiSpec, pointer)?.schema;
-    if (!schema) return message;
+    if (!schema) {
+        return message;
+    }
 
     const schemaProperty = OPENAPI_ERRORS_SCHEMA_PROPERTY_ERRORS_MAP[errorCode];
-    if (!schemaProperty) return message;
+    if (!schemaProperty) {
+        return message;
+    }
 
     return schema?.errorMessage?.[schemaProperty] || message;
 }
@@ -126,8 +132,12 @@ function getCustomOpenApiErrorDetail(fullError) {
  * @returns {string|undefined} The path in JSON Pointer format, or undefined if input is falsy.
  */
 function toJsonPointer(path) {
-    if (!path) return undefined;
-    if (path.startsWith('/')) return path; // already JSON Pointer
+    if (!path) {
+        return undefined;
+    }
+    if (path.startsWith('/')) {
+        return path; // already JSON Pointer
+    }
     // Convert dot notation to JSON Pointer
     return `/${path.replace(/\./g, '/')}`;
 }

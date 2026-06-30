@@ -51,7 +51,9 @@ export function parseEnumFlagValue(value, allowedValues) {
     }
 
     const normalized = flagValue.trim().toLowerCase();
-    if (!normalized) return undefined;
+    if (!normalized) {
+        return undefined;
+    }
     return allowedValues === undefined || allowedValues.includes(normalized)
         ? normalized
         : undefined;
@@ -141,6 +143,67 @@ export function getFeatureFlagValue(session, flagName) {
 }
 
 /**
+ * Initializes a feature flag from session state with repository defaults.
+ *
+ * @param {string} flagName - The flag name to initialize.
+ * @param {import('express-session').Session | undefined} session - Request session object.
+ * @returns {boolean | string} The initialized flag value.
+ */
+function initializeFlag(flagName, session) {
+    if (flagName === 'type') {
+        return resolveSearchType(session?.featureFlags?.type, session);
+    }
+    return getFeatureFlagValue(session, flagName);
+}
+
+/**
+ * Processes a query override for the type flag.
+ *
+ * @param {import('express-session').Session | undefined} session - Request session object.
+ * @param {unknown} queryValue - Query string value.
+ * @returns {string | undefined} Updated flag value or undefined if no valid override.
+ */
+function processTypeFlag(session, queryValue) {
+    const queryType = Array.isArray(queryValue) ? queryValue.at(-1) : queryValue;
+    if (typeof queryType === 'string' && queryType.trim().length > 0) {
+        const normalizedQueryType = queryType.trim().toLowerCase();
+        if (Object.values(SEARCH_TYPES).includes(normalizedQueryType)) {
+            return resolveSearchType(normalizedQueryType, session);
+        }
+    }
+    return undefined;
+}
+
+/**
+ * Applies query string overrides to a feature flag based on its type.
+ *
+ * @param {string} flagName - The flag name.
+ * @param {boolean | string} currentValue - Current flag value.
+ * @param {unknown} queryValue - Query string value.
+ * @param {import('express-session').Session | undefined} session - Request session object.
+ * @returns {{value: boolean | string, wasOverridden: boolean}} Final flag value and whether it was overridden.
+ */
+function applyQueryOverride(flagName, currentValue, queryValue, session) {
+    if (flagName === 'type') {
+        const override = processTypeFlag(session, queryValue);
+        const wasOverridden = override !== undefined;
+        return { value: wasOverridden ? override : currentValue, wasOverridden };
+    }
+    if (typeof FEATURE_FLAG_DEFAULTS[flagName] === 'boolean') {
+        // Prevent debug flag query overrides in production
+        if (flagName === 'debug' && process.env.DEPLOY_ENV === 'production') {
+            return { value: currentValue, wasOverridden: false };
+        }
+        const parsed = parseFeatureFlagValue(queryValue);
+        const wasOverridden = typeof parsed === 'boolean';
+        return { value: wasOverridden ? parsed : currentValue, wasOverridden };
+    }
+    const parsed = parseEnumFlagValue(queryValue);
+    const wasOverridden = typeof parsed === 'string';
+    return { value: wasOverridden ? parsed : currentValue, wasOverridden };
+}
+
+/**
  * Persists supported feature flags from query-string params into the session.
  *
  * Boolean flags (`align`, `debug`) accept `on` / `off` query-string values.
@@ -158,45 +221,19 @@ export default function featureFlags(req, res, next) {
 
     if (req.session) {
         for (const flagName of Object.keys(FEATURE_FLAG_DEFAULTS)) {
-            // Initialize from validated session values with repo defaults.
-            flags[flagName] = getFeatureFlagValue(req.session, flagName);
-            provenance[flagName] = getFeatureFlagSource(req.session, flagName);
-
-            if (typeof FEATURE_FLAG_DEFAULTS[flagName] === 'boolean') {
-                const queryFlagValue = parseFeatureFlagValue(req.query?.[flagName]);
-                // Block query-string override for debug flag in production
-                if (
-                    typeof queryFlagValue === 'boolean' &&
-                    !(flagName === 'debug' && process.env.DEPLOY_ENV === 'production')
-                ) {
-                    flags[flagName] = queryFlagValue;
-                    provenance[flagName] = 'query';
-                }
-            } else if (flagName === 'type') {
-                // Express parses repeated query params (e.g. ?type=a&type=b) as an array.
-                // Normalize to the last entry first, consistent with parseFeatureFlagValue /
-                // parseEnumFlagValue.
-                const queryType = Array.isArray(req.query?.type)
-                    ? req.query.type.at(-1)
-                    : req.query?.type;
-
-                if (typeof queryType === 'string' && queryType.trim().length > 0) {
-                    // Only process a non-empty type value. An empty or whitespace-only
-                    // ?type= query param is treated as absent so the session value is preserved.
-                    const normalizedQueryType = queryType.trim().toLowerCase();
-                    if (Object.values(SEARCH_TYPES).includes(normalizedQueryType)) {
-                        flags[flagName] = normalizedQueryType;
-                        provenance[flagName] = 'query';
-                    } else {
-                        flags[flagName] = resolveSearchType(queryType, req.session);
-                    }
-                }
+            flags[flagName] = initializeFlag(flagName, req.session);
+            const override = applyQueryOverride(
+                flagName,
+                flags[flagName],
+                req.query?.[flagName],
+                req.session
+            );
+            flags[flagName] = override.value;
+            // Determine provenance: query override > session/default
+            if (override.wasOverridden) {
+                provenance[flagName] = 'query';
             } else {
-                const queryFlagValue = parseEnumFlagValue(req.query?.[flagName]);
-                if (typeof queryFlagValue === 'string') {
-                    flags[flagName] = queryFlagValue;
-                    provenance[flagName] = 'query';
-                }
+                provenance[flagName] = getFeatureFlagSource(req.session, flagName);
             }
         }
         // Only update the session if there are changes to prevent unnecessary

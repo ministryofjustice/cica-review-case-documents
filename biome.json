@@ -31,17 +31,33 @@
                 "noUnreachable": "error"
             },
             "suspicious": {
-                "noExplicitAny": "error"
+                "noExplicitAny": "error",
+                "noConsole": {
+                    "level": "warn",
+                    "options": {
+                        "allow": ["error", "warn"]
+                    }
+                }
             },
             "style": {
                 "recommended": true,
-                "useConst": "error"
+                "useConst": "error",
+                "useBlockStatements": "error",
+                "noParameterAssign": "warn",
+                "noNestedTernary": "warn",
+                "noImplicitBoolean": "warn"
             },
             "a11y": {
                 "recommended": true
             },
             "complexity": {
-                "recommended": true
+                "recommended": true,
+                "noExcessiveCognitiveComplexity": {
+                    "level": "warn",
+                    "options": {
+                        "maxAllowedComplexity": 18
+                    }
+                }
             },
             "performance": {
                 "recommended": true
@@ -51,6 +67,18 @@
             }
         }
     },
+    "overrides": [
+        {
+            "includes": ["**/*.test.js"],
+            "linter": {
+                "rules": {
+                    "suspicious": {
+                        "noConsole": "off"
+                    }
+                }
+            }
+        }
+    ],
     "vcs": {
         "enabled": true,
         "clientKind": "git",

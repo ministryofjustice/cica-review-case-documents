@@ -69,7 +69,13 @@ pre-commit
 pre-push
 ```
 
- > pre-commit runs `npm run precommit` (format, lint, sass build, and gitleaks secret scan via `npm run precommit:secrets`) and pre-push runs `npm run prepush`.
+ > pre-commit runs `npm run precommit` (mutating checks via `npm run quality:fix`: format, lint safe auto-fix, Sass build, gitleaks secret scan, and OpenAPI build). pre-push runs `npm run prepush` in this order: `npm audit` (high severity, prod deps), `npm run quality:verify` (lint check + gitleaks), then tests and JSDoc linting. Pre-push does not run formatting fixes, Sass compilation, or OpenAPI builds.
+
+If you explicitly want Biome unsafe transformations (for example, automatic brace insertion from `useBlockStatements`), run:
+
+```bash
+npm run lint:fix:unsafe
+```
 
 Install the `gitleaks` CLI locally so pre-commit secret scanning can run: https://github.com/gitleaks/gitleaks#installing
 The installer for a Ubuntu WSL console is `sudo apt install gitleaks` for example.
@@ -89,11 +95,10 @@ The secret scan uses `.gitleaks.toml` as the configuration file.
    ```
 2. Make your changes
 3. Run pre-commit checks: `npm run precommit` (enforced by pre-commit hook)
-4. Run pre-push checks: `npm run prepush` (enforced by pre-push hook)
-5. Commit your changes with descriptive messages
-6. Push to your branch
-7. Create a Pull Request to merge into `main`
-8. After review and approval, merge to `main`
+4. Commit your changes with descriptive messages
+5. Push to your branch (pre-push hook enforces non-mutating verification checks automatically)
+6. Create a Pull Request to merge into `main`
+7. After review and approval, merge to `main`
 
 ### Git Hooks (Husky)
 
@@ -101,8 +106,8 @@ The project uses Husky for Git hooks:
 
 | Hook Name  | Action       | Description                          |
 | ---------- | ------------ | ------------------------------------ |
-| pre-commit | npm run precommit | Runs format, lint, sass, and gitleaks before commit |
-| pre-push   | npm run prepush | Runs npm audit --audit-level=high --omit=dev, tests and JSDoc linting before push |
+| pre-commit | npm run precommit | Runs quick checks before commit: format, lint, sass, gitleaks, and OpenAPI build |
+| pre-push   | npm run prepush | Runs npm audit, non-mutating quality checks (`quality:verify`), tests, and JSDoc linting before push |
 
 ### CI/CD Pipeline
 
@@ -447,11 +452,11 @@ npm run format
 ### VS Code Setup
 
 1. Install the [Biome VS Code extension](https://marketplace.visualstudio.com/items?itemName=biomejs.biome)
-2. Update `.vscode/settings.json`:
+2. The repository already provides workspace defaults in `.vscode/settings.json` and extension recommendations in `.vscode/extensions.json`.
+3. Use the following settings as a reference for the expected VS Code workspace configuration:
 
 ```json
 {
-    "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnSave": true,
     "prettier.enable": false,
     "eslint.enable": false,
@@ -461,6 +466,10 @@ npm run format
         "editor.defaultFormatter": "biomejs.biome"
     },
     "[json]": {
+        "editor.tabSize": 4,
+        "editor.defaultFormatter": "biomejs.biome"
+    },
+    "[css]": {
         "editor.tabSize": 4,
         "editor.defaultFormatter": "biomejs.biome"
     }

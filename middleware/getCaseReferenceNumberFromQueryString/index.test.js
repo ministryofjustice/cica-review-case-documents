@@ -62,10 +62,7 @@ function getMockRequest(...propsToMerge) {
 
     const mergedProps = JSON.parse(
         JSON.stringify(
-            propsToMerge.reduce((merged, propsObject) => {
-                merged = deepMerge(merged, propsObject);
-                return merged;
-            }, baseReq)
+            propsToMerge.reduce((merged, propsObject) => deepMerge(merged, propsObject), baseReq)
         )
     );
 
