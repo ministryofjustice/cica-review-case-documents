@@ -23,10 +23,10 @@ describe('paginationDataFromMetadata', () => {
         assert.strictEqual(result.next, null);
     });
 
-    it('includes search query parameters in generated page URLs', () => {
+    it('includes searchId in generated page URLs', () => {
         const result = paginationDataFromMetadata(
             { page_num: 2, page_count: 3 },
-            { searchTerm: 'acute pain' },
+            { searchId: 'srch_abc123' },
             params
         );
 
@@ -34,7 +34,8 @@ describe('paginationDataFromMetadata', () => {
         const parsed = new URL(firstHref, 'http://localhost');
 
         assert.strictEqual(parsed.searchParams.get('crn'), '12-745678');
-        assert.strictEqual(parsed.searchParams.get('searchTerm'), 'acute pain');
+        assert.strictEqual(parsed.searchParams.get('searchId'), 'srch_abc123');
+        assert.strictEqual(parsed.searchParams.get('searchTerm'), null);
         assert.strictEqual(result.previous?.text, 'Previous');
         assert.strictEqual(result.next?.text, 'Next');
     });

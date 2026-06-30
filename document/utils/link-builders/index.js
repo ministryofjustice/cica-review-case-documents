@@ -34,26 +34,22 @@ export function buildImageUrl(
  * @param {string} documentId - The document UUID
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
- * @param {string} [searchTerm=''] - The search term
+ * @param {string} [searchId=''] - Opaque saved-search identifier
  * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - The active search type value
  * @param {Object} [session={}] - The session object
- * @param {string} [searchId=''] - Optional opaque saved-search identifier
  * @returns {string} The text view URL
  */
 export function buildTextPageLink(
     documentId,
     pageNumber,
     crn,
-    searchTerm = '',
+    searchId = '',
     searchType = DEFAULT_SEARCH_TYPE,
-    session = {},
-    searchId = ''
+    session = {}
 ) {
-    const searchContext = searchId
-        ? `searchId=${encodeURIComponent(searchId)}`
-        : `searchTerm=${encodeURIComponent(searchTerm)}`;
-    const base = `/document/${documentId}/view/text/page/${pageNumber}?crn=${encodeURIComponent(crn)}&${searchContext}`;
-    return `${base}&type=${encodeURIComponent(resolveSearchType(searchType, session))}`;
+    const base = `/document/${documentId}/view/text/page/${pageNumber}?crn=${encodeURIComponent(crn)}`;
+    const searchContext = searchId ? `&searchId=${encodeURIComponent(searchId)}` : '';
+    return `${base}${searchContext}&type=${encodeURIComponent(resolveSearchType(searchType, session))}`;
 }
 
 /**
@@ -62,24 +58,20 @@ export function buildTextPageLink(
  * @param {string} documentId - The document UUID
  * @param {number} pageNumber - The page number
  * @param {string} crn - The case reference number
- * @param {string} [searchTerm=''] - The search term
+ * @param {string} [searchId=''] - Opaque saved-search identifier
  * @param {string} [searchType=DEFAULT_SEARCH_TYPE] - The active search type value
  * @param {Object} [session={}] - The session object
- * @param {string} [searchId=''] - Optional opaque saved-search identifier
  * @returns {string} The image view URL
  */
 export function buildImagePageLink(
     documentId,
     pageNumber,
     crn,
-    searchTerm = '',
+    searchId = '',
     searchType = DEFAULT_SEARCH_TYPE,
-    session = {},
-    searchId = ''
+    session = {}
 ) {
-    const searchContext = searchId
-        ? `searchId=${encodeURIComponent(searchId)}`
-        : `searchTerm=${encodeURIComponent(searchTerm)}`;
-    const base = `/document/${documentId}/view/page/${pageNumber}?crn=${encodeURIComponent(crn)}&${searchContext}`;
-    return `${base}&type=${encodeURIComponent(resolveSearchType(searchType, session))}`;
+    const base = `/document/${documentId}/view/page/${pageNumber}?crn=${encodeURIComponent(crn)}`;
+    const searchContext = searchId ? `&searchId=${encodeURIComponent(searchId)}` : '';
+    return `${base}${searchContext}&type=${encodeURIComponent(resolveSearchType(searchType, session))}`;
 }

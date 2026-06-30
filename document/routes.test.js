@@ -10,7 +10,11 @@ import createDocumentRouter from './routes.js';
 /**
  * Helper function to set up a test express app with required middleware
  */
-function createTestApp(mockCreateDocumentMetadataService, stubCreatePageChunksServiceFactory) {
+function createTestApp(
+    mockCreateDocumentMetadataService,
+    stubCreatePageChunksServiceFactory,
+    stubCreateSavedSearchStore
+) {
     const stubPageChunksServiceFactory =
         stubCreatePageChunksServiceFactory ||
         (() => ({
@@ -34,18 +38,26 @@ function createTestApp(mockCreateDocumentMetadataService, stubCreatePageChunksSe
     // Setup minimal middleware
     testApp.use((req, res, next) => {
         req.session.caseSelected = true;
+        req.session.caseReferenceNumber = '12-745678';
         req.log = { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} };
         res.locals.csrfToken = 'test-csrf-token';
         res.locals.cspNonce = 'test-csp-nonce';
         next();
     });
 
+    const savedSearchStoreFactory =
+        stubCreateSavedSearchStore ||
+        (() => ({
+            getById: async () => null
+        }));
+
     // Inject mock service into routes
     testApp.use(
         '/document',
         createDocumentRouter({
             createDocumentMetadataService: mockCreateDocumentMetadataService,
-            createPageChunksService: stubPageChunksServiceFactory
+            createPageChunksService: stubPageChunksServiceFactory,
+            createSavedSearchStore: savedSearchStoreFactory
         })
     );
 
@@ -139,7 +151,7 @@ describe('Document Routes', () => {
             );
 
             const res = await request(appWithPassingServices).get(
-                `/document/${docId}/view/page/1?crn=12-745678&searchTerm=test%20query`
+                `/document/${docId}/view/page/1?crn=12-745678&searchId=srch_abc123`
             );
             assert.equal(res.statusCode, 200);
             // Ensure mock correspondence_type influences title rendering indirectly
@@ -162,7 +174,7 @@ describe('Document Routes', () => {
 
             const docId = '123e4567-e89b-12d3-a456-426614174000';
             const res = await request(appWithFailingService).get(
-                `/document/${docId}/view/page/1?crn=12-745678`
+                `/document/${docId}/view/page/1?crn=12-745678&searchId=srch_abc123`
             );
 
             assert.equal(res.statusCode, 500);
@@ -179,12 +191,18 @@ describe('Document Routes', () => {
 
             const appWithFailingService = createTestApp(
                 passingMetadataService,
-                failingPageChunksService
+                failingPageChunksService,
+                () => ({
+                    getById: async () => ({
+                        query: 'test query',
+                        caseReferenceNumber: '12-745678'
+                    })
+                })
             );
 
             const docId = '123e4567-e89b-12d3-a456-426614174000';
             const res = await request(appWithFailingService).get(
-                `/document/${docId}/view/page/1?crn=12-745678`
+                `/document/${docId}/view/page/1?crn=12-745678&searchId=srch_abc123`
             );
 
             assert.equal(res.statusCode, 500);
@@ -195,7 +213,7 @@ describe('Document Routes', () => {
         it('renders text view with valid parameters', async () => {
             const docId = '123e4567-e89b-12d3-a456-426614174000';
             const res = await request(app).get(
-                `/document/${docId}/view/text/page/1?crn=12-745678&searchTerm=test`
+                `/document/${docId}/view/text/page/1?crn=12-745678&searchId=srch_abc123`
             );
 
             assert.equal(res.statusCode, 200);

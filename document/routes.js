@@ -1,12 +1,12 @@
 import express from 'express';
 import { validateDocumentParams } from '../middleware/validateDocumentParams/index.js';
+import createSavedSearchStoreDefault from '../search/saved-search-store.js';
 import { createImageStreamingHandler } from './handlers/image-streaming.js';
 import { createPageViewerHandler } from './handlers/page-viewer.js';
 import { createTextViewerHandler } from './handlers/text-viewer.js';
 import createPageChunksService from './services/document-chunks-service.js';
 import createDocumentMetadataService from './services/document-metadata-service.js';
 import { createS3Client } from './services/s3-service.js';
-import createSavedSearchStoreDefault from '../search/saved-search-store.js';
 
 /**
  * Creates an Express router for handling document viewing functionality.
@@ -25,7 +25,7 @@ function createDocumentRouter(options = {}) {
     const {
         createDocumentMetadataService: createMetadataServiceFactory = createDocumentMetadataService,
         createPageChunksService: createPageChunksServiceFactory = createPageChunksService,
-        createSavedSearchStore: createSavedSearchStore = createSavedSearchStoreDefault
+        createSavedSearchStore = createSavedSearchStoreDefault
     } = options;
     const router = express.Router();
     let savedSearchStore = null;
@@ -43,7 +43,11 @@ function createDocumentRouter(options = {}) {
         if (!savedSearchStore?.getById) {
             return null;
         }
-        return savedSearchStore.getById(searchId);
+        try {
+            return await savedSearchStore.getById(searchId);
+        } catch {
+            return null;
+        }
     };
 
     // Create S3 client
@@ -62,9 +66,14 @@ function createDocumentRouter(options = {}) {
     router.get(
         '/:documentId/view/page/:pageNumber',
         validateDocumentParams(),
-        createPageViewerHandler(createMetadataServiceFactory, createPageChunksServiceFactory, undefined, {
-            findSavedSearchById
-        })
+        createPageViewerHandler(
+            createMetadataServiceFactory,
+            createPageChunksServiceFactory,
+            undefined,
+            {
+                findSavedSearchById
+            }
+        )
     );
 
     // TEXT VIEWER ENDPOINT
@@ -72,9 +81,14 @@ function createDocumentRouter(options = {}) {
     router.get(
         '/:documentId/view/text/page/:pageNumber',
         validateDocumentParams(),
-        createTextViewerHandler(createMetadataServiceFactory, createPageChunksServiceFactory, undefined, {
-            findSavedSearchById
-        })
+        createTextViewerHandler(
+            createMetadataServiceFactory,
+            createPageChunksServiceFactory,
+            undefined,
+            {
+                findSavedSearchById
+            }
+        )
     );
 
     return router;

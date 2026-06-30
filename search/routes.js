@@ -6,7 +6,7 @@ import { finalizeDebugInfo, hasDebugContext, ifDebugContext } from '../middlewar
 import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 import buildViewModel from '../templateEngine/buildViewModel.js';
-import buildSearchSessionPreference from '../utils/buildSearchSessionPreference.js';
+import buildSearchSessionPreference from '../utils/buildSearchSessionPreference/index.js';
 import createSavedSearchStoreDefault from './saved-search-store.js';
 
 /**

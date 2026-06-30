@@ -36,15 +36,19 @@ export function createPageViewerHandler(
 
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
-            const { searchTerm = '', searchId = '' } = req.query;
+            const { searchId = '' } = req.query;
             const searchType = getFeatureFlagValue(req.session, 'type');
             const alignFlag = getFeatureFlagValue(req.session, 'align');
             const userName = req.session?.username;
             const apiJwtToken = createApiJwtToken(userName);
             const debugQueryDslOverrides = res.locals.debugQueryDslOverrides || {};
-            let resolvedSearchTerm = typeof searchTerm === 'string' ? searchTerm : '';
+            let resolvedSearchTerm = '';
 
-            if (typeof searchId === 'string' && searchId !== '' && typeof findSavedSearchById === 'function') {
+            if (
+                typeof searchId === 'string' &&
+                searchId !== '' &&
+                typeof findSavedSearchById === 'function'
+            ) {
                 const savedSearch = await findSavedSearchById(searchId);
                 if (
                     savedSearch?.query &&
@@ -74,7 +78,7 @@ export function createPageViewerHandler(
             // work out the pagination data from the metadata and values needed to construct the URLs for the pagination links
             const paginationData = paginationDataFromMetadata(
                 pageMetadata,
-                req.query,
+                { searchId },
                 req.validatedParams,
                 viewMode,
                 searchType
@@ -87,35 +91,41 @@ export function createPageViewerHandler(
                 documentId,
                 pageNumber,
                 crn,
-                resolvedSearchTerm,
+                searchId,
                 searchType,
-                req.session,
-                searchId
+                req.session
             );
 
             const pageTitle = formatPageTitle(pageMetadata.correspondence_type);
 
             // Fetch document page chunks with bounding boxes for overlay rendering
             let pageChunks = [];
-            try {
-                const pageChunksServiceInstance = createPageChunksServiceFactory({
-                    documentId,
-                    pageNumber,
-                    crn,
-                    searchTerm: resolvedSearchTerm,
-                    searchType,
-                    jwtToken: apiJwtToken,
-                    queryDslConfig: debugQueryDslOverrides,
-                    logger: req.log
-                });
-                pageChunks = await pageChunksServiceInstance.getPageChunks();
-            } catch (error) {
-                // Chunks are core functionality - capture error to display to user
-                req.log?.error(
-                    { error: error.message, documentId, pageNumber, searchTerm: resolvedSearchTerm },
-                    'Failed to retrieve document page chunks'
-                );
-                return next(error);
+            if (resolvedSearchTerm !== '') {
+                try {
+                    const pageChunksServiceInstance = createPageChunksServiceFactory({
+                        documentId,
+                        pageNumber,
+                        crn,
+                        searchTerm: resolvedSearchTerm,
+                        searchType,
+                        jwtToken: apiJwtToken,
+                        queryDslConfig: debugQueryDslOverrides,
+                        logger: req.log
+                    });
+                    pageChunks = await pageChunksServiceInstance.getPageChunks();
+                } catch (error) {
+                    // Chunks are core functionality - capture error to display to user
+                    req.log?.error(
+                        {
+                            error: error.message,
+                            documentId,
+                            pageNumber,
+                            searchTerm: resolvedSearchTerm
+                        },
+                        'Failed to retrieve document page chunks'
+                    );
+                    return next(error);
+                }
             }
 
             const alignedPageHighlights = determineHighlightAlignmentStrategy(

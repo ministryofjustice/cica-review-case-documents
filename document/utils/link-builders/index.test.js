@@ -72,21 +72,21 @@ describe('Link Builders', () => {
 
     describe('buildTextPageLink', () => {
         it('builds text page link with search context', () => {
-            const result = buildTextPageLink(docId, 1, crn, 'search term');
+            const result = buildTextPageLink(docId, 1, crn, 'srch_abc123');
             assert.ok(result.includes(`/document/${docId}/view/text/page/1`));
             assert.ok(result.includes(`crn=${encodeURIComponent(crn)}`));
-            assert.ok(result.includes(`searchTerm=${encodeURIComponent('search term')}`));
+            assert.ok(result.includes('searchId=srch_abc123'));
         });
 
-        it('handles empty search parameters', () => {
+        it('omits searchId when not provided', () => {
             const result = buildTextPageLink(docId, 1, crn);
             assert.ok(result.includes(`/document/${docId}/view/text/page/1`));
-            assert.ok(result.includes('searchTerm='));
+            assert.ok(!result.includes('searchId='));
         });
 
-        it('encodes special characters in search term', () => {
-            const result = buildTextPageLink(docId, 1, crn, 'test & special');
-            assert.ok(result.includes(encodeURIComponent('test & special')));
+        it('encodes special characters in searchId', () => {
+            const result = buildTextPageLink(docId, 1, crn, 'srch/with spaces');
+            assert.ok(result.includes(`searchId=${encodeURIComponent('srch/with spaces')}`));
         });
 
         it('defaults to DEFAULT_SEARCH_TYPE when searchType is not provided', () => {
@@ -126,16 +126,16 @@ describe('Link Builders', () => {
 
     describe('buildImagePageLink', () => {
         it('builds image page link with search context', () => {
-            const result = buildImagePageLink(docId, 1, crn, 'search term');
+            const result = buildImagePageLink(docId, 1, crn, 'srch_abc123');
             assert.ok(result.includes(`/document/${docId}/view/page/1`));
             assert.ok(result.includes(`crn=${encodeURIComponent(crn)}`));
-            assert.ok(result.includes(`searchTerm=${encodeURIComponent('search term')}`));
+            assert.ok(result.includes('searchId=srch_abc123'));
         });
 
-        it('handles empty search parameters', () => {
+        it('omits searchId when not provided', () => {
             const result = buildImagePageLink(docId, 1, crn);
             assert.ok(result.includes(`/document/${docId}/view/page/1`));
-            assert.ok(result.includes('searchTerm='));
+            assert.ok(!result.includes('searchId='));
         });
 
         it('defaults to DEFAULT_SEARCH_TYPE when searchType is not provided', () => {

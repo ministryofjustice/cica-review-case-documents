@@ -76,16 +76,8 @@
     <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
 
     {% set paginationItems = [] %}
-    {% set paginationPrevious = {
-            text: "Previous",
-            href: ["/search/?query=", query | urlencode, "&pageNumber=", pagination.currentPageIndex - 1, "&crn=", caseReferenceNumber | urlencode, "&type=", searchType | urlencode] | join
-        }
-    %}
-    {% set paginationNext = {
-            text: "Next",
-            href: ["/search/?query=", query | urlencode, "&pageNumber=", pagination.currentPageIndex + 1, "&crn=", caseReferenceNumber | urlencode, "&type=", searchType | urlencode] | join
-        }
-    %}
+    {% set paginationPrevious = null %}
+    {% set paginationNext = null %}
     {% if searchId %}
         {% set paginationPrevious = {
             text: "Previous",
@@ -97,19 +89,7 @@
         } %}
     {% endif %}
     {# only show pagination item links if there is more than one page #}
-    {% if showPaginationItems %}
-        {% for i in range(1, pagination.totalPageCount + 1) %}
-            {%
-                set paginationItems = (paginationItems.push({
-                    text: i,
-                    href: ["/search/?query=", query | urlencode, "&pageNumber=", i, "&crn=", caseReferenceNumber | urlencode, "&type=", searchType | urlencode] | join,
-                    selected: i == pagination.currentPageIndex
-                }), paginationItems)
-            %}
-        {% endfor %}
-    {% endif %}
     {% if showPaginationItems and searchId %}
-        {% set paginationItems = [] %}
         {% for i in range(1, pagination.totalPageCount + 1) %}
             {%
                 set paginationItems = (paginationItems.push({

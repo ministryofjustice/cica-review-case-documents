@@ -18,6 +18,7 @@ describe('search page templates', () => {
         csrfToken: 'csrf-token',
         cspNonce: 'nonce',
         userName: 'search.user@example.com',
+        searchId: 'srch_abc123',
         query: 'jaw fracture',
         searchType: 'semantic',
         searchTerm: 'jaw fracture',
@@ -54,6 +55,7 @@ describe('search page templates', () => {
             searchResults: [
                 {
                     docUuid: 'doc-123',
+                    searchId: 'srch_abc123',
                     searchTerm: 'jaw fracture',
                     searchType: 'semantic',
                     caseReferenceNumber: '12-745678',
@@ -69,18 +71,14 @@ describe('search page templates', () => {
         });
 
         assert.match(html, /name="type" value="semantic"/);
+        assert.match(html, /\/search\/s\/srch_abc123\?pageNumber=1/);
+        assert.match(html, /\/search\/s\/srch_abc123\?pageNumber=3/);
         assert.match(
             html,
-            /\/search\/\?query=jaw%20fracture&amp;pageNumber=1&amp;crn=12-745678&amp;type=semantic/
+            /\/document\/doc-123\/view\/page\/3\?crn=12-745678&searchId=srch_abc123&type=semantic/
         );
-        assert.match(
-            html,
-            /\/search\/\?query=jaw%20fracture&amp;pageNumber=3&amp;crn=12-745678&amp;type=semantic/
-        );
-        assert.match(
-            html,
-            /\/document\/doc-123\/view\/page\/3\?crn=12-745678&searchTerm=jaw%20fracture&type=semantic/
-        );
+        assert.doesNotMatch(html, /\/search\/\?query=jaw%20fracture/);
+        assert.doesNotMatch(html, /searchTerm=jaw%20fracture/);
     });
 
     it('renders result-level debug tags and relevance score when debug feature flag is enabled', () => {

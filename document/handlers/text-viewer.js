@@ -36,13 +36,17 @@ export function createTextViewerHandler(
 
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
-            const { searchTerm = '', searchId = '' } = req.query;
+            const { searchId = '' } = req.query;
             const searchType = getFeatureFlagValue(req.session, 'type');
             const apiJwtToken = createApiJwtToken(req.session?.username);
             const debugQueryDslOverrides = res.locals.debugQueryDslOverrides || {};
-            let resolvedSearchTerm = typeof searchTerm === 'string' ? searchTerm : '';
+            let resolvedSearchTerm = '';
 
-            if (typeof searchId === 'string' && searchId !== '' && typeof findSavedSearchById === 'function') {
+            if (
+                typeof searchId === 'string' &&
+                searchId !== '' &&
+                typeof findSavedSearchById === 'function'
+            ) {
                 const savedSearch = await findSavedSearchById(searchId);
                 if (
                     savedSearch?.query &&
@@ -73,7 +77,7 @@ export function createTextViewerHandler(
             // construct the URLs for the pagination links.
             const paginationData = paginationDataFromMetadata(
                 pageMetadata,
-                req.query,
+                { searchId },
                 req.validatedParams,
                 viewMode,
                 searchType
@@ -86,10 +90,9 @@ export function createTextViewerHandler(
                 documentId,
                 pageNumber,
                 crn,
-                resolvedSearchTerm,
+                searchId,
                 searchType,
-                req.session,
-                searchId
+                req.session
             );
 
             const { text } = pageMetadata;
