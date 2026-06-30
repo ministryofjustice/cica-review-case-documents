@@ -20,7 +20,7 @@ export default function createApiJwtToken(id) {
     const payload = { id: normalisedId };
 
     return jwt.sign(payload, process.env.APP_JWT_SECRET, {
-        expiresIn: process.env.APP_API_JWT_EXPIRES_IN || '60s',
+        expiresIn: process.env.APP_API_JWT_EXPIRES_IN || '300s',
         issuer: getApiJwtIssuer(),
         audience: getApiJwtAudience(),
         algorithm: 'HS256'
