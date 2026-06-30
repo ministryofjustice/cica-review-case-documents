@@ -30,6 +30,7 @@ import isAuthenticated from './middleware/isAuthenticated/index.js';
 import defaultCreateLogger from './middleware/logger/index.js';
 import generalRateLimiter from './middleware/rateLimiter/index.js';
 import searchRouter from './search/routes.js';
+import createSavedSearchStore from './search/saved-search-store.js';
 import createSearchService from './search/search-service.js';
 import createTemplateEngineService from './templateEngine/index.js';
 
@@ -213,7 +214,11 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
         caseSelected,
         debugMiddleware,
         enforceSearchTypeInQuery,
-        searchRouter({ createTemplateEngineService, createSearchService })
+        searchRouter({
+            createTemplateEngineService,
+            createSearchService,
+            createSavedSearchStore
+        })
     );
 
     app.use(notFoundHandler);

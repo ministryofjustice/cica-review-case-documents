@@ -117,6 +117,32 @@ describe('search page templates', () => {
         assert.match(html, /Relevance score:\s*9\.42/);
     });
 
+    it('renders pagination links using shareable searchId when present', () => {
+        const html = createRenderer().render('search/page/results.njk', {
+            ...baseResultsContext,
+            searchId: 'srch_abc123',
+            searchResults: [
+                {
+                    docUuid: 'doc-123',
+                    searchTerm: 'jaw fracture',
+                    searchType: 'semantic',
+                    caseReferenceNumber: '12-745678',
+                    _source: {
+                        correspondence_type: 'Medical report',
+                        source_file_name: 'report.pdf',
+                        chunk_text: 'Result snippet',
+                        page_number: 3,
+                        received_date: '2026-01-12T00:00:00Z'
+                    }
+                }
+            ]
+        });
+
+        assert.match(html, /\/search\/s\/srch_abc123\?pageNumber=1/);
+        assert.match(html, /\/search\/s\/srch_abc123\?pageNumber=3/);
+        assert.doesNotMatch(html, /\/search\/\?query=jaw%20fracture/);
+    });
+
     it('does not render result-level debug metadata when debug feature flag is disabled', () => {
         const html = createRenderer().render('search/page/results.njk', {
             ...baseResultsContext,
