@@ -11,6 +11,7 @@ const DOCUMENT_VIEW_PAGE_PATH_PATTERN = /^\/document\/([0-9a-fA-F-]{36})\/view\/
 const DOCUMENT_VIEW_TEXT_PAGE_PATH_PATTERN =
     /^\/document\/([0-9a-fA-F-]{36})\/view\/text\/page\/(\d+)$/;
 const DOCUMENT_IMAGE_PAGE_PATH_PATTERN = /^\/document\/([0-9a-fA-F-]{36})\/page\/(\d+)$/;
+const SEARCH_SAVED_PATH_PATTERN = /^\/search\/s\/([^/]+)$/;
 
 /**
  * An array of allowed URL patterns for which feature-flag enforcement applies.
@@ -18,6 +19,7 @@ const DOCUMENT_IMAGE_PAGE_PATH_PATTERN = /^\/document\/([0-9a-fA-F-]{36})\/page\
  * @constant
  */
 const ALLOWED_PATH_PATTERNS = [
+    SEARCH_SAVED_PATH_PATTERN,
     DOCUMENT_VIEW_PAGE_PATH_PATTERN,
     DOCUMENT_VIEW_TEXT_PAGE_PATH_PATTERN,
     DOCUMENT_IMAGE_PAGE_PATH_PATTERN // Image streaming endpoint
@@ -67,6 +69,12 @@ function resolveSafeRedirectPath(path) {
 
     if (ALLOWED_PATHS.includes(normalizedPath)) {
         return normalizedPath;
+    }
+
+    const savedSearchMatch = normalizedPath.match(SEARCH_SAVED_PATH_PATTERN);
+    if (savedSearchMatch) {
+        const [, searchId] = savedSearchMatch;
+        return `/search/s/${searchId}`;
     }
 
     const viewPageMatch = normalizedPath.match(DOCUMENT_VIEW_PAGE_PATH_PATTERN);

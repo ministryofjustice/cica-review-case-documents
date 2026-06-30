@@ -230,8 +230,12 @@ function createSearchRouter({
                         ownerUserName: req.session?.username
                     })
                     .then(({ id }) => {
+                        const redirectParams = new URLSearchParams({
+                            pageNumber: String(pageNumber),
+                            crn: String(req.session?.caseReferenceNumber || '')
+                        });
                         return res.redirect(
-                            `/search/s/${encodeURIComponent(id)}?pageNumber=${pageNumber}`
+                            `/search/s/${encodeURIComponent(id)}?${redirectParams.toString()}`
                         );
                     })
                     .catch(next);

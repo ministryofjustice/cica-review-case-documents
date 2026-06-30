@@ -18,6 +18,7 @@ const ALLOWED_PATHS = ['/search'];
  * if (ALLOWED_PATH_PATTERNS.some(pattern => pattern.test(request.path))) { ... }
  */
 const ALLOWED_PATH_PATTERNS = [
+    /^\/search\/s\/[^/]+$/,
     /^\/document\/[0-9a-fA-F-]{36}\/view\/page\/\d+$/,
     /^\/document\/[0-9a-fA-F-]{36}\/view\/text\/page\/\d+$/, // Text viewer endpoint
     /^\/document\/[0-9a-fA-F-]{36}\/page\/\d+$/ // Image streaming endpoint

@@ -71,8 +71,8 @@ describe('search page templates', () => {
         });
 
         assert.match(html, /name="type" value="semantic"/);
-        assert.match(html, /\/search\/s\/srch_abc123\?pageNumber=1/);
-        assert.match(html, /\/search\/s\/srch_abc123\?pageNumber=3/);
+        assert.match(html, /\/search\/s\/srch_abc123\?pageNumber=1&amp;crn=12-745678/);
+        assert.match(html, /\/search\/s\/srch_abc123\?pageNumber=3&amp;crn=12-745678/);
         assert.match(
             html,
             /\/document\/doc-123\/view\/page\/3\?crn=12-745678&searchId=srch_abc123&type=semantic/
@@ -136,8 +136,8 @@ describe('search page templates', () => {
             ]
         });
 
-        assert.match(html, /\/search\/s\/srch_abc123\?pageNumber=1/);
-        assert.match(html, /\/search\/s\/srch_abc123\?pageNumber=3/);
+        assert.match(html, /\/search\/s\/srch_abc123\?pageNumber=1&amp;crn=12-745678/);
+        assert.match(html, /\/search\/s\/srch_abc123\?pageNumber=3&amp;crn=12-745678/);
         assert.doesNotMatch(html, /\/search\/\?query=jaw%20fracture/);
     });
 

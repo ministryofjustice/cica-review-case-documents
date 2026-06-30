@@ -262,6 +262,19 @@ test('redirects for document image streaming endpoint', () => {
     );
 });
 
+test('redirects for saved search page path', () => {
+    const req = createMockReq({
+        path: '/search/s/srch_abc123',
+        query: { pageNumber: '2', crn: '12-745678' },
+        session: { featureFlags: { align: false, type: DEFAULT_SEARCH_TYPE, debug: false } }
+    });
+    const res = createMockRes();
+
+    enforceFeatureFlagsInQuery(req, res, () => {});
+
+    assert.strictEqual(res.redirectedUrl, '/search/s/srch_abc123?pageNumber=2&crn=12-745678&align=off');
+});
+
 test('normalises trailing slash before checking allowed path', () => {
     const req = createMockReq({
         path: '/search/',

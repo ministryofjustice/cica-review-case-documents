@@ -11,6 +11,7 @@ assert.deepStrictEqual(
 
 // --- Pattern-based allowlist test ---
 const validPaths = [
+    '/search/s/srch_abc123',
     '/document/123e4567-e89b-12d3-a456-426614174000/view/page/1',
     '/document/abcdefab-1234-5678-abcd-abcdefabcdef/view/page/42',
     '/document/123e4567-e89b-12d3-a456-426614174000/view/text/page/1',

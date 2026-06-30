@@ -642,7 +642,10 @@ describe('Search Routes', () => {
                 .send({ query: 'search term', type: 'semantic' });
 
             assert.strictEqual(res.statusCode, 302);
-            assert.strictEqual(res.headers.location, '/search/s/srch_abc123?pageNumber=3');
+            assert.strictEqual(
+                res.headers.location,
+                '/search/s/srch_abc123?pageNumber=3&crn=12345'
+            );
         });
 
         it('should render search results for GET /search/s/:id when saved search exists', async () => {
@@ -678,7 +681,7 @@ describe('Search Routes', () => {
             });
             testApp.use('/search', router);
 
-            const res = await request(testApp).get('/search/s/srch_abc123?pageNumber=2');
+            const res = await request(testApp).get('/search/s/srch_abc123?pageNumber=2&crn=12345');
 
             assert.strictEqual(res.statusCode, 200);
             assert.match(res.text, /search\/page\/results.njk/);
