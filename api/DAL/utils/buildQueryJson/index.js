@@ -58,6 +58,7 @@ function normalisePagination(pageNumber, itemsPerPage) {
  * @param {'search'|'page-metadata'} [params.options.queryMode='search'] - Query builder mode.
  * @param {boolean} [params.options.includePagination=true] - Whether to include pagination fields in the query.
  * @param {boolean} [params.options.includeNamedQueries=false] - Whether to include named-query `_name` metadata in the generated DSL.
+ * @param {string[]|boolean|{includes?: string[], excludes?: string[]}} [params.options.sourceFields] - Optional OpenSearch `_source` projection.
  * @param {object} [params.options.queryDslConfig] - Optional tuning overrides for semantic thresholds, ANN k, and default boosts.
  * @param {string} [params.options.documentId] - Document UUID to scope results to a single document and page.
  * @returns {object} OpenSearch query DSL JSON object.
@@ -73,6 +74,7 @@ function buildQueryJson({
         queryMode = DEFAULT_QUERY_MODE,
         includePagination = true,
         includeNamedQueries = false,
+        sourceFields,
         documentId,
         queryDslConfig
     } = {}
@@ -142,6 +144,10 @@ function buildQueryJson({
         queryJson.size = safeItemsPerPage;
     }
 
+    if (sourceFields !== undefined) {
+        queryJson._source = sourceFields;
+    }
+
     if (queryJson?.query?.bool?.should?.length === 0) {
         delete queryJson.query.bool.should;
         delete queryJson.query.bool.minimum_should_match;
@@ -170,6 +176,7 @@ function buildQueryJson({
         safePageNumber,
         documentId,
         includeNamedQueries,
+        sourceFields,
         queryDslConfig
     };
     const prettyJsonEnabled = process.env.APP_LOG_PRETTY_JSON === 'true';

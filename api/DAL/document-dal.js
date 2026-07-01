@@ -126,10 +126,10 @@ function createDocumentDAL({
                     logger,
                     searchType,
                     includeNamedQueries: shouldIncludeNamedQueries,
+                    sourceFields,
                     queryDslConfig
                 }
             });
-            queryBody._source = sourceFields;
             const buildEnd = Date.now();
 
             // safe query hash for correlation, not raw text.
@@ -214,10 +214,10 @@ function createDocumentDAL({
                     queryMode: QUERY_MODES.PAGE_METADATA,
                     includePagination: false,
                     documentId,
+                    sourceFields,
                     queryDslConfig
                 }
             });
-            queryBody._source = sourceFields;
 
             const response = await db.query({
                 index: 'page_metadata',
@@ -285,11 +285,10 @@ function createDocumentDAL({
                     documentId,
                     logger,
                     includeNamedQueries: shouldIncludeNamedQueries,
+                    sourceFields,
                     queryDslConfig
                 }
             });
-
-            queryBody._source = sourceFields;
             queryBody.sort = [{ chunk_index: { order: 'asc' } }];
 
             const dbStart = Date.now();

@@ -77,7 +77,7 @@ describe('Search Service', () => {
 
         assert.equal(mockDAL.getDocumentsChunksByKeyword.mock.callCount(), 1);
         const args = mockDAL.getDocumentsChunksByKeyword.mock.calls[0].arguments;
-        assert.deepEqual(args, [keyword, pageNumber, itemsPerPage, undefined]);
+        assert.deepEqual(args, [keyword, pageNumber, itemsPerPage, { sourceFields: undefined }]);
     });
 
     it('should return search results from DAL', async () => {
@@ -164,7 +164,7 @@ describe('Search Service', () => {
         });
 
         const args = mockDAL.getDocumentsChunksByKeyword.mock.calls[0].arguments;
-        assert.deepEqual(args, ['test', 3, 50, undefined]);
+        assert.deepEqual(args, ['test', 3, 50, { sourceFields: undefined }]);
     });
 
     it('should pass sourceFields to DAL query options when provided', async () => {

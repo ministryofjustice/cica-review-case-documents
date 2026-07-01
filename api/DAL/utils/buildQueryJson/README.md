@@ -25,7 +25,7 @@ When `queryMode` is `page-metadata`, `buildQueryJson` builds:
 - `bool.must` with `source_doc_id` match
 - `bool.must` with `page_num` match
 
-`_source` projection is still caller-controlled (for example in DAL methods).
+`_source` projection is set in `buildQueryJson` when `options.sourceFields` is provided.
 
 ## `searchType` values
 
@@ -79,7 +79,11 @@ const hybridDatesQuery = buildQueryJson({
     caseReferenceNumber: '26-711111',
     pageNumber: 1,
     itemsPerPage: 10,
-    options: { searchType: 'hybrid-dates', logger }
+    options: {
+        searchType: 'hybrid-dates',
+        sourceFields: { excludes: ['embeddings'] },
+        logger
+    }
 });
 
 // Keyword + dates (BM25 match + date phrase expansion)

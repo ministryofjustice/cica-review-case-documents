@@ -53,8 +53,7 @@ function createSearchService({ createDocumentDAL: dalFactory = createDocumentDAL
             includeNamedQueries,
             queryDslConfig
         });
-        const queryOptions = sourceFields === undefined ? undefined : { sourceFields };
-        return db.getDocumentsChunksByKeyword(keyword, pageNumber, itemsPerPage, queryOptions);
+        return db.getDocumentsChunksByKeyword(keyword, pageNumber, itemsPerPage, { sourceFields });
     }
 
     return Object.freeze({

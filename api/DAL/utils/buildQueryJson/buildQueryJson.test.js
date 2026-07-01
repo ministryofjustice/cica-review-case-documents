@@ -96,6 +96,35 @@ describe('buildQueryJson', () => {
         }
     });
 
+    it('Should include _source when sourceFields option is provided', () => {
+        const result = buildQueryJson({
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 5,
+            options: {
+                searchType: SEARCH_TYPES.KEYWORD,
+                sourceFields: { excludes: ['embeddings'] }
+            }
+        });
+
+        assert.deepStrictEqual(result._source, { excludes: ['embeddings'] });
+    });
+
+    it('Should not include _source when sourceFields option is undefined', () => {
+        const result = buildQueryJson({
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 5,
+            options: {
+                searchType: SEARCH_TYPES.KEYWORD
+            }
+        });
+
+        assert.strictEqual(Object.hasOwn(result, '_source'), false);
+    });
+
     it('Should build query with multiple numeric dates and remaining text', () => {
         const params = {
             keyword: 'Event dates: 12/01/2024, 13-02-24 in the calendar',
