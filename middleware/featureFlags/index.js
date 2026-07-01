@@ -63,7 +63,7 @@ export function parseEnumFlagValue(value, allowedValues) {
  * Resolves provenance for non-type feature flags by comparing the session value
  * against the repository default value.
  *
- * @param {boolean | string | undefined} sessionFlagValue - Value stored in the session.
+ * @param {unknown} sessionFlagValue - Value stored in the session.
  * @param {boolean | string} defaultValue - Repository default for the flag.
  * @returns {'default' | 'session'} The provenance of the resolved flag value.
  */
@@ -93,7 +93,7 @@ function getDefaultFlagSource(sessionFlagValue, defaultValue) {
  * The `type` flag is special because it is normalized through the supported
  * search-type list before provenance is compared against the default.
  *
- * @param {string | undefined} sessionFlagValue - Value stored in the session.
+ * @param {unknown} sessionFlagValue - Value stored in the session.
  * @returns {'default' | 'session'} The provenance of the resolved flag value.
  */
 function getTypeFlagSource(sessionFlagValue) {
