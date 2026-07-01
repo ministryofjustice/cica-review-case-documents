@@ -34,7 +34,7 @@ Keep this file limited to stable repo rules. Use [README.md](./README.md), [ARCH
 - Put additional details in an unordered list using `-`.
 - Keep each bullet short and focused on one change.
 - Follow the commit-message requirements here; see `CONTRIBUTING.md` for terminal command examples and workflow mechanics.
-- Do not use `\n` in commit command strings.
+- Do not use `\n` escape sequences in commit command strings to simulate line breaks.
 
 ## Routing And Middleware
 
