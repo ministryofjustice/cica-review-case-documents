@@ -451,6 +451,25 @@ describe('buildQueryJson', () => {
         });
     });
 
+    it('Should throw when documentId is missing in page-metadata mode', () => {
+        assert.throws(
+            () =>
+                buildQueryJson({
+                    keyword: '',
+                    caseReferenceNumber: '26-711111',
+                    pageNumber: 1,
+                    itemsPerPage: 10,
+                    options: {
+                        queryMode: 'page-metadata',
+                        includePagination: false
+                    }
+                }),
+            {
+                message: 'documentId is required when queryMode is page-metadata'
+            }
+        );
+    });
+
     it('Should include pagination fields in page-metadata mode when enabled', () => {
         const result = buildQueryJson({
             keyword: '',

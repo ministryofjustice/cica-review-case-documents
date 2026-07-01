@@ -189,6 +189,9 @@ function createDocumentDAL({
      * @async
      * @param {string} documentId - The UUID of the document (source_doc_id in OpenSearch).
      * @param {number|string} pageNumber - The page number (page_num in OpenSearch).
+        * @param {{sourceFields?: string[]|boolean|{includes?: string[], excludes?: string[]}}} [options]
+        *   Optional OpenSearch `_source` projection.
+        *   Defaults to the page metadata fields used by the API response.
      * @returns {Promise<Object|null>} The page metadata object with all fields, or null if not found.
      * @throws {VError} If the database query fails.
      */

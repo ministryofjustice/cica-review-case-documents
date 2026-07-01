@@ -60,7 +60,7 @@ function normalisePagination(pageNumber, itemsPerPage) {
  * @param {boolean} [params.options.includeNamedQueries=false] - Whether to include named-query `_name` metadata in the generated DSL.
  * @param {string[]|boolean|{includes?: string[], excludes?: string[]}} [params.options.sourceFields] - Optional OpenSearch `_source` projection.
  * @param {object} [params.options.queryDslConfig] - Optional tuning overrides for semantic thresholds, ANN k, and default boosts.
- * @param {string} [params.options.documentId] - Document UUID to scope results to a single document and page.
+ * @param {string} [params.options.documentId] - Document UUID to scope results to a single document and page. Required when queryMode is `page-metadata`.
  * @returns {object} OpenSearch query DSL JSON object.
  */
 function buildQueryJson({
@@ -93,14 +93,19 @@ function buildQueryJson({
 
     switch (effectiveQueryMode) {
         case QUERY_MODES.PAGE_METADATA: {
+            if (!documentId) {
+                throw new Error('documentId is required when queryMode is page-metadata');
+            }
             const queryStructureBuilder = defaultQueryStructureBuilders[effectiveQueryMode];
+            if (!queryStructureBuilder) {
+                throw new Error(
+                    `No query structure builder registered for queryMode "${effectiveQueryMode}"`
+                );
+            }
+
             queryJson = queryStructureBuilder({
                 documentId,
-                safePageNumber,
-                caseReferenceNumber,
-                keyword,
-                logger,
-                includeNamedQueries
+                safePageNumber
             });
             break;
         }
