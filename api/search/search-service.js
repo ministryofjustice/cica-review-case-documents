@@ -30,6 +30,7 @@ function createSearchService({ createDocumentDAL: dalFactory = createDocumentDAL
      * @param {string} [context.searchType=DEFAULT_SEARCH_TYPE] - Search mode. One of SEARCH_TYPES.KEYWORD, SEARCH_TYPES.KEYWORD_DATES, SEARCH_TYPES.SEMANTIC, SEARCH_TYPES.HYBRID, or SEARCH_TYPES.HYBRID_DATES.
      * @param {boolean} [context.includeNamedQueries] - Optional explicit override for named query metadata.
      * @param {object} [context.queryDslConfig] - Optional debug-only DSL tuning overrides.
+     * @param {string[]|boolean} [context.sourceFields] - Optional `_source` projection for OpenSearch queries.
      * @returns {Promise<Object[]>} A promise that resolves to an array of document results.
      */
     async function getSearchResultsByKeyword(
@@ -41,7 +42,8 @@ function createSearchService({ createDocumentDAL: dalFactory = createDocumentDAL
             logger,
             searchType = DEFAULT_SEARCH_TYPE,
             includeNamedQueries,
-            queryDslConfig
+            queryDslConfig,
+            sourceFields
         }
     ) {
         const db = dalFactory({
@@ -51,7 +53,8 @@ function createSearchService({ createDocumentDAL: dalFactory = createDocumentDAL
             includeNamedQueries,
             queryDslConfig
         });
-        return db.getDocumentsChunksByKeyword(keyword, pageNumber, itemsPerPage);
+        const queryOptions = sourceFields === undefined ? undefined : { sourceFields };
+        return db.getDocumentsChunksByKeyword(keyword, pageNumber, itemsPerPage, queryOptions);
     }
 
     return Object.freeze({

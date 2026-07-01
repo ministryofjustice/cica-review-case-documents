@@ -77,7 +77,7 @@ describe('Search Service', () => {
 
         assert.equal(mockDAL.getDocumentsChunksByKeyword.mock.callCount(), 1);
         const args = mockDAL.getDocumentsChunksByKeyword.mock.calls[0].arguments;
-        assert.deepEqual(args, [keyword, pageNumber, itemsPerPage]);
+        assert.deepEqual(args, [keyword, pageNumber, itemsPerPage, undefined]);
     });
 
     it('should return search results from DAL', async () => {
@@ -164,7 +164,24 @@ describe('Search Service', () => {
         });
 
         const args = mockDAL.getDocumentsChunksByKeyword.mock.calls[0].arguments;
-        assert.deepEqual(args, ['test', 3, 50]);
+        assert.deepEqual(args, ['test', 3, 50, undefined]);
+    });
+
+    it('should pass sourceFields to DAL query options when provided', async () => {
+        const searchService = createSearchService({
+            createDocumentDAL: mockDALFactory
+        });
+
+        mockDAL.getDocumentsChunksByKeyword = mock.fn(async () => []);
+
+        await searchService.getSearchResultsByKeyword('test', 1, 10, {
+            caseReferenceNumber: '12-745678',
+            logger: { info: () => {} },
+            sourceFields: ['chunk_text', 'chunk_id']
+        });
+
+        const args = mockDAL.getDocumentsChunksByKeyword.mock.calls[0].arguments;
+        assert.deepEqual(args, ['test', 1, 10, { sourceFields: ['chunk_text', 'chunk_id'] }]);
     });
 
     it('should pass includeNamedQueries to DAL factory when provided', async () => {

@@ -401,6 +401,67 @@ describe('buildQueryJson', () => {
         );
     });
 
+    it('Should build page metadata query when queryMode is page-metadata', () => {
+        const result = buildQueryJson({
+            keyword: '',
+            caseReferenceNumber: '26-711111',
+            pageNumber: '5',
+            options: {
+                queryMode: 'page-metadata',
+                includePagination: false,
+                documentId: 'doc-123'
+            }
+        });
+
+        assert.deepStrictEqual(result, {
+            query: {
+                bool: {
+                    must: [{ match: { source_doc_id: 'doc-123' } }, { match: { page_num: 5 } }]
+                }
+            }
+        });
+    });
+
+    it('Should include pagination fields in page-metadata mode when enabled', () => {
+        const result = buildQueryJson({
+            keyword: '',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 2,
+            itemsPerPage: 3,
+            options: {
+                queryMode: 'page-metadata',
+                includePagination: true,
+                documentId: 'doc-123'
+            }
+        });
+
+        assert.strictEqual(result.from, 3);
+        assert.strictEqual(result.size, 3);
+        assert.deepStrictEqual(result.query.bool.must, [
+            { match: { source_doc_id: 'doc-123' } },
+            { match: { page_num: 2 } }
+        ]);
+    });
+
+    it('Should throw when an invalid queryMode is provided', () => {
+        assert.throws(
+            () =>
+                buildQueryJson({
+                    keyword: '',
+                    caseReferenceNumber: '26-711111',
+                    pageNumber: 1,
+                    options: {
+                        queryMode: 'invalid-mode',
+                        includePagination: false,
+                        documentId: 'doc-123'
+                    }
+                }),
+            {
+                message: 'Invalid queryMode "invalid-mode". Must be one of: search, page-metadata'
+            }
+        );
+    });
+
     it('Should build a hybrid query when searchType is hybrid', () => {
         // Test owns its tuning via explicit overrides so it is decoupled from
         // production defaults in DEFAULT_QUERY_DSL_CONFIG.

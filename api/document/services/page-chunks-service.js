@@ -25,6 +25,7 @@ function createPageChunksService({
      * @param {string} [context.searchType='hybrid-dates'] - Search mode (one of SEARCH_TYPES).
      * @param {boolean} [context.includeNamedQueries=false] - Whether to include named query metadata in the generated DSL.
      * @param {object} [context.queryDslConfig] - Optional debug-only DSL tuning overrides.
+     * @param {string[]|boolean} [context.sourceFields] - Optional `_source` projection for OpenSearch queries.
      * @returns {Promise<Array<Object>>} Array of chunks with bounding boxes.
      */
     async function getPageChunks(
@@ -32,7 +33,13 @@ function createPageChunksService({
         pageNumber,
         crn,
         searchTerm,
-        { logger, searchType = DEFAULT_SEARCH_TYPE, includeNamedQueries, queryDslConfig } = {}
+        {
+            logger,
+            searchType = DEFAULT_SEARCH_TYPE,
+            includeNamedQueries,
+            queryDslConfig,
+            sourceFields
+        } = {}
     ) {
         const dal = createDocumentDALFactory({
             caseReferenceNumber: crn,
@@ -47,7 +54,8 @@ function createPageChunksService({
                 documentId,
                 pageNumber,
                 searchTerm,
-                searchType
+                searchType,
+                sourceFields === undefined ? undefined : { sourceFields }
             );
         } catch (error) {
             logger?.error(

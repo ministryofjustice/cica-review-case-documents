@@ -1,6 +1,31 @@
 # buildQueryJson
 
-Builds an OpenSearch query DSL object for a given `searchType`.
+Builds an OpenSearch query DSL object for a given query mode.
+
+- Search queries are assembled by `queryTypeBuilders.js` (driven by `searchType`).
+- Non-search structural queries are assembled by `queryStructureBuilders.js` (driven by `queryMode`).
+
+## `queryMode` values
+
+| `queryMode` | Default | Description |
+|---|:---:|---|
+| `search` | ✅ | Uses `searchType` and `queryTypeBuilders` to build chunk search DSL. |
+| `page-metadata` | | Uses `queryStructureBuilders` to build page metadata lookup DSL. |
+
+## Structure Builders
+
+`queryStructureBuilders.js` defines non-search query shapes.
+
+- `QUERY_MODES.SEARCH`: canonical default mode value.
+- `QUERY_MODES.PAGE_METADATA`: page metadata lookup mode.
+- `DEFAULT_QUERY_MODE`: currently `QUERY_MODES.SEARCH`.
+
+When `queryMode` is `page-metadata`, `buildQueryJson` builds:
+
+- `bool.must` with `source_doc_id` match
+- `bool.must` with `page_num` match
+
+`_source` projection is still caller-controlled (for example in DAL methods).
 
 ## `searchType` values
 
@@ -82,6 +107,19 @@ const keywordQuery = buildQueryJson({
     pageNumber: 1,
     itemsPerPage: 10,
     options: { searchType: 'keyword', logger }
+});
+
+// Page metadata lookup (non-search structure mode)
+const pageMetadataQuery = buildQueryJson({
+    keyword: '',
+    caseReferenceNumber: '26-711111',
+    pageNumber: '5',
+    options: {
+        queryMode: 'page-metadata',
+        includePagination: false,
+        documentId: 'doc-123',
+        logger
+    }
 });
 ```
 
