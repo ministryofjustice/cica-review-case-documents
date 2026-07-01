@@ -60,32 +60,14 @@ export function parseEnumFlagValue(value, allowedValues) {
 }
 
 /**
- * Resolves where a feature flag value originated from.
+ * Resolves provenance for non-type feature flags by comparing the session value
+ * against the repository default value.
  *
- * When the middleware persists default values into the session, this function
- * treats values equal to the defaults as 'default' source, not 'session'.
- * This ensures the debug panel's origin indicator reflects the actual source
- * of a user-set override, not just whether a value exists in the session.
- *
- * @param {import('express-session').Session | undefined} session - Request session object.
- * @param {'align' | 'type' | 'debug'} flagName - Supported feature flag name.
- * @returns {'default' | 'session'} Source of the resolved value.
+ * @param {boolean | string | undefined} sessionFlagValue - Value stored in the session.
+ * @param {boolean | string} defaultValue - Repository default for the flag.
+ * @returns {'default' | 'session'} The provenance of the resolved flag value.
  */
-export function getFeatureFlagSource(session, flagName) {
-    const sessionFlagValue = session?.featureFlags?.[flagName];
-    const defaultValue = FEATURE_FLAG_DEFAULTS[flagName];
-
-    if (flagName === 'type') {
-        if (typeof sessionFlagValue === 'string') {
-            const normalisedSessionType = sessionFlagValue.trim().toLowerCase();
-            if (Object.values(SEARCH_TYPES).includes(normalisedSessionType)) {
-                // Treat persisted defaults as originating from 'default', not 'session'
-                return normalisedSessionType === defaultValue ? 'default' : 'session';
-            }
-        }
-        return 'default';
-    }
-
+function getDefaultFlagSource(sessionFlagValue, defaultValue) {
     if (typeof defaultValue === 'boolean') {
         if (typeof sessionFlagValue === 'boolean') {
             // Treat persisted defaults as originating from 'default', not 'session'
@@ -103,6 +85,50 @@ export function getFeatureFlagSource(session, flagName) {
     }
 
     return 'default';
+}
+
+/**
+ * Resolves provenance for the `type` feature flag.
+ *
+ * The `type` flag is special because it is normalized through the supported
+ * search-type list before provenance is compared against the default.
+ *
+ * @param {string | undefined} sessionFlagValue - Value stored in the session.
+ * @returns {'default' | 'session'} The provenance of the resolved flag value.
+ */
+function getTypeFlagSource(sessionFlagValue) {
+    if (typeof sessionFlagValue === 'string') {
+        const normalisedSessionType = sessionFlagValue.trim().toLowerCase();
+        if (Object.values(SEARCH_TYPES).includes(normalisedSessionType)) {
+            // Treat persisted defaults as originating from 'default', not 'session'
+            return normalisedSessionType === FEATURE_FLAG_DEFAULTS.type ? 'default' : 'session';
+        }
+    }
+
+    return 'default';
+}
+
+/**
+ * Resolves where a feature flag value originated from.
+ *
+ * When the middleware persists default values into the session, this function
+ * treats values equal to the defaults as 'default' source, not 'session'.
+ * This ensures the debug panel's origin indicator reflects the actual source
+ * of a user-set override, not just whether a value exists in the session.
+ *
+ * @param {import('express-session').Session | undefined} session - Request session object.
+ * @param {'align' | 'type' | 'debug'} flagName - Supported feature flag name.
+ * @returns {'default' | 'session'} Source of the resolved value.
+ */
+export function getFeatureFlagSource(session, flagName) {
+    const sessionFlagValue = session?.featureFlags?.[flagName];
+    const defaultValue = FEATURE_FLAG_DEFAULTS[flagName];
+
+    if (flagName === 'type') {
+        return getTypeFlagSource(sessionFlagValue);
+    }
+
+    return getDefaultFlagSource(sessionFlagValue, defaultValue);
 }
 
 /**
