@@ -33,11 +33,7 @@ Keep this file limited to stable repo rules. Use [README.md](./README.md), [ARCH
 - Leave exactly one empty line after that sentence.
 - Put additional details in an unordered list using `-`.
 - Keep each bullet short and focused on one change.
-- When writing a terminal commit command, use separate `-m` flags for the header and for each paragraph in the body.
-- Git inserts a blank line between each `-m` message.
-- Keep a multi-item bullet list together inside a single body paragraph; do not split list items across multiple `-m` flags.
-- For longer multi-line commit bodies from the terminal, `git commit -F -` with a heredoc is a valid alternative.
-- Required command shape: `git commit -m "<header>" -m "<summary>" -m "<bullet-list paragraph>"`.
+- Follow the commit-message requirements here; see `CONTRIBUTING.md` for terminal command examples and workflow mechanics.
 - Do not use `\n` in commit command strings.
 
 ## Routing And Middleware
