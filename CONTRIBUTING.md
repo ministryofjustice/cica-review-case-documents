@@ -98,6 +98,8 @@ npm run lint:fix:unsafe
 3. `npm run test`
 4. `npm run jsdoc:check`
 
+In scripts, this audit command is exposed as `npm run audit:ci` and used by `npm run prepush`.
+
 Pre-push does not run formatting fixes, Sass compilation, or OpenAPI builds.
 
 ## Staged Helper Safety Rules
