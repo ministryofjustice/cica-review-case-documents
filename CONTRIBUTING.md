@@ -64,10 +64,8 @@ Run `npm install` as expected, then run:
 npx husky init
 ```
 Husky will now use the scripts defined in the `/.husky` folder:
-```
-Pre-commit runs `npm run precommit`.
-Pre-push runs `npm run prepush`.
-```
+- Pre-commit runs `npm run precommit`.
+- Pre-push runs `npm run prepush`.
 
 ## Pre-commit
 
