@@ -145,6 +145,8 @@ Notes for pre-commit:
 - The staged helper aborts when a staged file also has unstaged edits (partial staging).
 - If staged `.scss` files are present, the helper also aborts when any tracked `.scss` file has unstaged edits.
 - This is intentional to keep staged-only checks deterministic and avoid unstaged changes being pulled into the commit.
+- The hook re-stages only files that were already staged before `npm run precommit`, instead of using `git add -A`.
+- The hook also stages generated artifacts when they change during checks: `public/stylesheets/all.css` and `api/openapi/openapi-dist.json`.
 
 ### CI/CD Pipeline
 
