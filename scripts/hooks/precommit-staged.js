@@ -32,6 +32,51 @@ function getStagedFiles() {
 }
 
 /**
+ * Determine whether staged changes affect any SCSS path, including
+ * add/modify/delete/copy/rename operations.
+ * @returns {boolean}
+ */
+function hasStagedScssChanges() {
+    const output = execFileSync(
+        'git',
+        ['diff', '--cached', '--name-status', '-z', '--diff-filter=ACMRD'],
+        {
+            encoding: 'utf8'
+        }
+    );
+
+    if (!output) {
+        return false;
+    }
+
+    const fields = output.split('\0').filter(Boolean);
+
+    for (let i = 0; i < fields.length; ) {
+        const status = fields[i++] || '';
+        const code = status[0];
+
+        if (code === 'R' || code === 'C') {
+            const oldPath = fields[i++] || '';
+            const newPath = fields[i++] || '';
+
+            if (oldPath.endsWith('.scss') || newPath.endsWith('.scss')) {
+                return true;
+            }
+
+            continue;
+        }
+
+        const path = fields[i++] || '';
+
+        if (path.endsWith('.scss')) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
  * Get paths that currently have unstaged working tree changes.
  * @param {string[]} paths Paths to check.
  * @returns {string[]}
@@ -77,8 +122,9 @@ function getUntrackedScssFiles() {
 }
 
 const stagedFiles = getStagedFiles();
+const hasScssChanges = hasStagedScssChanges();
 
-if (stagedFiles.length === 0) {
+if (stagedFiles.length === 0 && !hasScssChanges) {
     process.exit(0);
 }
 
@@ -104,8 +150,6 @@ const biomeFiles = stagedFiles.filter((file) => {
     // Keep npm-generated lockfile formatting stable.
     return !/(^|\/)package-lock\.json$/.test(file);
 });
-const hasScssChanges = stagedFiles.some((file) => file.endsWith('.scss'));
-
 if (biomeFiles.length > 0) {
     // Prefix paths with `./` so Biome never interprets them as CLI options.
     const biomePaths = biomeFiles.map((f) => `./${f}`);
@@ -153,7 +197,9 @@ if (hasScssChanges) {
 }
 
 // Use `--` so path-like arguments are never parsed as git options.
-run('git', ['add', '--', ...stagedFiles]);
+if (stagedFiles.length > 0) {
+    run('git', ['add', '--', ...stagedFiles]);
+}
 
 // Ensure generated stylesheet is included when Sass sources changed.
 if (hasScssChanges) {
