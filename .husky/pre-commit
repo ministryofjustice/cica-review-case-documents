@@ -1,1 +1,6 @@
+#!/usr/bin/env sh
+
+# Fail fast so a precommit check failure blocks the commit.
+set -e
+
 npm run precommit

@@ -63,13 +63,21 @@ Run `npm install` as expected, then run:
 ```
 npx husky init
 ```
-Husky will now use the scripts defined in the `/.husky` folder, which are currently:
-```
-pre-commit
-pre-push
-```
+Husky will now use the scripts defined in the `/.husky` folder:
+- Pre-commit runs `npm run precommit`.
+- Pre-push runs `npm run prepush`.
 
- > pre-commit runs `npm run precommit` (mutating checks via `npm run quality:fix`: format, lint safe auto-fix, Sass build, gitleaks secret scan, and OpenAPI build). pre-push runs `npm run prepush` in this order: `npm audit` (high severity, prod deps), `npm run quality:verify` (lint check + gitleaks), then tests and JSDoc linting. Pre-push does not run formatting fixes, Sass compilation, or OpenAPI builds.
+## Pre-commit
+
+`npm run precommit` runs in this order:
+
+1. `npm run precommit:staged`
+   - Runs staged-file Biome checks/fixes.
+   - Runs a conditional Sass build when staged `.scss` files are present.
+2. `npm run precommit:secrets`
+   - Runs gitleaks secret scan against staged content.
+
+If you want repo-wide mutating format/build checks, run `npm run quality:fix` manually. It runs format, lint safe auto-fix, Sass build, staged-only gitleaks (`npm run precommit:secrets`), and OpenAPI build.
 
 If you explicitly want Biome unsafe transformations (for example, automatic brace insertion from `useBlockStatements`), run:
 
@@ -77,10 +85,32 @@ If you explicitly want Biome unsafe transformations (for example, automatic brac
 npm run lint:fix:unsafe
 ```
 
+## Pre-push
+
+`npm run prepush` runs in this order:
+
+1. `npm audit --audit-level=high --omit=dev` (high severity, production dependencies)
+2. `npm run quality:verify` (lint check + repository gitleaks scan)
+3. `npm run test`
+4. `npm run jsdoc:check`
+
+In scripts, this audit command is exposed as `npm run audit:ci` and used by `npm run prepush`.
+
+Pre-push does not run formatting fixes, Sass compilation, or OpenAPI builds.
+
+## Staged Helper Safety Rules
+
+- The staged helper fails fast if any staged path also has unstaged changes (for example, partial staging in the same file).
+- When staged changes affect `.scss` paths (including adds, edits, deletions, and renames), the helper runs the Sass binary directly and checks tracked `.scss` files for unstaged edits while blocking on untracked `.scss` files before compiling.
+- This keeps `public/stylesheets/all.css` deterministic and prevents generated CSS from picking up unstaged SCSS changes.
+- If this happens, stage the full file, or stash/commit unstaged edits, then retry.
+
 Install the `gitleaks` CLI locally so pre-commit secret scanning can run: https://github.com/gitleaks/gitleaks#installing
 The installer for a Ubuntu WSL console is `sudo apt install gitleaks` for example.
 
 The secret scan uses `.gitleaks.toml` as the configuration file.
+
+`npm run precommit:secrets` scans staged content only. `npm run prepush:secrets` (used by `quality:verify`) runs a repository scan for pre-push and CI.
 
 ### Branching Strategy
 - Feature branches: Create from `main`, merge back to `main` via PR
@@ -106,15 +136,23 @@ The project uses Husky for Git hooks:
 
 | Hook Name  | Action       | Description                          |
 | ---------- | ------------ | ------------------------------------ |
-| pre-commit | npm run precommit | Runs quick checks before commit: format, lint, sass, gitleaks, and OpenAPI build |
+| pre-commit | npm run precommit | Runs staged-file Biome checks/fixes, conditional Sass build, and staged gitleaks checks |
 | pre-push   | npm run prepush | Runs npm audit, non-mutating quality checks (`quality:verify`), tests, and JSDoc linting before push |
+
+Notes for pre-commit:
+- The staged helper aborts when a staged file also has unstaged edits (partial staging).
+- If staged changes affect `.scss` paths, the helper also aborts when any tracked `.scss` file has unstaged edits or when untracked `.scss` files are present.
+- This is intentional to keep staged-only checks deterministic and avoid unstaged changes being pulled into the commit.
+- The staged helper re-stages only files that were already staged before checks, instead of using `git add -A`.
+- The staged helper also stages `public/stylesheets/all.css` when it changes during staged Sass checks.
+- The hook does not run OpenAPI build or auto-stage `api/openapi/openapi-dist.json`; include that file in a commit only when you explicitly stage it. Running `npm run quality:fix` may regenerate the file, but you still need `git add` to include it in the commit.
 
 ### CI/CD Pipeline
 
 #### Automated Tests (`tests.yml`)
 - **Triggers**: Runs on every push and pull request
 - **Actions**: Linting, JSDoc validation, and unit tests
-- **Node.js version**: 22.8.0
+- **Node.js version**: 24.15.0
 
 #### Deployment Workflow (`deploy.yml`)
 The deployment process consists of two stages:
@@ -173,7 +211,7 @@ Environment variables are substituted during CI/CD deployment.
 ## Technology Stack
 
 ### Core Technologies
-- **Runtime**: Node.js v22.8.0+
+- **Runtime**: Node.js v24.15.0+
 - **Framework**: Express.js v5
 - **Template Engine**: Nunjucks
 - **Search**: OpenSearch (AWS)
