@@ -103,7 +103,7 @@ Pre-push does not run formatting fixes, Sass compilation, or OpenAPI builds.
 ## Staged Helper Safety Rules
 
 - The staged helper fails fast if any staged path also has unstaged changes (for example, partial staging in the same file).
-- When staged `.scss` changes are present, the helper runs the Sass binary directly and checks tracked `.scss` files for unstaged edits while blocking on untracked `.scss` files before compiling.
+- When staged changes affect `.scss` paths (including adds, edits, deletions, and renames), the helper runs the Sass binary directly and checks tracked `.scss` files for unstaged edits while blocking on untracked `.scss` files before compiling.
 - This keeps `public/stylesheets/all.css` deterministic and prevents generated CSS from picking up unstaged SCSS changes.
 - If this happens, stage the full file, or stash/commit unstaged edits, then retry.
 
@@ -143,7 +143,7 @@ The project uses Husky for Git hooks:
 
 Notes for pre-commit:
 - The staged helper aborts when a staged file also has unstaged edits (partial staging).
-- If staged `.scss` files are present, the helper also aborts when any tracked `.scss` file has unstaged edits or when untracked `.scss` files are present.
+- If staged changes affect `.scss` paths, the helper also aborts when any tracked `.scss` file has unstaged edits or when untracked `.scss` files are present.
 - This is intentional to keep staged-only checks deterministic and avoid unstaged changes being pulled into the commit.
 - The staged helper re-stages only files that were already staged before checks, instead of using `git add -A`.
 - The staged helper also stages `public/stylesheets/all.css` when it changes during staged Sass checks.
