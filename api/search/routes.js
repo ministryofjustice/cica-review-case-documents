@@ -55,9 +55,19 @@ import { resolveSearchType } from './constants/searchTypes.js';
 export default function searchRouter({ searchService }) {
     const router = express.Router();
 
-    router.get('/', async (req, res, next) => {
+    /**
+     * Handles GET and POST search requests and returns a JSON:API search resource.
+     *
+     * @param {express.Request} req - Express request containing query/body search fields.
+     * @param {express.Response} res - Express response used to send JSON output.
+     * @param {express.NextFunction} next - Express next middleware callback.
+     * @returns {Promise<void>} A promise that resolves once the response is sent.
+     */
+    async function handleSearch(req, res, next) {
         try {
-            const { query, pageNumber, itemsPerPage, type: rawSearchType } = req.query;
+            const isPost = req.method === 'POST';
+            const source = isPost ? req.body || {} : req.query || {};
+            const { query, pageNumber, itemsPerPage, type: rawSearchType } = source;
 
             // Resolve and validate the search type, falling back to DEFAULT_SEARCH_TYPE
             // when absent or invalid. This ensures downstream consumers always receive
@@ -99,7 +109,10 @@ export default function searchRouter({ searchService }) {
         } catch (err) {
             next(err);
         }
-    });
+    }
+
+    router.get('/', handleSearch);
+    router.post('/', handleSearch);
 
     return router;
 }

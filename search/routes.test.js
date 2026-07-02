@@ -43,7 +43,8 @@ describe('Search Routes', () => {
 
         const searchRouter = createSearchRouter({
             createTemplateEngineService: mockCreateTemplateEngineService,
-            createSearchService: mockCreateSearchService
+            createSearchService: mockCreateSearchService,
+            createSavedSearchStore: () => null
         });
 
         app = express();
@@ -110,7 +111,8 @@ describe('Search Routes', () => {
 
             const searchRouter = createSearchRouter({
                 createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: mockCreateSearchService
+                createSearchService: mockCreateSearchService,
+                createSavedSearchStore: () => null
             });
 
             const testApp = express();
@@ -145,6 +147,7 @@ describe('Search Routes', () => {
 
             const searchRouter = createSearchRouter({
                 createTemplateEngineService: mockCreateTemplateEngineService,
+                createSavedSearchStore: () => null,
                 createSearchService: () => ({
                     getSearchResults: async (...args) => {
                         serviceCallArgs = args;
@@ -218,6 +221,7 @@ describe('Search Routes', () => {
 
             const router = createSearchRouter({
                 createTemplateEngineService: mockCreateTemplateEngineService,
+                createSavedSearchStore: () => null,
                 createSearchService: () => ({
                     getSearchResults: async (
                         _query,
@@ -279,7 +283,8 @@ describe('Search Routes', () => {
             });
             const routerWithFailingService = createSearchRouter({
                 createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: failingSearchService
+                createSearchService: failingSearchService,
+                createSavedSearchStore: () => null
             });
             testApp.use((req, res, next) => {
                 req.session = {
@@ -313,7 +318,8 @@ describe('Search Routes', () => {
             });
             const routerWithErrorService = createSearchRouter({
                 createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: errorSearchService
+                createSearchService: errorSearchService,
+                createSavedSearchStore: () => null
             });
             testApp.use((req, res, next) => {
                 req.session = {
@@ -343,7 +349,8 @@ describe('Search Routes', () => {
             });
             const routerWithErrorService = createSearchRouter({
                 createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: errorSearchService
+                createSearchService: errorSearchService,
+                createSavedSearchStore: () => null
             });
             testApp.use((req, res, next) => {
                 req.session = {
@@ -373,7 +380,8 @@ describe('Search Routes', () => {
             });
             const routerWithErrorService = createSearchRouter({
                 createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: errorSearchService
+                createSearchService: errorSearchService,
+                createSavedSearchStore: () => null
             });
             testApp.use((req, res, next) => {
                 req.session = {
@@ -408,7 +416,8 @@ describe('Search Routes', () => {
             });
             const routerWithErrorService = createSearchRouter({
                 createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: errorSearchService
+                createSearchService: errorSearchService,
+                createSavedSearchStore: () => null
             });
             testApp.use((req, res, next) => {
                 req.session = {
@@ -455,7 +464,8 @@ describe('Search Routes', () => {
 
             const routerWithResults = createSearchRouter({
                 createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: searchService
+                createSearchService: searchService,
+                createSavedSearchStore: () => null
             });
 
             testApp.use((req, res, next) => {
@@ -512,7 +522,8 @@ describe('Search Routes', () => {
 
             const routerWithResults = createSearchRouter({
                 createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: searchService
+                createSearchService: searchService,
+                createSavedSearchStore: () => null
             });
 
             testApp.use((req, res, next) => {
@@ -571,7 +582,8 @@ describe('Search Routes', () => {
 
             const routerWithResults = createSearchRouter({
                 createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: searchService
+                createSearchService: searchService,
+                createSavedSearchStore: () => null
             });
 
             testApp.use((req, res, next) => {
@@ -600,6 +612,120 @@ describe('Search Routes', () => {
     });
 
     describe('POST /', () => {
+        it('should create a saved search and redirect to a shareable searchId URL when store is configured', async () => {
+            const testApp = express();
+            const router = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: mockCreateSearchService,
+                createSavedSearchStore: () => ({
+                    create: async () => ({ id: 'srch_abc123' })
+                })
+            });
+
+            testApp.use(express.json());
+            testApp.use(express.urlencoded({ extended: true }));
+            testApp.use((req, res, next) => {
+                req.session = {
+                    caseSelected: true,
+                    caseReferenceNumber: '12345',
+                    username: 'search.user@example.com'
+                };
+                req.log = { info: () => {}, error: () => {} };
+                res.locals.csrfToken = 'test-csrf-token';
+                res.locals.cspNonce = 'test-csp-nonce';
+                next();
+            });
+            testApp.use('/search', router);
+
+            const res = await request(testApp)
+                .post('/search?pageNumber=3')
+                .send({ query: 'search term', type: 'semantic' });
+
+            assert.strictEqual(res.statusCode, 302);
+            assert.strictEqual(
+                res.headers.location,
+                '/search/s/srch_abc123?pageNumber=3&crn=12345'
+            );
+        });
+
+        it('falls back to legacy search redirect when saved-search storage is unavailable', async () => {
+            const testApp = express();
+            const router = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: mockCreateSearchService,
+                createSavedSearchStore: () => ({
+                    create: async () => {
+                        throw new Error('connect ECONNREFUSED 127.0.0.1:9200');
+                    }
+                })
+            });
+
+            testApp.use(express.json());
+            testApp.use(express.urlencoded({ extended: true }));
+            testApp.use((req, res, next) => {
+                req.session = {
+                    caseSelected: true,
+                    caseReferenceNumber: '12345',
+                    username: 'search.user@example.com'
+                };
+                req.log = { info: () => {}, warn: () => {}, error: () => {} };
+                res.locals.csrfToken = 'test-csrf-token';
+                res.locals.cspNonce = 'test-csp-nonce';
+                next();
+            });
+            testApp.use('/search', router);
+
+            const res = await request(testApp)
+                .post('/search?pageNumber=3')
+                .send({ query: 'search term', type: 'semantic' });
+
+            assert.strictEqual(res.statusCode, 302);
+            assert.strictEqual(
+                res.headers.location,
+                '/search?query=search+term&pageNumber=3&type=semantic'
+            );
+        });
+
+        it('should render search results for GET /search/s/:id when saved search exists', async () => {
+            const testApp = express();
+            const router = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: mockCreateSearchService,
+                createSavedSearchStore: () => ({
+                    getById: async () => ({
+                        id: 'srch_abc123',
+                        query: 'test',
+                        searchType: 'semantic',
+                        caseReferenceNumber: '12345'
+                    })
+                })
+            });
+
+            testApp.use(express.json());
+            testApp.use(express.urlencoded({ extended: true }));
+            testApp.use((req, res, next) => {
+                req.session = {
+                    caseSelected: true,
+                    caseReferenceNumber: '12345',
+                    username: 'search.user@example.com',
+                    featureFlags: {
+                        type: 'semantic'
+                    }
+                };
+                req.log = { info: () => {}, error: () => {}, debug: () => {} };
+                res.locals.csrfToken = 'test-csrf-token';
+                res.locals.cspNonce = 'test-csp-nonce';
+                next();
+            });
+            testApp.use('/search', router);
+
+            const res = await request(testApp).get('/search/s/srch_abc123?pageNumber=2&crn=12345');
+
+            assert.strictEqual(res.statusCode, 200);
+            assert.match(res.text, /search\/page\/results.njk/);
+            assert.strictEqual(lastRenderParams.searchId, 'srch_abc123');
+        });
+
         it('should redirect to the GET route with the query parameter and default type', async () => {
             const res = await request(app).post('/search').send({ query: ' search term ' });
             assert.strictEqual(res.statusCode, 302);
@@ -668,7 +794,8 @@ describe('Search Routes', () => {
 
             const router = createSearchRouter({
                 createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: mockCreateSearchService
+                createSearchService: mockCreateSearchService,
+                createSavedSearchStore: () => null
             });
             errorApp.use('/search', router);
 

@@ -7,6 +7,7 @@ import { getFeatureFlagValue } from '../middleware/featureFlags/index.js';
 import createApiJwtToken from '../service/request/create-api-jwt-token.js';
 import buildViewModel from '../templateEngine/buildViewModel.js';
 import buildSearchSessionPreference from '../utils/buildSearchSessionPreference/index.js';
+import createSavedSearchStoreDefault from './saved-search-store.js';
 
 /**
  * Creates an Express router for handling search functionality.
@@ -14,74 +15,49 @@ import buildSearchSessionPreference from '../utils/buildSearchSessionPreference/
  * @param {Object} services - The services required to create the router.
  * @param {Function} services.createTemplateEngineService - Factory function to create the template engine service.
  * @param {Function} services.createSearchService - Factory function to create the search service.
+ * @param {Function} [services.createSavedSearchStore] - Optional factory function to create the saved search store.
  * @returns {express.Router} The configured Express router for search routes.
  *
  * @route POST /search
  * @route GET /search
+ * @route GET /search/s/:searchId
  */
-function createSearchRouter({ createTemplateEngineService, createSearchService }) {
+function createSearchRouter({
+    createTemplateEngineService,
+    createSearchService,
+    createSavedSearchStore = createSavedSearchStoreDefault
+}) {
     const router = express.Router();
-
-    /**
-     * Handles search form submissions and normalizes input into query-string based navigation.
-     *
-     * @param {express.Request} req - Express request containing body fields.
-     * @param {express.Response} res - Express response used for redirects.
-     * @param {express.NextFunction} next - Express next middleware callback.
-     * @returns {void}
-     */
-    router.post('/', (req, res, next) => {
+    let savedSearchStore = null;
+    if (typeof createSavedSearchStore === 'function') {
         try {
-            const { query } = req.body;
-            const { pageNumber = 1 } = req.query;
-            const searchType = resolveSearchType(req.body?.type, req.session);
-
-            const redirectParams = new URLSearchParams({
-                query: query.trim(),
-                pageNumber: String(pageNumber),
-                type: searchType
-            });
-
-            return res.redirect(`/search?${redirectParams.toString()}`);
-        } catch (err) {
-            next(err);
+            savedSearchStore = createSavedSearchStore();
+        } catch {
+            // Keep legacy behavior when saved-search persistence is not configured.
+            savedSearchStore = null;
         }
-    });
+    }
 
     /**
-     * Renders search index/results pages and coordinates API-backed search execution.
+     * Renders search results using either raw query input or a saved search definition.
      *
-     * @param {express.Request} req - Express request with query parameters and session context.
-     * @param {express.Response} res - Express response used to send rendered HTML.
+     * @param {express.Request} req - Express request object.
+     * @param {express.Response} res - Express response object.
      * @param {express.NextFunction} next - Express next middleware callback.
-     * @returns {Promise<void>}
+     * @param {{query: string, searchType: string, searchId?: string}} options - Search rendering options.
+     * @returns {Promise<void>} Resolves when the response is sent.
      */
-    router.get('/', async (req, res, next) => {
+    async function renderSearchResults(req, res, next, { query, searchType, searchId }) {
         try {
             const templateEngineService = createTemplateEngineService();
             const { render } = templateEngineService;
-
-            const { query, pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.query;
+            const { pageNumber: rawPageNumber, itemsPerPage: rawItemsPerPage } = req.query;
             const userName = req.session?.username;
-            const searchType = getFeatureFlagValue(req.session, 'type');
             const isDebugMode = Boolean(hasDebugContext(res));
             const debugQueryDslOverrides = isDebugMode
                 ? res.locals.debugQueryDslOverrides || {}
                 : {};
             const debugQueryDslConfig = res.locals.debugQueryDslConfig;
-
-            if (!query) {
-                finalizeDebugInfo(res, 200);
-                const html = render(
-                    'search/page/index.njk',
-                    buildViewModel(req, res, {
-                        pageType: 'search',
-                        searchType,
-                        isDebugMode
-                    })
-                );
-                return res.send(html);
-            }
 
             const pageNumber = Math.max(Number(rawPageNumber) || 1, 1);
             const itemsPerPage = Math.max(
@@ -93,10 +69,14 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 pageType: 'search',
                 query,
                 searchType,
+                searchId,
                 isDebugMode
             });
 
-            req.log?.debug?.({ query, pageNumber, itemsPerPage }, 'Creating search service');
+            req.log?.debug?.(
+                { query, pageNumber, itemsPerPage, searchId },
+                'Creating search service'
+            );
             const searchService = createSearchService({
                 caseReferenceNumber: req.session?.caseReferenceNumber,
                 logger: req.log
@@ -191,6 +171,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                 ),
                 docUuid: hit._source?.source_doc_id || 0,
                 searchTerm: query,
+                searchId,
                 searchType,
                 isDebugMode,
                 caseReferenceNumber: req.session?.caseReferenceNumber,
@@ -221,6 +202,134 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             return res.status(200).send(html);
         } catch (error) {
             req.log.error('Error occurred while processing search request:', error);
+            next(error);
+        }
+    }
+
+    /**
+     * Handles search form submissions and normalizes input into query-string based navigation.
+     *
+     * @param {express.Request} req - Express request containing body fields.
+     * @param {express.Response} res - Express response used for redirects.
+     * @param {express.NextFunction} next - Express next middleware callback.
+     * @returns {void}
+     */
+    router.post('/', (req, res, next) => {
+        try {
+            const { query } = req.body;
+            const { pageNumber = 1 } = req.query;
+            const searchType = resolveSearchType(req.body?.type, req.session);
+
+            const redirectToLegacySearch = () => {
+                const redirectParams = new URLSearchParams({
+                    query: query.trim(),
+                    pageNumber: String(pageNumber),
+                    type: searchType
+                });
+
+                return res.redirect(`/search?${redirectParams.toString()}`);
+            };
+
+            if (savedSearchStore?.create) {
+                return savedSearchStore
+                    .create({
+                        query: query.trim(),
+                        searchType,
+                        caseReferenceNumber: req.session?.caseReferenceNumber,
+                        itemsPerPage: Number(process.env.APP_SEARCH_PAGINATION_ITEMS_PER_PAGE),
+                        ownerUserName: req.session?.username
+                    })
+                    .then(({ id }) => {
+                        const redirectParams = new URLSearchParams({
+                            pageNumber: String(pageNumber),
+                            crn: String(req.session?.caseReferenceNumber || '')
+                        });
+                        return res.redirect(
+                            `/search/s/${encodeURIComponent(id)}?${redirectParams.toString()}`
+                        );
+                    })
+                    .catch((error) => {
+                        req.log?.warn?.(
+                            {
+                                error: error?.message,
+                                caseReferenceNumber: req.session?.caseReferenceNumber
+                            },
+                            'Saved search store unavailable, falling back to legacy search redirect'
+                        );
+                        return redirectToLegacySearch();
+                    });
+            }
+
+            return redirectToLegacySearch();
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    /**
+     * Renders search index/results pages and coordinates API-backed search execution.
+     *
+     * @param {express.Request} req - Express request with query parameters and session context.
+     * @param {express.Response} res - Express response used to send rendered HTML.
+     * @param {express.NextFunction} next - Express next middleware callback.
+     * @returns {Promise<void>}
+     */
+    router.get('/', async (req, res, next) => {
+        try {
+            const templateEngineService = createTemplateEngineService();
+            const { render } = templateEngineService;
+
+            const { query } = req.query;
+            const searchType = getFeatureFlagValue(req.session, 'type');
+            const isDebugMode = Boolean(hasDebugContext(res));
+
+            if (!query) {
+                finalizeDebugInfo(res, 200);
+                const html = render(
+                    'search/page/index.njk',
+                    buildViewModel(req, res, {
+                        pageType: 'search',
+                        searchType,
+                        isDebugMode
+                    })
+                );
+                return res.send(html);
+            }
+
+            return renderSearchResults(req, res, next, {
+                query: String(query),
+                searchType,
+                searchId: undefined
+            });
+        } catch (error) {
+            req.log.error('Error occurred while processing search request:', error);
+            next(error);
+        }
+    });
+
+    router.get('/s/:searchId', async (req, res, next) => {
+        try {
+            if (!savedSearchStore?.getById) {
+                return res.status(404).send('Not Found');
+            }
+
+            const { searchId } = req.params;
+            const savedSearch = await savedSearchStore.getById(searchId);
+            if (!savedSearch) {
+                return res.status(404).send('Not Found');
+            }
+
+            if (savedSearch.caseReferenceNumber !== req.session?.caseReferenceNumber) {
+                return res.status(403).send('Forbidden');
+            }
+
+            return renderSearchResults(req, res, next, {
+                query: savedSearch.query,
+                searchType: resolveSearchType(savedSearch.searchType, req.session),
+                searchId
+            });
+        } catch (error) {
+            req.log.error('Error occurred while processing saved search request:', error);
             next(error);
         }
     });

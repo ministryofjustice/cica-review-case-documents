@@ -15,7 +15,7 @@ function createSearchService({
     logger,
     createRequestService = createRequestServiceDefault
 } = {}) {
-    const { get } = createRequestService();
+    const { post } = createRequestService();
 
     /**
      * Fetches search results from the API.
@@ -39,17 +39,14 @@ function createSearchService({
         { searchType = DEFAULT_SEARCH_TYPE, includeNamedQueries = false, queryDslConfig } = {}
     ) {
         logger?.info?.({ query, pageNumber, itemsPerPage }, 'Fetching search results');
-        const searchParams = new URLSearchParams({
-            query: String(query),
-            pageNumber: String(pageNumber),
-            itemsPerPage: String(itemsPerPage),
-            type: searchType
-        });
-        const strictQueryString = Array.from(searchParams.entries())
-            .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-            .join('&');
         const opts = {
-            url: `${process.env.APP_API_URL}/search/?${strictQueryString}`,
+            url: `${process.env.APP_API_URL}/search/`,
+            json: {
+                query: String(query),
+                pageNumber: Number(pageNumber),
+                itemsPerPage: Number(itemsPerPage),
+                type: searchType
+            },
             headers: {
                 'On-Behalf-Of': caseReferenceNumber
             }
@@ -68,7 +65,7 @@ function createSearchService({
         if (hasQueryDslConfig) {
             opts.headers['X-Query-DSL-Config'] = JSON.stringify(queryDslConfig);
         }
-        return get(opts);
+        return post(opts);
     }
 
     return Object.freeze({

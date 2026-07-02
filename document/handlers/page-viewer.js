@@ -18,13 +18,17 @@ import { paginationDataFromMetadata } from '../utils/pagination/index.js';
  * @param {Function} createMetadataServiceFactory - Factory function to create metadata service
  * @param {Function} createPageChunksServiceFactory - Factory function to create document page chunks service
  * @param {Function} [createTemplateEngineServiceFactory=createTemplateEngineService] - Factory that returns a template engine service with a render method
+ * @param {object} [options] - Optional dependencies.
+ * @param {(searchId: string) => Promise<object|null>} [options.findSavedSearchById] - Optional lookup for saved searches by opaque ID.
  * @returns {Function} Express route handler
  */
 export function createPageViewerHandler(
     createMetadataServiceFactory,
     createPageChunksServiceFactory,
-    createTemplateEngineServiceFactory = createTemplateEngineService
+    createTemplateEngineServiceFactory = createTemplateEngineService,
+    options = {}
 ) {
+    const { findSavedSearchById } = options;
     return async (req, res, next) => {
         try {
             const templateEngineService = createTemplateEngineServiceFactory();
@@ -32,12 +36,27 @@ export function createPageViewerHandler(
 
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
-            const { searchTerm = '' } = req.query;
+            const { searchId = '' } = req.query;
             const searchType = getFeatureFlagValue(req.session, 'type');
             const alignFlag = getFeatureFlagValue(req.session, 'align');
             const userName = req.session?.username;
             const apiJwtToken = createApiJwtToken(userName);
             const debugQueryDslOverrides = res.locals.debugQueryDslOverrides || {};
+            let resolvedSearchTerm = '';
+
+            if (
+                typeof searchId === 'string' &&
+                searchId !== '' &&
+                typeof findSavedSearchById === 'function'
+            ) {
+                const savedSearch = await findSavedSearchById(searchId);
+                if (
+                    savedSearch?.query &&
+                    savedSearch.caseReferenceNumber === req.session?.caseReferenceNumber
+                ) {
+                    resolvedSearchTerm = savedSearch.query;
+                }
+            }
 
             // Fetch document page metadata from API (which queries OpenSearch)
             let pageMetadata;
@@ -59,7 +78,7 @@ export function createPageViewerHandler(
             // work out the pagination data from the metadata and values needed to construct the URLs for the pagination links
             const paginationData = paginationDataFromMetadata(
                 pageMetadata,
-                req.query,
+                { searchId },
                 req.validatedParams,
                 viewMode,
                 searchType
@@ -72,7 +91,7 @@ export function createPageViewerHandler(
                 documentId,
                 pageNumber,
                 crn,
-                searchTerm,
+                searchId,
                 searchType,
                 req.session
             );
@@ -81,25 +100,32 @@ export function createPageViewerHandler(
 
             // Fetch document page chunks with bounding boxes for overlay rendering
             let pageChunks = [];
-            try {
-                const pageChunksServiceInstance = createPageChunksServiceFactory({
-                    documentId,
-                    pageNumber,
-                    crn,
-                    searchTerm,
-                    searchType,
-                    jwtToken: apiJwtToken,
-                    queryDslConfig: debugQueryDslOverrides,
-                    logger: req.log
-                });
-                pageChunks = await pageChunksServiceInstance.getPageChunks();
-            } catch (error) {
-                // Chunks are core functionality - capture error to display to user
-                req.log?.error(
-                    { error: error.message, documentId, pageNumber, searchTerm },
-                    'Failed to retrieve document page chunks'
-                );
-                return next(error);
+            if (resolvedSearchTerm !== '') {
+                try {
+                    const pageChunksServiceInstance = createPageChunksServiceFactory({
+                        documentId,
+                        pageNumber,
+                        crn,
+                        searchTerm: resolvedSearchTerm,
+                        searchType,
+                        jwtToken: apiJwtToken,
+                        queryDslConfig: debugQueryDslOverrides,
+                        logger: req.log
+                    });
+                    pageChunks = await pageChunksServiceInstance.getPageChunks();
+                } catch (error) {
+                    // Chunks are core functionality - capture error to display to user
+                    req.log?.error(
+                        {
+                            error: error.message,
+                            documentId,
+                            pageNumber,
+                            searchTerm: resolvedSearchTerm
+                        },
+                        'Failed to retrieve document page chunks'
+                    );
+                    return next(error);
+                }
             }
 
             const alignedPageHighlights = determineHighlightAlignmentStrategy(
@@ -124,7 +150,7 @@ export function createPageViewerHandler(
                     opensearch: {
                         ...(debugInfo.search?.opensearch || {}),
                         index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME || 'unknown',
-                        preference: buildSearchSessionPreference(String(searchTerm))
+                        preference: buildSearchSessionPreference(String(resolvedSearchTerm))
                     }
                 };
             });

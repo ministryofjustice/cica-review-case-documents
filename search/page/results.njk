@@ -76,23 +76,25 @@
     <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
 
     {% set paginationItems = [] %}
-    {% set paginationPrevious = {
+    {% set paginationPrevious = null %}
+    {% set paginationNext = null %}
+    {% if searchId %}
+        {% set paginationPrevious = {
             text: "Previous",
-            href: ["/search/?query=", query | urlencode, "&pageNumber=", pagination.currentPageIndex - 1, "&crn=", caseReferenceNumber | urlencode, "&type=", searchType | urlencode] | join
-        }
-    %}
-    {% set paginationNext = {
+            href: ["/search/s/", searchId | urlencode, "?pageNumber=", pagination.currentPageIndex - 1, "&crn=", caseReferenceNumber | urlencode] | join
+        } %}
+        {% set paginationNext = {
             text: "Next",
-            href: ["/search/?query=", query | urlencode, "&pageNumber=", pagination.currentPageIndex + 1, "&crn=", caseReferenceNumber | urlencode, "&type=", searchType | urlencode] | join
-        }
-    %}
+            href: ["/search/s/", searchId | urlencode, "?pageNumber=", pagination.currentPageIndex + 1, "&crn=", caseReferenceNumber | urlencode] | join
+        } %}
+    {% endif %}
     {# only show pagination item links if there is more than one page #}
-    {% if showPaginationItems %}
+    {% if showPaginationItems and searchId %}
         {% for i in range(1, pagination.totalPageCount + 1) %}
             {%
                 set paginationItems = (paginationItems.push({
                     text: i,
-                    href: ["/search/?query=", query | urlencode, "&pageNumber=", i, "&crn=", caseReferenceNumber | urlencode, "&type=", searchType | urlencode] | join,
+                    href: ["/search/s/", searchId | urlencode, "?pageNumber=", i, "&crn=", caseReferenceNumber | urlencode] | join,
                     selected: i == pagination.currentPageIndex
                 }), paginationItems)
             %}

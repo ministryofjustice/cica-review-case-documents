@@ -224,6 +224,25 @@ test('allows redirect for path matching allowed patterns', () => {
     assert.strictEqual(nextCalled, false);
 });
 
+test('allows redirect for saved search route pattern', () => {
+    const req = createMockReq({
+        method: 'GET',
+        query: { pageNumber: '2' },
+        session: { caseSelected: true, caseReferenceNumber: '12-745678' }
+    });
+    req.path = '/search/s/srch_abc123';
+    const res = createMockRes();
+    let nextCalled = false;
+    const next = () => {
+        nextCalled = true;
+    };
+
+    enforceCrnInQuery(req, res, next);
+
+    assert.strictEqual(res.redirectedUrl, '/search/s/srch_abc123?pageNumber=2&crn=12-745678');
+    assert.strictEqual(nextCalled, false);
+});
+
 test('allows redirect for image streaming endpoint pattern', () => {
     const req = createMockReq({
         method: 'GET',

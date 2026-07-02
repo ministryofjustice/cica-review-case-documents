@@ -4,11 +4,11 @@ import { beforeEach, describe, it, mock } from 'node:test';
 import createSearchService from './search-service.js';
 
 describe('search-service', () => {
-    let mockGet;
+    let mockPost;
     let mockCreateRequestService;
 
     beforeEach(() => {
-        mockGet = mock.fn(() => {
+        mockPost = mock.fn(() => {
             return {
                 body: {
                     data: 'fake results'
@@ -18,12 +18,12 @@ describe('search-service', () => {
 
         mockCreateRequestService = mock.fn(() => {
             return {
-                get: mockGet
+                post: mockPost
             };
         });
     });
 
-    it('Should call get with correct URL and headers', async () => {
+    it('Should call post with correct URL, body and headers', async () => {
         const fakeLogger = { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} };
         const service = createSearchService({
             caseReferenceNumber: '12-745678',
@@ -40,20 +40,18 @@ describe('search-service', () => {
 
         assert.deepEqual(result, { body: { data: 'fake results' } });
         assert.equal(mockCreateRequestService.mock.callCount(), 1);
-        const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
-        assert.equal(
-            mockGetCallArguments.url,
-            `${process.env.APP_API_URL}/search/?${new URLSearchParams({
-                query,
-                pageNumber: String(pageNumber),
-                itemsPerPage: String(itemsPerPage),
-                type: 'semantic'
-            }).toString()}`
-        );
-        assert.equal(mockGetCallArguments.headers['On-Behalf-Of'], '12-745678');
+        const mockPostCallArguments = mockPost.mock.calls[0].arguments[0];
+        assert.equal(mockPostCallArguments.url, `${process.env.APP_API_URL}/search/`);
+        assert.deepEqual(mockPostCallArguments.json, {
+            query,
+            pageNumber,
+            itemsPerPage,
+            type: 'semantic'
+        });
+        assert.equal(mockPostCallArguments.headers['On-Behalf-Of'], '12-745678');
     });
 
-    it('Should encode searchType in URL query string', async () => {
+    it('Should send searchType in request body as a plain value', async () => {
         const fakeLogger = { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} };
         const service = createSearchService({
             caseReferenceNumber: '12-745678',
@@ -70,20 +68,12 @@ describe('search-service', () => {
             searchType: injectedSearchType
         });
 
-        const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
-        assert.equal(
-            mockGetCallArguments.url,
-            `${process.env.APP_API_URL}/search/?${new URLSearchParams({
-                query,
-                pageNumber: String(pageNumber),
-                itemsPerPage: String(itemsPerPage),
-                type: injectedSearchType
-            }).toString()}`
-        );
-        assert.equal(mockGetCallArguments.url.includes('&debug=on'), false);
+        const mockPostCallArguments = mockPost.mock.calls[0].arguments[0];
+        assert.equal(mockPostCallArguments.url, `${process.env.APP_API_URL}/search/`);
+        assert.equal(mockPostCallArguments.json.type, injectedSearchType);
     });
 
-    it('Should encode query to prevent query-string injection', async () => {
+    it('Should send query in request body', async () => {
         const fakeLogger = { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} };
         const service = createSearchService({
             caseReferenceNumber: '12-745678',
@@ -97,20 +87,12 @@ describe('search-service', () => {
             searchType: 'semantic'
         });
 
-        const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
-        assert.equal(
-            mockGetCallArguments.url,
-            `${process.env.APP_API_URL}/search/?${new URLSearchParams({
-                query,
-                pageNumber: '1',
-                itemsPerPage: '10',
-                type: 'semantic'
-            }).toString()}`
-        );
-        assert.equal(mockGetCallArguments.url.includes('&debug=on'), false);
+        const mockPostCallArguments = mockPost.mock.calls[0].arguments[0];
+        assert.equal(mockPostCallArguments.url, `${process.env.APP_API_URL}/search/`);
+        assert.equal(mockPostCallArguments.json.query, query);
     });
 
-    it('Should encode spaces in query as %20 for API compatibility', async () => {
+    it('Should keep spaces in query payload value', async () => {
         const fakeLogger = { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} };
         const service = createSearchService({
             caseReferenceNumber: '12-745678',
@@ -122,12 +104,8 @@ describe('search-service', () => {
             searchType: 'hybrid-dates'
         });
 
-        const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
-        assert.equal(
-            mockGetCallArguments.url,
-            `${process.env.APP_API_URL}/search/?query=acute%20november%202022&pageNumber=1&itemsPerPage=10&type=hybrid-dates`
-        );
-        assert.equal(mockGetCallArguments.url.includes('acute+november+2022'), false);
+        const mockPostCallArguments = mockPost.mock.calls[0].arguments[0];
+        assert.equal(mockPostCallArguments.json.query, 'acute november 2022');
     });
 
     it('Should include X-Debug-Context header when includeNamedQueries is true', async () => {
@@ -143,8 +121,8 @@ describe('search-service', () => {
             includeNamedQueries: true
         });
 
-        const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
-        assert.equal(mockGetCallArguments.headers['X-Debug-Context'], 'true');
+        const mockPostCallArguments = mockPost.mock.calls[0].arguments[0];
+        assert.equal(mockPostCallArguments.headers['X-Debug-Context'], 'true');
     });
 
     it('Should include X-Query-DSL-Config header when queryDslConfig is provided', async () => {
@@ -170,9 +148,9 @@ describe('search-service', () => {
             queryDslConfig
         });
 
-        const mockGetCallArguments = mockGet.mock.calls[0].arguments[0];
+        const mockPostCallArguments = mockPost.mock.calls[0].arguments[0];
         assert.equal(
-            mockGetCallArguments.headers['X-Query-DSL-Config'],
+            mockPostCallArguments.headers['X-Query-DSL-Config'],
             JSON.stringify(queryDslConfig)
         );
     });
@@ -188,6 +166,6 @@ describe('search-service', () => {
         });
 
         assert.deepEqual(result, { body: { data: 'fake results' } });
-        assert.equal(mockGet.mock.callCount(), 1);
+        assert.equal(mockPost.mock.callCount(), 1);
     });
 });

@@ -224,7 +224,7 @@ describe('Text Viewer Handler', () => {
         assert.equal(result, sendResult);
     });
 
-    it('provides highlighted text segments when searchTerm is present', async () => {
+    it('provides highlighted text segments when searchId resolves to a query', async () => {
         let renderParams;
         let capturedChunkServiceArgs;
 
@@ -251,7 +251,13 @@ describe('Text Viewer Handler', () => {
                     renderParams = params;
                     return 'render-output-highlight';
                 }
-            })
+            }),
+            {
+                findSavedSearchById: async () => ({
+                    query: '12/12/1995',
+                    caseReferenceNumber: '26-745678'
+                })
+            }
         );
 
         const req = {
@@ -261,9 +267,9 @@ describe('Text Viewer Handler', () => {
                 crn: '26-745678'
             },
             query: {
-                searchTerm: '12/12/1995'
+                searchId: 'srch_abc123'
             },
-            session: { caseSelected: true },
+            session: { caseSelected: true, caseReferenceNumber: '26-745678' },
             cookies: { jwtToken: 'test-jwt' },
             log: { error: () => {} }
         };
@@ -320,28 +326,6 @@ describe('Text Viewer Handler', () => {
         let renderCalled = false;
         let sendCalled = false;
 
-        const handler = createTextViewerHandler(
-            () => ({
-                getPageMetadata: async () =>
-                    buildPageMetadataFixture({
-                        overrides: {
-                            text: 'Some text'
-                        }
-                    })
-            }),
-            () => ({
-                getPageChunks: async () => {
-                    throw pageChunksError;
-                }
-            }),
-            () => ({
-                render: () => {
-                    renderCalled = true;
-                    return 'render-output-page-chunks-failure';
-                }
-            })
-        );
-
         const req = {
             validatedParams: {
                 documentId: '123e4567-e89b-12d3-a456-426614174000',
@@ -349,9 +333,9 @@ describe('Text Viewer Handler', () => {
                 crn: '26-745678'
             },
             query: {
-                searchTerm: '  gabapentin  '
+                searchId: 'srch_abc123'
             },
-            session: { caseSelected: true },
+            session: { caseSelected: true, caseReferenceNumber: '26-745678' },
             cookies: { jwtToken: 'test-jwt' },
             log: {
                 error: (context, message) => {
@@ -374,7 +358,35 @@ describe('Text Viewer Handler', () => {
             return nextResult;
         };
 
-        const result = await handler(req, res, next);
+        const handlerWithSavedLookup = createTextViewerHandler(
+            () => ({
+                getPageMetadata: async () =>
+                    buildPageMetadataFixture({
+                        overrides: {
+                            text: 'Some text'
+                        }
+                    })
+            }),
+            () => ({
+                getPageChunks: async () => {
+                    throw pageChunksError;
+                }
+            }),
+            () => ({
+                render: () => {
+                    renderCalled = true;
+                    return 'render-output-metadata-failure';
+                }
+            }),
+            {
+                findSavedSearchById: async () => ({
+                    query: 'gabapentin',
+                    caseReferenceNumber: '26-745678'
+                })
+            }
+        );
+
+        const result = await handlerWithSavedLookup(req, res, next);
 
         assert.equal(nextError, pageChunksError);
         assert.deepEqual(loggedContext, {
@@ -389,7 +401,7 @@ describe('Text Viewer Handler', () => {
         assert.equal(result, nextResult);
     });
 
-    it('does not request chunks when searchTerm is blank', async () => {
+    it('does not request chunks when searchId cannot be resolved', async () => {
         let getPageChunksCalls = 0;
 
         const handler = createTextViewerHandler(
@@ -409,7 +421,10 @@ describe('Text Viewer Handler', () => {
             }),
             () => ({
                 render: () => 'render-output-no-search-term'
-            })
+            }),
+            {
+                findSavedSearchById: async () => null
+            }
         );
 
         const req = {
@@ -419,7 +434,7 @@ describe('Text Viewer Handler', () => {
                 crn: '26-745678'
             },
             query: {
-                searchTerm: '   '
+                searchId: 'srch_missing'
             },
             session: { caseSelected: true },
             cookies: { jwtToken: 'test-jwt' },

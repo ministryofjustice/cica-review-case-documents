@@ -205,7 +205,13 @@ describe('Page Viewer Handler', () => {
                         renderParams = params;
                         return 'render-output-valid-metadata';
                     }
-                })
+                }),
+                {
+                    findSavedSearchById: async () => ({
+                        query: 'test',
+                        caseReferenceNumber: 'CASE-2024-001'
+                    })
+                }
             );
 
             const req = {
@@ -215,10 +221,11 @@ describe('Page Viewer Handler', () => {
                     crn: 'CASE-2024-001'
                 },
                 query: {
-                    searchTerm: 'test'
+                    searchId: 'srch_abc123'
                 },
                 session: {
                     caseSelected: 'CASE-2024-001',
+                    caseReferenceNumber: 'CASE-2024-001',
                     username: 'viewer@example.com'
                 },
                 log: { info: () => {}, error: () => {}, warn: () => {} }
@@ -281,7 +288,13 @@ describe('Page Viewer Handler', () => {
                         renderedPageChunks = params.pageChunks;
                         return 'render-output-session-align';
                     }
-                })
+                }),
+                {
+                    findSavedSearchById: async () => ({
+                        query: 'test',
+                        caseReferenceNumber: 'CASE-2024-003'
+                    })
+                }
             );
 
             const req = {
@@ -291,9 +304,10 @@ describe('Page Viewer Handler', () => {
                     crn: 'CASE-2024-003'
                 },
                 query: {
-                    searchTerm: 'test'
+                    searchId: 'srch_abc123'
                 },
                 session: {
+                    caseReferenceNumber: 'CASE-2024-003',
                     featureFlags: {
                         align: false
                     }
