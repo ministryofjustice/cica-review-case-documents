@@ -11,8 +11,8 @@ if [ -n "$STAGED_FILES" ]; then
 	done
 fi
 
-# Keep generated artifacts in sync when hook checks update them.
-for generated in public/stylesheets/all.css api/openapi/openapi-dist.json; do
+# Keep generated stylesheet in sync when staged Sass checks update it.
+for generated in public/stylesheets/all.css; do
 	if git ls-files --error-unmatch "$generated" >/dev/null 2>&1; then
 		if ! git diff --quiet -- "$generated"; then
 			git add -- "$generated"
