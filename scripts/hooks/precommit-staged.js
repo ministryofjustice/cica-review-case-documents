@@ -60,6 +60,22 @@ function getTrackedScssFiles() {
     return output ? output.split('\0').filter(Boolean) : [];
 }
 
+/**
+ * Get untracked SCSS file paths (excluding ignored files).
+ * @returns {string[]}
+ */
+function getUntrackedScssFiles() {
+    const output = execFileSync(
+        'git',
+        ['ls-files', '--others', '--exclude-standard', '-z', '--', '*.scss'],
+        {
+            encoding: 'utf8'
+        }
+    );
+
+    return output ? output.split('\0').filter(Boolean) : [];
+}
+
 const stagedFiles = getStagedFiles();
 
 if (stagedFiles.length === 0) {
@@ -99,6 +115,7 @@ if (biomeFiles.length > 0) {
 if (hasScssChanges) {
     const trackedScssFiles = getTrackedScssFiles();
     const scssPathsWithUnstagedChanges = getPathsWithUnstagedChanges(trackedScssFiles);
+    const untrackedScssFiles = getUntrackedScssFiles();
 
     if (scssPathsWithUnstagedChanges.length > 0) {
         console.error('Pre-commit aborted: tracked SCSS files contain unstaged changes.');
@@ -106,6 +123,18 @@ if (hasScssChanges) {
         console.error('Files:');
 
         for (const file of scssPathsWithUnstagedChanges) {
+            console.error(`  - ${file}`);
+        }
+
+        process.exit(1);
+    }
+
+    if (untrackedScssFiles.length > 0) {
+        console.error('Pre-commit aborted: untracked SCSS files are present.');
+        console.error('Sass output must be generated from a deterministic SCSS working tree.');
+        console.error('Files:');
+
+        for (const file of untrackedScssFiles) {
             console.error(`  - ${file}`);
         }
 
