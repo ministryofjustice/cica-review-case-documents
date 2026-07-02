@@ -25,7 +25,7 @@ function createPageChunksService({
      * @param {string} [context.searchType='hybrid-dates'] - Search mode (one of SEARCH_TYPES).
      * @param {boolean} [context.includeNamedQueries=false] - Whether to include named query metadata in the generated DSL.
      * @param {object} [context.queryDslConfig] - Optional debug-only DSL tuning overrides.
-    * @param {string[]|boolean|{includes?: string[], excludes?: string[]}} [context.sourceFields] - Optional `_source` projection for OpenSearch queries.
+     * @param {string[]|boolean|{includes?: string[], excludes?: string[]}} [context.sourceFields] - Optional `_source` projection for OpenSearch queries.
      * @returns {Promise<Array<Object>>} Array of chunks with bounding boxes.
      */
     async function getPageChunks(
