@@ -148,6 +148,60 @@ describe('document-dal', () => {
         assert.ok(neuralClause.neural.embedding.boost > 0);
     });
 
+    it('Should exclude embeddings by default for keyword chunk searches', async () => {
+        let queryArgs;
+        const mockDB = {
+            query: async (args) => {
+                queryArgs = args;
+                return {
+                    body: {
+                        hits: {
+                            hits: []
+                        }
+                    }
+                };
+            }
+        };
+
+        const dal = createDocumentDAL({
+            caseReferenceNumber: '12-745678',
+            createDBQuery: () => mockDB,
+            logger: mockLogger
+        });
+
+        await dal.getDocumentsChunksByKeyword('keyword', 1, 10);
+
+        assert.deepStrictEqual(queryArgs.body._source, { excludes: ['embeddings'] });
+    });
+
+    it('Should allow overriding _source for keyword chunk searches', async () => {
+        let queryArgs;
+        const mockDB = {
+            query: async (args) => {
+                queryArgs = args;
+                return {
+                    body: {
+                        hits: {
+                            hits: []
+                        }
+                    }
+                };
+            }
+        };
+
+        const dal = createDocumentDAL({
+            caseReferenceNumber: '12-745678',
+            createDBQuery: () => mockDB,
+            logger: mockLogger
+        });
+
+        await dal.getDocumentsChunksByKeyword('keyword', 1, 10, {
+            sourceFields: ['chunk_text', 'source_doc_id']
+        });
+
+        assert.deepStrictEqual(queryArgs.body._source, ['chunk_text', 'source_doc_id']);
+    });
+
     it('Should include named query metadata when includeNamedQueries override is true', async () => {
         let queryArgs;
         const mockQuery = async (args) => {
@@ -348,6 +402,41 @@ describe('document-dal', () => {
 
             assert.strictEqual(queryArgs.index, 'page_metadata');
             assert.deepStrictEqual(queryArgs.body.query.bool.must[1], { match: { page_num: 5 } });
+            assert.deepStrictEqual(queryArgs.body._source, [
+                'correspondence_type',
+                'page_count',
+                'page_num',
+                's3_page_image_s3_uri',
+                'text'
+            ]);
+        });
+
+        it('should allow overriding _source fields for page metadata query', async () => {
+            let queryArgs;
+            const mockDB = {
+                query: async (args) => {
+                    queryArgs = args;
+                    return {
+                        body: {
+                            hits: {
+                                hits: []
+                            }
+                        }
+                    };
+                }
+            };
+
+            const dal = createDocumentDAL({
+                caseReferenceNumber: '12-745678',
+                createDBQuery: () => mockDB,
+                logger: mockLogger
+            });
+
+            await dal.getPageMetadataByDocumentIdAndPageNumber('doc-123', 5, {
+                sourceFields: ['text']
+            });
+
+            assert.deepStrictEqual(queryArgs.body._source, ['text']);
         });
     });
 
@@ -903,6 +992,28 @@ describe('document-dal', () => {
                 'chunk_index',
                 'chunk_text'
             ]);
+        });
+
+        it('should allow overriding _source fields for page chunks query', async () => {
+            let queryArgs;
+            const mockDB = {
+                query: async (args) => {
+                    queryArgs = args;
+                    return { body: { hits: { hits: [] } } };
+                }
+            };
+
+            const dal = createDocumentDAL({
+                caseReferenceNumber: '12-745678',
+                createDBQuery: () => mockDB,
+                logger: mockLogger
+            });
+
+            await dal.getPageChunksByDocumentIdAndPageNumber('doc-123', 1, '', 'hybrid', {
+                sourceFields: ['chunk_text']
+            });
+
+            assert.deepStrictEqual(queryArgs.body._source, ['chunk_text']);
         });
 
         it('should handle missing logger in getPageChunksByDocumentIdAndPageNumber', async () => {

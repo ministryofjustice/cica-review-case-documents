@@ -103,7 +103,8 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
             });
 
             const token = createApiJwtToken(userName);
-            const searchOptions = { searchType };
+            const sourceFields = { excludes: ['embeddings'] };
+            const searchOptions = { searchType, sourceFields };
             if (isDebugMode) {
                 searchOptions.includeNamedQueries = true;
                 // In debug mode, pass the effective DSL tuning bag consistently.
@@ -142,10 +143,8 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
                     pageNumber,
                     itemsPerPage,
                     options: {
-                        searchType,
-                        logger: req.log,
-                        includeNamedQueries: isDebugMode,
-                        queryDslConfig: debugQueryDslOverrides
+                        ...searchOptions,
+                        logger: req.log
                     }
                 });
                 const queryHash = crypto

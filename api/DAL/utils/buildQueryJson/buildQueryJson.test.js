@@ -96,6 +96,35 @@ describe('buildQueryJson', () => {
         }
     });
 
+    it('Should include _source when sourceFields option is provided', () => {
+        const result = buildQueryJson({
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 5,
+            options: {
+                searchType: SEARCH_TYPES.KEYWORD,
+                sourceFields: { excludes: ['embeddings'] }
+            }
+        });
+
+        assert.deepStrictEqual(result._source, { excludes: ['embeddings'] });
+    });
+
+    it('Should not include _source when sourceFields option is undefined', () => {
+        const result = buildQueryJson({
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 5,
+            options: {
+                searchType: SEARCH_TYPES.KEYWORD
+            }
+        });
+
+        assert.strictEqual(Object.hasOwn(result, '_source'), false);
+    });
+
     it('Should build query with multiple numeric dates and remaining text', () => {
         const params = {
             keyword: 'Event dates: 12/01/2024, 13-02-24 in the calendar',
@@ -397,6 +426,86 @@ describe('buildQueryJson', () => {
             {
                 message:
                     'Invalid searchType "invalid". Must be one of: hybrid-dates, keyword-dates, hybrid, keyword, semantic'
+            }
+        );
+    });
+
+    it('Should build page metadata query when queryMode is page-metadata', () => {
+        const result = buildQueryJson({
+            keyword: '',
+            caseReferenceNumber: '26-711111',
+            pageNumber: '5',
+            options: {
+                queryMode: 'page-metadata',
+                includePagination: false,
+                documentId: 'doc-123'
+            }
+        });
+
+        assert.deepStrictEqual(result, {
+            query: {
+                bool: {
+                    must: [{ match: { source_doc_id: 'doc-123' } }, { match: { page_num: 5 } }]
+                }
+            }
+        });
+    });
+
+    it('Should throw when documentId is missing in page-metadata mode', () => {
+        assert.throws(
+            () =>
+                buildQueryJson({
+                    keyword: '',
+                    caseReferenceNumber: '26-711111',
+                    pageNumber: 1,
+                    itemsPerPage: 10,
+                    options: {
+                        queryMode: 'page-metadata',
+                        includePagination: false
+                    }
+                }),
+            {
+                message: 'documentId is required when queryMode is page-metadata'
+            }
+        );
+    });
+
+    it('Should include pagination fields in page-metadata mode when enabled', () => {
+        const result = buildQueryJson({
+            keyword: '',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 2,
+            itemsPerPage: 3,
+            options: {
+                queryMode: 'page-metadata',
+                includePagination: true,
+                documentId: 'doc-123'
+            }
+        });
+
+        assert.strictEqual(result.from, 3);
+        assert.strictEqual(result.size, 3);
+        assert.deepStrictEqual(result.query.bool.must, [
+            { match: { source_doc_id: 'doc-123' } },
+            { match: { page_num: 2 } }
+        ]);
+    });
+
+    it('Should throw when an invalid queryMode is provided', () => {
+        assert.throws(
+            () =>
+                buildQueryJson({
+                    keyword: '',
+                    caseReferenceNumber: '26-711111',
+                    pageNumber: 1,
+                    options: {
+                        queryMode: 'invalid-mode',
+                        includePagination: false,
+                        documentId: 'doc-123'
+                    }
+                }),
+            {
+                message: 'Invalid queryMode "invalid-mode". Must be one of: search, page-metadata'
             }
         );
     });

@@ -136,7 +136,10 @@ describe('Search Routes', () => {
 
             assert.strictEqual(res.statusCode, 200);
             assert.deepStrictEqual(serviceCallArgs[4], {
-                searchType: 'semantic'
+                searchType: 'semantic',
+                sourceFields: {
+                    excludes: ['embeddings']
+                }
             });
         });
 
@@ -200,6 +203,9 @@ describe('Search Routes', () => {
             assert.strictEqual(res.statusCode, 200);
             assert.deepStrictEqual(serviceCallArgs[4], {
                 searchType: 'hybrid',
+                sourceFields: {
+                    excludes: ['embeddings']
+                },
                 includeNamedQueries: true,
                 queryDslConfig: {
                     semanticMinScore: 1.2,
@@ -209,6 +215,9 @@ describe('Search Routes', () => {
                     dateBoost: 2,
                     neuralBoost: 3
                 }
+            });
+            assert.deepStrictEqual(lastRenderParams.debugInfo.request.queryDsl._source, {
+                excludes: ['embeddings']
             });
         });
 

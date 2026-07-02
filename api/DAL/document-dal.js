@@ -4,6 +4,7 @@ import createDBQueryDefault from '../../db/index.js';
 import buildSearchSessionPreference from '../../utils/buildSearchSessionPreference/index.js';
 import { DEFAULT_SEARCH_TYPE } from '../search/constants/searchTypes.js';
 import buildQueryJson from './utils/buildQueryJson/index.js';
+import { QUERY_MODES } from './utils/buildQueryJson/queryStructureBuilders.js';
 
 /**
  * @typedef {object} Logger
@@ -51,9 +52,9 @@ import buildQueryJson from './utils/buildQueryJson/index.js';
  * @returns {{
  *   getDocuments: () => Promise<object[]>,
  *   getDocument: (documentId: string) => Promise<object>,
- *   getDocumentsChunksByKeyword: (keyword: string, pageNumber: number, itemsPerPage: number) => Promise<object[]>,
- *   getPageMetadataByDocumentIdAndPageNumber: (documentId: string, pageNumber: number|string) => Promise<object|null>,
- *   getPageChunksByDocumentIdAndPageNumber: (documentId: string, pageNumber: number|string, keyword?: string, searchType?: string) => Promise<object[]>
+ *   getDocumentsChunksByKeyword: (keyword: string, pageNumber: number, itemsPerPage: number, options?: {sourceFields?: string[]|boolean|{includes?: string[], excludes?: string[]}}) => Promise<object[]>,
+ *   getPageMetadataByDocumentIdAndPageNumber: (documentId: string, pageNumber: number|string, options?: {sourceFields?: string[]|boolean|{includes?: string[], excludes?: string[]}}) => Promise<object|null>,
+ *   getPageChunksByDocumentIdAndPageNumber: (documentId: string, pageNumber: number|string, keyword?: string, searchType?: string, options?: {sourceFields?: string[]|boolean|{includes?: string[], excludes?: string[]}}) => Promise<object[]>
  * }}
  *   A frozen object exposing document and chunk retrieval methods.
  */
@@ -101,13 +102,21 @@ function createDocumentDAL({
      * @param {string} keyword - Keyword to search in `chunk_text`.
      * @param {number} pageNumber - 1-based page number.
      * @param {number} itemsPerPage - Number of items per page.
+     * @param {{sourceFields?: string[]|boolean|{includes?: string[], excludes?: string[]}}} [options]
+     *   Optional OpenSearch `_source` projection.
+     *   Defaults to excluding the `embeddings` field while returning all other source fields.
      * @returns {Promise<Object[]>} Array of hit objects from OpenSearch.
      *
      * @throws {VError} If the OpenSearch query fails or throws an error.
      */
-    async function getDocumentsChunksByKeyword(keyword, pageNumber, itemsPerPage) {
+    async function getDocumentsChunksByKeyword(keyword, pageNumber, itemsPerPage, options = {}) {
         try {
             const buildStart = Date.now();
+            const {
+                sourceFields = {
+                    excludes: ['embeddings']
+                }
+            } = options;
             const queryBody = buildQueryJson({
                 keyword,
                 caseReferenceNumber,
@@ -117,6 +126,7 @@ function createDocumentDAL({
                     logger,
                     searchType,
                     includeNamedQueries: shouldIncludeNamedQueries,
+                    sourceFields,
                     queryDslConfig
                 }
             });
@@ -179,32 +189,42 @@ function createDocumentDAL({
      * @async
      * @param {string} documentId - The UUID of the document (source_doc_id in OpenSearch).
      * @param {number|string} pageNumber - The page number (page_num in OpenSearch).
+     * @param {{sourceFields?: string[]|boolean|{includes?: string[], excludes?: string[]}}} [options]
+     *   Optional OpenSearch `_source` projection.
+     *   Defaults to the page metadata fields used by the API response.
      * @returns {Promise<Object|null>} The page metadata object with all fields, or null if not found.
      * @throws {VError} If the database query fails.
      */
-    async function getPageMetadataByDocumentIdAndPageNumber(documentId, pageNumber) {
+    async function getPageMetadataByDocumentIdAndPageNumber(documentId, pageNumber, options = {}) {
         try {
+            const {
+                sourceFields = [
+                    'correspondence_type',
+                    'page_count',
+                    'page_num',
+                    's3_page_image_s3_uri',
+                    'text'
+                ]
+            } = options;
             logger?.info?.({ documentId, pageNumber }, 'Querying OpenSearch for page metadata');
+
+            const queryBody = buildQueryJson({
+                keyword: '',
+                caseReferenceNumber,
+                pageNumber,
+                options: {
+                    logger,
+                    queryMode: QUERY_MODES.PAGE_METADATA,
+                    includePagination: false,
+                    documentId,
+                    sourceFields,
+                    queryDslConfig
+                }
+            });
 
             const response = await db.query({
                 index: 'page_metadata',
-                body: {
-                    query: {
-                        bool: {
-                            must: [
-                                { match: { source_doc_id: documentId } },
-                                { match: { page_num: parseInt(pageNumber, 10) } }
-                            ]
-                        }
-                    },
-                    _source: [
-                        'correspondence_type',
-                        'page_count',
-                        'page_num',
-                        's3_page_image_s3_uri',
-                        'text'
-                    ]
-                }
+                body: queryBody
             });
 
             if (response.body?.hits?.hits && response.body.hits.hits.length > 0) {
@@ -240,9 +260,19 @@ function createDocumentDAL({
         documentId,
         pageNumber,
         keyword = '',
-        searchType = DEFAULT_SEARCH_TYPE
+        searchType = DEFAULT_SEARCH_TYPE,
+        options = {}
     ) {
         try {
+            const {
+                sourceFields = [
+                    'chunk_id',
+                    'bounding_box',
+                    'chunk_type',
+                    'chunk_index',
+                    'chunk_text'
+                ]
+            } = options;
             logger?.info?.(
                 { documentId, pageNumber, searchType },
                 'Querying OpenSearch for page chunks with bounding boxes'
@@ -258,17 +288,10 @@ function createDocumentDAL({
                     documentId,
                     logger,
                     includeNamedQueries: shouldIncludeNamedQueries,
+                    sourceFields,
                     queryDslConfig
                 }
             });
-
-            queryBody._source = [
-                'chunk_id',
-                'bounding_box',
-                'chunk_type',
-                'chunk_index',
-                'chunk_text'
-            ];
             queryBody.sort = [{ chunk_index: { order: 'asc' } }];
 
             const dbStart = Date.now();

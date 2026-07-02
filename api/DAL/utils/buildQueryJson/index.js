@@ -1,6 +1,11 @@
 import SEARCH_TYPES, { DEFAULT_SEARCH_TYPE } from '../../../search/constants/searchTypes.js';
 import logQueryMetrics from '../logQueryMetrics/index.js';
 import {
+    DEFAULT_QUERY_MODE,
+    queryStructureBuilders as defaultQueryStructureBuilders,
+    QUERY_MODES
+} from './queryStructureBuilders.js';
+import {
     createQueryTypeBuilders,
     queryTypeBuilders as defaultQueryTypeBuilders
 } from './queryTypeBuilders.js';
@@ -50,10 +55,12 @@ function normalisePagination(pageNumber, itemsPerPage) {
  * @param {object} [params.options] - Optional behavioural overrides.
  * @param {object} [params.options.logger] - Optional structured logger instance.
  * @param {string} [params.options.searchType=DEFAULT_SEARCH_TYPE] - Search mode. One of SEARCH_TYPES.KEYWORD, SEARCH_TYPES.KEYWORD_DATES, SEARCH_TYPES.SEMANTIC, SEARCH_TYPES.HYBRID, or SEARCH_TYPES.HYBRID_DATES.
+ * @param {'search'|'page-metadata'} [params.options.queryMode='search'] - Query builder mode.
  * @param {boolean} [params.options.includePagination=true] - Whether to include pagination fields in the query.
  * @param {boolean} [params.options.includeNamedQueries=false] - Whether to include named-query `_name` metadata in the generated DSL.
+ * @param {string[]|boolean|{includes?: string[], excludes?: string[]}} [params.options.sourceFields] - Optional OpenSearch `_source` projection.
  * @param {object} [params.options.queryDslConfig] - Optional tuning overrides for semantic thresholds, ANN k, and default boosts.
- * @param {string} [params.options.documentId] - Document UUID to scope results to a single document and page.
+ * @param {string} [params.options.documentId] - Document UUID to scope results to a single document and page. Required when queryMode is `page-metadata`.
  * @returns {object} OpenSearch query DSL JSON object.
  */
 function buildQueryJson({
@@ -64,46 +71,86 @@ function buildQueryJson({
     options: {
         logger,
         searchType = DEFAULT_SEARCH_TYPE,
+        queryMode = DEFAULT_QUERY_MODE,
         includePagination = true,
         includeNamedQueries = false,
+        sourceFields,
         documentId,
         queryDslConfig
     } = {}
 }) {
     const buildStart = Date.now();
-
-    // Re-use the module-level default builder map when no config overrides are
-    // provided — avoids rebuilding the map and re-merging config on every request.
-    const queryTypeBuilders = queryDslConfig
-        ? createQueryTypeBuilders({ queryDslConfig })
-        : defaultQueryTypeBuilders;
-    // dispatch to the appropriate mode-specific builder. Each builder handles
-    // its own date preprocessing (keyword and hybrid extract dates, semantic
-    // skips preprocessing entirely for efficiency).
-    const queryTypeBuilder = queryTypeBuilders[searchType];
-    if (!queryTypeBuilder) {
-        throw new Error(
-            `Invalid searchType "${searchType}". Must be one of: ${Object.values(SEARCH_TYPES).join(', ')}`
-        );
-    }
+    const effectiveQueryMode = queryMode ?? DEFAULT_QUERY_MODE;
 
     const { safePageNumber, safeItemsPerPage } = normalisePagination(pageNumber, itemsPerPage);
 
-    const builderParams = {
-        keyword,
-        caseReferenceNumber,
-        safePageNumber,
-        documentId,
-        logger,
-        includeNamedQueries
-    };
+    let queryJson;
+    let phrases = [];
+    let phrasesVariants = [];
+    let shouldClauses = [];
+    let extractMs = 0;
+    let variantMs = 0;
 
-    const { queryJson, phrases, phrasesVariants, shouldClauses, extractMs, variantMs } =
-        queryTypeBuilder(builderParams);
+    switch (effectiveQueryMode) {
+        case QUERY_MODES.PAGE_METADATA: {
+            if (!documentId) {
+                throw new Error('documentId is required when queryMode is page-metadata');
+            }
+            const queryStructureBuilder = defaultQueryStructureBuilders[effectiveQueryMode];
+            if (!queryStructureBuilder) {
+                throw new Error(
+                    `No query structure builder registered for queryMode "${effectiveQueryMode}"`
+                );
+            }
+
+            queryJson = queryStructureBuilder({
+                documentId,
+                safePageNumber
+            });
+            break;
+        }
+        case QUERY_MODES.SEARCH: {
+            // Re-use the module-level default builder map when no config overrides are
+            // provided — avoids rebuilding the map and re-merging config on every request.
+            const queryTypeBuilders = queryDslConfig
+                ? createQueryTypeBuilders({ queryDslConfig })
+                : defaultQueryTypeBuilders;
+            // dispatch to the appropriate mode-specific builder. Each builder handles
+            // its own date preprocessing (keyword and hybrid extract dates, semantic
+            // skips preprocessing entirely for efficiency).
+            const queryTypeBuilder = queryTypeBuilders[searchType];
+            if (!queryTypeBuilder) {
+                throw new Error(
+                    `Invalid searchType "${searchType}". Must be one of: ${Object.values(SEARCH_TYPES).join(', ')}`
+                );
+            }
+
+            const builderParams = {
+                keyword,
+                caseReferenceNumber,
+                safePageNumber,
+                documentId,
+                logger,
+                includeNamedQueries
+            };
+
+            ({ queryJson, phrases, phrasesVariants, shouldClauses, extractMs, variantMs } =
+                queryTypeBuilder(builderParams));
+            break;
+        }
+        default:
+            throw new Error(
+                `Invalid queryMode "${effectiveQueryMode}". Must be one of: ${Object.values(QUERY_MODES).join(', ')}`
+            );
+    }
 
     if (includePagination === true) {
         queryJson.from = safeItemsPerPage * (safePageNumber - 1);
         queryJson.size = safeItemsPerPage;
+    }
+
+    if (sourceFields !== undefined) {
+        queryJson._source = sourceFields;
     }
 
     if (queryJson?.query?.bool?.should?.length === 0) {
@@ -130,9 +177,11 @@ function buildQueryJson({
     const queryTypeBuilderParamsLog = {
         keyword,
         caseReferenceNumber,
+        queryMode: effectiveQueryMode,
         safePageNumber,
         documentId,
         includeNamedQueries,
+        sourceFields,
         queryDslConfig
     };
     const prettyJsonEnabled = process.env.APP_LOG_PRETTY_JSON === 'true';
