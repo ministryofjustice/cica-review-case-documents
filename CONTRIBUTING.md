@@ -100,6 +100,25 @@ The secret scan uses `.gitleaks.toml` as the configuration file.
 6. Create a Pull Request to merge into `main`
 7. After review and approval, merge to `main`
 
+### Commit Messages
+
+Use Conventional Commits and follow the durable repository rules in `AGENTS.md` for header format, scope, and commit-body structure.
+
+When writing commit messages from the terminal:
+
+- Use separate `-m` flags for the header and for each paragraph in the body.
+- Git inserts a blank line between each `-m` message.
+- Keep a multi-item bullet list together inside a single body paragraph; do not split list items across multiple `-m` flags.
+- Do not use `\n` escape sequences in commit command strings to simulate line breaks.
+- Multi-item bullet-list paragraphs must use literal newlines inside a single `-m` argument or `git commit -F -` with a heredoc.
+- For longer multi-line commit bodies, `git commit -F -` with a heredoc is a valid alternative.
+
+Example command shape:
+
+```bash
+git commit -m "<header>" -m "<summary>" -m "<bullet-list paragraph>"
+```
+
 ### Git Hooks (Husky)
 
 The project uses Husky for Git hooks:

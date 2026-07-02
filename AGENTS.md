@@ -10,12 +10,31 @@ Keep this file limited to stable repo rules. Use [README.md](./README.md), [ARCH
 - Use kebab-case for UI component folder names under `components/cica/`.
 - Use `.js` files by default; do not introduce `.mjs` files.
 - Use Nunjucks only for templates.
+- Use British English explicitly and exclusively in prose, including documentation, comments, UI copy, error messages, and commit messages.
+- Do not rename or respell language-, platform-, API-, or framework-defined identifiers where the required spelling is outside the project's control.
 
 ## Core Rules
 
 - Use the Node test runner only. Test files live beside the code they cover and end in `*.test.js`.
 - Keep middleware and utility folders in camelCase.
 - Keep private helpers inside the owning module folder.
+
+## Commit Messages
+
+- Use Conventional Commits for every commit message.
+- Required header format: `<type>(<scope>): <subject>`.
+- Use lower-case `type` and `scope`, and write `subject` in imperative mood.
+- Keep the header concise (ideally 72 characters or fewer).
+- Use `!` before the colon for breaking changes, for example `<type>(<scope>)!: <subject>`.
+- Common `type` values: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, `revert`.
+- Use a repository namespace as `scope`, for example: `api`, `app`, `auth`, `document`, `search`, `middleware`, `components`, `deps`.
+- If a commit includes multiple changes that benefit from extra context, include a commit body.
+- Start the body with one concise descriptive sentence.
+- Leave exactly one empty line after that sentence.
+- Put additional details in an unordered list using `-`.
+- Keep each bullet short and focused on one change.
+- Follow the commit-message requirements here; see `CONTRIBUTING.md` for terminal command examples and workflow mechanics.
+- Do not use `\n` escape sequences in commit command strings to simulate line breaks.
 
 ## Routing And Middleware
 
