@@ -103,7 +103,7 @@ Pre-push does not run formatting fixes, Sass compilation, or OpenAPI builds.
 ## Staged Helper Safety Rules
 
 - The staged helper fails fast if any staged path also has unstaged changes (for example, partial staging in the same file).
-- When staged `.scss` changes trigger `npm run sass`, the helper checks tracked `.scss` files for unstaged edits and blocks on untracked `.scss` files before compiling.
+- When staged `.scss` changes are present, the helper runs the Sass binary directly and checks tracked `.scss` files for unstaged edits while blocking on untracked `.scss` files before compiling.
 - This keeps `public/stylesheets/all.css` deterministic and prevents generated CSS from picking up unstaged SCSS changes.
 - If this happens, stage the full file, or stash/commit unstaged edits, then retry.
 
