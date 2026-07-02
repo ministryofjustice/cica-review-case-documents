@@ -76,12 +76,10 @@ Pre-push runs `npm run prepush`.
 1. `npm run precommit:staged`
    - Runs staged-file Biome checks/fixes.
    - Runs a conditional Sass build when staged `.scss` files are present.
-2. `npm run quality:fix`
-   - Runs format.
-   - Runs lint safe auto-fix.
-   - Runs Sass build.
-   - Runs gitleaks secret scan.
-   - Runs OpenAPI build.
+2. `npm run precommit:secrets`
+  - Runs gitleaks secret scan against staged content.
+
+If you want full-repo mutating quality checks, run `npm run quality:fix` manually. It runs format, lint safe auto-fix, Sass build, gitleaks, and OpenAPI build.
 
 If you explicitly want Biome unsafe transformations (for example, automatic brace insertion from `useBlockStatements`), run:
 
@@ -138,7 +136,7 @@ The project uses Husky for Git hooks:
 
 | Hook Name  | Action       | Description                          |
 | ---------- | ------------ | ------------------------------------ |
-| pre-commit | npm run precommit | Runs staged-file Biome checks/fixes and conditional Sass build, then format, lint, sass, gitleaks, and OpenAPI build |
+| pre-commit | npm run precommit | Runs staged-file Biome checks/fixes, conditional Sass build, and staged gitleaks checks |
 | pre-push   | npm run prepush | Runs npm audit, non-mutating quality checks (`quality:verify`), tests, and JSDoc linting before push |
 
 Notes for pre-commit:
@@ -146,7 +144,8 @@ Notes for pre-commit:
 - If staged `.scss` files are present, the helper also aborts when any tracked `.scss` file has unstaged edits.
 - This is intentional to keep staged-only checks deterministic and avoid unstaged changes being pulled into the commit.
 - The hook re-stages only files that were already staged before `npm run precommit`, instead of using `git add -A`.
-- The hook also stages generated artifacts when they change during checks: `public/stylesheets/all.css` and `api/openapi/openapi-dist.json`.
+- The hook also stages `public/stylesheets/all.css` when it changes during staged Sass checks.
+- The hook does not run OpenAPI build or auto-stage `api/openapi/openapi-dist.json`; include that file in a commit only when you explicitly stage it (or run full-repo checks via `npm run quality:fix`).
 
 ### CI/CD Pipeline
 

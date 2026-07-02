@@ -34,7 +34,7 @@
         "quality:fix": "npm run format && npm run lint:fix && npm run sass && npm run precommit:secrets && npm run openapi:build",
         "quality:verify": "npm run lint:check && npm run precommit:secrets",
         "audit:ci": "npm audit --audit-level=high --omit=dev",
-        "precommit": "npm run precommit:staged && npm run quality:fix",
+        "precommit": "npm run precommit:staged && npm run precommit:secrets",
         "prepush": "npm run audit:ci && npm run quality:verify && npm run test && npm run jsdoc:check",
         "jsdoc:check": "eslint .",
         "prepare": "husky"
