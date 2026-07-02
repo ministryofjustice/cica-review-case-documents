@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import { afterEach, beforeEach, describe, test } from 'node:test';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
-import createApi from './app.js';
+import isAuthenticated from '../middleware/isAuthenticated/index.js';
 
 const API_ENV_VARS = [
     'APP_LOG_LEVEL',
@@ -13,7 +13,8 @@ const API_ENV_VARS = [
     'APP_API_JWT_ISSUER',
     'APP_API_JWT_AUDIENCE',
     'API_RATE_LIMIT_MAX_AUTH',
-    'API_RATE_LIMIT_MAX_UNAUTH'
+    'API_RATE_LIMIT_MAX_UNAUTH',
+    'API_RATE_LIMIT_WINDOW_MS'
 ];
 
 /**
@@ -31,7 +32,27 @@ function signApiToken(payload) {
     });
 }
 
-// Mock the search service to isolate the API app logic
+/**
+ * Middleware to simulate authentication for testing purposes.
+ * @param {import('express').Request} req - The Express request object.
+ * @param {import('express').Response} res - The Express response object.
+ * @param {import('express').NextFunction} next - The next middleware function.
+ * @returns {void}
+ */
+function docsAuthMiddleware(req, res, next) {
+    req.session ??= {};
+
+    if (req.headers.authorization?.startsWith('Bearer ')) {
+        req.session.loggedIn = true;
+    }
+
+    return isAuthenticated(req, res, next);
+}
+
+/**
+ * Creates a mock search service for testing purposes.
+ * @returns {any} The mock search service.
+ */
 const mockCreateSearchService = () => ({
     getSearchResultsByKeyword: async (keyword, page, limit, { logger }) => {
         logger.info(`Mock search for: ${keyword}`);
@@ -47,6 +68,24 @@ const mockCreateSearchService = () => ({
         };
     }
 });
+
+/**
+ * Sets the JWT environment variables for testing purposes.
+ * @param {object} [options] - Optional configuration for JWT environment variables.
+ * @param {string} [options.secret='test-secret-for-api'] - The secret key for signing JWT tokens.
+ * @param {string} [options.issuer='test-ui'] - The issuer claim for JWT tokens.
+ * @param {string} [options.audience='test-api'] - The audience claim for JWT tokens.
+ * @returns {void}
+ */
+function setJwtEnv({
+    secret = 'test-secret-for-api',
+    issuer = 'test-ui',
+    audience = 'test-api'
+} = {}) {
+    process.env.APP_JWT_SECRET = secret;
+    process.env.APP_API_JWT_ISSUER = issuer;
+    process.env.APP_API_JWT_AUDIENCE = audience;
+}
 
 describe('API Application', () => {
     let app;
@@ -66,12 +105,7 @@ describe('API Application', () => {
         process.env.APP_API_JWT_ISSUER = 'test-ui';
         process.env.APP_API_JWT_AUDIENCE = 'test-api';
 
-        // Create the Express app instance for testing
-        //app = await createApi({ createSearchService: mockCreateSearchService });
-
-        app = await createApi({
-            createSearchService: mockCreateSearchService
-        });
+        app = await createTestApi();
     });
 
     afterEach(() => {
@@ -84,6 +118,41 @@ describe('API Application', () => {
         }
     });
 
+    /**
+     * Creates a test instance of the API application with optional configuration overrides.
+     *
+     * @param {Object} [options={}] - Optional configuration overrides for the test API.
+     * @param {Function} [options.createSearchService] - Optional custom search service factory function.
+     * @param {Function} [options.docsAuthMiddleware] - Optional custom authentication middleware for docs routes.
+     * @returns {Promise<import('express').Application>} A promise that resolves to the initialized Express application.
+     * @throws {Error} If the API application fails to initialize.
+     * @async
+     * @function
+     * @name createTestApi
+     * @memberof module:api/app.test.js
+     * @inner
+     * @example
+     * const app = await createTestApi({ createSearchService: myMockSearchService });
+     */
+    async function createTestApi(options = {}) {
+        const { default: createApi } = await import('./app.js');
+
+        const defaults = {
+            createSearchService: mockCreateSearchService
+        };
+
+        // Only provide docsAuthMiddleware by default in non-production
+        // Allow tests to override by explicitly passing it in options
+        if (process.env.DEPLOY_ENV !== 'production' && !('docsAuthMiddleware' in options)) {
+            defaults.docsAuthMiddleware = docsAuthMiddleware;
+        }
+
+        return createApi({
+            ...defaults,
+            ...options
+        });
+    }
+
     describe('OpenAPI Spec Loading', () => {
         test('logs error when OpenAPI spec content is invalid JSON', async () => {
             const originalConsoleError = console.error;
@@ -93,8 +162,7 @@ describe('API Application', () => {
             };
 
             try {
-                const appWithInvalidSpec = await createApi({
-                    createSearchService: mockCreateSearchService,
+                const appWithInvalidSpec = await createTestApi({
                     readOpenApiFile: async () => '{'
                 });
 
@@ -111,9 +179,7 @@ describe('API Application', () => {
             process.env.APP_LOG_LEVEL = 'silent';
 
             // By creating an app, if the spec file doesn't exist, it should catch the error
-            const appWithMissingSpec = await createApi({
-                createSearchService: mockCreateSearchService
-            });
+            const appWithMissingSpec = await createTestApi();
 
             // If app is created without throwing, the error was handled
             assert.ok(appWithMissingSpec);
@@ -124,9 +190,7 @@ describe('API Application', () => {
             process.env.APP_LOG_LEVEL = 'silent';
 
             // Create app - spec file exists so this logs if there's an error
-            const app = await createApi({
-                createSearchService: mockCreateSearchService
-            });
+            const app = await createTestApi();
 
             // Verify the app was created (error handling worked)
             assert.ok(app);
@@ -139,9 +203,7 @@ describe('API Application', () => {
             // so the console fallback is always used during OpenAPI loading.
             // The try-catch ensures the app still initializes even if the spec fails to load.
 
-            const app = await createApi({
-                createSearchService: mockCreateSearchService
-            });
+            const app = await createTestApi();
 
             // App should be created successfully (spec loaded or error caught)
             assert.ok(app);
@@ -155,16 +217,30 @@ describe('API Application', () => {
             process.env.APP_LOG_LEVEL = 'silent';
             process.env.APP_JWT_SECRET = 'test-secret';
 
-            const devApp = await createApi({
-                createSearchService: mockCreateSearchService
-            });
+            const devApp = await createTestApi();
 
-            const token = signApiToken({ userId: 'test' });
+            const token = signApiToken({ id: 'test' });
 
             const res = await request(devApp).get('/docs/').set('Authorization', `Bearer ${token}`);
 
             // In non-production, should get Swagger UI (200 or 404 if spec missing, but not middleware error)
-            assert.ok([200, 404].includes(res.statusCode));
+            assert.strictEqual(res.statusCode, 200);
+        });
+
+        test('defaults docs auth to deny-all when docsAuthMiddleware is not provided', async () => {
+            process.env.DEPLOY_ENV = 'development';
+            process.env.APP_LOG_LEVEL = 'silent';
+            process.env.APP_JWT_SECRET = 'test-secret';
+
+            const appWithoutDocsAuth = await createTestApi({ docsAuthMiddleware: null });
+
+            const docsResponse = await request(appWithoutDocsAuth).get('/docs/');
+            const specResponse = await request(appWithoutDocsAuth).get('/openapi.json');
+
+            assert.strictEqual(docsResponse.statusCode, 401);
+            assert.deepStrictEqual(docsResponse.body, { error: 'Unauthorized' });
+            assert.strictEqual(specResponse.statusCode, 401);
+            assert.deepStrictEqual(specResponse.body, { error: 'Unauthorized' });
         });
 
         test('does NOT include Swagger UI middleware in production environment', async () => {
@@ -172,11 +248,9 @@ describe('API Application', () => {
             process.env.APP_LOG_LEVEL = 'silent';
             process.env.APP_JWT_SECRET = 'test-secret';
 
-            const prodApp = await createApi({
-                createSearchService: mockCreateSearchService
-            });
+            const prodApp = await createTestApi();
 
-            const token = signApiToken({ userId: 'test' });
+            const token = signApiToken({ id: 'test' });
 
             const res = await request(prodApp)
                 .get('/docs/')
@@ -187,18 +261,32 @@ describe('API Application', () => {
         });
     });
 
-    describe('Public and Unauthenticated requests', () => {
-        test('responds with 401 for Swagger UI docs', async () => {
+    describe('Public and Unauthenticated requests production environments', () => {
+        test('responds with status 401 for unauthenticated openapi requests in production', async () => {
+            process.env.DEPLOY_ENV = 'production';
+
+            const prodLikeApp = await createTestApi();
+
+            let response = await request(prodLikeApp).get('/docs/');
+            // ALL requests respond with 401 Unauthorized.
+            assert.strictEqual(response.statusCode, 401);
+
+            response = await request(prodLikeApp).get('/openapi.json');
+            assert.strictEqual(response.statusCode, 401);
+        });
+    });
+
+    describe('Public and Unauthenticated requests non production environments', () => {
+        test('redirects unauthenticated requests for Swagger UI docs', async () => {
             const res = await request(app).get('/docs/');
-            assert.strictEqual(res.statusCode, 401);
-            assert.match(res.body.errors[0].detail, /Missing authentication token/);
+            assert.strictEqual(res.statusCode, 302);
+            assert.strictEqual(res.headers.location, '/auth/login');
         });
 
-        test('responds with 401 for OpenAPI spec', async () => {
+        test('redirects unauthenticated requests for OpenAPI spec to /auth/login', async () => {
             const res = await request(app).get('/openapi.json');
-            assert.strictEqual(res.statusCode, 401);
-            assert.strictEqual(res.type, 'application/json');
-            assert.match(res.body.errors[0].detail, /Missing authentication token/);
+            assert.strictEqual(res.statusCode, 302);
+            assert.strictEqual(res.headers.location, '/auth/login');
         });
 
         test('responds with 401 for missing JWT on protected search endpoint', async () => {
@@ -218,7 +306,7 @@ describe('API Application', () => {
 
         beforeEach(() => {
             // Create a fresh token for each test
-            validToken = signApiToken({ userId: 'test-user-123', email: 'test@example.com' });
+            validToken = signApiToken({ id: 'claims_test_oid' });
         });
 
         test('responds with 200 for Swagger UI docs', async () => {
@@ -236,23 +324,20 @@ describe('API Application', () => {
             assert.strictEqual(res.type, 'application/json');
         });
 
-        test('responds with 200 for docs OpenAPI spec route', async () => {
+        test('responds with 404 for docs OpenAPI spec route in production when JWT claim is present', async () => {
             process.env.DEPLOY_ENV = 'production';
             process.env.APP_LOG_LEVEL = 'silent';
-            process.env.APP_JWT_SECRET = 'test-secret';
+            setJwtEnv({ secret: 'test-secret' });
 
-            const prodApp = await createApi({
-                createSearchService: mockCreateSearchService
-            });
-
-            const prodToken = signApiToken({ userId: 'test-user-123' });
+            const prodApp = await createTestApi();
+            const prodToken = signApiToken({ id: 'claims_test_oid' });
 
             const res = await request(prodApp)
-                .get('/docs/openapi.json')
+                .get('/openapi.json')
                 .set('Authorization', `Bearer ${prodToken}`);
 
-            assert.strictEqual(res.statusCode, 200);
-            assert.strictEqual(res.type, 'application/json');
+            assert.strictEqual(res.statusCode, 404);
+            assert.strictEqual(res.type, 'application/vnd.api+json');
             assert.ok(res.body && typeof res.body === 'object');
         });
 
@@ -280,25 +365,28 @@ describe('API Application', () => {
         });
 
         test('rate limits authenticated API requests in production using API_RATE_LIMIT_MAX_AUTH', async () => {
-            process.env.NODE_ENV = 'production';
+            process.env.DEPLOY_ENV = 'production';
             process.env.API_RATE_LIMIT_MAX_AUTH = '2';
-            process.env.API_RATE_LIMIT_MAX_UNAUTH = '1';
 
-            const prodLikeApp = await createApi({
-                createSearchService: mockCreateSearchService
-            });
+            const prodLikeApp = await createTestApi();
 
-            const token = signApiToken({ userId: 'auth-rate-limit-user' });
+            let token = signApiToken({ id: 'claims_test_oid_limit' });
 
             const first = await request(prodLikeApp)
                 .get('/search?query=test&pageNumber=1&itemsPerPage=1')
                 .set('Authorization', `Bearer ${token}`)
                 .set('On-Behalf-Of', '25-711111');
 
+            // Re-sign the token to ensure a fresh JWT for the second request
+            token = signApiToken({ id: 'claims_test_oid_limit' });
+
             const second = await request(prodLikeApp)
                 .get('/search?query=test&pageNumber=1&itemsPerPage=1')
                 .set('Authorization', `Bearer ${token}`)
                 .set('On-Behalf-Of', '25-711111');
+
+            // Re-sign the token again for the third request to avoid using a cached token
+            token = signApiToken({ id: 'claims_test_oid_limit' });
 
             const third = await request(prodLikeApp)
                 .get('/search?query=test&pageNumber=1&itemsPerPage=1')
@@ -311,21 +399,21 @@ describe('API Application', () => {
         });
 
         test('applies authenticated rate limits independently for different JWT users', async () => {
-            process.env.NODE_ENV = 'production';
+            process.env.DEPLOY_ENV = 'test';
             process.env.API_RATE_LIMIT_MAX_AUTH = '1';
             process.env.API_RATE_LIMIT_MAX_UNAUTH = '1';
 
-            const prodLikeApp = await createApi({
-                createSearchService: mockCreateSearchService
-            });
+            const prodLikeApp = await createTestApi();
 
-            const firstUserToken = signApiToken({ userId: 'rate-user-1' });
-            const secondUserToken = signApiToken({ userId: 'rate-user-2' });
+            let firstUserToken = signApiToken({ id: 'claims_test_oid_1' });
+            const secondUserToken = signApiToken({ id: 'claims_test_oid_2' });
 
             const firstUserFirstRequest = await request(prodLikeApp)
                 .get('/search?query=test&pageNumber=1&itemsPerPage=1')
                 .set('Authorization', `Bearer ${firstUserToken}`)
                 .set('On-Behalf-Of', '25-711111');
+
+            firstUserToken = signApiToken({ id: 'claims_test_oid_1' });
 
             const firstUserSecondRequest = await request(prodLikeApp)
                 .get('/search?query=test&pageNumber=1&itemsPerPage=1')
@@ -342,36 +430,36 @@ describe('API Application', () => {
             assert.strictEqual(secondUserFirstRequest.statusCode, 200);
         });
 
-        test('applies authenticated rate limits independently when JWT identity is username', async () => {
-            process.env.NODE_ENV = 'production';
+        test('applies authenticated rate limits independently when JWT identity is claims oid GUID', async () => {
+            process.env.DEPLOY_ENV = 'test';
             process.env.API_RATE_LIMIT_MAX_AUTH = '1';
             process.env.API_RATE_LIMIT_MAX_UNAUTH = '1';
 
-            const prodLikeApp = await createApi({
-                createSearchService: mockCreateSearchService
-            });
+            const prodLikeApp = await createTestApi();
 
-            const firstUsernameToken = signApiToken({ username: 'username-user-1' });
-            const secondUsernameToken = signApiToken({ username: 'username-user-2' });
+            let userOneOidToken = signApiToken({ id: 'claims_test_oid_1' });
+            const userTwoOidToken = signApiToken({ id: 'claims_test_oid_2' });
 
-            const firstUserFirstRequest = await request(prodLikeApp)
+            const userOneFirstAPIRequest = await request(prodLikeApp)
                 .get('/search?query=test&pageNumber=1&itemsPerPage=1')
-                .set('Authorization', `Bearer ${firstUsernameToken}`)
+                .set('Authorization', `Bearer ${userOneOidToken}`)
                 .set('On-Behalf-Of', '25-711111');
 
-            const firstUserSecondRequest = await request(prodLikeApp)
+            userOneOidToken = signApiToken({ id: 'claims_test_oid_1' });
+
+            const userOneSecondAPIRequest = await request(prodLikeApp)
                 .get('/search?query=test&pageNumber=1&itemsPerPage=1')
-                .set('Authorization', `Bearer ${firstUsernameToken}`)
+                .set('Authorization', `Bearer ${userOneOidToken}`)
                 .set('On-Behalf-Of', '25-711111');
 
-            const secondUserFirstRequest = await request(prodLikeApp)
+            const userTwoFirstAPIRequest = await request(prodLikeApp)
                 .get('/search?query=test&pageNumber=1&itemsPerPage=1')
-                .set('Authorization', `Bearer ${secondUsernameToken}`)
+                .set('Authorization', `Bearer ${userTwoOidToken}`)
                 .set('On-Behalf-Of', '25-711111');
 
-            assert.strictEqual(firstUserFirstRequest.statusCode, 200);
-            assert.strictEqual(firstUserSecondRequest.statusCode, 429);
-            assert.strictEqual(secondUserFirstRequest.statusCode, 200);
+            assert.strictEqual(userOneFirstAPIRequest.statusCode, 200);
+            assert.strictEqual(userOneSecondAPIRequest.statusCode, 429);
+            assert.strictEqual(userTwoFirstAPIRequest.statusCode, 200);
         });
 
         test('returns 403 when JWT is valid but missing required identity claims', async () => {
@@ -388,13 +476,63 @@ describe('API Application', () => {
                 'Authentication token is missing required identity claims'
             );
         });
+
+        test('returns 500 when OpenAPI spec file read fails on request', async () => {
+            process.env.DEPLOY_ENV = 'development';
+            process.env.APP_LOG_LEVEL = 'silent';
+
+            // Create a mock readOpenApiFile that throws an error
+            const failingReadOpenApiFile = async () => {
+                throw new Error('File read failed');
+            };
+
+            const options = {
+                docsAuthMiddleware,
+                readOpenApiFile: failingReadOpenApiFile
+            };
+
+            const testApp = await createTestApi(options);
+            const token = signApiToken({ id: 'test-user' });
+
+            const res = await request(testApp)
+                .get('/openapi.json')
+                .set('Authorization', `Bearer ${token}`);
+
+            assert.strictEqual(res.statusCode, 500);
+            assert.strictEqual(res.body.error, 'Failed to load OpenAPI spec');
+        });
+
+        test('returns 500 when OpenAPI spec file contains invalid JSON on request', async () => {
+            process.env.DEPLOY_ENV = 'development';
+            process.env.APP_LOG_LEVEL = 'silent';
+
+            // Create a mock readOpenApiFile that returns invalid JSON
+            const invalidJsonReadOpenApiFile = async () => {
+                return 'not valid json {{{';
+            };
+
+            const options = {
+                docsAuthMiddleware,
+                readOpenApiFile: invalidJsonReadOpenApiFile
+            };
+
+            const testApp = await createTestApi(options);
+            const token = signApiToken({ id: 'test-user' });
+
+            const res = await request(testApp)
+                .get('/openapi.json')
+                .set('Authorization', `Bearer ${token}`);
+
+            assert.strictEqual(res.statusCode, 500);
+            assert.strictEqual(res.body.error, 'Failed to load OpenAPI spec');
+        });
     });
 
     describe('Request Validation and Error Handling', () => {
         let validToken;
 
         beforeEach(() => {
-            validToken = signApiToken({ id: 'test' });
+            validToken = signApiToken({ id: 'claims_test_oid' });
         });
 
         test('responds with 404 for an unknown route when authenticated', async () => {

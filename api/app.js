@@ -4,13 +4,12 @@ import { fileURLToPath } from 'node:url';
 import Ajv from 'ajv';
 import ajvErrors from 'ajv-errors';
 import express from 'express';
-import helmet from 'helmet';
 import pinoHttp from 'pino-http';
-import swaggerUi from 'swagger-ui-express';
+import createDocsRouter from './docs/createDocsRouter.js';
 import createApiRouter from './document/routes.js';
 import errorHandler from './middleware/errorHandler/index.js';
 import authenticateJWTToken from './middleware/jwt-authentication/index.js';
-import dynamicRateLimiter from './middleware/rateLimiter/index.js';
+import createDynamicRateLimiter from './middleware/rateLimiter/index.js';
 import createOpenApiValidatorMiddleware from './middleware/validator/index.js';
 import createSearchService from './search/search-service.js';
 
@@ -23,6 +22,8 @@ const __dirname = path.dirname(__filename);
  * @param {object} [options.logger] - An optional logger instance.
  * @param {Function} [options.createSearchService] - A factory function to create the search service.
  * @param {Function} [options.readOpenApiFile] - Optional file reader for loading OpenAPI spec (used by tests).
+ * @param {import('express').RequestHandler} [options.docsAuthMiddleware] - Auth middleware for docs protection.
+ *        Defaults to a deny-all handler when DEPLOY_ENV !== 'production'.
  * @returns {Promise<import('express').Application>} A promise that resolves to the configured Express app.
  */
 export default async function createApi(options = {}) {
@@ -41,45 +42,38 @@ export default async function createApi(options = {}) {
     app.use(express.json({ type: 'application/vnd.api+json' }));
     app.use(express.urlencoded({ extended: true }));
 
-    const openApiPath = path.join(__dirname, 'openapi', 'openapi-dist.json');
-    const readOpenApiFile = options.readOpenApiFile || readFile; // DI to allow the try/catch to be tested
-    let openApiSpec = {};
-    try {
-        openApiSpec = JSON.parse(await readOpenApiFile(openApiPath, 'utf-8'));
-    } catch (err) {
-        // Use the app's logger instance if available
-        (app.get('logger') || console).error({ err }, 'Failed to load OpenAPI spec');
-    }
-
-    // --- API Routes (Protected and Validated) ---
-    const docsRouter = express.Router();
-    docsRouter.use(authenticateJWTToken);
     if (process.env.DEPLOY_ENV !== 'production') {
-        // Serve Swagger UI only in non-production environments
-        docsRouter.use(
-            '/',
-            helmet({
-                contentSecurityPolicy: {
-                    directives: {
-                        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-                        'script-src': ["'self'", "'unsafe-inline'"],
-                        'style-src': ["'self'", "'unsafe-inline'"]
-                    }
-                }
-            }),
-            swaggerUi.serve,
-            swaggerUi.setup(openApiSpec)
-        );
-    }
-    docsRouter.get('/openapi.json', (req, res) => {
-        res.json(openApiSpec);
-    });
+        const docsAuthMiddleware =
+            options.docsAuthMiddleware ??
+            ((req, res) => {
+                res.status(401).json({ error: 'Unauthorized' });
+            });
 
-    // Mount docsRouter at /docs and /openapi.json
-    app.use('/docs', docsRouter);
-    app.use('/openapi.json', authenticateJWTToken, (req, res) => {
-        res.json(openApiSpec);
-    });
+        // Provide the rate limiter factory to the docs router so it can create
+        // its own limiter during initialization. Create a separate limiter
+        // instance for the /openapi.json route here.
+        const docsRouter = await createDocsRouter({
+            readOpenApiFile: options.readOpenApiFile,
+            docsAuthMiddleware,
+            docsRateLimiter: createDynamicRateLimiter
+        });
+
+        app.use('/docs', docsRouter);
+
+        // Also serve the spec at root for standard location using a fresh limiter
+        const openApiLimiter = createDynamicRateLimiter();
+        app.use('/openapi.json', openApiLimiter, docsAuthMiddleware, async (req, res) => {
+            const readOpenApiFile = options.readOpenApiFile || readFile;
+            try {
+                const openApiPath = path.resolve(__dirname, 'openapi/openapi-dist.json');
+                const openApiSpec = JSON.parse(await readOpenApiFile(openApiPath, 'utf-8'));
+                res.json(openApiSpec);
+            } catch (err) {
+                (req.log || console).error({ err }, 'Failed to load OpenAPI spec');
+                res.status(500).json({ error: 'Failed to load OpenAPI spec' });
+            }
+        });
+    }
 
     // This middleware sets the content type and version for all subsequent API routes.
     const apiSetupMiddleware = (req, res, next) => {
@@ -94,12 +88,11 @@ export default async function createApi(options = {}) {
     const apiRouter = createApiRouter({ searchService });
 
     const openApiValidator = await createOpenApiValidatorMiddleware({ ajv, logger });
-
+    const apiRateLimiter = createDynamicRateLimiter();
     app.use(
         '/',
         authenticateJWTToken,
-        // Rate limit authenticated users by user ID after successful auth
-        dynamicRateLimiter,
+        apiRateLimiter,
         apiSetupMiddleware,
         openApiValidator,
         apiRouter

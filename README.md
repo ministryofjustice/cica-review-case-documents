@@ -273,13 +273,13 @@ The API is documented using OpenAPI 3.1 specification. See [`api/openapi/openapi
 
 ### Accessing API Documentation
 
-The interactive Swagger UI is available at `/api/docs` when the application is running:
+The interactive Swagger UI is available at `/api/docs` in non-production environments when the application is running and you are authenticated:
 
 ```
 http://localhost:5000/api/docs
 ```
 
-**Note:** The OpenAPI specification must be built before accessing the documentation. Run `npm run openapi:build` if you encounter errors.
+**Note:** `npm run start:dev` builds the OpenAPI specification once before startup. If you later change files under `api/openapi/`, run `npm run openapi:build` again or use `npm run openapi:watch`, because the dev server ignores that folder for restarts.
 
 **Quick API reference:**
 

@@ -14,7 +14,7 @@ export function createImageStreamingHandler(s3Client, createMetadataService) {
         try {
             // Use pre-validated parameters from middleware
             const { documentId, pageNumber, crn } = req.validatedParams;
-            const apiJwtToken = createApiJwtToken(req.session?.username);
+            const apiJwtToken = createApiJwtToken(req.session?.entraUser?.oid);
 
             // Fetch metadata from API to get the S3 URI
             let pageMetadata;

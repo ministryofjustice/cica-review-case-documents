@@ -34,8 +34,8 @@ export function createTextViewerHandler(
             const { documentId, pageNumber, crn } = req.validatedParams;
             const { searchTerm = '' } = req.query;
             const searchType = getFeatureFlagValue(req.session, 'type');
-            const apiJwtToken = createApiJwtToken(req.session?.username);
             const debugQueryDslOverrides = res.locals.debugQueryDslOverrides || {};
+            const apiJwtToken = createApiJwtToken(req.session?.entraUser?.oid);
 
             // Fetch document page metadata from OpenSearch via API
             let pageMetadata;

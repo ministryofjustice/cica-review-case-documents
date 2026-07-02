@@ -65,6 +65,7 @@ describe('Search Pagination Persistence', () => {
             req.session = sessionData;
             req.session.caseSelected = true;
             req.session.caseReferenceNumber = '12-745678';
+            req.session.entraUser = { oid: 'entra-oid-123' };
             req.log = { info: () => {}, error: () => {} };
             res.locals.csrfToken = 'test-csrf-token';
             res.locals.cspNonce = 'test-csp-nonce';

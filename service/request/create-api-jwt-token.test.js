@@ -4,36 +4,62 @@ import jwt from 'jsonwebtoken';
 import createApiJwtToken from './create-api-jwt-token.js';
 
 describe('createApiJwtToken', () => {
-    it('creates a signed token with provided username', () => {
+    it('creates a signed token with provided oid as id', () => {
         process.env.APP_JWT_SECRET = 'test-secret';
         process.env.APP_API_JWT_EXPIRES_IN = '60s';
         process.env.APP_API_JWT_ISSUER = 'test-ui';
         process.env.APP_API_JWT_AUDIENCE = 'test-api';
 
-        const token = createApiJwtToken('user@example.com');
+        const token = createApiJwtToken('entra-oid-123');
         const payload = jwt.verify(token, process.env.APP_JWT_SECRET, {
             issuer: 'test-ui',
             audience: 'test-api'
         });
 
-        assert.equal(payload.username, 'user@example.com');
+        assert.equal(payload.id, 'entra-oid-123');
         assert.equal(payload.iss, 'test-ui');
         assert.equal(payload.aud, 'test-api');
     });
 
-    it('falls back to app-ui when username is missing', () => {
+    it('creates a signed token with whitespace trimmed provided oid as id', () => {
         process.env.APP_JWT_SECRET = 'test-secret';
         process.env.APP_API_JWT_EXPIRES_IN = '60s';
         process.env.APP_API_JWT_ISSUER = 'test-ui';
         process.env.APP_API_JWT_AUDIENCE = 'test-api';
 
-        const token = createApiJwtToken();
+        const token = createApiJwtToken('entra-oid-123 ');
         const payload = jwt.verify(token, process.env.APP_JWT_SECRET, {
             issuer: 'test-ui',
             audience: 'test-api'
         });
 
-        assert.equal(payload.username, 'app-ui');
+        assert.equal(payload.id, 'entra-oid-123');
+        assert.equal(payload.iss, 'test-ui');
+        assert.equal(payload.aud, 'test-api');
+    });
+
+    it('throws when oid is missing', () => {
+        process.env.APP_JWT_SECRET = 'test-secret';
+        process.env.APP_API_JWT_EXPIRES_IN = '60s';
+        process.env.APP_API_JWT_ISSUER = 'test-ui';
+        process.env.APP_API_JWT_AUDIENCE = 'test-api';
+
+        assert.throws(
+            () => createApiJwtToken(),
+            /An Entra oid is required to create an API JWT token/
+        );
+    });
+
+    it('throws when oid is whitespace', () => {
+        process.env.APP_JWT_SECRET = 'test-secret';
+        process.env.APP_API_JWT_EXPIRES_IN = '60s';
+        process.env.APP_API_JWT_ISSUER = 'test-ui';
+        process.env.APP_API_JWT_AUDIENCE = 'test-api';
+
+        assert.throws(
+            () => createApiJwtToken(' '),
+            /An Entra oid is required to create an API JWT token/
+        );
     });
 
     it('throws if APP_JWT_SECRET is not set', () => {
@@ -41,7 +67,7 @@ describe('createApiJwtToken', () => {
         delete process.env.APP_JWT_SECRET;
 
         assert.throws(
-            () => createApiJwtToken('user@example.com'),
+            () => createApiJwtToken('entra-oid-123'),
             /APP_JWT_SECRET environment variable is not set/
         );
 
@@ -57,7 +83,7 @@ describe('createApiJwtToken', () => {
         process.env.APP_API_JWT_AUDIENCE = 'test-api';
 
         assert.throws(
-            () => createApiJwtToken('user@example.com'),
+            () => createApiJwtToken('entra-oid-123'),
             /APP_API_JWT_ISSUER environment variable is not set/
         );
 
@@ -73,7 +99,7 @@ describe('createApiJwtToken', () => {
         delete process.env.APP_API_JWT_AUDIENCE;
 
         assert.throws(
-            () => createApiJwtToken('user@example.com'),
+            () => createApiJwtToken('entra-oid-123'),
             /APP_API_JWT_AUDIENCE environment variable is not set/
         );
 

@@ -1,371 +1,214 @@
 import assert from 'node:assert';
-import { test } from 'node:test';
+import { afterEach, beforeEach, test } from 'node:test';
 import express from 'express';
 import { ipKeyGenerator } from 'express-rate-limit';
 import session from 'express-session';
 import request from 'supertest';
 import generalRateLimiter, { generateRateLimitKey } from './index.js';
 
-test('generateRateLimitKey returns session id when logged in session exists', () => {
+let originalAuthLimit;
+let originalUnauthLimit;
+let originalWindowMs;
+
+beforeEach(() => {
+    originalAuthLimit = process.env.APP_RATE_LIMIT_MAX_AUTH;
+    originalUnauthLimit = process.env.APP_RATE_LIMIT_MAX_UNAUTH;
+    originalWindowMs = process.env.APP_RATE_LIMIT_WINDOW_MS;
+});
+
+afterEach(() => {
+    if (originalAuthLimit === undefined) {
+        delete process.env.APP_RATE_LIMIT_MAX_AUTH;
+    } else {
+        process.env.APP_RATE_LIMIT_MAX_AUTH = originalAuthLimit;
+    }
+    if (originalUnauthLimit === undefined) {
+        delete process.env.APP_RATE_LIMIT_MAX_UNAUTH;
+    } else {
+        process.env.APP_RATE_LIMIT_MAX_UNAUTH = originalUnauthLimit;
+    }
+    if (originalWindowMs === undefined) {
+        delete process.env.APP_RATE_LIMIT_WINDOW_MS;
+    } else {
+        process.env.APP_RATE_LIMIT_WINDOW_MS = originalWindowMs;
+    }
+});
+
+/**
+ * Creates an Express app configured with session support and the provided rate limiter.
+ * @param {import('express').RequestHandler} [limiter=generalRateLimiter] - Rate limiter middleware to apply.
+ * @returns {import('express').Express} Configured Express application instance.
+ */
+function createTestApp(limiter = generalRateLimiter) {
+    const app = express();
+    app.set('trust proxy', 1);
+
+    app.use(
+        session({
+            secret: 'test-secret',
+            resave: false,
+            saveUninitialized: true
+        })
+    );
+
+    // Test helper: simulate authenticated browser sessions via request headers.
+    app.use((req, res, next) => {
+        const oid = req.get('x-test-oid');
+        if (oid) {
+            req.session.loggedIn = true;
+            req.session.entraUser = { oid };
+        }
+        next();
+    });
+
+    app.use(limiter);
+
+    app.get('/test', (req, res) => {
+        res.status(200).json({ ok: true });
+    });
+
+    return app;
+}
+
+test('generateRateLimitKey uses entra oid for authenticated requests', () => {
     const req = {
+        ip: '203.0.113.1',
         session: {
             loggedIn: true,
-            id: 'session-123'
+            entraUser: { oid: 'oid-123' }
         }
     };
 
-    assert.strictEqual(generateRateLimitKey(req), 'session-123');
+    assert.strictEqual(generateRateLimitKey(req), 'oid:oid-123');
 });
 
-test('generateRateLimitKey returns user id when session is not logged in', () => {
+test('generateRateLimitKey falls back to IP when unauthenticated', () => {
     const req = {
-        session: {
-            loggedIn: false,
-            id: 'session-123'
-        },
-        user: {
-            id: 'user-123'
-        }
-    };
-
-    assert.strictEqual(generateRateLimitKey(req), 'user-123');
-});
-
-test('generateRateLimitKey falls back to ipKeyGenerator when no session or user id', () => {
-    const req = {
-        ip: '127.0.0.1',
-        ips: [],
-        socket: { remoteAddress: '127.0.0.1' },
-        headers: {}
+        ip: '198.51.100.10',
+        session: { loggedIn: false, entraUser: { oid: 'oid-ignored' } }
     };
 
     assert.strictEqual(generateRateLimitKey(req), ipKeyGenerator(req.ip));
 });
 
-test('skip function returns true in non-production mode', async () => {
-    const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'development';
+test('generateRateLimitKey falls back to IP when authenticated user has no oid', () => {
+    const req = {
+        ip: '198.51.100.11',
+        session: { loggedIn: true, entraUser: {} }
+    };
 
-    try {
-        const app = express();
-        app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
-        app.use(generalRateLimiter);
-        app.get('/test', (req, res) => res.send('OK'));
-
-        // Should allow unlimited requests in dev mode
-        for (let i = 0; i < 100; i++) {
-            const res = await request(app).get('/test');
-            assert.strictEqual(res.status, 200);
-        }
-    } finally {
-        process.env.NODE_ENV = originalEnv;
-    }
+    assert.strictEqual(generateRateLimitKey(req), ipKeyGenerator(req.ip));
 });
 
-test('skip function does not bypass limiter in production for /api paths', async () => {
-    const originalEnv = process.env.NODE_ENV;
-    const originalUnauth = process.env.APP_RATE_LIMIT_MAX_UNAUTH;
-    process.env.NODE_ENV = 'production';
-    process.env.APP_RATE_LIMIT_MAX_UNAUTH = '1';
-
-    try {
-        const { default: limiter } = await import(`./index.js?t=${Date.now()}`);
-
-        const app = express();
-        app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
-        app.use(limiter);
-        app.get('/api/test', (req, res) => res.send('OK'));
-
-        const res1 = await request(app).get('/api/test');
-        const res2 = await request(app).get('/api/test');
-
-        assert.strictEqual(res1.status, 200);
-        assert.strictEqual(res2.status, 429);
-    } finally {
-        process.env.NODE_ENV = originalEnv;
-        if (originalUnauth !== undefined) {
-            process.env.APP_RATE_LIMIT_MAX_UNAUTH = originalUnauth;
-        } else {
-            delete process.env.APP_RATE_LIMIT_MAX_UNAUTH;
-        }
-    }
-});
-
-test('limit function returns AUTHENTICATED_LIMIT when session.loggedIn is true', async () => {
-    const originalEnv = process.env.NODE_ENV;
-    const originalAuth = process.env.APP_RATE_LIMIT_MAX_AUTH;
-    const originalUnauth = process.env.APP_RATE_LIMIT_MAX_UNAUTH;
-
-    process.env.NODE_ENV = 'production';
+test('blocks requests over the authenticated rate limit', async () => {
     process.env.APP_RATE_LIMIT_MAX_AUTH = '2';
+    process.env.APP_RATE_LIMIT_MAX_UNAUTH = '100';
+
+    const app = createTestApp();
+    const oid = `auth-limit-user-${Date.now()}`;
+
+    const res1 = await request(app).get('/test').set('x-test-oid', oid);
+    const res2 = await request(app).get('/test').set('x-test-oid', oid);
+    const blocked = await request(app).get('/test').set('x-test-oid', oid);
+
+    assert.strictEqual(res1.status, 200);
+    assert.strictEqual(res2.status, 200);
+    assert.strictEqual(blocked.status, 429);
+    assert.deepStrictEqual(blocked.body, { error: 'Too many requests, please try again later' });
+});
+
+test('blocks requests over the unauthenticated rate limit by IP', async () => {
+    process.env.APP_RATE_LIMIT_MAX_AUTH = '100';
     process.env.APP_RATE_LIMIT_MAX_UNAUTH = '1';
 
-    try {
-        const { default: limiter } = await import(`./index.js?t=${Date.now()}`);
+    const app = createTestApp();
+    const ip = `203.0.113.${(Date.now() % 200) + 1}`;
 
-        const app = express();
-        app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
-        app.use((req, res, next) => {
-            req.session.loggedIn = true;
-            next();
-        });
-        app.use(limiter);
-        app.get('/test', (req, res) => res.send('OK'));
+    const res1 = await request(app).get('/test').set('x-forwarded-for', ip);
+    const blocked = await request(app).get('/test').set('x-forwarded-for', ip);
 
-        const agent = request.agent(app);
-        const res1 = await agent.get('/test');
-        assert.strictEqual(res1.status, 200);
-        const res2 = await agent.get('/test');
-        assert.strictEqual(res2.status, 200);
-        const res3 = await agent.get('/test');
-        assert.strictEqual(res3.status, 429);
-    } finally {
-        process.env.NODE_ENV = originalEnv;
-        if (originalAuth !== undefined) {
-            process.env.APP_RATE_LIMIT_MAX_AUTH = originalAuth;
-        } else {
-            delete process.env.APP_RATE_LIMIT_MAX_AUTH;
-        }
-        if (originalUnauth !== undefined) {
-            process.env.APP_RATE_LIMIT_MAX_UNAUTH = originalUnauth;
-        } else {
-            delete process.env.APP_RATE_LIMIT_MAX_UNAUTH;
-        }
-    }
+    assert.strictEqual(res1.status, 200);
+    assert.strictEqual(blocked.status, 429);
+    assert.deepStrictEqual(blocked.body, { error: 'Too many requests, please try again later' });
 });
 
-test('limit function returns AUTHENTICATED_LIMIT when req.user exists', async () => {
-    const originalEnv = process.env.NODE_ENV;
-    const originalAuth = process.env.APP_RATE_LIMIT_MAX_AUTH;
-    const originalUnauth = process.env.APP_RATE_LIMIT_MAX_UNAUTH;
+test('applies independent limits to different authenticated users', async () => {
+    process.env.APP_RATE_LIMIT_MAX_AUTH = '1';
+    process.env.APP_RATE_LIMIT_MAX_UNAUTH = '100';
 
-    process.env.NODE_ENV = 'production';
-    process.env.APP_RATE_LIMIT_MAX_AUTH = '2';
+    const app = createTestApp();
+    const user1 = `auth-user-1-${Date.now()}`;
+    const user2 = `auth-user-2-${Date.now()}`;
+
+    const user1First = await request(app).get('/test').set('x-test-oid', user1);
+    const user1Blocked = await request(app).get('/test').set('x-test-oid', user1);
+    const user2First = await request(app).get('/test').set('x-test-oid', user2);
+
+    assert.strictEqual(user1First.status, 200);
+    assert.strictEqual(user1Blocked.status, 429);
+    assert.strictEqual(user2First.status, 200);
+});
+
+test('uses default limits when env vars are not set', async () => {
+    delete process.env.APP_RATE_LIMIT_MAX_AUTH;
+    delete process.env.APP_RATE_LIMIT_MAX_UNAUTH;
+
+    const app = createTestApp();
+    const unauthIp = `198.51.100.${(Date.now() % 200) + 1}`;
+    const authOid = `default-auth-${Date.now()}`;
+
+    const unauthRes = await request(app).get('/test').set('x-forwarded-for', unauthIp);
+    const authRes = await request(app).get('/test').set('x-test-oid', authOid);
+
+    assert.strictEqual(unauthRes.status, 200);
+    assert.strictEqual(authRes.status, 200);
+    assert.strictEqual(unauthRes.headers['x-ratelimit-limit'], '500');
+    assert.strictEqual(authRes.headers['x-ratelimit-limit'], '1000');
+});
+
+test('uses configured windowMs when APP_RATE_LIMIT_WINDOW_MS is set', async () => {
+    process.env.APP_RATE_LIMIT_WINDOW_MS = '100';
+    process.env.APP_RATE_LIMIT_MAX_AUTH = '100';
     process.env.APP_RATE_LIMIT_MAX_UNAUTH = '1';
 
-    try {
-        const { default: limiter } = await import(`./index.js?t=${Date.now()}`);
+    // Re-import module with a unique specifier so windowMs is re-evaluated from env.
+    const module = await import(`./index.js?window-ms-${Date.now()}`);
+    const app = createTestApp(module.default);
+    const ip = `203.0.113.${(Date.now() % 200) + 1}`;
 
-        const app = express();
-        app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
-        app.use((req, res, next) => {
-            req.user = { id: 'user-123' };
-            next();
-        });
-        app.use(limiter);
-        app.get('/test', (req, res) => res.send('OK'));
+    const first = await request(app).get('/test').set('x-forwarded-for', ip);
+    const blocked = await request(app).get('/test').set('x-forwarded-for', ip);
+    assert.strictEqual(first.status, 200);
+    assert.strictEqual(blocked.status, 429);
 
-        const res1 = await request(app).get('/test');
-        assert.strictEqual(res1.status, 200);
-        const res2 = await request(app).get('/test');
-        assert.strictEqual(res2.status, 200);
-        const res3 = await request(app).get('/test');
-        assert.strictEqual(res3.status, 429);
-    } finally {
-        process.env.NODE_ENV = originalEnv;
-        if (originalAuth !== undefined) {
-            process.env.APP_RATE_LIMIT_MAX_AUTH = originalAuth;
-        } else {
-            delete process.env.APP_RATE_LIMIT_MAX_AUTH;
-        }
-        if (originalUnauth !== undefined) {
-            process.env.APP_RATE_LIMIT_MAX_UNAUTH = originalUnauth;
-        } else {
-            delete process.env.APP_RATE_LIMIT_MAX_UNAUTH;
-        }
-    }
+    await new Promise((resolve) => {
+        setTimeout(resolve, 150);
+    });
+
+    const afterReset = await request(app).get('/test').set('x-forwarded-for', ip);
+    assert.strictEqual(afterReset.status, 200);
 });
 
-test('limit function returns UNAUTHENTICATED_LIMIT when no auth present', async () => {
-    const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
-
-    try {
-        // Create a test limiter with unauthenticated limit of 1
-        const { default: rateLimit } = await import('express-rate-limit');
-        const testLimiter = rateLimit({
-            windowMs: 60 * 1000,
-            limit: (req) => (req.session?.loggedIn || req.user ? 5 : 1),
-            keyGenerator: () => 'unauthenticated-test-client',
-            skip: () => !process.env.NODE_ENV || process.env.NODE_ENV !== 'production'
-        });
-
-        const app = express();
-        app.set('trust proxy', 1);
-        app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
-        app.use(testLimiter);
-        app.get('/test', (req, res) => res.send('OK'));
-
-        const res1 = await request(app).get('/test');
-        assert.strictEqual(res1.status, 200);
-        const res2 = await request(app).get('/test');
-        assert.strictEqual(res2.status, 429);
-    } finally {
-        process.env.NODE_ENV = originalEnv;
-    }
-});
-
-test('keyGenerator returns session.id when session.loggedIn and session.id exist', async () => {
-    const originalEnv = process.env.NODE_ENV;
-    const originalAuth = process.env.APP_RATE_LIMIT_MAX_AUTH;
-
-    process.env.NODE_ENV = 'production';
-    process.env.APP_RATE_LIMIT_MAX_AUTH = '1';
-
-    try {
-        const { default: limiter } = await import(`./index.js?t=${Date.now()}`);
-
-        const app = express();
-        app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
-        app.use((req, res, next) => {
-            req.session.loggedIn = true;
-            next();
-        });
-        app.use(limiter);
-        app.get('/test', (req, res) => res.send('OK'));
-
-        const agent1 = request.agent(app);
-        const agent2 = request.agent(app);
-
-        const res1 = await agent1.get('/test');
-        assert.strictEqual(res1.status, 200);
-        const res2 = await agent1.get('/test');
-        assert.strictEqual(res2.status, 429);
-        const res3 = await agent2.get('/test');
-        assert.strictEqual(res3.status, 200);
-    } finally {
-        process.env.NODE_ENV = originalEnv;
-        if (originalAuth !== undefined) {
-            process.env.APP_RATE_LIMIT_MAX_AUTH = originalAuth;
-        } else {
-            delete process.env.APP_RATE_LIMIT_MAX_AUTH;
-        }
-    }
-});
-
-test('keyGenerator returns user.id when no session.loggedIn but user.id exists', async () => {
-    const originalEnv = process.env.NODE_ENV;
-    const originalAuth = process.env.APP_RATE_LIMIT_MAX_AUTH;
-
-    process.env.NODE_ENV = 'production';
-    process.env.APP_RATE_LIMIT_MAX_AUTH = '1';
-
-    try {
-        const { default: limiter } = await import(`./index.js?t=${Date.now()}`);
-
-        const app = express();
-        app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
-        app.use((req, res, next) => {
-            req.user = { id: req.headers['x-user-id'] };
-            next();
-        });
-        app.use(limiter);
-        app.get('/test', (req, res) => res.send('OK'));
-
-        const res1 = await request(app).get('/test').set('x-user-id', 'user-1');
-        assert.strictEqual(res1.status, 200);
-        const res2 = await request(app).get('/test').set('x-user-id', 'user-1');
-        assert.strictEqual(res2.status, 429);
-        const res3 = await request(app).get('/test').set('x-user-id', 'user-2');
-        assert.strictEqual(res3.status, 200);
-    } finally {
-        process.env.NODE_ENV = originalEnv;
-        if (originalAuth !== undefined) {
-            process.env.APP_RATE_LIMIT_MAX_AUTH = originalAuth;
-        } else {
-            delete process.env.APP_RATE_LIMIT_MAX_AUTH;
-        }
-    }
-});
-
-test('keyGenerator uses ipKeyGenerator when no session or user', async () => {
-    const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
-
-    try {
-        const { default: rateLimit } = await import('express-rate-limit');
-        const testLimiter = rateLimit({
-            windowMs: 60 * 1000,
-            limit: 1,
-            keyGenerator: (req) => {
-                // Use IP-based key when no session or user
-                if (req.session?.loggedIn && req.session?.id) {
-                    return req.session.id;
-                }
-                if (req.user?.id) {
-                    return req.user.id;
-                }
-                // Fallback to IP key - for testing we use a fixed key
-                return 'test-ip-client';
-            },
-            skip: () => !process.env.NODE_ENV || process.env.NODE_ENV !== 'production'
-        });
-
-        const app = express();
-        app.set('trust proxy', 1);
-        app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
-        app.use(testLimiter);
-        app.get('/test', (req, res) => res.send('OK'));
-
-        const res1 = await request(app).get('/test');
-        assert.strictEqual(res1.status, 200);
-        const res2 = await request(app).get('/test');
-        assert.strictEqual(res2.status, 429);
-    } finally {
-        process.env.NODE_ENV = originalEnv;
-    }
-});
-
-test('handler returns 429 with JSON error when limit exceeded', async () => {
-    const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
-
-    try {
-        const { default: rateLimit } = await import('express-rate-limit');
-        const testLimiter = rateLimit({
-            windowMs: 60 * 1000,
-            limit: 1,
-            skip: () => !process.env.NODE_ENV || process.env.NODE_ENV !== 'production',
-            handler: (req, res) => {
-                res.status(429).json({ error: 'Too many requests, please try again later' });
-            }
-        });
-
-        const app = express();
-        app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
-        app.use(testLimiter);
-        app.get('/test', (req, res) => res.send('OK'));
-
-        await request(app).get('/test');
-        const res = await request(app).get('/test');
-        assert.strictEqual(res.status, 429);
-        assert.strictEqual(res.body.error, 'Too many requests, please try again later');
-    } finally {
-        process.env.NODE_ENV = originalEnv;
-    }
-});
-
-test('uses default WINDOW_MS when APP_RATE_LIMIT_WINDOW_MS is not set', async () => {
-    const originalWindowMs = process.env.APP_RATE_LIMIT_WINDOW_MS;
-    const originalEnv = process.env.NODE_ENV;
-
+test('uses default windowMs when APP_RATE_LIMIT_WINDOW_MS is not set', async () => {
     delete process.env.APP_RATE_LIMIT_WINDOW_MS;
-    process.env.NODE_ENV = 'development'; // Skip rate limiting so we can test initialization
+    process.env.APP_RATE_LIMIT_MAX_AUTH = '100';
+    process.env.APP_RATE_LIMIT_MAX_UNAUTH = '1';
 
-    try {
-        const { default: limiter } = await import(`./index.js?t=${Date.now()}`);
+    // Re-import module with a unique specifier so windowMs is re-evaluated from env.
+    const module = await import(`./index.js?default-window-${Date.now()}`);
+    const app = createTestApp(module.default);
+    const ip = `203.0.113.${(Date.now() % 200) + 1}`;
 
-        const app = express();
-        app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
-        app.use(limiter);
-        app.get('/test', (req, res) => res.send('OK'));
+    const first = await request(app).get('/test').set('x-forwarded-for', ip);
+    const blocked = await request(app).get('/test').set('x-forwarded-for', ip);
+    assert.strictEqual(first.status, 200);
+    assert.strictEqual(blocked.status, 429);
 
-        const res = await request(app).get('/test');
-        assert.strictEqual(res.status, 200);
-    } finally {
-        if (originalWindowMs !== undefined) {
-            process.env.APP_RATE_LIMIT_WINDOW_MS = originalWindowMs;
-        }
-        process.env.NODE_ENV = originalEnv;
-    }
+    await new Promise((resolve) => {
+        setTimeout(resolve, 150);
+    });
+
+    // With default window (15 minutes), client should still be blocked shortly after.
+    const stillBlocked = await request(app).get('/test').set('x-forwarded-for', ip);
+    assert.strictEqual(stillBlocked.status, 429);
 });

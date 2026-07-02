@@ -344,12 +344,12 @@ npm run openapi:watch
 - After modifying `api/openapi/openapi.json`
 - After changing JSON schemas in `api/openapi/json-schemas/`
 - After updating API endpoints or route definitions
-- Before accessing Swagger UI at `/api-docs`
+- Before accessing Swagger UI at `/api/docs`
 
-**Note:** The OpenAPI build is NOT automatically included in `npm run start:dev`. You must manually run `npm run openapi:build` or use `npm run openapi:watch` in a separate terminal when working on API schema changes.
+**Note:** `npm run start:dev` runs `npm run openapi:build` once via `prestart:dev`. After startup, changes under `api/openapi/` do not trigger a rebuild or server restart because `dev:server` ignores that folder. Run `npm run openapi:build` manually or use `npm run openapi:watch` in a separate terminal while working on API schema changes.
 
 **Swagger UI and CSP:**
-Swagger UI requires inline scripts, which conflicts with our Content Security Policy (CSP). The application implements a CSP workaround specifically for the `/api-docs` route by relaxing the `script-src` directive to allow Swagger UI to function. This is an acceptable trade-off for developer documentation endpoints. The workaround is implemented in the `helmet` configuration when serving Swagger UI.
+Swagger UI requires inline scripts, which conflicts with our Content Security Policy (CSP). The application implements a CSP workaround specifically for the `/api/docs` route by relaxing the `script-src` directive to allow Swagger UI to function. This is an acceptable trade-off for developer documentation endpoints. The workaround is implemented in the `helmet` configuration when serving Swagger UI.
 
 ### Development Mode
 
@@ -665,6 +665,10 @@ The application connects to an OpenSearch database. The connection URL is config
 ### Local docker desktop production like environment changes and testing
 
 see [local docker desktop kube deployments](/deployments/local/README.md)
+
+ ### Rate Limiting
+
+see [RATE_LIMITING](RATE_LIMITING.md)
 
 ## Additional Resources
 

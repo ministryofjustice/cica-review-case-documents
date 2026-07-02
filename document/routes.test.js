@@ -34,6 +34,7 @@ function createTestApp(mockCreateDocumentMetadataService, stubCreatePageChunksSe
     // Setup minimal middleware
     testApp.use((req, res, next) => {
         req.session.caseSelected = true;
+        req.session.entraUser = { oid: 'entra-oid-123' };
         req.log = { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} };
         res.locals.csrfToken = 'test-csrf-token';
         res.locals.cspNonce = 'test-csp-nonce';
