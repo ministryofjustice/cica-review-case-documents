@@ -77,7 +77,7 @@ Pre-push runs `npm run prepush`.
    - Runs staged-file Biome checks/fixes.
    - Runs a conditional Sass build when staged `.scss` files are present.
 2. `npm run precommit:secrets`
-  - Runs gitleaks secret scan against staged content.
+   - Runs gitleaks secret scan against staged content.
 
 If you want full-repo mutating quality checks, run `npm run quality:fix` manually. It runs format, lint safe auto-fix, Sass build, gitleaks, and OpenAPI build.
 
