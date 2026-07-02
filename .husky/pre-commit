@@ -1,3 +1,6 @@
+# Fail fast so a precommit check failure blocks the commit.
+set -e
+
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR)
 
 npm run precommit
