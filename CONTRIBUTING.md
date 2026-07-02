@@ -79,7 +79,7 @@ Pre-push runs `npm run prepush`.
 2. `npm run precommit:secrets`
    - Runs gitleaks secret scan against staged content.
 
-If you want full-repo mutating quality checks, run `npm run quality:fix` manually. It runs format, lint safe auto-fix, Sass build, gitleaks, and OpenAPI build.
+If you want repo-wide mutating format/build checks, run `npm run quality:fix` manually. It runs format, lint safe auto-fix, Sass build, staged-only gitleaks (`npm run precommit:secrets`), and OpenAPI build.
 
 If you explicitly want Biome unsafe transformations (for example, automatic brace insertion from `useBlockStatements`), run:
 
@@ -103,7 +103,7 @@ Pre-push does not run formatting fixes, Sass compilation, or OpenAPI builds.
 ## Staged Helper Safety Rules
 
 - The staged helper fails fast if any staged path also has unstaged changes (for example, partial staging in the same file).
-- When staged `.scss` changes trigger `npm run sass`, the helper also checks tracked `.scss` files for unstaged edits before compiling.
+- When staged `.scss` changes trigger `npm run sass`, the helper checks tracked `.scss` files for unstaged edits and blocks on untracked `.scss` files before compiling.
 - This keeps `public/stylesheets/all.css` deterministic and prevents generated CSS from picking up unstaged SCSS changes.
 - If this happens, stage the full file, or stash/commit unstaged edits, then retry.
 
@@ -143,7 +143,7 @@ The project uses Husky for Git hooks:
 
 Notes for pre-commit:
 - The staged helper aborts when a staged file also has unstaged edits (partial staging).
-- If staged `.scss` files are present, the helper also aborts when any tracked `.scss` file has unstaged edits.
+- If staged `.scss` files are present, the helper also aborts when any tracked `.scss` file has unstaged edits or when untracked `.scss` files are present.
 - This is intentional to keep staged-only checks deterministic and avoid unstaged changes being pulled into the commit.
 - The staged helper re-stages only files that were already staged before checks, instead of using `git add -A`.
 - The staged helper also stages `public/stylesheets/all.css` when it changes during staged Sass checks.
