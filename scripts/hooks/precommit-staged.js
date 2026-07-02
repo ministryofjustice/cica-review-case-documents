@@ -141,7 +141,15 @@ if (hasScssChanges) {
         process.exit(1);
     }
 
-    run('npm', ['run', 'sass']);
+    // call the Sass binary directly to avoid nested `npm run` startup overhead in hooks.
+    run('sass', [
+        '--quiet-deps',
+        '--load-path=.',
+        '--style=compressed',
+        '--no-source-map',
+        'src/sass/all.scss',
+        'public/stylesheets/all.css'
+    ]);
 }
 
 // Use `--` so path-like arguments are never parsed as git options.
