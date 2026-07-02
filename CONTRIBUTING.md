@@ -92,7 +92,7 @@ npm run lint:fix:unsafe
 `npm run prepush` runs in this order:
 
 1. `npm audit --audit-level=high --omit=dev` (high severity, production dependencies)
-2. `npm run quality:verify` (lint check + gitleaks)
+2. `npm run quality:verify` (lint check + repository gitleaks scan)
 3. `npm run test`
 4. `npm run jsdoc:check`
 
@@ -111,6 +111,8 @@ Install the `gitleaks` CLI locally so pre-commit secret scanning can run: https:
 The installer for a Ubuntu WSL console is `sudo apt install gitleaks` for example.
 
 The secret scan uses `.gitleaks.toml` as the configuration file.
+
+`npm run precommit:secrets` scans staged content only. `npm run prepush:secrets` (used by `quality:verify`) runs a repository scan for pre-push and CI.
 
 ### Branching Strategy
 - Feature branches: Create from `main`, merge back to `main` via PR

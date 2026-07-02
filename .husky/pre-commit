@@ -2,6 +2,11 @@
 set -e
 
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR)
+HAS_STAGED_SCSS=0
+
+if printf '%s\n' "$STAGED_FILES" | grep -Eq '\.scss$'; then
+	HAS_STAGED_SCSS=1
+fi
 
 npm run precommit
 
@@ -14,11 +19,11 @@ if [ -n "$STAGED_FILES" ]; then
 	done
 fi
 
-# Keep generated stylesheet in sync when staged Sass checks update it.
-for generated in public/stylesheets/all.css; do
-	if git ls-files --error-unmatch "$generated" >/dev/null 2>&1; then
-		if ! git diff --quiet -- "$generated"; then
-			git add -- "$generated"
+# Keep generated stylesheet in sync only when staged Sass checks are in scope.
+if [ "$HAS_STAGED_SCSS" -eq 1 ]; then
+	if git ls-files --error-unmatch public/stylesheets/all.css >/dev/null 2>&1; then
+		if ! git diff --quiet -- public/stylesheets/all.css; then
+			git add -- public/stylesheets/all.css
 		fi
 	fi
-done
+fi
