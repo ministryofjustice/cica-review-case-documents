@@ -2,7 +2,12 @@ import { initAll } from '/node_modules/govuk-frontend/dist/govuk/govuk-frontend.
 import './debug-panel.js';
 initAll();
 document.addEventListener('click', event => {
-  const targetElement = event.target instanceof Element ? event.target : event.target instanceof Node ? event.target.parentElement : null;
+  let targetElement = null;
+  if (event.target instanceof Element) {
+    targetElement = event.target;
+  } else if (event.target instanceof Node) {
+    targetElement = event.target.parentElement;
+  }
   if (
   // Ignore clicks that aren't left-clicks or that have modifier keys, or where the target can't be resolved to an Element
   !targetElement || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
