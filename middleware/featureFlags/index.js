@@ -76,30 +76,49 @@ export function getFeatureFlagSource(session, flagName) {
     const defaultValue = FEATURE_FLAG_DEFAULTS[flagName];
 
     if (flagName === 'type') {
-        if (typeof sessionFlagValue === 'string') {
-            const normalisedSessionType = sessionFlagValue.trim().toLowerCase();
-            if (Object.values(SEARCH_TYPES).includes(normalisedSessionType)) {
-                // Treat persisted defaults as originating from 'default', not 'session'
-                return normalisedSessionType === defaultValue ? 'default' : 'session';
-            }
-        }
+        return resolveTypeFeatureFlagSource(sessionFlagValue, defaultValue);
+    }
+
+    return resolvePrimitiveFeatureFlagSource(sessionFlagValue, defaultValue);
+}
+
+/**
+ * Resolves the source for the `type` feature flag.
+ *
+ * @param {unknown} sessionFlagValue - Candidate session value for the flag.
+ * @param {string} defaultValue - Repository default for the flag.
+ * @returns {'default' | 'session'} Source of the resolved value.
+ */
+function resolveTypeFeatureFlagSource(sessionFlagValue, defaultValue) {
+    if (typeof sessionFlagValue !== 'string') {
         return 'default';
     }
 
-    if (typeof defaultValue === 'boolean') {
-        if (typeof sessionFlagValue === 'boolean') {
-            // Treat persisted defaults as originating from 'default', not 'session'
-            return sessionFlagValue === defaultValue ? 'default' : 'session';
-        }
+    const normalisedSessionType = sessionFlagValue.trim().toLowerCase();
+    if (!Object.values(SEARCH_TYPES).includes(normalisedSessionType)) {
         return 'default';
     }
 
-    if (typeof defaultValue === 'string') {
-        if (typeof sessionFlagValue === 'string') {
-            // Treat persisted defaults as originating from 'default', not 'session'
-            return sessionFlagValue === defaultValue ? 'default' : 'session';
-        }
-        return 'default';
+    // Treat persisted defaults as originating from 'default', not 'session'
+    return normalisedSessionType === defaultValue ? 'default' : 'session';
+}
+
+/**
+ * Resolves the source for boolean/string feature flags.
+ *
+ * @param {unknown} sessionFlagValue - Candidate session value for the flag.
+ * @param {boolean | string} defaultValue - Repository default for the flag.
+ * @returns {'default' | 'session'} Source of the resolved value.
+ */
+function resolvePrimitiveFeatureFlagSource(sessionFlagValue, defaultValue) {
+    if (typeof defaultValue === 'boolean' && typeof sessionFlagValue === 'boolean') {
+        // Treat persisted defaults as originating from 'default', not 'session'
+        return sessionFlagValue === defaultValue ? 'default' : 'session';
+    }
+
+    if (typeof defaultValue === 'string' && typeof sessionFlagValue === 'string') {
+        // Treat persisted defaults as originating from 'default', not 'session'
+        return sessionFlagValue === defaultValue ? 'default' : 'session';
     }
 
     return 'default';
