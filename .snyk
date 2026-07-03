@@ -1,17 +1,17 @@
 # Snyk policy file used by CI with --policy-path=.snyk.
 # For rule syntax and examples, see CONTRIBUTING.md and:
 # https://docs.snyk.io/manage-risk/policies/the-.snyk-file
+# The Expiry Default: 30 days
+# https://docs.snyk.io/developer-tools/snyk-cli/snyk-cli/commands/ignore#expiry-less-than-expiry-greater-than
 version: v1.25.0
 ignore:
-  SNYK-DEBIAN13-PERL-17037371:
+  SNYK-DEBIAN13-ACL-17677882:
     - "*":
         reason: "Accepted temporarily: non-fixable in current base image; tracked for remediation via base image updates"
-        expires: "2026-07-31T23:59:59.000Z"
-  SNYK-DEBIAN13-PERL-17037374:
+  SNYK-DEBIAN13-ATTR-17678182:
     - "*":
         reason: "Accepted temporarily: non-fixable in current base image; tracked for remediation via base image updates"
-        expires: "2026-07-31T23:59:59.000Z"
-  SNYK-DEBIAN13-PERL-17037434:
+  SNYK-DEBIAN13-ACL-17677866:
     - "*":
         reason: "Accepted temporarily: non-fixable in current base image; tracked for remediation via base image updates"
-        expires: "2026-07-31T23:59:59.000Z"
+
