@@ -206,6 +206,8 @@ describe('Search Routes', () => {
                     semanticOnlyMinScore: 0.4,
                     semanticK: 120,
                     lexicalBoost: 11,
+                    phraseBoost: 40,
+                    phraseSlop: 0,
                     dateBoost: 2,
                     neuralBoost: 3
                 }

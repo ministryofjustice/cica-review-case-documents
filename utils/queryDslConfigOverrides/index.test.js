@@ -14,6 +14,8 @@ describe('queryDslConfigOverrides', () => {
             semanticOnlyMinScore: '0.45',
             semanticK: '120',
             lexicalBoost: '10',
+            phraseBoost: '22.5',
+            phraseSlop: '1',
             dateBoost: '2.5',
             neuralBoost: '3'
         });
@@ -23,6 +25,8 @@ describe('queryDslConfigOverrides', () => {
             semanticOnlyMinScore: 0.45,
             semanticK: 120,
             lexicalBoost: 10,
+            phraseBoost: 22.5,
+            phraseSlop: 1,
             dateBoost: 2.5,
             neuralBoost: 3
         });
@@ -34,6 +38,8 @@ describe('queryDslConfigOverrides', () => {
             semanticOnlyMinScore: 'abc',
             semanticK: '0',
             lexicalBoost: '-2',
+            phraseBoost: '-1',
+            phraseSlop: '-1',
             dateBoost: '',
             neuralBoost: null
         });
@@ -48,6 +54,8 @@ describe('queryDslConfigOverrides', () => {
                 semanticOnlyMinScore: 0.33,
                 semanticK: 111,
                 lexicalBoost: 7,
+                phraseBoost: 9,
+                phraseSlop: 2,
                 dateBoost: 1,
                 neuralBoost: 2
             })
@@ -58,6 +66,8 @@ describe('queryDslConfigOverrides', () => {
             semanticOnlyMinScore: 0.33,
             semanticK: 111,
             lexicalBoost: 7,
+            phraseBoost: 9,
+            phraseSlop: 2,
             dateBoost: 1,
             neuralBoost: 2
         });
@@ -81,6 +91,8 @@ describe('queryDslConfigOverrides', () => {
             semanticK: undefined,
             semanticMinScore: -1,
             lexicalBoost: 'not-a-number',
+            phraseBoost: -10,
+            phraseSlop: -1,
             neuralBoost: 8
         });
 
@@ -92,6 +104,9 @@ describe('queryDslConfigOverrides', () => {
         assert.ok(effective.semanticK >= 1);
         assert.ok(effective.semanticMinScore >= 0);
         assert.ok(effective.lexicalBoost >= 0);
+        assert.ok(effective.phraseBoost >= 0);
+        assert.ok(effective.phraseSlop >= 0);
+        assert.ok(Number.isInteger(effective.phraseSlop));
     });
 
     it('should serialize only sanitized numeric overrides as query params', () => {
@@ -100,13 +115,15 @@ describe('queryDslConfigOverrides', () => {
             semanticOnlyMinScore: -1,
             semanticK: '101',
             lexicalBoost: '2.5',
+            phraseBoost: 0,
+            phraseSlop: 2,
             dateBoost: 'x',
             neuralBoost: 0
         });
 
         assert.equal(
             serialized,
-            'semanticMinScore=0.75&semanticK=101&lexicalBoost=2.5&neuralBoost=0'
+            'semanticMinScore=0.75&semanticK=101&lexicalBoost=2.5&phraseBoost=0&phraseSlop=2&neuralBoost=0'
         );
     });
 });

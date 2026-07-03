@@ -29,6 +29,8 @@ export const DEFAULT_QUERY_DSL_CONFIG = Object.freeze({
     /** @type {number} Number of nearest-neighbour candidates for neural queries. Set high enough to cover the deepest expected pagination so result ranking is stable across pages. */
     semanticK: 250,
     lexicalBoost: 20,
+    phraseBoost: 40,
+    phraseSlop: 0,
     dateBoost: 4,
     neuralBoost: 4
 });
@@ -399,6 +401,8 @@ export function buildSemanticQuery({
  * @param {number} params.safePageNumber - Normalised page number for document scoping.
  * @param {string} [params.documentId] - Optional document UUID to scope results to a single page.
  * @param {number} params.lexicalBoost - Boost for the lexical match clause.
+ * @param {number} params.phraseBoost - Boost for the exact whole-query phrase clause.
+ * @param {number} params.phraseSlop - Allowed token distance for whole-query phrase matching.
  * @param {number} params.dateBoost - Boost for the grouped date variant clauses.
  * @param {number} params.neuralBoost - Boost for the neural clause.
  * @returns {object} Assembled hybrid query DSL object.
@@ -412,7 +416,18 @@ function buildHybridQuery({
     queryDslConfig = DEFAULT_QUERY_DSL_CONFIG,
     includeNamedQueries = false
 }) {
-    const { semanticK, semanticMinScore, lexicalBoost, dateBoost, neuralBoost } = queryDslConfig;
+    const {
+        semanticK,
+        semanticMinScore,
+        lexicalBoost,
+        phraseBoost,
+        phraseSlop,
+        dateBoost,
+        neuralBoost
+    } = queryDslConfig;
+    const hasKeyword = keyword.trim().length > 0;
+    const tokenCount = keyword.trim().split(/\s+/u).filter(Boolean).length;
+    const isMultiTokenQuery = tokenCount >= 2;
 
     const queryJson = createHybridQuery({ caseReferenceNumber, semanticMinScore });
 
@@ -441,6 +456,21 @@ function buildHybridQuery({
         });
     }
 
+    // Boost exact whole-query phrase matches so strict lexical hits rank above
+    // looser token matches when both are present.
+    if (hasKeyword && isMultiTokenQuery && phraseBoost > 0) {
+        queryJson.query.bool.should.push({
+            match_phrase: {
+                chunk_text: {
+                    query: keyword,
+                    slop: phraseSlop,
+                    boost: phraseBoost,
+                    ...(includeNamedQueries ? { _name: 'keyword_phrase' } : {})
+                }
+            }
+        });
+    }
+
     // Boosted date variant clauses, grouped so they share a single boost weight.
     if (matchPhraseClauses.length > 0) {
         queryJson.query.bool.should.push({
@@ -454,7 +484,7 @@ function buildHybridQuery({
     }
 
     // Boosted neural clause — only when the keyword is non-empty.
-    if (keyword.trim().length > 0) {
+    if (hasKeyword) {
         const neuralFilter = buildNeuralFilter({ caseReferenceNumber, documentId, safePageNumber });
         queryJson.query.bool.should.push({
             neural: {

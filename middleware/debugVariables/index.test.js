@@ -18,6 +18,8 @@ describe('Debug Variables Configuration', () => {
             'semanticOnlyMinScore',
             'semanticK',
             'lexicalBoost',
+            'phraseBoost',
+            'phraseSlop',
             'dateBoost',
             'neuralBoost'
         ]);
@@ -29,6 +31,8 @@ describe('Debug Variables Configuration', () => {
         assert.strictEqual(typeof defaults.semanticOnlyMinScore, 'number');
         assert.strictEqual(typeof defaults.semanticK, 'number');
         assert.strictEqual(typeof defaults.lexicalBoost, 'number');
+        assert.strictEqual(typeof defaults.phraseBoost, 'number');
+        assert.strictEqual(typeof defaults.phraseSlop, 'number');
         assert.strictEqual(typeof defaults.dateBoost, 'number');
         assert.strictEqual(typeof defaults.neuralBoost, 'number');
     });
@@ -52,19 +56,25 @@ describe('parseDebugVariablesFromQuery', () => {
         const parsed = parseDebugVariablesFromQuery({
             semanticMinScore: '1.25',
             semanticK: '120',
-            lexicalBoost: '10.5'
+            lexicalBoost: '10.5',
+            phraseBoost: '40',
+            phraseSlop: '1'
         });
 
         assert.strictEqual(parsed.semanticMinScore, 1.25);
         assert.strictEqual(parsed.semanticK, 120);
         assert.strictEqual(parsed.lexicalBoost, 10.5);
+        assert.strictEqual(parsed.phraseBoost, 40);
+        assert.strictEqual(parsed.phraseSlop, 1);
     });
 
     it('should ignore invalid values', () => {
         const parsed = parseDebugVariablesFromQuery({
             semanticMinScore: '-1',
             semanticK: '0',
-            lexicalBoost: 'abc'
+            lexicalBoost: 'abc',
+            phraseBoost: '-5',
+            phraseSlop: '-1'
         });
 
         assert.deepStrictEqual(parsed, {});

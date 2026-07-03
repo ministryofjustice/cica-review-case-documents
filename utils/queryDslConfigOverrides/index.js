@@ -5,6 +5,8 @@ export const QUERY_DSL_CONFIG_INPUT_KEYS = Object.freeze([
     'semanticOnlyMinScore',
     'semanticK',
     'lexicalBoost',
+    'phraseBoost',
+    'phraseSlop',
     'dateBoost',
     'neuralBoost'
 ]);
@@ -71,6 +73,16 @@ export function normalizeQueryDslConfigOverrides(rawOverrides = {}) {
     const lexicalBoost = toFiniteNumber(rawOverrides.lexicalBoost);
     if (lexicalBoost !== undefined && lexicalBoost >= 0) {
         normalized.lexicalBoost = lexicalBoost;
+    }
+
+    const phraseBoost = toFiniteNumber(rawOverrides.phraseBoost);
+    if (phraseBoost !== undefined && phraseBoost >= 0) {
+        normalized.phraseBoost = phraseBoost;
+    }
+
+    const phraseSlop = toFiniteNumber(rawOverrides.phraseSlop);
+    if (phraseSlop !== undefined && Number.isInteger(phraseSlop) && phraseSlop >= 0) {
+        normalized.phraseSlop = phraseSlop;
     }
 
     const dateBoost = toFiniteNumber(rawOverrides.dateBoost);

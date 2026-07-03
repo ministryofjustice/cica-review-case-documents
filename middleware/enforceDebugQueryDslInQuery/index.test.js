@@ -53,6 +53,7 @@ test('redirects to add DSL tuning values when missing from query', () => {
                 semanticOnlyMinScore: 0.5,
                 semanticK: 250,
                 lexicalBoost: 20,
+                phraseBoost: 40,
                 dateBoost: 60,
                 neuralBoost: 4
             }
@@ -69,6 +70,7 @@ test('redirects to add DSL tuning values when missing from query', () => {
     assert.strictEqual(params.get('semanticOnlyMinScore'), '0.5');
     assert.strictEqual(params.get('semanticK'), '250');
     assert.strictEqual(params.get('lexicalBoost'), '20');
+    assert.strictEqual(params.get('phraseBoost'), '40');
     assert.strictEqual(params.get('dateBoost'), '60');
     assert.strictEqual(params.get('neuralBoost'), '4');
 });
@@ -83,6 +85,7 @@ test('preserves existing query params and appends missing DSL params', () => {
                 semanticOnlyMinScore: 0.5,
                 semanticK: 120,
                 lexicalBoost: 20,
+                phraseBoost: 40,
                 dateBoost: 60,
                 neuralBoost: 4
             }
@@ -100,6 +103,7 @@ test('preserves existing query params and appends missing DSL params', () => {
     assert.strictEqual(params.get('semanticOnlyMinScore'), '0.5');
     assert.strictEqual(params.get('semanticK'), '120');
     assert.strictEqual(params.get('lexicalBoost'), '20');
+    assert.strictEqual(params.get('phraseBoost'), '40');
     assert.strictEqual(params.get('dateBoost'), '60');
     assert.strictEqual(params.get('neuralBoost'), '4');
 });
@@ -117,6 +121,7 @@ test('preserves repeated query params when redirecting', () => {
                 semanticOnlyMinScore: 0.5,
                 semanticK: 120,
                 lexicalBoost: 20,
+                phraseBoost: 40,
                 dateBoost: 60,
                 neuralBoost: 4
             }
@@ -129,6 +134,7 @@ test('preserves repeated query params when redirecting', () => {
     const params = getRedirectQueryParams(res.redirectedUrl);
     assert.deepStrictEqual(params.getAll('tag'), ['a', 'b']);
     assert.strictEqual(params.get('semanticK'), '120');
+    assert.strictEqual(params.get('phraseBoost'), '40');
     assert.strictEqual(params.get('dateBoost'), '60');
 });
 
@@ -156,6 +162,7 @@ test('does not redirect when all DSL params are already in query', () => {
             semanticOnlyMinScore: '0.5',
             semanticK: '120',
             lexicalBoost: '20',
+            phraseBoost: '40',
             dateBoost: '60',
             neuralBoost: '4'
         },
@@ -166,6 +173,7 @@ test('does not redirect when all DSL params are already in query', () => {
                 semanticOnlyMinScore: 0.5,
                 semanticK: 120,
                 lexicalBoost: 20,
+                phraseBoost: 40,
                 dateBoost: 60,
                 neuralBoost: 4
             }
@@ -303,6 +311,7 @@ test('applies to document view page path', () => {
                 semanticOnlyMinScore: 0.5,
                 semanticK: 250,
                 lexicalBoost: 20,
+                phraseBoost: 40,
                 dateBoost: 60,
                 neuralBoost: 4
             }
@@ -314,7 +323,7 @@ test('applies to document view page path', () => {
 
     assert.strictEqual(
         res.redirectedUrl,
-        '/document/123e4567-e89b-12d3-a456-426614174000/view/page/1?semanticMinScore=2.25&semanticOnlyMinScore=0.5&semanticK=250&lexicalBoost=20&dateBoost=60&neuralBoost=4'
+        '/document/123e4567-e89b-12d3-a456-426614174000/view/page/1?semanticMinScore=2.25&semanticOnlyMinScore=0.5&semanticK=250&lexicalBoost=20&phraseBoost=40&dateBoost=60&neuralBoost=4'
     );
 });
 

@@ -58,10 +58,10 @@ function createSearchService({
             // Include Authorization header if token is provided
             opts.headers.Authorization = `Bearer ${token}`;
         }
-        // Enable debug context when either includeNamedQueries is requested
-        // or when queryDslConfig is provided (DSL tuning requires debug context).
+        // Enable debug context only when includeNamedQueries is requested.
+        // Query DSL tuning is handled independently.
         const hasQueryDslConfig = queryDslConfig && Object.keys(queryDslConfig).length > 0;
-        if (includeNamedQueries === true || hasQueryDslConfig) {
+        if (includeNamedQueries === true) {
             opts.headers['X-Debug-Context'] = 'true';
         }
         // Only send DSL config header when non-empty and debug context is enabled.

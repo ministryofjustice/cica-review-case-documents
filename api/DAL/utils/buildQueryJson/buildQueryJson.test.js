@@ -441,6 +441,16 @@ describe('buildQueryJson', () => {
                             }
                         },
                         {
+                            match_phrase: {
+                                chunk_text: {
+                                    query: 'Important meeting',
+                                    slop: 0,
+                                    boost: 40,
+                                    _name: 'keyword_phrase'
+                                }
+                            }
+                        },
+                        {
                             neural: {
                                 embedding: {
                                     query_text: 'Important meeting',
@@ -517,6 +527,8 @@ describe('buildQueryJson', () => {
             semanticMinScore: 0.5,
             semanticK: 50,
             lexicalBoost: 17,
+            phraseBoost: 34,
+            phraseSlop: 1,
             dateBoost: 3,
             neuralBoost: 11
         };
@@ -538,6 +550,7 @@ describe('buildQueryJson', () => {
             (clause) => clause.bool && Array.isArray(clause.bool.should)
         );
         const keywordClause = hybridShould.find((clause) => clause.match?.chunk_text);
+        const phraseClause = hybridShould.find((clause) => clause.match_phrase?.chunk_text);
         const neuralClause = hybridShould.find((clause) => clause.neural?.embedding);
 
         const lexicalFilter = result.query.bool.filter;
@@ -546,6 +559,8 @@ describe('buildQueryJson', () => {
         assert.strictEqual(dateBoolClause.bool.boost, 3);
         assert.strictEqual(dateBoolClause.bool.minimum_should_match, 1);
         assert.strictEqual(keywordClause.match.chunk_text.boost, 17);
+        assert.strictEqual(phraseClause.match_phrase.chunk_text.slop, 1);
+        assert.strictEqual(phraseClause.match_phrase.chunk_text.boost, 34);
         assert.strictEqual(neuralClause.neural.embedding.boost, 11);
     });
 
@@ -986,6 +1001,8 @@ describe('buildQueryJson', () => {
                     semanticMinScore: 0.91,
                     semanticK: 7,
                     lexicalBoost: 31,
+                    phraseBoost: 62,
+                    phraseSlop: 2,
                     dateBoost: 2,
                     neuralBoost: 9
                 }
@@ -994,14 +1011,66 @@ describe('buildQueryJson', () => {
 
         const shouldClauses = result.query.bool.should;
         const keywordClause = shouldClauses.find((clause) => clause.match?.chunk_text);
+        const phraseClause = shouldClauses.find((clause) => clause.match_phrase?.chunk_text);
         const dateClause = shouldClauses.find((clause) => clause.bool?.should);
         const neuralClause = shouldClauses.find((clause) => clause.neural?.embedding);
 
         assert.strictEqual(result.min_score, 0.91);
         assert.strictEqual(keywordClause.match.chunk_text.boost, 31);
+        assert.strictEqual(phraseClause.match_phrase.chunk_text.slop, 2);
+        assert.strictEqual(phraseClause.match_phrase.chunk_text.boost, 62);
         assert.strictEqual(dateClause.bool.boost, 2);
         assert.strictEqual(neuralClause.neural.embedding.boost, 9);
         assert.strictEqual(neuralClause.neural.embedding.k, 7);
+    });
+
+    it('Should skip whole-query phrase clause when phraseBoost is 0', () => {
+        const result = buildQueryJson({
+            keyword: 'Important meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 5,
+            options: {
+                searchType: 'hybrid',
+                includeNamedQueries: true,
+                queryDslConfig: {
+                    phraseBoost: 0
+                }
+            }
+        });
+
+        const shouldClauses = result.query.bool.should;
+        assert.ok(
+            !shouldClauses.some((clause) => clause.match_phrase?.chunk_text),
+            'No whole-query match_phrase clause should be present when disabled'
+        );
+        assert.ok(shouldClauses.some((clause) => clause.match?.chunk_text));
+        assert.ok(shouldClauses.some((clause) => clause.neural?.embedding));
+    });
+
+    it('Should skip whole-query phrase clause for single-token queries', () => {
+        const result = buildQueryJson({
+            keyword: 'meeting',
+            caseReferenceNumber: '26-711111',
+            pageNumber: 1,
+            itemsPerPage: 5,
+            options: {
+                searchType: 'hybrid',
+                includeNamedQueries: true,
+                queryDslConfig: {
+                    phraseBoost: 40,
+                    phraseSlop: 1
+                }
+            }
+        });
+
+        const shouldClauses = result.query.bool.should;
+        assert.ok(
+            !shouldClauses.some((clause) => clause.match_phrase?.chunk_text),
+            'No whole-query match_phrase clause should be present for single-token queries'
+        );
+        assert.ok(shouldClauses.some((clause) => clause.match?.chunk_text));
+        assert.ok(shouldClauses.some((clause) => clause.neural?.embedding));
     });
 
     it('Should log queryTypeBuilder parameters and output when logger is provided', () => {

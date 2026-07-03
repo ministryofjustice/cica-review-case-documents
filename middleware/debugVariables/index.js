@@ -40,6 +40,18 @@ export const DEBUG_VARIABLES = Object.freeze([
         validator: (val) => typeof val === 'number' && val >= 0 && Number.isFinite(val)
     },
     {
+        name: 'phraseBoost',
+        type: 'number',
+        default: DEFAULT_QUERY_DSL_CONFIG.phraseBoost,
+        validator: (val) => typeof val === 'number' && val >= 0 && Number.isFinite(val)
+    },
+    {
+        name: 'phraseSlop',
+        type: 'number',
+        default: DEFAULT_QUERY_DSL_CONFIG.phraseSlop,
+        validator: (val) => typeof val === 'number' && Number.isInteger(val) && val >= 0
+    },
+    {
         name: 'dateBoost',
         type: 'number',
         default: DEFAULT_QUERY_DSL_CONFIG.dateBoost,
@@ -58,6 +70,8 @@ const QUERY_DSL_DEBUG_VARIABLE_NAMES = Object.freeze([
     'semanticOnlyMinScore',
     'semanticK',
     'lexicalBoost',
+    'phraseBoost',
+    'phraseSlop',
     'dateBoost',
     'neuralBoost'
 ]);
@@ -76,7 +90,7 @@ export function getDebugVariableNames() {
 /**
  * Gets the default values for all debug variables.
  *
- * @returns {Record<string, number>} Object mapping variable names to defaults.
+ * @returns {Record<string, number | boolean>} Object mapping variable names to defaults.
  */
 export function getDebugVariableDefaults() {
     const defaults = {};
@@ -90,7 +104,7 @@ export function getDebugVariableDefaults() {
  * Builds the debug query DSL config object used by templates/debug views.
  *
  * @param {Record<string, number>} [overrides={}] - Validated override values.
- * @returns {{defaults: Record<string, number>, overrides: Record<string, number>, effective: Record<string, number>}}
+ * @returns {{defaults: Record<string, number | boolean>, overrides: Record<string, number | boolean>, effective: Record<string, number | boolean>}}
  */
 export function buildDebugQueryDslConfig(overrides = {}) {
     const defaults = getDebugVariableDefaults();
@@ -108,7 +122,7 @@ export function buildDebugQueryDslConfig(overrides = {}) {
  * Extracts query-DSL-related numeric values from the full debug variable bag.
  *
  * @param {Record<string, unknown>} [debugVariables={}] - Full debug variables object.
- * @returns {Record<string, number>} Finite query DSL values present in the bag.
+ * @returns {Record<string, number>} Query DSL values present in the bag.
  */
 export function getQueryDslOverrides(debugVariables = {}) {
     const overrides = {};
