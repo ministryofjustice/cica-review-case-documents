@@ -28,7 +28,7 @@ function createTemplateEngineService(app) {
                 {
                     name: 'MissingExpressAppError'
                 },
-                'Cannot initialize Nunjucks environment: Express app instance is required. ' +
+                'Cannot initialise Nunjucks environment: Express app instance is required. ' +
                     'Please pass the Express app when calling createTemplateEngineService(app).'
             );
         }

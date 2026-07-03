@@ -5,12 +5,12 @@ import {
     getSingleNonEmptyQueryParam,
     regenerateSession
 } from '../auth-flow-helpers.js';
-import { getUsernameFromEntraClaims } from '../utils/entra-auth/claims.js';
-import { isEntraConfigured } from '../utils/entra-auth/config.js';
+import { getUsernameFromEntraClaims } from '../utils/entraAuth/claims.js';
+import { isEntraConfigured } from '../utils/entraAuth/config.js';
 import {
     decodeAndValidateEntraIdToken,
     exchangeEntraAuthorizationCode
-} from '../utils/entra-auth/token.js';
+} from '../utils/entraAuth/token.js';
 
 const ENTRA_INTERACTIVE_RETRY_ERROR_CODES = new Set([
     // AADSTS65001: DelegationDoesNotExist - user/admin consent missing; requires interactive consent.
@@ -103,7 +103,7 @@ function handleEntraCallbackError(req, res) {
             hasState: Boolean(state),
             hasMatchingState
         },
-        'Entra authorization failed'
+        'Entra authorisation failed'
     );
     clearPendingEntraAuth(req);
     res.status(401).send('Authentication failed');

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import normalizeApiJwtUser from './normalizeApiJwtUser.js';
 
-test('normalizes using precedence order id > userId > username', () => {
+test('normalises using precedence order id > userId > username', () => {
     const user = {
         id: 'id-value',
         userId: 'user-id-value',

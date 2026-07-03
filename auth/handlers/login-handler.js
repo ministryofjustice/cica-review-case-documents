@@ -1,9 +1,9 @@
 import { nanoid } from 'nanoid';
 import { getSessionValuesToPreserve, regenerateSession } from '../auth-flow-helpers.js';
-import { buildEntraAuthorizeUrl, isEntraConfigured } from '../utils/entra-auth/config.js';
+import { buildEntraAuthorizeUrl, isEntraConfigured } from '../utils/entraAuth/config.js';
 
 /**
- * Creates an auth login handler that starts the Entra authorization flow.
+ * Creates an auth login handler that starts the Entra authorisation flow.
  *
  * @returns {import('express').RequestHandler} Express handler for `/auth/login`.
  */

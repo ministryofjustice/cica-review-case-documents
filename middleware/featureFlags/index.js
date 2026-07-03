@@ -169,11 +169,11 @@ export function getFeatureFlagValue(session, flagName) {
 }
 
 /**
- * Initializes a feature flag from session state with repository defaults.
+ * Initialises a feature flag from session state with repository defaults.
  *
- * @param {string} flagName - The flag name to initialize.
+ * @param {string} flagName - The flag name to initialise.
  * @param {import('express-session').Session | undefined} session - Request session object.
- * @returns {boolean | string} The initialized flag value.
+ * @returns {boolean | string} The initialised flag value.
  */
 function initializeFlag(flagName, session) {
     if (flagName === 'type') {

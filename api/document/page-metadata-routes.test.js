@@ -224,7 +224,7 @@ describe('API: Page Metadata Routes', () => {
 
     it('500 when outer try-catch catches unexpected error', async () => {
         const helperFactoryThatThrowsUnexpected = () => {
-            throw new Error('Unexpected initialization error');
+            throw new Error('Unexpected initialisation error');
         };
 
         const testApp = buildTestApp({

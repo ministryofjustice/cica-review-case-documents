@@ -350,7 +350,7 @@ test('uses default WINDOW_MS when APP_RATE_LIMIT_WINDOW_MS is not set', async ()
     const originalEnv = process.env.NODE_ENV;
 
     delete process.env.APP_RATE_LIMIT_WINDOW_MS;
-    process.env.NODE_ENV = 'development'; // Skip rate limiting so we can test initialization
+    process.env.NODE_ENV = 'development'; // Skip rate limiting so we can test initialisation
 
     try {
         const { default: limiter } = await import(`./index.js?t=${Date.now()}`);

@@ -143,7 +143,7 @@ This application uses a strict allowlist and pattern-based approach to control w
 
 ### Login and authentication
 
-The UI supports Microsoft Entra ID sign-in via authorization code flow.
+The UI supports Microsoft Entra ID sign-in via authorisation code flow.
 When `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET`, and `ENTRA_TENANT_ID` are set, `/auth/login` redirects to Entra and `/auth/callback` completes sign-in.
 
 `APP_BASE_URL` is used as the trusted base URL for Entra redirect URI generation.

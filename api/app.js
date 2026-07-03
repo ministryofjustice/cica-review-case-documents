@@ -9,7 +9,7 @@ import pinoHttp from 'pino-http';
 import swaggerUi from 'swagger-ui-express';
 import createApiRouter from './document/routes.js';
 import errorHandler from './middleware/errorHandler/index.js';
-import authenticateJWTToken from './middleware/jwt-authentication/index.js';
+import authenticateJWTToken from './middleware/jwtAuthentication/index.js';
 import dynamicRateLimiter from './middleware/rateLimiter/index.js';
 import createOpenApiValidatorMiddleware from './middleware/validator/index.js';
 import createSearchService from './search/search-service.js';

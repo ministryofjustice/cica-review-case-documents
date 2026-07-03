@@ -31,7 +31,7 @@ describe('entra-auth token utilities', () => {
         resetEnv();
     });
 
-    it('exchanges authorization code with token endpoint', async () => {
+    it('exchanges authorisation code with token endpoint', async () => {
         const originalPost = got.post;
 
         try {

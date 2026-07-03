@@ -94,7 +94,7 @@ describe('queryDslConfigOverrides', () => {
         assert.ok(effective.lexicalBoost >= 0);
     });
 
-    it('should serialize only sanitized numeric overrides as query params', () => {
+    it('should serialise only sanitised numeric overrides as query params', () => {
         const serialized = serializeQueryDslConfigOverrides({
             semanticMinScore: '0.75',
             semanticOnlyMinScore: -1,

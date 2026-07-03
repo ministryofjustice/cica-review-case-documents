@@ -115,10 +115,10 @@ async function getEntraSigningKey(idToken, tenantId) {
 }
 
 /**
- * Exchanges an authorization code for tokens at Entra token endpoint.
+ * Exchanges an authorisation code for tokens at Entra token endpoint.
  *
  * @param {import('express').Request} req - Express request used to derive callback URI.
- * @param {string} code - Authorization code returned by Entra authorize endpoint.
+ * @param {string} code - Authorisation code returned by Entra authorize endpoint.
  * @returns {Promise<any>}
  */
 export async function exchangeEntraAuthorizationCode(req, code) {
