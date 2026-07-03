@@ -151,7 +151,7 @@ function initializeDebugPanel() {
         /**
          * Positions tooltip above the chip and keeps it inside viewport bounds.
          *
-         * @param {HTMLElement} chip
+         * @param {HTMLElement} chip - Help chip element that anchors the tooltip position.
          * @returns {void}
          */
         const positionTooltip = (chip) => {
@@ -174,7 +174,7 @@ function initializeDebugPanel() {
         /**
          * Shows tooltip content sourced from the help chip title.
          *
-         * @param {HTMLElement} chip
+         * @param {HTMLElement} chip - Help chip element that provides tooltip text and anchor position.
          * @returns {void}
          */
         const showTooltip = (chip) => {
