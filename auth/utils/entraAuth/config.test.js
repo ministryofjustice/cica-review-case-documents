@@ -91,7 +91,7 @@ describe('entra-auth config utilities', () => {
         );
     });
 
-    it('builds authorize URL with expected parameters', () => {
+    it('builds authorise URL with expected parameters', () => {
         const req = {
             protocol: 'https',
             get: (name) => (name === 'host' ? 'example.test' : undefined)
@@ -109,7 +109,7 @@ describe('entra-auth config utilities', () => {
         assert.match(url, /nonce=nonce-1/);
     });
 
-    it('adds optional authorize parameters when provided', () => {
+    it('adds optional authorise parameters when provided', () => {
         const req = {
             protocol: 'https',
             get: (name) => (name === 'host' ? 'example.test' : undefined)

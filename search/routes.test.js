@@ -269,7 +269,7 @@ describe('Search Routes', () => {
         });
 
         it('should handle errors from the search service', async () => {
-            // This test needs a fresh app instance to re-initialize the router with new mocks
+            // This test needs a fresh app instance to re-initialise the router with new mocks
             const testApp = express();
             const failingSearch = async () => {
                 throw new Error('Search failed');
@@ -477,7 +477,7 @@ describe('Search Routes', () => {
             assert.match(res.text, /search\/page\/results.njk/);
         });
 
-        it('normalizes matchSources to known unique constituent labels and preserves _score', async () => {
+        it('normalises matchSources to known unique constituent labels and preserves _score', async () => {
             const testApp = express();
             const searchResponseWithMatchedQueries = async () => ({
                 body: {

@@ -7,7 +7,7 @@ import buildSearchSessionPreference from '../../utils/buildSearchSessionPreferen
 import { VIEW_MODES } from '../constants/viewModes.js';
 import { formatPageTitle } from '../utils/formatters/index.js';
 import { buildTextHighlightSegments } from '../utils/highlight/index.js';
-import { buildImagePageLink } from '../utils/link-builders/index.js';
+import { buildImagePageLink } from '../utils/linkBuilders/index.js';
 import { fetchPageMetadata } from '../utils/metadata/index.js';
 import { paginationDataFromMetadata } from '../utils/pagination/index.js';
 

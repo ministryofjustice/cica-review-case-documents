@@ -63,12 +63,12 @@ export function getEntraRedirectUri(req) {
 }
 
 /**
- * Builds an Entra authorize URL for the authorization code flow.
+ * Builds an Entra authorize URL for the authorisation code flow.
  *
  * @param {import('express').Request} req - Express request used to derive callback URI.
  * @param {string} state - OIDC state value bound to the current auth transaction.
  * @param {string} nonce - OIDC nonce value validated against the returned id token.
- * @param {{ prompt?: string, domainHint?: string }} [options] - Optional authorize request parameters.
+ * @param {{ prompt?: string, domainHint?: string }} [options] - Optional authorise request parameters.
  * @returns {string}
  */
 export function buildEntraAuthorizeUrl(req, state, nonce, options = {}) {

@@ -23,7 +23,7 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
     const router = express.Router();
 
     /**
-     * Handles search form submissions and normalizes input into query-string based navigation.
+     * Handles search form submissions and normalises input into query-string based navigation.
      *
      * @param {express.Request} req - Express request containing body fields.
      * @param {express.Response} res - Express response used for redirects.

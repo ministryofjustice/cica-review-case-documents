@@ -5,7 +5,7 @@ import {
     alignOverlappingHighlights,
     determineHighlightAlignmentStrategy,
     hasHorizontalOverlap
-} from '../utils/overlap-strategy/index.js';
+} from '../utils/overlapStrategy/index.js';
 import { createPageViewerHandler } from './page-viewer.js';
 
 describe('Chunk overlap helpers', () => {

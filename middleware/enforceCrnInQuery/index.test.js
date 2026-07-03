@@ -23,7 +23,7 @@ function createMockReq({ method = 'GET', query = {}, session = {} } = {}) {
 /**
  * Creates a mock response object for testing purposes.
  * The mock object captures any URL passed to its `redirect` method,
- * allowing tests to assert redirection behavior.
+ * allowing tests to assert redirection behaviour.
  *
  * @returns {{redirect: function(string): void, redirectedUrl: string|null}}
  *   An object with a `redirect` method to simulate redirection and a `redirectedUrl` property to retrieve the redirected URL.
@@ -303,7 +303,7 @@ test('skips enforcement for excluded paths - js files', () => {
     assert.strictEqual(nextCalled, true);
 });
 
-test('normalizes path with trailing slash before checking', () => {
+test('normalises path with trailing slash before checking', () => {
     const req = createMockReq({
         method: 'GET',
         query: { test: 'value' },

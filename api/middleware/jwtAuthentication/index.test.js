@@ -12,7 +12,7 @@ beforeEach(() => {
 });
 
 /**
- * Creates a mock Express request object with JWT token in authorization header.
+ * Creates a mock Express request object with JWT token in authorisation header.
  *
  * @param {Object} options - Options for creating the mock request.
  * @param {string} options.token - The JWT token to include in the request.
@@ -161,7 +161,7 @@ test('authenticateToken returns 500 when auth configuration is invalid', async (
     );
 });
 
-test('authenticateToken normalizes to username when userId is null', async () => {
+test('authenticateToken normalises to username when userId is null', async () => {
     const token = jwt.sign({ userId: null, username: 'fallback-user' }, SECRET, {
         issuer: process.env.APP_API_JWT_ISSUER,
         audience: process.env.APP_API_JWT_AUDIENCE,

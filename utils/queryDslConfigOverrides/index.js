@@ -102,9 +102,9 @@ export function parseQueryDslConfigFromQuery(query = {}) {
 }
 
 /**
- * Serializes sanitized query DSL overrides for reuse in links/forms.
+ * Serialises sanitised query DSL overrides for reuse in links/forms.
  *
- * @param {Partial<typeof DEFAULT_QUERY_DSL_CONFIG>} [overrides={}] - Override values to serialize.
+ * @param {Partial<typeof DEFAULT_QUERY_DSL_CONFIG>} [overrides={}] - Override values to serialise.
  * @returns {string} URL-encoded query string without a leading `?`.
  */
 export function serializeQueryDslConfigOverrides(overrides = {}) {

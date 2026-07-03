@@ -6,9 +6,9 @@ import createTemplateEngineService from '../../templateEngine/index.js';
 import buildSearchSessionPreference from '../../utils/buildSearchSessionPreference/index.js';
 import { VIEW_MODES } from '../constants/viewModes.js';
 import { formatPageTitle } from '../utils/formatters/index.js';
-import { buildImageUrl, buildTextPageLink } from '../utils/link-builders/index.js';
+import { buildImageUrl, buildTextPageLink } from '../utils/linkBuilders/index.js';
 import { fetchPageMetadata } from '../utils/metadata/index.js';
-import { determineHighlightAlignmentStrategy } from '../utils/overlap-strategy/index.js';
+import { determineHighlightAlignmentStrategy } from '../utils/overlapStrategy/index.js';
 import { paginationDataFromMetadata } from '../utils/pagination/index.js';
 
 /**

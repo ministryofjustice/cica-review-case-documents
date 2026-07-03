@@ -44,19 +44,19 @@ The middleware persists the resolved value to the session, so subsequent request
 
 ## Accessing flags
 
-All feature-flag access **should** use `getFeatureFlagValue(session, flagName)` rather than directly accessing `session.featureFlags`. This ensures consistent validation and fallback behavior across the entire app:
+All feature-flag access **should** use `getFeatureFlagValue(session, flagName)` rather than directly accessing `session.featureFlags`. This ensures consistent validation and fallback behaviour across the entire app:
 
 ```javascript
 import { getFeatureFlagValue } from './middleware/featureFlags/index.js';
 
-// ✅ Correct - normalized and validated
+// ✅ Correct - normalised and validated
 const alignFlag = getFeatureFlagValue(req.session, 'align');     // boolean
 const searchType = getFeatureFlagValue(req.session, 'type');      // string
 
 // ⚠️ Direct access - only acceptable to avoid circular dependencies
 const sessionType = session?.featureFlags?.type;                 // direct access (see note below)
 
-// ❌ Incorrect - bypasses validation and normalization
+// ❌ Incorrect - bypasses validation and normalisation
 const alignFlag = req.session?.featureFlags?.align;              // unvalidated
 const searchType = req.session?.featureFlags?.type;              // unvalidated - use getFeatureFlagValue instead
 ```
