@@ -38,11 +38,14 @@ function initializeDebugPanel() {
     const queryDslResetButton = panel.querySelector('#debug-query-dsl-reset');
     const copySnapshotButton = panel.querySelector('#debug-copy-snapshot');
     const copyStatus = panel.querySelector('#debug-copy-status');
+    const helpChips = panel.querySelectorAll('.debug-panel__help[title]');
     const queryDslParamNames = [
         'semanticMinScore',
         'semanticOnlyMinScore',
         'semanticK',
         'lexicalBoost',
+        'phraseBoost',
+        'phraseSlop',
         'dateBoost',
         'neuralBoost'
     ];
@@ -126,6 +129,92 @@ function initializeDebugPanel() {
 
         window.location.assign(url.toString());
     };
+
+    /**
+     * Creates a single floating tooltip element attached to document body.
+     *
+     * @returns {HTMLDivElement}
+     */
+    const createFloatingTooltip = () => {
+        const tooltip = document.createElement('div');
+        tooltip.className = 'debug-panel__floating-tooltip';
+        tooltip.setAttribute('role', 'tooltip');
+        tooltip.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(tooltip);
+        return tooltip;
+    };
+
+    if (helpChips.length > 0) {
+        const floatingTooltip = createFloatingTooltip();
+        const viewportPadding = 8;
+
+        /**
+         * Positions tooltip above the chip and keeps it inside viewport bounds.
+         *
+         * @param {HTMLElement} chip
+         * @returns {void}
+         */
+        const positionTooltip = (chip) => {
+            const chipRect = chip.getBoundingClientRect();
+            const tooltipRect = floatingTooltip.getBoundingClientRect();
+
+            let left = chipRect.left + chipRect.width / 2 - tooltipRect.width / 2;
+            left = Math.max(viewportPadding, left);
+            left = Math.min(left, window.innerWidth - tooltipRect.width - viewportPadding);
+
+            let top = chipRect.top - tooltipRect.height - 8;
+            if (top < viewportPadding) {
+                top = chipRect.bottom + 8;
+            }
+
+            floatingTooltip.style.left = `${Math.round(left)}px`;
+            floatingTooltip.style.top = `${Math.round(top)}px`;
+        };
+
+        /**
+         * Shows tooltip content sourced from the help chip title.
+         *
+         * @param {HTMLElement} chip
+         * @returns {void}
+         */
+        const showTooltip = (chip) => {
+            const text = chip.getAttribute('title') || '';
+            if (!text) {
+                return;
+            }
+
+            floatingTooltip.textContent = text;
+            floatingTooltip.classList.add('debug-panel__floating-tooltip--visible');
+            floatingTooltip.setAttribute('aria-hidden', 'false');
+            positionTooltip(chip);
+        };
+
+        /**
+         * Hides the floating tooltip.
+         *
+         * @returns {void}
+         */
+        const hideTooltip = () => {
+            floatingTooltip.classList.remove('debug-panel__floating-tooltip--visible');
+            floatingTooltip.setAttribute('aria-hidden', 'true');
+        };
+
+        helpChips.forEach((chip) => {
+            chip.addEventListener('mouseenter', () => {
+                showTooltip(chip);
+            });
+
+            chip.addEventListener('focus', () => {
+                showTooltip(chip);
+            });
+
+            chip.addEventListener('mouseleave', hideTooltip);
+            chip.addEventListener('blur', hideTooltip);
+        });
+
+        window.addEventListener('scroll', hideTooltip, true);
+        window.addEventListener('resize', hideTooltip);
+    }
 
     /**
      * Applies multiple query params in one redirect while preserving unrelated URL state.

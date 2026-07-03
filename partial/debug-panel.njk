@@ -138,8 +138,14 @@
       <div class="debug-panel__control-group">
         <form id="debug-query-dsl-form" class="debug-panel__tuning-form" novalidate>
           <div class="debug-panel__tuning-grid">
-            <label class="govuk-label govuk-label--s" for="debug-qc-semantic-min-score">
+            <label class="govuk-label govuk-label--s debug-panel__label-with-help" for="debug-qc-semantic-min-score">
               semanticMinScore
+              <span
+                class="debug-panel__help"
+                tabindex="0"
+                aria-label="Minimum vector similarity score for hybrid searches. Higher values are stricter and reduce broad semantic matches."
+                title="Minimum vector similarity score for hybrid searches. Higher values are stricter and reduce broad semantic matches."
+              >?</span>
             </label>
             <input
               id="debug-qc-semantic-min-score"
@@ -152,8 +158,14 @@
               placeholder="{{ debugQueryDslConfig.defaults.semanticMinScore | default('2.25', true) }}"
             />
 
-            <label class="govuk-label govuk-label--s" for="debug-qc-semantic-only-min-score">
+            <label class="govuk-label govuk-label--s debug-panel__label-with-help" for="debug-qc-semantic-only-min-score">
               semanticOnlyMinScore
+              <span
+                class="debug-panel__help"
+                tabindex="0"
+                aria-label="Minimum vector similarity score for semantic-only mode. Increase to prioritize precision, decrease to broaden recall."
+                title="Minimum vector similarity score for semantic-only mode. Increase to prioritize precision, decrease to broaden recall."
+              >?</span>
             </label>
             <input
               id="debug-qc-semantic-only-min-score"
@@ -166,8 +178,14 @@
               placeholder="{{ debugQueryDslConfig.defaults.semanticOnlyMinScore | default('0.5', true) }}"
             />
 
-            <label class="govuk-label govuk-label--s" for="debug-qc-semantic-k">
+            <label class="govuk-label govuk-label--s debug-panel__label-with-help" for="debug-qc-semantic-k">
               semanticK
+              <span
+                class="debug-panel__help"
+                tabindex="0"
+                aria-label="Number of candidates retrieved from vector search before final ranking. Larger values can improve recall but may add latency."
+                title="Number of candidates retrieved from vector search before final ranking. Larger values can improve recall but may add latency."
+              >?</span>
             </label>
             <input
               id="debug-qc-semantic-k"
@@ -180,8 +198,14 @@
               placeholder="{{ debugQueryDslConfig.defaults.semanticK | default('250', true) }}"
             />
 
-            <label class="govuk-label govuk-label--s" for="debug-qc-lexical-boost">
+            <label class="govuk-label govuk-label--s debug-panel__label-with-help" for="debug-qc-lexical-boost">
               lexicalBoost
+              <span
+                class="debug-panel__help"
+                tabindex="0"
+                aria-label="Weight applied to lexical BM25 matching in hybrid ranking. Higher values favor exact term matches over semantic similarity."
+                title="Weight applied to lexical BM25 matching in hybrid ranking. Higher values favor exact term matches over semantic similarity."
+              >?</span>
             </label>
             <input
               id="debug-qc-lexical-boost"
@@ -194,8 +218,14 @@
               placeholder="{{ debugQueryDslConfig.defaults.lexicalBoost | default('20', true) }}"
             />
 
-            <label class="govuk-label govuk-label--s" for="debug-qc-date-boost">
+            <label class="govuk-label govuk-label--s debug-panel__label-with-help" for="debug-qc-date-boost">
               dateBoost
+              <span
+                class="debug-panel__help"
+                tabindex="0"
+                aria-label="Extra weight for date fields in lexical matching. Increase when date terms should strongly influence ordering."
+                title="Extra weight for date fields in lexical matching. Increase when date terms should strongly influence ordering."
+              >?</span>
             </label>
             <input
               id="debug-qc-date-boost"
@@ -208,8 +238,54 @@
               placeholder="{{ debugQueryDslConfig.defaults.dateBoost | default('4', true) }}"
             />
 
-            <label class="govuk-label govuk-label--s" for="debug-qc-neural-boost">
+            <label class="govuk-label govuk-label--s debug-panel__label-with-help" for="debug-qc-phrase-boost">
+              phraseBoost
+              <span
+                class="debug-panel__help"
+                tabindex="0"
+                aria-label="Boost for whole-query phrase matching in lexical search. Set to 0 to disable phrase boosting entirely."
+                title="Boost for whole-query phrase matching in lexical search. Set to 0 to disable phrase boosting entirely."
+              >?</span>
+            </label>
+            <input
+              id="debug-qc-phrase-boost"
+              name="phraseBoost"
+              type="number"
+              step="0.01"
+              min="0"
+              class="govuk-input govuk-input--width-10"
+              value="{{ debugQueryDslConfig.overrides.phraseBoost | default('') }}"
+              placeholder="{{ debugQueryDslConfig.defaults.phraseBoost | default('40', true) }}"
+            />
+
+            <label class="govuk-label govuk-label--s debug-panel__label-with-help" for="debug-qc-phrase-slop">
+              phraseSlop
+              <span
+                class="debug-panel__help"
+                tabindex="0"
+                aria-label="Allowed word movement in phrase matching. 0 requires exact order; higher values allow looser near-phrase matches."
+                title="Allowed word movement in phrase matching. 0 requires exact order; higher values allow looser near-phrase matches."
+              >?</span>
+            </label>
+            <input
+              id="debug-qc-phrase-slop"
+              name="phraseSlop"
+              type="number"
+              step="1"
+              min="0"
+              class="govuk-input govuk-input--width-10"
+              value="{{ debugQueryDslConfig.overrides.phraseSlop | default('') }}"
+              placeholder="{{ debugQueryDslConfig.defaults.phraseSlop | default('0', true) }}"
+            />
+
+            <label class="govuk-label govuk-label--s debug-panel__label-with-help" for="debug-qc-neural-boost">
               neuralBoost
+              <span
+                class="debug-panel__help"
+                tabindex="0"
+                aria-label="Weight applied to neural/vector score in hybrid ranking. Higher values push semantically similar results upward."
+                title="Weight applied to neural/vector score in hybrid ranking. Higher values push semantically similar results upward."
+              >?</span>
             </label>
             <input
               id="debug-qc-neural-boost"
