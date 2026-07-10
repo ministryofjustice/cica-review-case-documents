@@ -1,0 +1,108 @@
+{
+    "_source": {
+        "includes": ["chunk_id", "chunk_text", "page_number", "case_ref", "chunk_type"]
+    },
+    "query": {
+        "index": "page_chunks",
+        "preference": "session-346fa2d18bbdd560e3c27a367916f4b547a3a927dfe58b505fe29d0381ed259e",
+        "body": {
+            "query": {
+                "bool": {
+                    "filter": [
+                        {
+                            "term": {
+                                "case_ref": "26-700001"
+                            }
+                        }
+                    ],
+                    "should": [
+                        {
+                            "bool": {
+                                "should": [
+                                    {
+                                        "match_phrase": {
+                                            "chunk_text": "28 1 18"
+                                        }
+                                    },
+                                    {
+                                        "match_phrase": {
+                                            "chunk_text": "28 1 2018"
+                                        }
+                                    },
+                                    {
+                                        "match_phrase": {
+                                            "chunk_text": "28 01 18"
+                                        }
+                                    },
+                                    {
+                                        "match_phrase": {
+                                            "chunk_text": "28 01 2018"
+                                        }
+                                    },
+                                    {
+                                        "match_phrase": {
+                                            "chunk_text": "28 Jan 18"
+                                        }
+                                    },
+                                    {
+                                        "match_phrase": {
+                                            "chunk_text": "28 Jan 2018"
+                                        }
+                                    },
+                                    {
+                                        "match_phrase": {
+                                            "chunk_text": "28 January 18"
+                                        }
+                                    },
+                                    {
+                                        "match_phrase": {
+                                            "chunk_text": "28 January 2018"
+                                        }
+                                    },
+                                    {
+                                        "match_phrase": {
+                                            "chunk_text": "2018 1 28"
+                                        }
+                                    },
+                                    {
+                                        "match_phrase": {
+                                            "chunk_text": "2018 01 28"
+                                        }
+                                    },
+                                    {
+                                        "match_phrase": {
+                                            "chunk_text": "2018 Jan 28"
+                                        }
+                                    },
+                                    {
+                                        "match_phrase": {
+                                            "chunk_text": "2018 January 28"
+                                        }
+                                    }
+                                ],
+                                "minimum_should_match": 1,
+                                "boost": 4
+                            }
+                        },
+                        {
+                            "neural": {
+                                "embedding": {
+                                    "query_text": "28 Jan 2018",
+                                    "k": 250,
+                                    "filter": {
+                                        "term": {
+                                            "case_ref": "26-700001"
+                                        }
+                                    },
+                                    "boost": 4
+                                }
+                            }
+                        }
+                    ],
+                    "minimum_should_match": 1
+                }
+            },
+            "min_score": 2.25
+        }
+    }
+}

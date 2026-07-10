@@ -1,0 +1,560 @@
+{
+    "meta": {
+        "generatedAt": "2026-07-10T08:20:41.368Z",
+        "generatedAtEuropeLondon": "Friday, 10 July 2026 at 09:20:41 BST",
+        "outputPath": "/home/enigma/cica-review-case-documents/expeerimental/integration-tests/page-subset-query-matching/results/Did_the_applicant_suffer_brain_damage?-20260710-092030.json",
+        "baseDslPath": "/home/enigma/cica-review-case-documents/expeerimental/integration-tests/page-subset-query-matching/query_dsls/hybrid_base_search_query_dsl.json",
+        "pageDslPath": "/home/enigma/cica-review-case-documents/expeerimental/integration-tests/page-subset-query-matching/query_dsls/hybrid_page_search_query_dsl.json",
+        "opensearchUrl": "http://localhost:9200",
+        "fallbackIndex": "page_chunks",
+        "queryInputs": {
+            "base": {
+                "keywordQuery": "Did the applicant suffer brain damage?",
+                "neuralQueryText": "Did the applicant suffer brain damage?"
+            },
+            "page": {
+                "keywordQuery": "Did the applicant suffer brain damage?",
+                "neuralQueryText": "Did the applicant suffer brain damage?"
+            }
+        },
+        "queryConfig": {
+            "base": {
+                "index": "page_chunks",
+                "preference": "session-edb18f1a1d5884f245c40fe76a64e864b337bfadcea2391d648f4b8643a976a9",
+                "rows": null,
+                "min_score": 2.25,
+                "track_scores": null,
+                "minimum_should_match": 1,
+                "sort": null,
+                "boosts": {
+                    "keyword": 20,
+                    "phraseGroup": null,
+                    "neural": 4
+                },
+                "neural": {
+                    "k": 250
+                }
+            },
+            "page": {
+                "index": "page_chunks",
+                "preference": "session-edb18f1a1d5884f245c40fe76a64e864b337bfadcea2391d648f4b8643a976a9",
+                "rows": null,
+                "min_score": 2.25,
+                "track_scores": null,
+                "minimum_should_match": 1,
+                "sort": [
+                    {
+                        "chunk_index": {
+                            "order": "asc"
+                        }
+                    }
+                ],
+                "boosts": {
+                    "keyword": 20,
+                    "phraseGroup": null,
+                    "neural": 4
+                },
+                "neural": {
+                    "k": 250
+                }
+            }
+        }
+    },
+    "base": {
+        "index": "page_chunks",
+        "totalHits": {
+            "value": 100,
+            "relation": "eq"
+        },
+        "totalHitsValue": 100,
+        "returnedHits": 100,
+        "returnedHitsMeaning": "Number of hits returned for the executed query window (affected by size/from/min_score).",
+        "fetchedAllHits": true,
+        "byPage": {
+            "1": 2,
+            "2": 2,
+            "3": 2,
+            "5": 4,
+            "6": 2,
+            "8": 3,
+            "10": 1,
+            "11": 1,
+            "12": 1,
+            "13": 4,
+            "14": 2,
+            "15": 6,
+            "17": 3,
+            "18": 4,
+            "19": 1,
+            "20": 1,
+            "21": 1,
+            "22": 4,
+            "23": 2,
+            "24": 4,
+            "25": 2,
+            "26": 4,
+            "27": 4,
+            "28": 1,
+            "29": 1,
+            "30": 1,
+            "31": 4,
+            "32": 2,
+            "33": 3,
+            "34": 4,
+            "35": 2,
+            "36": 4,
+            "37": 2,
+            "38": 1,
+            "39": 2,
+            "40": 1,
+            "41": 2,
+            "43": 1,
+            "44": 1,
+            "45": 1,
+            "47": 1,
+            "48": 2,
+            "49": 2,
+            "50": 2
+        }
+    },
+    "pageValidation": {
+        "index": "page_chunks",
+        "scopesTested": 44,
+        "aggregateReturnedHits": 100,
+        "failingScopeCount": 0,
+        "sampleScopes": [
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 1,
+                "baseHits": 2,
+                "returnedHits": 2,
+                "base_chunk_ids": [
+                    "110957da-cac1-54e5-9ae8-c9df10c8f374",
+                    "c355be77-1c79-50f3-9d21-4e2a98a2b9f3"
+                ],
+                "returned_chunk_ids": [
+                    "110957da-cac1-54e5-9ae8-c9df10c8f374",
+                    "c355be77-1c79-50f3-9d21-4e2a98a2b9f3"
+                ],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 2,
+                "baseHits": 2,
+                "returnedHits": 2,
+                "base_chunk_ids": [
+                    "1d910b33-8ee7-5f63-949a-1c3291bf6a22",
+                    "ba966626-3f39-5b73-9fe3-f4230087d273"
+                ],
+                "returned_chunk_ids": [
+                    "1d910b33-8ee7-5f63-949a-1c3291bf6a22",
+                    "ba966626-3f39-5b73-9fe3-f4230087d273"
+                ],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 3,
+                "baseHits": 2,
+                "returnedHits": 2,
+                "base_chunk_ids": [
+                    "a42105ad-2ded-576f-9418-a5a8ff285b09",
+                    "d85863c0-ef6a-52b7-9a17-6005cf4f937f"
+                ],
+                "returned_chunk_ids": [
+                    "a42105ad-2ded-576f-9418-a5a8ff285b09",
+                    "d85863c0-ef6a-52b7-9a17-6005cf4f937f"
+                ],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 5,
+                "baseHits": 4,
+                "returnedHits": 4,
+                "base_chunk_ids": [
+                    "144e72dc-3475-56c4-92dc-266f3f37e071",
+                    "4bc975c7-70cd-5444-bad4-55ecaaa4f5ea",
+                    "c7fc799d-83ee-5bbf-a7bc-6f5bbac91fe7",
+                    "f3b3baf4-c7da-56cc-8cf4-ea0e1612a934"
+                ],
+                "returned_chunk_ids": [
+                    "144e72dc-3475-56c4-92dc-266f3f37e071",
+                    "4bc975c7-70cd-5444-bad4-55ecaaa4f5ea",
+                    "c7fc799d-83ee-5bbf-a7bc-6f5bbac91fe7",
+                    "f3b3baf4-c7da-56cc-8cf4-ea0e1612a934"
+                ],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 6,
+                "baseHits": 2,
+                "returnedHits": 2,
+                "base_chunk_ids": [
+                    "71f4c421-6b98-5ecc-b618-97eabeadad7d",
+                    "d083b19d-4289-5488-aa25-e813122a5dc7"
+                ],
+                "returned_chunk_ids": [
+                    "71f4c421-6b98-5ecc-b618-97eabeadad7d",
+                    "d083b19d-4289-5488-aa25-e813122a5dc7"
+                ],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 8,
+                "baseHits": 3,
+                "returnedHits": 3,
+                "base_chunk_ids": [
+                    "532501d0-55e5-5d6c-b6ae-ece86eb7c89e",
+                    "da57787c-628d-5802-82d1-8481d2e99721",
+                    "e3ef482c-087f-5435-8271-4628ce84889f"
+                ],
+                "returned_chunk_ids": [
+                    "532501d0-55e5-5d6c-b6ae-ece86eb7c89e",
+                    "da57787c-628d-5802-82d1-8481d2e99721",
+                    "e3ef482c-087f-5435-8271-4628ce84889f"
+                ],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 10,
+                "baseHits": 1,
+                "returnedHits": 1,
+                "base_chunk_ids": ["8fd17628-8c55-5bca-bef6-8d470a1fe9c3"],
+                "returned_chunk_ids": ["8fd17628-8c55-5bca-bef6-8d470a1fe9c3"],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 11,
+                "baseHits": 1,
+                "returnedHits": 1,
+                "base_chunk_ids": ["3a94bac3-326b-5bf9-a7d8-6454113ae3d3"],
+                "returned_chunk_ids": ["3a94bac3-326b-5bf9-a7d8-6454113ae3d3"],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 12,
+                "baseHits": 1,
+                "returnedHits": 1,
+                "base_chunk_ids": ["65dd7445-51ee-58ad-bcd5-9ab4531c7c24"],
+                "returned_chunk_ids": ["65dd7445-51ee-58ad-bcd5-9ab4531c7c24"],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 13,
+                "baseHits": 4,
+                "returnedHits": 4,
+                "base_chunk_ids": [
+                    "1b062561-5226-572e-a20a-baf1c32a30ef",
+                    "2f403ef1-a942-52c6-ad9e-ada0052492ec",
+                    "3a18301e-568a-59b2-829f-add79ab5cbba",
+                    "9f811df2-8ee7-5aae-9d8f-4e0012d14703"
+                ],
+                "returned_chunk_ids": [
+                    "1b062561-5226-572e-a20a-baf1c32a30ef",
+                    "2f403ef1-a942-52c6-ad9e-ada0052492ec",
+                    "3a18301e-568a-59b2-829f-add79ab5cbba",
+                    "9f811df2-8ee7-5aae-9d8f-4e0012d14703"
+                ],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 14,
+                "baseHits": 2,
+                "returnedHits": 2,
+                "base_chunk_ids": [
+                    "6e20855c-29ff-5952-b6e8-5bca76b9674f",
+                    "894c6500-bff9-55e7-9bda-d66f9841bf6c"
+                ],
+                "returned_chunk_ids": [
+                    "6e20855c-29ff-5952-b6e8-5bca76b9674f",
+                    "894c6500-bff9-55e7-9bda-d66f9841bf6c"
+                ],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 15,
+                "baseHits": 6,
+                "returnedHits": 6,
+                "base_chunk_ids": [
+                    "20bf802d-ccc8-56a5-931c-049986d5912f",
+                    "22863540-fee4-5811-811c-7710498d354c",
+                    "4cc294aa-7596-5ac3-89b2-f19b5446e133",
+                    "cb980903-bb55-525d-a831-90900481a4ce",
+                    "d2f89525-cfaa-52ba-8571-e752b981e1d8",
+                    "f4cd449f-acb6-53e6-923d-dcc39f582645"
+                ],
+                "returned_chunk_ids": [
+                    "20bf802d-ccc8-56a5-931c-049986d5912f",
+                    "22863540-fee4-5811-811c-7710498d354c",
+                    "4cc294aa-7596-5ac3-89b2-f19b5446e133",
+                    "cb980903-bb55-525d-a831-90900481a4ce",
+                    "d2f89525-cfaa-52ba-8571-e752b981e1d8",
+                    "f4cd449f-acb6-53e6-923d-dcc39f582645"
+                ],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 17,
+                "baseHits": 3,
+                "returnedHits": 3,
+                "base_chunk_ids": [
+                    "265d1c77-bdb3-59c0-bef4-3073e6c38de1",
+                    "68789fbc-7fc3-56f1-a1d2-4786ce1d3dd9",
+                    "74acf3e1-42e1-54ae-b66f-816fe78af57a"
+                ],
+                "returned_chunk_ids": [
+                    "265d1c77-bdb3-59c0-bef4-3073e6c38de1",
+                    "68789fbc-7fc3-56f1-a1d2-4786ce1d3dd9",
+                    "74acf3e1-42e1-54ae-b66f-816fe78af57a"
+                ],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 18,
+                "baseHits": 4,
+                "returnedHits": 4,
+                "base_chunk_ids": [
+                    "1bca0caf-6f8f-549c-94e8-1f6301ae2eed",
+                    "a5edd5af-4e79-5962-adef-f72caaff1b61",
+                    "b4bd542c-8ea0-5005-bb79-29f7def0341a",
+                    "d27d71e9-1ada-58c6-b692-d15c31bddd4b"
+                ],
+                "returned_chunk_ids": [
+                    "1bca0caf-6f8f-549c-94e8-1f6301ae2eed",
+                    "a5edd5af-4e79-5962-adef-f72caaff1b61",
+                    "b4bd542c-8ea0-5005-bb79-29f7def0341a",
+                    "d27d71e9-1ada-58c6-b692-d15c31bddd4b"
+                ],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 19,
+                "baseHits": 1,
+                "returnedHits": 1,
+                "base_chunk_ids": ["25afde94-b258-5343-9976-0cbdceb13f83"],
+                "returned_chunk_ids": ["25afde94-b258-5343-9976-0cbdceb13f83"],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 20,
+                "baseHits": 1,
+                "returnedHits": 1,
+                "base_chunk_ids": ["73a9864c-ed42-54d9-a8b6-595b3050f5f7"],
+                "returned_chunk_ids": ["73a9864c-ed42-54d9-a8b6-595b3050f5f7"],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 21,
+                "baseHits": 1,
+                "returnedHits": 1,
+                "base_chunk_ids": ["8e1e7b1a-3e39-5d02-97de-3e236f476937"],
+                "returned_chunk_ids": ["8e1e7b1a-3e39-5d02-97de-3e236f476937"],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 22,
+                "baseHits": 4,
+                "returnedHits": 4,
+                "base_chunk_ids": [
+                    "4e6a8dbc-5e0f-5911-a07c-6a2f0231899a",
+                    "78d13c8a-8c03-56fb-b102-ee0457abe4f3",
+                    "8b2e4a00-dd4f-598a-ad37-a6537f9c5780",
+                    "d143e161-e2d4-5b22-a89a-f2e06a119ae5"
+                ],
+                "returned_chunk_ids": [
+                    "4e6a8dbc-5e0f-5911-a07c-6a2f0231899a",
+                    "78d13c8a-8c03-56fb-b102-ee0457abe4f3",
+                    "8b2e4a00-dd4f-598a-ad37-a6537f9c5780",
+                    "d143e161-e2d4-5b22-a89a-f2e06a119ae5"
+                ],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 23,
+                "baseHits": 2,
+                "returnedHits": 2,
+                "base_chunk_ids": [
+                    "7ffa13ce-1438-51dd-8fac-92f7c37bc318",
+                    "9c23d535-d808-5151-9ea4-c4a4b8668d04"
+                ],
+                "returned_chunk_ids": [
+                    "7ffa13ce-1438-51dd-8fac-92f7c37bc318",
+                    "9c23d535-d808-5151-9ea4-c4a4b8668d04"
+                ],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            },
+            {
+                "source_doc_id": "535aaa3d-41df-58d4-8eb1-897a5d39830a",
+                "page_number": 24,
+                "baseHits": 4,
+                "returnedHits": 4,
+                "base_chunk_ids": [
+                    "5bbc25a1-76d6-58f0-b7ba-a5f7aea87d03",
+                    "7cbc06cd-babf-5058-9807-f1ac5788be68",
+                    "89791abf-b21d-5944-aa99-12e2d220f741",
+                    "d0ca079a-9907-5d05-8510-ed276e183ee6"
+                ],
+                "returned_chunk_ids": [
+                    "5bbc25a1-76d6-58f0-b7ba-a5f7aea87d03",
+                    "7cbc06cd-babf-5058-9807-f1ac5788be68",
+                    "89791abf-b21d-5944-aa99-12e2d220f741",
+                    "d0ca079a-9907-5d05-8510-ed276e183ee6"
+                ],
+                "subsetPass": true,
+                "scopeFilterPass": true,
+                "missingCount": 0,
+                "outsideScopeCount": 0,
+                "missingFromPageCount": 0,
+                "additionalHitsCount": 0,
+                "exactMatchPass": true
+            }
+        ]
+    },
+    "checks": {
+        "subsetPass": true,
+        "scopeFilterPass": true,
+        "missingCount": 0,
+        "outsideScopeCount": 0,
+        "exactSetPass": true,
+        "missingFromPageCount": 0,
+        "additionalHitsCount": 0,
+        "pageDslContainsNeural": true,
+        "baseDslContainsNeural": true
+    },
+    "examples": {
+        "missingFromBase": [],
+        "missingFromPage": [],
+        "outsideRequestedScope": []
+    }
+}
