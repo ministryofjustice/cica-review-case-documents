@@ -1,8 +1,8 @@
-<h2 class="govuk-heading-m">{{ params._source.correspondence_type }} - {{ params._source.source_file_name }}</h2>
+<h2 class="govuk-heading-m">
+  <a href="/document/{{ params.docUuid }}/view/page/{{ params._source.page_number or '0' }}?crn={{ params.caseReferenceNumber | urlencode }}&searchTerm={{ params.searchTerm | urlencode }}&type={{ params.searchType | urlencode }}" class="govuk-link">Page {{ params._source.page_number }} · {{ params._source.correspondence_type }} {{ params._source.source_file_name }}</a>
+</h2>
 <p class="govuk-hint govuk-visually-hidden">Received on {{ params._source.received_date | formatDate}}</p>
 <p class="govuk-body">{{ params._source.chunk_text | safe }}</p>
-
-<p class="govuk-body"><strong>Found on:</strong> <a href="/document/{{ params.docUuid }}/view/page/{{ params._source.page_number or '0' }}?crn={{ params.caseReferenceNumber | urlencode }}&searchTerm={{ params.searchTerm | urlencode }}&type={{ params.searchType | urlencode }}" class="govuk-link">Page {{ params._source.page_number }}</a></p>
 
 {% if params.isDebugMode %}
   <div class="search-result-debug">

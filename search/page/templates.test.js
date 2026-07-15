@@ -81,6 +81,8 @@ describe('search page templates', () => {
             html,
             /\/document\/doc-123\/view\/page\/3\?crn=12-745678&searchTerm=jaw%20fracture&type=semantic/
         );
+        assert.match(html, /Page 3 · Medical report report\.pdf/);
+        assert.doesNotMatch(html, /Found on:/);
     });
 
     it('renders result-level debug tags and relevance score when debug feature flag is enabled', () => {
