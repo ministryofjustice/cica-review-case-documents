@@ -1,5 +1,8 @@
+{% set pageNumber = params._source.page_number or '0' %}
+{% set pageHref = '/document/' + params.docUuid + '/view/page/' + pageNumber + '?crn=' + (params.caseReferenceNumber | urlencode) + '&searchTerm=' + (params.searchTerm | urlencode) + '&type=' + (params.searchType | urlencode) %}
+
 <h2 class="govuk-heading-m">
-  <a href="/document/{{ params.docUuid }}/view/page/{{ params._source.page_number or '0' }}?crn={{ params.caseReferenceNumber | urlencode }}&searchTerm={{ params.searchTerm | urlencode }}&type={{ params.searchType | urlencode }}" class="govuk-link">Page {{ params._source.page_number or '0' }} · {{ params._source.correspondence_type }} {{ params._source.source_file_name }}</a>
+  <a href="{{ pageHref }}" class="govuk-link">Page {{ pageNumber }} - {{ params._source.correspondence_type }}</a>
 </h2>
 <p class="govuk-hint govuk-visually-hidden">Received on {{ params._source.received_date | formatDate}}</p>
 <p class="govuk-body">{{ params._source.chunk_text | safe }}</p>
