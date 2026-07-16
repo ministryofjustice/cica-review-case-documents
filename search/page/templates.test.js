@@ -148,4 +148,30 @@ describe('search page templates', () => {
         assert.doesNotMatch(html, /search-result-debug/);
         assert.doesNotMatch(html, /Relevance score:/);
     });
+
+    it('renders page number fallback in both result link href and visible text when page_number is missing', () => {
+        const html = createRenderer().render('search/page/results.njk', {
+            ...baseResultsContext,
+            searchResults: [
+                {
+                    docUuid: 'doc-123',
+                    searchTerm: 'jaw fracture',
+                    searchType: 'semantic',
+                    caseReferenceNumber: '12-745678',
+                    _source: {
+                        correspondence_type: 'Medical report',
+                        source_file_name: 'report.pdf',
+                        chunk_text: 'Result snippet',
+                        received_date: '2026-01-12T00:00:00Z'
+                    }
+                }
+            ]
+        });
+
+        assert.match(
+            html,
+            /\/document\/doc-123\/view\/page\/0\?crn=12-745678&searchTerm=jaw%20fracture&type=semantic/
+        );
+        assert.match(html, /Page 0 · Medical report report\.pdf/);
+    });
 });
