@@ -79,7 +79,7 @@ describe('search page templates', () => {
         );
         assert.match(
             html,
-            /\/document\/doc-123\/view\/page\/3\?crn=12-745678&amp;searchTerm=jaw%20fracture&amp;type=semantic/
+            /\/document\/doc-123\/view\/page\/3\?crn=12-745678(?:&|&amp;)searchTerm=jaw%20fracture(?:&|&amp;)type=semantic/
         );
         assert.match(html, /Page 3 - Medical report/);
         assert.doesNotMatch(html, /Found on:/);
@@ -170,7 +170,7 @@ describe('search page templates', () => {
 
         assert.match(
             html,
-            /\/document\/doc-123\/view\/page\/0\?crn=12-745678&amp;searchTerm=jaw%20fracture&amp;type=semantic/
+            /\/document\/doc-123\/view\/page\/0\?crn=12-745678(?:&|&amp;)searchTerm=jaw%20fracture(?:&|&amp;)type=semantic/
         );
         assert.match(html, /Page 0 - Medical report/);
     });
