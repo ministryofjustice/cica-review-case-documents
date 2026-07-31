@@ -5,13 +5,18 @@
 # https://docs.snyk.io/developer-tools/snyk-cli/snyk-cli/commands/ignore#expiry-less-than-expiry-greater-than
 version: v1.25.0
 ignore:
-  SNYK-DEBIAN13-ACL-17677882:
-    - "*":
-        reason: "Accepted temporarily: non-fixable in current base image; tracked for remediation via base image updates"
   SNYK-DEBIAN13-ATTR-17678182:
     - "*":
         reason: "Accepted temporarily: non-fixable in current base image; tracked for remediation via base image updates"
   SNYK-DEBIAN13-ACL-17677866:
     - "*":
         reason: "Accepted temporarily: non-fixable in current base image; tracked for remediation via base image updates"
+  SNYK-JS-APIDEVTOOLSJSONSCHEMAREFPARSER-17937352:
+    - "*":
+        reason: "express-openapi-validator@5.6.2 not yet compatible with patched version (15.3.6+); tracking for remediation via upstream update"
+        expires: "2026-10-29"
+  SNYK-JS-JSYAML-18313070:
+    - "*":
+        reason: "js-yaml@4.x required by @apidevtools/json-schema-ref-parser@15.5.0; ESM export compatibility blocker for upgrade to 5.x"
+        expires: "2026-10-29"
 
