@@ -15,8 +15,4 @@ ignore:
     - "*":
         reason: "express-openapi-validator@5.6.2 not yet compatible with patched version (15.3.6+); tracking for remediation via upstream update"
         expires: "2026-10-29"
-  SNYK-JS-JSYAML-18313070:
-    - "*":
-        reason: "js-yaml@4.x required by @apidevtools/json-schema-ref-parser@15.5.0; ESM export compatibility blocker for upgrade to 5.x"
-        expires: "2026-10-29"
 
