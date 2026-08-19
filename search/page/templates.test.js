@@ -83,6 +83,57 @@ describe('search page templates', () => {
         );
         assert.match(html, /Page 3 - Medical report/);
         assert.doesNotMatch(html, /Found on:/);
+        assert.doesNotMatch(html, /govuk-tag--handwriting/);
+    });
+
+    it('renders the handwriting tag when a result page contains handwriting', () => {
+        const html = createRenderer().render('search/page/results.njk', {
+            ...baseResultsContext,
+            searchResults: [
+                {
+                    docUuid: 'doc-123',
+                    searchTerm: 'jaw fracture',
+                    searchType: 'semantic',
+                    caseReferenceNumber: '12-745678',
+                    _source: {
+                        correspondence_type: 'Medical report',
+                        source_file_name: 'report.pdf',
+                        chunk_text: 'Result snippet',
+                        page_number: 3,
+                        page_contains_handwriting: true,
+                        received_date: '2026-01-12T00:00:00Z'
+                    }
+                }
+            ]
+        });
+
+        assert.match(html, /govuk-tag--handwriting/);
+        assert.match(html, /Handwriting/);
+    });
+
+    it('does not render the handwriting tag when a result page does not contain handwriting', () => {
+        const html = createRenderer().render('search/page/results.njk', {
+            ...baseResultsContext,
+            searchResults: [
+                {
+                    docUuid: 'doc-123',
+                    searchTerm: 'jaw fracture',
+                    searchType: 'semantic',
+                    caseReferenceNumber: '12-745678',
+                    _source: {
+                        correspondence_type: 'Medical report',
+                        source_file_name: 'report.pdf',
+                        chunk_text: 'Result snippet',
+                        page_number: 3,
+                        page_contains_handwriting: false,
+                        received_date: '2026-01-12T00:00:00Z'
+                    }
+                }
+            ]
+        });
+
+        assert.doesNotMatch(html, /govuk-tag--handwriting/);
+        assert.doesNotMatch(html, /Handwriting/);
     });
 
     it('renders result-level debug tags and relevance score when debug feature flag is enabled', () => {

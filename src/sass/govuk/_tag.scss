@@ -1,0 +1,11 @@
+.govuk-tag.govuk-tag--handwriting {
+    margin-top: 1rem;
+}
+
+@media (min-width: 800px) {
+    .govuk-tag.govuk-tag--handwriting {
+        float: right;
+        margin-left: 1rem;
+        margin-top: 0;
+    }
+}

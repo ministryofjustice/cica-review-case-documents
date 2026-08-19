@@ -1,8 +1,15 @@
+{%- from "govuk/components/tag/macro.njk" import govukTag -%}
 {% set pageNumber = params._source.page_number or '0' %}
 {% set pageHref = '/document/' + params.docUuid + '/view/page/' + pageNumber + '?crn=' + (params.caseReferenceNumber | urlencode) + '&searchTerm=' + (params.searchTerm | urlencode) + '&type=' + (params.searchType | urlencode) %}
 
 <h2 class="govuk-heading-m">
-  <a href="{{ pageHref }}" class="govuk-link">Page {{ pageNumber }} - {{ params._source.correspondence_type }}</a>
+    <a href="{{ pageHref }}" class="govuk-link">Page {{ pageNumber }} - {{ params._source.correspondence_type }}</a>
+    {% if params._source.page_contains_handwriting %}
+      {{ govukTag({
+          text: "Handwriting",
+          classes: "govuk-tag--handwriting"
+      }) }}
+    {% endif %}
 </h2>
 <p class="govuk-hint govuk-visually-hidden">Received on {{ params._source.received_date | formatDate}}</p>
 <p class="govuk-body">{{ params._source.chunk_text | safe }}</p>
