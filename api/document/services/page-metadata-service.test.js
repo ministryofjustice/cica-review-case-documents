@@ -64,7 +64,8 @@ describe('page-metadata-service', () => {
             page_count: 10,
             page_num: 2,
             imageUrl: 's3://bucket/doc-123/2.png',
-            text: 'Sample text'
+            text: 'Sample text',
+            page_contains_handwriting: false
         });
     });
 

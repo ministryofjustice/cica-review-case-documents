@@ -102,7 +102,8 @@ function createPageMetadataService({
             page_count: pageMetadata.page_count,
             page_num: metadataPageNumber,
             imageUrl: pageMetadata.imageUrl,
-            text: pageMetadata.text
+            text: pageMetadata.text,
+            page_contains_handwriting: fullMetadata.page_contains_handwriting === true
         };
     }
 
