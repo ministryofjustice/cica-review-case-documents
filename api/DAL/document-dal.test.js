@@ -901,7 +901,8 @@ describe('document-dal', () => {
                 'bounding_box',
                 'chunk_type',
                 'chunk_index',
-                'chunk_text'
+                'chunk_text',
+                'page_contains_handwriting'
             ]);
         });
 
