@@ -1,8 +1,10 @@
+@use "node_modules/govuk-frontend/dist/govuk/helpers/media-queries" as govuk;
+
 .govuk-tag.govuk-tag--handwriting {
     margin-top: 1rem;
 }
 
-@media (min-width: 800px) {
+@include govuk.govuk-media-query($from: tablet) {
     .govuk-tag.govuk-tag--handwriting {
         float: right;
         margin-left: 1rem;

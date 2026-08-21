@@ -149,7 +149,10 @@ export function createTextViewerHandler(
                     pageText,
                     pageTextSegments,
                     showPagination: paginationData?.results?.count > 1,
-                    paginationData
+                    paginationData,
+                    pageContainsHandwriting: pageChunks.some(
+                        (chunk) => chunk.page_contains_handwriting === true
+                    )
                 })
             );
 
