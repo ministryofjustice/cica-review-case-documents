@@ -127,7 +127,6 @@ export function createPageViewerHandler(
                     }
                 };
             });
-            console.log('pageChunks', pageChunks);
             const html = render(
                 'document/page/imageview.njk',
                 buildViewModel(req, res, {

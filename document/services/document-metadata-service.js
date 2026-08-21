@@ -97,7 +97,6 @@ function extractMetadataOrThrow(response) {
         error.status = response.statusCode || 500;
         throw error;
     }
-    console.log('response.body.data', response.body.data);
     return response.body.data;
 }
 
