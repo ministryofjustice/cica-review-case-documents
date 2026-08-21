@@ -72,8 +72,9 @@ Husky will now use the scripts defined in the `/.husky` folder:
 `npm run precommit` runs in this order:
 
 1. `npm run precommit:staged`
-   - Runs staged-file Biome checks/fixes.
-   - Runs a conditional Sass build when staged `.scss` files are present.
+   - Guards against partial staging (files with both staged and unstaged changes).
+   - Runs Biome checks/fixes on staged `.js`/`.json` files.
+   - Re-stages any files modified by Biome.
 2. `npm run precommit:secrets`
    - Runs gitleaks secret scan against staged content.
 
@@ -101,8 +102,6 @@ Pre-push does not run formatting fixes, Sass compilation, or OpenAPI builds.
 ## Staged Helper Safety Rules
 
 - The staged helper fails fast if any staged path also has unstaged changes (for example, partial staging in the same file).
-- When staged changes affect `.scss` paths (including adds, edits, deletions, and renames), the helper runs the Sass binary directly and checks tracked `.scss` files for unstaged edits while blocking on untracked `.scss` files before compiling.
-- This keeps `public/stylesheets/all.css` deterministic and prevents generated CSS from picking up unstaged SCSS changes.
 - If this happens, stage the full file, or stash/commit unstaged edits, then retry.
 
 Install the `gitleaks` CLI locally so pre-commit secret scanning can run: https://github.com/gitleaks/gitleaks#installing
@@ -136,15 +135,13 @@ The project uses Husky for Git hooks:
 
 | Hook Name  | Action       | Description                          |
 | ---------- | ------------ | ------------------------------------ |
-| pre-commit | npm run precommit | Runs staged-file Biome checks/fixes, conditional Sass build, and staged gitleaks checks |
+| pre-commit | npm run precommit | Runs staged-file Biome checks/fixes and staged gitleaks checks |
 | pre-push   | npm run prepush | Runs npm audit, non-mutating quality checks (`quality:verify`), tests, and JSDoc linting before push |
 
 Notes for pre-commit:
 - The staged helper aborts when a staged file also has unstaged edits (partial staging).
-- If staged changes affect `.scss` paths, the helper also aborts when any tracked `.scss` file has unstaged edits or when untracked `.scss` files are present.
 - This is intentional to keep staged-only checks deterministic and avoid unstaged changes being pulled into the commit.
 - The staged helper re-stages only files that were already staged before checks, instead of using `git add -A`.
-- The staged helper also stages `public/stylesheets/all.css` when it changes during staged Sass checks.
 - The hook does not run OpenAPI build or auto-stage `api/openapi/openapi-dist.json`; include that file in a commit only when you explicitly stage it. Running `npm run quality:fix` may regenerate the file, but you still need `git add` to include it in the commit.
 
 ### CI/CD Pipeline

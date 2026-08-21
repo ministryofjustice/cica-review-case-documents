@@ -4,3 +4,8 @@ stuff/
 scan.js
 .env
 coverage/
+
+# Generated build artifacts (built in CI/Docker and locally via npm run start:dev)
+public/stylesheets/all.css
+public/js/bundle.js
+src/js/scripts.babel.generated.js
