@@ -202,7 +202,8 @@ function createDocumentDAL({
                         'page_count',
                         'page_num',
                         's3_page_image_s3_uri',
-                        'text'
+                        'text',
+                        'page_contains_handwriting'
                     ]
                 }
             });
@@ -267,7 +268,8 @@ function createDocumentDAL({
                 'bounding_box',
                 'chunk_type',
                 'chunk_index',
-                'chunk_text'
+                'chunk_text',
+                'page_contains_handwriting'
             ];
             queryBody.sort = [{ chunk_index: { order: 'asc' } }];
 
