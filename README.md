@@ -81,7 +81,7 @@ npm run start:dev
 npm start
 ```
 
-`npm run start:dev` automatically builds the OpenAPI spec, compiles Sass, bundles JavaScript, and then starts the dev server with a concurrent Sass watcher. No manual build steps needed.
+`npm run start:dev` runs `prestart:dev` to build the OpenAPI spec, compile Sass, and create the dev JavaScript bundle once before starting the dev server; Sass is then recompiled on changes via `sass:watch`.
 
 Navigate to `http://localhost:5000/` in your browser.
 
