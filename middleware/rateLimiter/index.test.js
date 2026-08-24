@@ -1,10 +1,21 @@
 import assert from 'node:assert';
+import crypto from 'node:crypto';
 import { afterEach, beforeEach, test } from 'node:test';
 import express from 'express';
 import { ipKeyGenerator } from 'express-rate-limit';
 import session from 'express-session';
 import request from 'supertest';
 import generalRateLimiter, { generateRateLimitKey } from './index.js';
+
+/**
+ * Generates a unique synthetic IP address for test isolation.
+ * Uses a random octet to avoid collisions between concurrent tests.
+ * @param {string} [subnet='203.0.113'] - First three octets of the IP.
+ * @returns {string} A unique IP address.
+ */
+function uniqueIp(subnet = '203.0.113') {
+    return `${subnet}.${crypto.randomUUID()}`;
+}
 
 let originalAuthLimit;
 let originalUnauthLimit;
@@ -105,7 +116,7 @@ test('blocks requests over the authenticated rate limit', async () => {
     process.env.APP_RATE_LIMIT_MAX_UNAUTH = '100';
 
     const app = createTestApp();
-    const oid = `auth-limit-user-${Date.now()}`;
+    const oid = `auth-limit-user-${crypto.randomUUID()}`;
 
     const res1 = await request(app).get('/test').set('x-test-oid', oid);
     const res2 = await request(app).get('/test').set('x-test-oid', oid);
@@ -122,7 +133,7 @@ test('blocks requests over the unauthenticated rate limit by IP', async () => {
     process.env.APP_RATE_LIMIT_MAX_UNAUTH = '1';
 
     const app = createTestApp();
-    const ip = `203.0.113.${(Date.now() % 200) + 1}`;
+    const ip = uniqueIp();
 
     const res1 = await request(app).get('/test').set('x-forwarded-for', ip);
     const blocked = await request(app).get('/test').set('x-forwarded-for', ip);
@@ -137,8 +148,8 @@ test('applies independent limits to different authenticated users', async () => 
     process.env.APP_RATE_LIMIT_MAX_UNAUTH = '100';
 
     const app = createTestApp();
-    const user1 = `auth-user-1-${Date.now()}`;
-    const user2 = `auth-user-2-${Date.now()}`;
+    const user1 = `auth-user-1-${crypto.randomUUID()}`;
+    const user2 = `auth-user-2-${crypto.randomUUID()}`;
 
     const user1First = await request(app).get('/test').set('x-test-oid', user1);
     const user1Blocked = await request(app).get('/test').set('x-test-oid', user1);
@@ -154,8 +165,8 @@ test('uses default limits when env vars are not set', async () => {
     delete process.env.APP_RATE_LIMIT_MAX_UNAUTH;
 
     const app = createTestApp();
-    const unauthIp = `198.51.100.${(Date.now() % 200) + 1}`;
-    const authOid = `default-auth-${Date.now()}`;
+    const unauthIp = uniqueIp('198.51.100');
+    const authOid = `default-auth-${crypto.randomUUID()}`;
 
     const unauthRes = await request(app).get('/test').set('x-forwarded-for', unauthIp);
     const authRes = await request(app).get('/test').set('x-test-oid', authOid);
@@ -174,7 +185,7 @@ test('uses configured windowMs when APP_RATE_LIMIT_WINDOW_MS is set', async () =
     // Re-import module with a unique specifier so windowMs is re-evaluated from env.
     const module = await import(`./index.js?window-ms-${Date.now()}`);
     const app = createTestApp(module.default);
-    const ip = `203.0.113.${(Date.now() % 200) + 1}`;
+    const ip = uniqueIp();
 
     const first = await request(app).get('/test').set('x-forwarded-for', ip);
     const blocked = await request(app).get('/test').set('x-forwarded-for', ip);
@@ -197,7 +208,7 @@ test('uses default windowMs when APP_RATE_LIMIT_WINDOW_MS is not set', async () 
     // Re-import module with a unique specifier so windowMs is re-evaluated from env.
     const module = await import(`./index.js?default-window-${Date.now()}`);
     const app = createTestApp(module.default);
-    const ip = `203.0.113.${(Date.now() % 200) + 1}`;
+    const ip = uniqueIp();
 
     const first = await request(app).get('/test').set('x-forwarded-for', ip);
     const blocked = await request(app).get('/test').set('x-forwarded-for', ip);
