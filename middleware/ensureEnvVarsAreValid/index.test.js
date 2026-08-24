@@ -323,11 +323,11 @@ describe('ensureEnvVarsAreValid', () => {
             );
         });
 
-        it('Should throw ConfigurationError when APP_BASE_URL uses http in production', async () => {
+        it('Should throw ConfigurationError when APP_BASE_URL uses http for non-localhost', async () => {
             const { checkEnvVars } = await import('./index.js');
 
             process.env.NODE_ENV = 'production';
-            process.env.APP_BASE_URL = 'http://localhost:5000';
+            process.env.APP_BASE_URL = 'http://example.com';
 
             assert.throws(
                 () => checkEnvVars({ logger: fakeLogger }),
@@ -337,6 +337,15 @@ describe('ensureEnvVarsAreValid', () => {
                     return true;
                 }
             );
+        });
+
+        it('Should not throw https required when APP_BASE_URL uses http://localhost', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.NODE_ENV = 'production';
+            process.env.APP_BASE_URL = 'http://localhost:5000';
+
+            assert.doesNotThrow(() => checkEnvVars({ logger: fakeLogger }));
         });
 
         it('Should throw ConfigurationError if optionalEnvVars is not an array', async () => {
