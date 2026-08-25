@@ -71,12 +71,16 @@ Husky will now use the scripts defined in the `/.husky` folder:
 
 `npm run precommit` runs in this order:
 
-1. `npm run precommit:staged`
+1. `npm run precommit:secrets`
+   - Runs gitleaks secret scan against staged content.
+2. `npm run precommit:staged`
    - Guards against partial staging (files with both staged and unstaged changes).
    - Runs Biome checks/fixes on staged `.js`/`.json` files.
    - Re-stages any files modified by Biome.
-2. `npm run precommit:secrets`
-   - Runs gitleaks secret scan against staged content.
+   - Rebuilds CSS (`npm run sass`) if any `.scss` files are staged.
+   - Runs the unit test suite (`npm test`).
+
+Each step fails fast — a failure at any point blocks the commit immediately.
 
 If you want repo-wide mutating format/build checks, run `npm run quality:fix` manually. It runs format, lint safe auto-fix, Sass build, staged-only gitleaks (`npm run precommit:secrets`), and OpenAPI build.
 
@@ -90,14 +94,13 @@ npm run lint:fix:unsafe
 
 `npm run prepush` runs in this order:
 
-1. `npm audit --audit-level=high --omit=dev` (high severity, production dependencies)
-2. `npm run quality:verify` (lint check + repository gitleaks scan)
-3. `npm run test`
-4. `npm run jsdoc:check`
+1. `npm run quality:verify` (lint check + repository gitleaks scan)
+2. `npm run jsdoc:check`
+3. `npm run audit:ci` (`npm audit --audit-level=high --omit=dev`)
 
-In scripts, this audit command is exposed as `npm run audit:ci` and used by `npm run prepush`.
+Audit runs last because audit failures are typically independent of the code being pushed. Running it as the final gate means you establish whether the branch passes quality and documentation checks before spending time on dependency issues.
 
-Pre-push does not run formatting fixes, Sass compilation, or OpenAPI builds.
+Pre-push does not run formatting fixes, Sass compilation, tests, or OpenAPI builds. Tests run during pre-commit for earlier feedback.
 
 ## Staged Helper Safety Rules
 
@@ -135,8 +138,8 @@ The project uses Husky for Git hooks:
 
 | Hook Name  | Action       | Description                          |
 | ---------- | ------------ | ------------------------------------ |
-| pre-commit | npm run precommit | Runs staged-file Biome checks/fixes and staged gitleaks checks |
-| pre-push   | npm run prepush | Runs npm audit, non-mutating quality checks (`quality:verify`), tests, and JSDoc linting before push |
+| pre-commit | npm run precommit | Runs staged gitleaks, Biome checks/fixes, conditional sass build, and unit tests |
+| pre-push   | npm run prepush | Runs non-mutating quality checks (`quality:verify`), JSDoc linting, and npm audit before push |
 
 Notes for pre-commit:
 - The staged helper aborts when a staged file also has unstaged edits (partial staging).

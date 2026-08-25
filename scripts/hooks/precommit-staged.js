@@ -68,6 +68,8 @@ if (pathsWithUnstagedChanges.length > 0) {
     process.exit(1);
 }
 
+// --- Lint/format staged .js/.json files via Biome ---
+
 const biomeFiles = stagedFiles.filter((file) => {
     if (!/\.(js|json)$/.test(file)) {
         return false;
@@ -88,3 +90,15 @@ if (stagedFiles.length > 0) {
     // Use `--` so path-like arguments are never parsed as git options.
     run('git', ['add', '--', ...stagedFiles]);
 }
+
+// --- Sass build (only if .scss files are staged) ---
+
+const scssFiles = stagedFiles.filter((file) => /\.scss$/.test(file));
+
+if (scssFiles.length > 0) {
+    run('npm', ['run', 'sass']);
+}
+
+// --- Unit tests ---
+
+run('npm', ['test']);
