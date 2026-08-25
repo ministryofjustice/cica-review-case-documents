@@ -257,7 +257,7 @@ describe('ensureEnvVarsAreValid', () => {
             );
         });
 
-        it('Should accept http://localhost APP_BASE_URL in development', async () => {
+        it('Should accept http://localhost APP_BASE_URL when NODE_ENV=development', async () => {
             const { checkEnvVars } = await import('./index.js');
 
             process.env.NODE_ENV = 'development';
@@ -266,7 +266,7 @@ describe('ensureEnvVarsAreValid', () => {
             assert.doesNotThrow(() => checkEnvVars({ logger: fakeLogger }));
         });
 
-        it('Should accept https APP_BASE_URL in production', async () => {
+        it('Should accept https APP_BASE_URL when NODE_ENV=production', async () => {
             const { checkEnvVars } = await import('./index.js');
 
             process.env.NODE_ENV = 'production';
@@ -275,7 +275,7 @@ describe('ensureEnvVarsAreValid', () => {
             assert.doesNotThrow(() => checkEnvVars({ logger: fakeLogger }));
         });
 
-        it('Should throw ConfigurationError when APP_BASE_URL is missing in production', async () => {
+        it('Should throw ConfigurationError when APP_BASE_URL is missing even when NODE_ENV=production', async () => {
             const { checkEnvVars } = await import('./index.js');
 
             process.env.NODE_ENV = 'production';
@@ -323,20 +323,35 @@ describe('ensureEnvVarsAreValid', () => {
             );
         });
 
-        it('Should throw ConfigurationError when APP_BASE_URL uses http in production', async () => {
+        it('Should accept http://localhost APP_BASE_URL when NODE_ENV=production', async () => {
             const { checkEnvVars } = await import('./index.js');
 
             process.env.NODE_ENV = 'production';
             process.env.APP_BASE_URL = 'http://localhost:5000';
+            process.env.APP_ALLOW_INSECURE_COOKIE = 'false';
 
-            assert.throws(
-                () => checkEnvVars({ logger: fakeLogger }),
-                (err) => {
-                    assert.equal(err.name, 'ConfigurationError');
-                    assert.match(err.message, /must use https in production/);
-                    return true;
-                }
-            );
+            assert.doesNotThrow(() => checkEnvVars({ logger: fakeLogger }));
+        });
+
+        it('Should accept http://localhost APP_BASE_URL regardless of APP_ALLOW_INSECURE_COOKIE when NODE_ENV=production', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.NODE_ENV = 'production';
+            process.env.APP_BASE_URL = 'http://localhost:5000';
+            process.env.APP_ALLOW_INSECURE_COOKIE = 'true';
+
+            assert.doesNotThrow(() => checkEnvVars({ logger: fakeLogger }));
+        });
+
+        it('Should accept http://localhost APP_BASE_URL regardless of DEPLOY_ENV when NODE_ENV=production', async () => {
+            const { checkEnvVars } = await import('./index.js');
+
+            process.env.NODE_ENV = 'production';
+            process.env.APP_BASE_URL = 'http://localhost:5000';
+            process.env.APP_ALLOW_INSECURE_COOKIE = 'false';
+            process.env.DEPLOY_ENV = 'local-dev';
+
+            assert.doesNotThrow(() => checkEnvVars({ logger: fakeLogger }));
         });
 
         it('Should throw ConfigurationError if optionalEnvVars is not an array', async () => {

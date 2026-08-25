@@ -24,10 +24,10 @@ This local Kubernetes deployment should be used when you need to test changes th
 
 1.  **Docker Desktop:** Ensure Docker Desktop is installed and running.
 2.  **Kubernetes Enabled:** In Docker Desktop settings, go to the `Kubernetes` section and check `Enable Kubernetes`.
-3.  **Kubeadm Provider:** It is highly recommended to use the `Kubeadm` default cluster provider for a smoother experience, as it shares the image store with the Docker engine. If you use the `kind` provider, you will need to load your local image into the cluster's image store manually.
+3.  **Kubeadm Provider (Required):** Use the `kubeadm` cluster provider in Docker Desktop for this setup. It shares the image store with the Docker engine and matches the workflow documented here.
 4.  **kubectl:** Ensure `kubectl` is installed and configured to point to the `docker-desktop` context.
 5.  **Local Opensearch database running** see [airflow local dev environment](https://github.com/ministryofjustice/cica-review-case-documents-airflow/blob/main/local-dev-environment/README.md)
-6.  Env vars set see [Local Kubernetes/Docker Testing Only](../../.env.example) 
+6.  Env vars set see [Local Kubernetes/Docker Testing Only](../../.env.example)
 
 ### Managing Kubernetes Context
 
@@ -37,26 +37,20 @@ Before running any `kubectl` commands for this local setup, ensure you are targe
 Before switching contexts, capture your current context so you can easily switch back when finished.
 ```shell
 # Save current context to a variable (for use later)
- $ PREVIOUS_CONTEXT=$(kubectl config current-context)
- echo "Current context: $PREVIOUS_CONTEXT"
+PREVIOUS_CONTEXT=$(kubectl config current-context)
+echo "Current context: $PREVIOUS_CONTEXT"
 ```
 
-**2. List available contexts:**
-This command shows all configured clusters. The one with the `*` is currently active.
-```shell
-kubectl config get-contexts
-```
-*Example Output:*
-```
-CURRENT   NAME                                         CLUSTER                                      AUTHINFO              NAMESPACE
-          docker-desktop                               docker-desktop                               docker-desktop
-*         live.cloud-platform.service.justice.gov.uk   live.cloud-platform.service.justice.gov.uk   someone@live   cica-namespace
-```
-
-**3. Switch to the local context:**
-Use this command to target your local Kubernetes cluster for this setup.
+**2. Switch to docker-desktop context (if needed):**
 ```shell
 kubectl config use-context docker-desktop
+```
+
+**3. Verify your context:**
+Confirm the active context is now `docker-desktop`.
+```shell
+kubectl config current-context
+# Should show: docker-desktop
 ```
 
 **4. When you are finished:**
@@ -111,11 +105,13 @@ These commands read values from the file in the project root to create the secre
 
 ## How to Run
 
-1.  **Build/Rebuild the Docker Image:**
+1.  **Build the Docker Image:**
     From the root of the repository, build the image and tag it as `latest`. The `imagePullPolicy: Never` in the deployment manifest requires the image to exist locally.
     ```shell
     docker build -t cica-review-case-documents:latest .
     ```
+    
+    When using Docker Desktop with kubeadm provider, the image is automatically available to the cluster via the shared image store.
 
 2.  **Apply the Kubernetes Manifests:**
     Apply the deployment, service, and ingress manifests from this directory.
@@ -138,6 +134,10 @@ These commands read values from the file in the project root to create the secre
         kubectl port-forward service/cica-case-review-documents-service 5000:80
         ```
         You can now access the application at **http://localhost:5000**.
+        Keep this command running in a terminal while you use the app. If it stops, both `http://localhost:5000` and Entra callbacks to the app will fail.
+
+        If you use Entra auth locally with port-forwarding, the redirect URI must include port `5000`:
+        `http://localhost:5000/auth/callback`
 
     *   **Method 2: Ingress (May require restart)**
         The `ingress.yml` manifest is configured to expose the service at `http://localhost`. Sometimes, the Docker Desktop Ingress controller can be slow to assign an address. If `http://localhost` does not work after a few minutes, a restart of Docker Desktop usually resolves the issue.
@@ -178,7 +178,12 @@ For local development and troubleshooting, this deployment includes a debug side
 
 *   **Pod is in `ErrImagePull` or `ImagePullBackOff` state:**
     *   Ensure you have built the image locally with the correct tag: `cica-review-case-documents:latest`.
-    *   If using the `kind` provider in Docker Desktop, the image needs to be loaded into the kind cluster: `kind load docker-image cica-review-case-documents:latest`.
+    *   In Docker Desktop settings, ensure Kubernetes is enabled and the provider is set to `kubeadm`.
+
+*   **`kubernetes.docker.internal` DNS/connection errors (for example `no such host`):**
+    *   Docker Desktop Kubernetes is not yet healthy or fully initialized.
+    *   In Docker Desktop settings, ensure `Kubernetes` is enabled and using the `kubeadm` provider.
+    *   Wait a few moments for Docker Desktop to finish initializing the cluster, then try again.
 
 *   **Pod is in `CreateContainerConfigError` state:**
     *   This almost always means the secrets are missing. Run the `kubectl create secret` commands in the setup section.

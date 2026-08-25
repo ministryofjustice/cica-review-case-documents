@@ -3,8 +3,19 @@
 // IMPORTANT: This conditional import must remain first to load local development environment variables.
 if (process.env.DEPLOY_ENV === 'local-dev') {
     // Dynamically import for local development only.
-    // In deployed environments, this code will not run, avoiding the need for the file to exist.
-    await import('../loadLocalEnv.js');
+    // In containerized local-dev deployments the loader file may be absent, so continue without it.
+    try {
+        await import('../loadLocalEnv.js');
+    } catch (error) {
+        // only ignore the error if it's a missing module error for the loadLocalEnv.js file
+        const isMissingLocalEnvLoader =
+            error?.code === 'ERR_MODULE_NOT_FOUND' &&
+            /(?:^|[\\/])loadLocalEnv\.js(?:['"\s]|$)/.test(error?.message ?? '');
+
+        if (!isMissingLocalEnvLoader) {
+            throw error;
+        }
+    }
 }
 
 import http from 'node:http';

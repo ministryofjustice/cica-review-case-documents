@@ -192,8 +192,8 @@ function checkMandatoryEnvVars(mandatoryEnvVars = getMandatoryEnvVars()) {
 /**
  * Validates APP_BASE_URL for trusted Entra redirect URI generation.
  *
- * Requires an absolute URL. In production the URL must use https. In non-production,
- * https is allowed everywhere and http is only allowed for localhost.
+ * Requires an absolute URL. `https:` is allowed for any host, while `http:` is
+ * only allowed when hostname is `localhost`.
  *
  * @throws {VError} Throws ConfigurationError when APP_BASE_URL is missing or unsafe.
  */
@@ -217,15 +217,6 @@ function checkAppBaseUrlForEntraRedirectUri() {
 
         const isHttps = parsedUrl.protocol === 'https:';
         const isLocalHttp = parsedUrl.protocol === 'http:' && parsedUrl.hostname === 'localhost';
-
-        if (process.env.NODE_ENV === 'production' && !isHttps) {
-            throw new VError(
-                {
-                    name: 'ConfigurationError'
-                },
-                'Environment variable "APP_BASE_URL" must use https in production for Entra redirect URI'
-            );
-        }
 
         if (!isHttps && !isLocalHttp) {
             throw new VError(
