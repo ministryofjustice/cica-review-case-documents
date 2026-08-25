@@ -37,5 +37,8 @@ jobs:
           sudo install /tmp/gitleaks /usr/local/bin/gitleaks
           gitleaks version
 
+      - name: Validate SCSS compilation
+        run: npm run sass
+
       - name: Run pre-push checks
         run: npm run prepush

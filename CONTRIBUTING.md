@@ -77,7 +77,7 @@ Husky will now use the scripts defined in the `/.husky` folder:
    - Guards against partial staging (files with both staged and unstaged changes).
    - Runs Biome checks/fixes on staged `.js`/`.json` files.
    - Re-stages any files modified by Biome.
-   - Rebuilds CSS (`npm run sass`) if any `.scss` files are staged.
+   - Validates SCSS compilation (`npm run sass`) if any `.scss` files are staged. The compiled CSS is gitignored and not committed — this step exists solely to catch syntax errors at commit time rather than at deployment.
    - Runs the unit test suite (`npm test`).
 
 Each step fails fast — a failure at any point blocks the commit immediately.
