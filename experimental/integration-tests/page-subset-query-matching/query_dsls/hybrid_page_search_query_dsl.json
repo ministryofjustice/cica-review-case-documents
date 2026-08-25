@@ -1,0 +1,81 @@
+{
+    "_source": {
+        "includes": ["chunk_id", "chunk_text", "page_number", "case_ref", "chunk_type"]
+    },
+    "query": {
+        "index": "page_chunks",
+        "preference": "session-edb18f1a1d5884f245c40fe76a64e864b337bfadcea2391d648f4b8643a976a9",
+        "body": {
+            "query": {
+                "bool": {
+                    "filter": [
+                        {
+                            "term": {
+                                "case_ref": "26-700001"
+                            }
+                        },
+                        {
+                            "term": {
+                                "source_doc_id": "4bcba3af-d9ab-53f2-9fd7-bf4263f8118e"
+                            }
+                        },
+                        {
+                            "term": {
+                                "page_number": 6
+                            }
+                        }
+                    ],
+                    "should": [
+                        {
+                            "match": {
+                                "chunk_text": {
+                                    "query": "Did the applicant suffer brain damage?",
+                                    "boost": 20
+                                }
+                            }
+                        },
+                        {
+                            "neural": {
+                                "embedding": {
+                                    "query_text": "Did the applicant suffer brain damage?",
+                                    "k": 250,
+                                    "filter": {
+                                        "bool": {
+                                            "filter": [
+                                                {
+                                                    "term": {
+                                                        "case_ref": "26-700001"
+                                                    }
+                                                },
+                                                {
+                                                    "term": {
+                                                        "source_doc_id": "4bcba3af-d9ab-53f2-9fd7-bf4263f8118e"
+                                                    }
+                                                },
+                                                {
+                                                    "term": {
+                                                        "page_number": 6
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "boost": 4
+                                }
+                            }
+                        }
+                    ],
+                    "minimum_should_match": 1
+                }
+            },
+            "min_score": 2.25,
+            "sort": [
+                {
+                    "chunk_index": {
+                        "order": "asc"
+                    }
+                }
+            ]
+        }
+    }
+}

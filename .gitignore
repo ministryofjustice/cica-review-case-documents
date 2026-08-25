@@ -4,3 +4,4 @@ stuff/
 scan.js
 .env
 coverage/
+expeerimental/integration-tests/page-subset-query-matching/results
