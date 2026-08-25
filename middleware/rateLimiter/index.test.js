@@ -1,21 +1,10 @@
 import assert from 'node:assert';
-import crypto from 'node:crypto';
 import { afterEach, beforeEach, test } from 'node:test';
 import express from 'express';
 import { ipKeyGenerator } from 'express-rate-limit';
 import session from 'express-session';
 import request from 'supertest';
 import generalRateLimiter, { generateRateLimitKey } from './index.js';
-
-/**
- * Generates a unique synthetic IP address for test isolation.
- * Uses a random octet to avoid collisions between concurrent tests.
- * @param {string} [subnet='203.0.113'] - First three octets of the IP.
- * @returns {string} A unique IP address.
- */
-function uniqueIp(subnet = '203.0.113') {
-    return `${subnet}.${crypto.randomUUID()}`;
-}
 
 let originalAuthLimit;
 let originalUnauthLimit;
@@ -116,11 +105,10 @@ test('blocks requests over the authenticated rate limit', async () => {
     process.env.APP_RATE_LIMIT_MAX_UNAUTH = '100';
 
     const app = createTestApp();
-    const oid = `auth-limit-user-${crypto.randomUUID()}`;
 
-    const res1 = await request(app).get('/test').set('x-test-oid', oid);
-    const res2 = await request(app).get('/test').set('x-test-oid', oid);
-    const blocked = await request(app).get('/test').set('x-test-oid', oid);
+    const res1 = await request(app).get('/test').set('x-test-oid', 'auth-limit-user');
+    const res2 = await request(app).get('/test').set('x-test-oid', 'auth-limit-user');
+    const blocked = await request(app).get('/test').set('x-test-oid', 'auth-limit-user');
 
     assert.strictEqual(res1.status, 200);
     assert.strictEqual(res2.status, 200);
@@ -133,10 +121,9 @@ test('blocks requests over the unauthenticated rate limit by IP', async () => {
     process.env.APP_RATE_LIMIT_MAX_UNAUTH = '1';
 
     const app = createTestApp();
-    const ip = uniqueIp();
 
-    const res1 = await request(app).get('/test').set('x-forwarded-for', ip);
-    const blocked = await request(app).get('/test').set('x-forwarded-for', ip);
+    const res1 = await request(app).get('/test').set('x-forwarded-for', '203.0.113.10');
+    const blocked = await request(app).get('/test').set('x-forwarded-for', '203.0.113.10');
 
     assert.strictEqual(res1.status, 200);
     assert.strictEqual(blocked.status, 429);
@@ -148,12 +135,10 @@ test('applies independent limits to different authenticated users', async () => 
     process.env.APP_RATE_LIMIT_MAX_UNAUTH = '100';
 
     const app = createTestApp();
-    const user1 = `auth-user-1-${crypto.randomUUID()}`;
-    const user2 = `auth-user-2-${crypto.randomUUID()}`;
 
-    const user1First = await request(app).get('/test').set('x-test-oid', user1);
-    const user1Blocked = await request(app).get('/test').set('x-test-oid', user1);
-    const user2First = await request(app).get('/test').set('x-test-oid', user2);
+    const user1First = await request(app).get('/test').set('x-test-oid', 'independent-user-1');
+    const user1Blocked = await request(app).get('/test').set('x-test-oid', 'independent-user-1');
+    const user2First = await request(app).get('/test').set('x-test-oid', 'independent-user-2');
 
     assert.strictEqual(user1First.status, 200);
     assert.strictEqual(user1Blocked.status, 429);
@@ -165,11 +150,9 @@ test('uses default limits when env vars are not set', async () => {
     delete process.env.APP_RATE_LIMIT_MAX_UNAUTH;
 
     const app = createTestApp();
-    const unauthIp = uniqueIp('198.51.100');
-    const authOid = `default-auth-${crypto.randomUUID()}`;
 
-    const unauthRes = await request(app).get('/test').set('x-forwarded-for', unauthIp);
-    const authRes = await request(app).get('/test').set('x-test-oid', authOid);
+    const unauthRes = await request(app).get('/test').set('x-forwarded-for', '198.51.100.20');
+    const authRes = await request(app).get('/test').set('x-test-oid', 'default-auth-user');
 
     assert.strictEqual(unauthRes.status, 200);
     assert.strictEqual(authRes.status, 200);
@@ -185,10 +168,9 @@ test('uses configured windowMs when APP_RATE_LIMIT_WINDOW_MS is set', async () =
     // Re-import module with a unique specifier so windowMs is re-evaluated from env.
     const module = await import(`./index.js?window-ms-${Date.now()}`);
     const app = createTestApp(module.default);
-    const ip = uniqueIp();
 
-    const first = await request(app).get('/test').set('x-forwarded-for', ip);
-    const blocked = await request(app).get('/test').set('x-forwarded-for', ip);
+    const first = await request(app).get('/test').set('x-forwarded-for', '203.0.113.30');
+    const blocked = await request(app).get('/test').set('x-forwarded-for', '203.0.113.30');
     assert.strictEqual(first.status, 200);
     assert.strictEqual(blocked.status, 429);
 
@@ -196,7 +178,7 @@ test('uses configured windowMs when APP_RATE_LIMIT_WINDOW_MS is set', async () =
         setTimeout(resolve, 150);
     });
 
-    const afterReset = await request(app).get('/test').set('x-forwarded-for', ip);
+    const afterReset = await request(app).get('/test').set('x-forwarded-for', '203.0.113.30');
     assert.strictEqual(afterReset.status, 200);
 });
 
@@ -208,10 +190,9 @@ test('uses default windowMs when APP_RATE_LIMIT_WINDOW_MS is not set', async () 
     // Re-import module with a unique specifier so windowMs is re-evaluated from env.
     const module = await import(`./index.js?default-window-${Date.now()}`);
     const app = createTestApp(module.default);
-    const ip = uniqueIp();
 
-    const first = await request(app).get('/test').set('x-forwarded-for', ip);
-    const blocked = await request(app).get('/test').set('x-forwarded-for', ip);
+    const first = await request(app).get('/test').set('x-forwarded-for', '203.0.113.40');
+    const blocked = await request(app).get('/test').set('x-forwarded-for', '203.0.113.40');
     assert.strictEqual(first.status, 200);
     assert.strictEqual(blocked.status, 429);
 
@@ -220,6 +201,6 @@ test('uses default windowMs when APP_RATE_LIMIT_WINDOW_MS is not set', async () 
     });
 
     // With default window (15 minutes), client should still be blocked shortly after.
-    const stillBlocked = await request(app).get('/test').set('x-forwarded-for', ip);
+    const stillBlocked = await request(app).get('/test').set('x-forwarded-for', '203.0.113.40');
     assert.strictEqual(stillBlocked.status, 429);
 });
