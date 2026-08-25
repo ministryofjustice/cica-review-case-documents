@@ -37,7 +37,7 @@
         "quality:verify": "npm run lint:check && npm run prepush:secrets",
         "audit:ci": "npm audit --audit-level=high --omit=dev",
         "precommit": "npm run precommit:secrets && npm run precommit:staged",
-        "prepush": "npm run quality:verify && npm run jsdoc:check && npm run audit:ci",
+        "prepush": "npm test && npm run quality:verify && npm run jsdoc:check && npm run audit:ci",
         "jsdoc:check": "eslint .",
         "prepare": "husky"
     },
