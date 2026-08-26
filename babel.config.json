@@ -3,11 +3,8 @@
         [
             "@babel/preset-env",
             {
-                "useBuiltIns": "entry",
-                "corejs": "3.8",
                 "modules": false,
                 "targets": {
-                    "node": "current",
                     "browsers": ["last 2 versions", "not dead"]
                 }
             }

@@ -218,7 +218,7 @@ function checkAppBaseUrlForEntraRedirectUri() {
         const isHttps = parsedUrl.protocol === 'https:';
         const isLocalHttp = parsedUrl.protocol === 'http:' && parsedUrl.hostname === 'localhost';
 
-        if (process.env.NODE_ENV === 'production' && !isHttps) {
+        if (process.env.NODE_ENV === 'production' && !isHttps && !isLocalHttp) {
             throw new VError(
                 {
                     name: 'ConfigurationError'

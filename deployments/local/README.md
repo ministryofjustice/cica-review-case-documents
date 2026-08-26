@@ -130,17 +130,11 @@ These commands read values from the file in the project root to create the secre
     ```
 
 3.  **Access the Application:**
-    The pod will start, and the application will be running inside the cluster on port 5000. To access it from your browser:
-
-    *   **Method 1: Port-Forwarding (Reliable)**
-        This is the most reliable way to connect. It forwards a local port on your machine directly to the service running in the cluster.
-        ```shell
-        kubectl port-forward service/cica-case-review-documents-service 5000:80
-        ```
-        You can now access the application at **http://localhost:5000**.
-
-    *   **Method 2: Ingress (May require restart)**
-        The `ingress.yml` manifest is configured to expose the service at `http://localhost`. Sometimes, the Docker Desktop Ingress controller can be slow to assign an address. If `http://localhost` does not work after a few minutes, a restart of Docker Desktop usually resolves the issue.
+    The pod will start, and the application will be running inside the cluster on port 5000. To access it from your browser, use port-forwarding. This forwards a local port on your machine directly to the service running in the cluster.
+    ```shell
+    kubectl port-forward service/cica-case-review-documents-service 5000:80
+    ```
+    You can now access the application at **http://localhost:5000**.
 
 ## Debugging with the Built-in Sidecar Container
 

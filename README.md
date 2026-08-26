@@ -71,24 +71,17 @@ See [`.env.example`](./.env.example) for all available configuration options and
 Security note: `APP_API_JWT_ISSUER` and `APP_API_JWT_AUDIENCE` are required.
 Set explicit values in each environment (Dev/UAT/Prod) so APP -> API JWT verification is scoped and auditable.
 
-### 3. Build OpenAPI Specification
+### 3. Run the Application
 
 ```bash
-# Build the OpenAPI specification
-npm run openapi:build
-```
-
-This generates the API documentation (`api/openapi/openapi-dist.json`). The OpenAPI spec must be manually rebuilt when making changes to the API schema or endpoints.
-
-### 4. Run the Application
-
-```bash
-# Development mode (with auto-reload and debugger)
+# Development mode (with auto-reload, Sass watcher, and debugger)
 npm run start:dev
 
 # Production mode
 npm start
 ```
+
+`npm run start:dev` runs `prestart:dev` to build the OpenAPI spec, compile Sass, and create the dev JavaScript bundle once before starting the dev server; Sass is then recompiled on changes via `sass:watch`.
 
 Navigate to `http://localhost:5000/` in your browser.
 
@@ -102,13 +95,15 @@ For a complete list of available npm scripts, see the `scripts` section in [`pac
 | Script | Description |
 | - | - |
 | `npm start` | Start the app in production mode |
-| `npm run start:dev` | Start with auto-reload and debugger on port 9229 |
+| `npm run start:dev` | Build assets, start dev server with Sass watcher and debugger on port 9229 |
 | `npm test` | Run all tests |
 | `npm run lint` | Check code with Biome linter |
 | `npm run format` | Format code with Biome |
-| `npm run sass` | Compile Sass to CSS |
+| `npm run sass` | Compile Sass to CSS (one-shot) |
+| `npm run sass:watch` | Compile Sass to CSS and watch for changes |
 | `npm run build` | Build production JavaScript |
 | `npm run build:dev` | Build development JavaScript with source maps |
+| `npm run openapi:build` | Build the OpenAPI specification |
 
 
 ## Testing
@@ -280,6 +275,15 @@ http://localhost:5000/api/docs
 ```
 
 **Note:** `npm run start:dev` builds the OpenAPI specification once before startup. If you later change files under `api/openapi/`, run `npm run openapi:build` again or use `npm run openapi:watch`, because the dev server ignores that folder for restarts.
+
+### Rebuild the OpenAPI specification
+
+```bash
+# Build the OpenAPI specification
+npm run openapi:build
+```
+
+This generates the API documentation (`api/openapi/openapi-dist.json`). The OpenAPI spec must be manually rebuilt when making changes to the API schema or endpoints.
 
 **Quick API reference:**
 
