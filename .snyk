@@ -15,4 +15,21 @@ ignore:
     - "*":
         reason: "express-openapi-validator@5.6.2 not yet compatible with patched version (15.3.6+); tracking for remediation via upstream update"
         expires: "2026-10-29"
+  SNYK-JS-FASTURI-19256867:
+    - "*":
+        reason: "ajv@8.20.0 not yet compatible with patched versions (3.16, 4.1.3); tracking for remediation via upstream update"
+        expires: "2026-10-29"
+  SNYK-JS-FASTURI-19256869:
+    - "*":
+        reason: "ajv@8.20.0 not yet compatible with patched versions (3.16, 4.1.3); tracking for remediation via upstream update"
+        expires: "2026-10-29"
+  SNYK-JS-FASTURI-19256871:
+    - "*":
+        reason: "ajv@8.20.0 not yet compatible with patched versions (3.16, 4.1.3); tracking for remediation via upstream update"
+        expires: "2026-10-29"
+  SNYK-JS-FASTURI-19256873:
+    - "*":
+        reason: "ajv@8.20.0 not yet compatible with patched versions (3.16, 4.1.3); tracking for remediation via upstream update"
+        expires: "2026-10-29"
+
 
