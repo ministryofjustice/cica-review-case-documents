@@ -368,6 +368,89 @@ describe('Page Viewer Handler', () => {
             assert.equal(nextError, undefined);
             assert.equal(responseSent, true);
         });
+
+        it('passes pageContainsHandwriting as true when metadata indicates handwriting', async () => {
+            let renderParams;
+
+            const mockCreateMetadataService = () => ({
+                getPageMetadata: async () =>
+                    buildPageMetadataFixture({
+                        overrides: {
+                            page_contains_handwriting: true
+                        }
+                    })
+            });
+
+            const handler = createPageViewerHandler(
+                mockCreateMetadataService,
+                mockCreatePageChunksService,
+                () => ({
+                    render: (_view, params) => {
+                        renderParams = params;
+                        return 'render-output-handwriting-true';
+                    }
+                })
+            );
+
+            const req = {
+                validatedParams: {
+                    documentId: 'doc-123',
+                    pageNumber: 1,
+                    crn: 'CASE-2024-001'
+                },
+                query: { searchTerm: 'test' },
+                session: { entraUser: { oid: 'entra-oid-123' } },
+                log: { info: () => {}, error: () => {}, warn: () => {} }
+            };
+
+            const res = {
+                locals: { csrfToken: 'csrf-token', cspNonce: 'nonce' },
+                send: () => {}
+            };
+
+            await handler(req, res, () => {});
+
+            assert.equal(renderParams.pageContainsHandwriting, true);
+        });
+
+        it('passes pageContainsHandwriting as false when metadata does not include the field', async () => {
+            let renderParams;
+
+            const mockCreateMetadataService = () => ({
+                getPageMetadata: async () => buildPageMetadataFixture()
+            });
+
+            const handler = createPageViewerHandler(
+                mockCreateMetadataService,
+                mockCreatePageChunksService,
+                () => ({
+                    render: (_view, params) => {
+                        renderParams = params;
+                        return 'render-output-handwriting-false';
+                    }
+                })
+            );
+
+            const req = {
+                validatedParams: {
+                    documentId: 'doc-123',
+                    pageNumber: 1,
+                    crn: 'CASE-2024-001'
+                },
+                query: { searchTerm: 'test' },
+                session: { entraUser: { oid: 'entra-oid-123' } },
+                log: { info: () => {}, error: () => {}, warn: () => {} }
+            };
+
+            const res = {
+                locals: { csrfToken: 'csrf-token', cspNonce: 'nonce' },
+                send: () => {}
+            };
+
+            await handler(req, res, () => {});
+
+            assert.equal(renderParams.pageContainsHandwriting, false);
+        });
     });
 
     describe('Error handling', () => {
