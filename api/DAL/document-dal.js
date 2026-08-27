@@ -268,8 +268,7 @@ function createDocumentDAL({
                 'bounding_box',
                 'chunk_type',
                 'chunk_index',
-                'chunk_text',
-                'page_contains_handwriting'
+                'chunk_text'
             ];
             queryBody.sort = [{ chunk_index: { order: 'asc' } }];
 
