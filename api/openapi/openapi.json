@@ -175,6 +175,10 @@
                                                 "text": {
                                                     "type": "string",
                                                     "description": "Full text extracted from the page"
+                                                },
+                                                "page_contains_handwriting": {
+                                                    "type": "boolean",
+                                                    "description": "Whether the page contains handwriting"
                                                 }
                                             }
                                         }
@@ -186,7 +190,8 @@
                                         "page_count": 50,
                                         "page_num": 6,
                                         "imageUrl": "s3://document-page-bucket/26-711111/55b2ea3c-3eae-54f7-b81d-292db7c84be7/pages/6.png",
-                                        "text": "28-Nov-2022 Gabapentin 600mg tablets"
+                                        "text": "28-Nov-2022 Gabapentin 600mg tablets",
+                                        "page_contains_handwriting": false
                                     }
                                 }
                             }
