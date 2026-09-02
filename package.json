@@ -82,7 +82,16 @@
         "eslint-plugin-jsdoc": "^64.3.5",
         "husky": "^9.1.7",
         "nodemon": "^3.1.14",
-        "sass": "^1.104.0",
-        "webpack-cli": "^7.2.3"
+        "sass": "^1.103.1",
+        "webpack-cli": "^7.2.2"
+    },
+    "overrides": {
+        "multer": "2.3.0",
+        "js-yaml": "5.4.1",
+        "express-openapi-validator": {
+            "@apidevtools/json-schema-ref-parser": {
+                "js-yaml": "4.3.2"
+            }
+        }
     }
 }
