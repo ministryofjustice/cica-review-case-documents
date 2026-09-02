@@ -200,6 +200,56 @@ describe('search page templates', () => {
         assert.doesNotMatch(html, /Relevance score:/);
     });
 
+    it('renders handwriting inset banner when hasHandwriting is true', () => {
+        const html = createRenderer().render('search/page/results.njk', {
+            ...baseResultsContext,
+            hasHandwriting: true,
+            searchResults: [
+                {
+                    docUuid: 'doc-123',
+                    searchTerm: 'jaw fracture',
+                    searchType: 'semantic',
+                    caseReferenceNumber: '12-745678',
+                    _source: {
+                        correspondence_type: 'Medical report',
+                        source_file_name: 'report.pdf',
+                        chunk_text: 'Result snippet',
+                        page_number: 3,
+                        received_date: '2026-01-12T00:00:00Z'
+                    }
+                }
+            ]
+        });
+
+        assert.match(html, /govuk-inset-text--moj/);
+        assert.match(html, /This document includes handwriting - check carefully/);
+    });
+
+    it('does not render handwriting inset banner when hasHandwriting is false', () => {
+        const html = createRenderer().render('search/page/results.njk', {
+            ...baseResultsContext,
+            hasHandwriting: false,
+            searchResults: [
+                {
+                    docUuid: 'doc-123',
+                    searchTerm: 'jaw fracture',
+                    searchType: 'semantic',
+                    caseReferenceNumber: '12-745678',
+                    _source: {
+                        correspondence_type: 'Medical report',
+                        source_file_name: 'report.pdf',
+                        chunk_text: 'Result snippet',
+                        page_number: 3,
+                        received_date: '2026-01-12T00:00:00Z'
+                    }
+                }
+            ]
+        });
+
+        assert.doesNotMatch(html, /govuk-inset-text--moj/);
+        assert.doesNotMatch(html, /This document includes handwriting - check carefully/);
+    });
+
     it('renders page number fallback in both result link href and visible text when page_number is missing', () => {
         const html = createRenderer().render('search/page/results.njk', {
             ...baseResultsContext,

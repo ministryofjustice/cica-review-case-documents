@@ -75,6 +75,13 @@
 
     <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
 
+    {% if hasHandwriting %}
+    {{ govukInsetText({
+        text: "This document includes handwriting - check carefully",
+        classes: "govuk-inset-text--moj"
+    }) }}
+    {% endif %}
+
     {% set paginationItems = [] %}
     {% set paginationPrevious = {
             text: "Previous",
