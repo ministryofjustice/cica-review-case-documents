@@ -632,6 +632,183 @@ describe('Search Routes', () => {
         });
     });
 
+    describe('GET / handwriting banner', () => {
+        const buildSearchServiceWithDocIds = (docIds) => () => ({
+            getSearchResults: async () => ({
+                body: {
+                    data: {
+                        attributes: {
+                            results: {
+                                hits: docIds.map((docId) => ({
+                                    _score: 1,
+                                    _source: { source_doc_id: docId }
+                                })),
+                                total: { value: docIds.length }
+                            }
+                        }
+                    }
+                }
+            })
+        });
+
+        const buildAppWithSession = (router, session) => {
+            const testApp = express();
+            testApp.use((req, res, next) => {
+                req.session = session;
+                req.log = { info: () => {}, error: () => {}, warn: () => {} };
+                res.locals.csrfToken = 'test-csrf-token';
+                res.locals.cspNonce = 'test-csp-nonce';
+                next();
+            });
+            testApp.use('/search', router);
+            return testApp;
+        };
+
+        const baseSession = () => ({
+            caseSelected: true,
+            caseReferenceNumber: '12345',
+            username: 'search.user@example.com',
+            entraUser: { oid: 'entra-oid-123' }
+        });
+
+        it('sets hasHandwriting true when a result document contains handwriting', async () => {
+            let queriedDocumentIds;
+            let queryCallCount = 0;
+            const router = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: buildSearchServiceWithDocIds(['doc-a', 'doc-b']),
+                createDocumentDAL: () => ({
+                    getDocumentsContainingHandwriting: async (documentIds) => {
+                        queryCallCount += 1;
+                        queriedDocumentIds = documentIds;
+                        return ['doc-b'];
+                    }
+                })
+            });
+
+            const res = await request(buildAppWithSession(router, baseSession())).get(
+                `/search?query=test&type=${DEFAULT_SEARCH_TYPE}`
+            );
+
+            assert.strictEqual(res.statusCode, 200);
+            assert.strictEqual(lastRenderParams.hasHandwriting, true);
+            // A single batched query covers all uncached documents.
+            assert.strictEqual(queryCallCount, 1);
+            assert.deepStrictEqual(queriedDocumentIds, ['doc-a', 'doc-b']);
+        });
+
+        it('sets hasHandwriting false when no result document contains handwriting', async () => {
+            const router = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: buildSearchServiceWithDocIds(['doc-a', 'doc-b']),
+                createDocumentDAL: () => ({
+                    getDocumentsContainingHandwriting: async () => []
+                })
+            });
+
+            const res = await request(buildAppWithSession(router, baseSession())).get(
+                `/search?query=test&type=${DEFAULT_SEARCH_TYPE}`
+            );
+
+            assert.strictEqual(res.statusCode, 200);
+            assert.strictEqual(lastRenderParams.hasHandwriting, false);
+        });
+
+        it('caches handwriting results in the session keyed by document id (true and false)', async () => {
+            let queryCount = 0;
+            const router = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: buildSearchServiceWithDocIds(['doc-a', 'doc-b']),
+                createDocumentDAL: () => ({
+                    getDocumentsContainingHandwriting: async () => {
+                        queryCount += 1;
+                        return ['doc-b'];
+                    }
+                })
+            });
+
+            const session = baseSession();
+
+            const res = await request(buildAppWithSession(router, session)).get(
+                `/search?query=test&type=${DEFAULT_SEARCH_TYPE}`
+            );
+
+            assert.strictEqual(res.statusCode, 200);
+            assert.strictEqual(lastRenderParams.hasHandwriting, true);
+            assert.strictEqual(queryCount, 1);
+            // Matching documents cache true; queried non-matching documents cache false.
+            assert.strictEqual(session.hasHandwriting['doc-b'], true);
+            assert.strictEqual(session.hasHandwriting['doc-a'], false);
+        });
+
+        it('uses the cached session value instead of querying the DAL again', async () => {
+            let queryCount = 0;
+            const router = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: buildSearchServiceWithDocIds(['doc-a']),
+                createDocumentDAL: () => ({
+                    getDocumentsContainingHandwriting: async () => {
+                        queryCount += 1;
+                        return ['doc-a'];
+                    }
+                })
+            });
+
+            const session = { ...baseSession(), hasHandwriting: { 'doc-a': true } };
+
+            const res = await request(buildAppWithSession(router, session)).get(
+                `/search?query=test&type=${DEFAULT_SEARCH_TYPE}`
+            );
+
+            assert.strictEqual(res.statusCode, 200);
+            assert.strictEqual(lastRenderParams.hasHandwriting, true);
+            assert.strictEqual(queryCount, 0);
+        });
+
+        it('only queries the DAL for documents not already cached', async () => {
+            let queriedDocumentIds;
+            const router = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: buildSearchServiceWithDocIds(['doc-a', 'doc-b']),
+                createDocumentDAL: () => ({
+                    getDocumentsContainingHandwriting: async (documentIds) => {
+                        queriedDocumentIds = documentIds;
+                        return [];
+                    }
+                })
+            });
+
+            // doc-a is already cached (false); only doc-b should be queried.
+            const session = { ...baseSession(), hasHandwriting: { 'doc-a': false } };
+
+            const res = await request(buildAppWithSession(router, session)).get(
+                `/search?query=test&type=${DEFAULT_SEARCH_TYPE}`
+            );
+
+            assert.strictEqual(res.statusCode, 200);
+            assert.deepStrictEqual(queriedDocumentIds, ['doc-b']);
+        });
+
+        it('sets hasHandwriting false and still renders when the handwriting check fails', async () => {
+            const router = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: buildSearchServiceWithDocIds(['doc-a']),
+                createDocumentDAL: () => ({
+                    getDocumentsContainingHandwriting: async () => {
+                        throw new Error('OpenSearch unavailable');
+                    }
+                })
+            });
+
+            const res = await request(buildAppWithSession(router, baseSession())).get(
+                `/search?query=test&type=${DEFAULT_SEARCH_TYPE}`
+            );
+
+            assert.strictEqual(res.statusCode, 200);
+            assert.strictEqual(lastRenderParams.hasHandwriting, false);
+        });
+    });
+
     describe('POST /', () => {
         it('should redirect to the GET route with the query parameter and default type', async () => {
             const res = await request(app).post('/search').send({ query: ' search term ' });
