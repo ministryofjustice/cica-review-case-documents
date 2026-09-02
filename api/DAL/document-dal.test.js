@@ -474,6 +474,157 @@ describe('document-dal', () => {
         });
     });
 
+    describe('getDocumentsContainingHandwriting', () => {
+        const aggregationResponse = (docIds) => ({
+            body: {
+                aggregations: {
+                    documents_with_handwriting: {
+                        buckets: docIds.map((key) => ({ key, doc_count: 1 }))
+                    }
+                }
+            }
+        });
+
+        it('should return the subset of documents that contain handwriting', async () => {
+            const mockDB = {
+                query: async () => aggregationResponse(['doc-b'])
+            };
+
+            const dal = createDocumentDAL({
+                caseReferenceNumber: '12-745678',
+                createDBQuery: () => mockDB,
+                logger: mockLogger
+            });
+
+            const result = await dal.getDocumentsContainingHandwriting(['doc-a', 'doc-b']);
+
+            assert.deepStrictEqual(result, ['doc-b']);
+        });
+
+        it('should return an empty array when no documents contain handwriting', async () => {
+            const mockDB = {
+                query: async () => aggregationResponse([])
+            };
+
+            const dal = createDocumentDAL({
+                caseReferenceNumber: '12-745678',
+                createDBQuery: () => mockDB,
+                logger: mockLogger
+            });
+
+            const result = await dal.getDocumentsContainingHandwriting(['doc-a', 'doc-b']);
+
+            assert.deepStrictEqual(result, []);
+        });
+
+        it('should short-circuit without querying when no document ids are provided', async () => {
+            let queryCalled = false;
+            const mockDB = {
+                query: async () => {
+                    queryCalled = true;
+                    return aggregationResponse([]);
+                }
+            };
+
+            const dal = createDocumentDAL({
+                caseReferenceNumber: '12-745678',
+                createDBQuery: () => mockDB,
+                logger: mockLogger
+            });
+
+            const result = await dal.getDocumentsContainingHandwriting([]);
+
+            assert.deepStrictEqual(result, []);
+            assert.strictEqual(queryCalled, false);
+        });
+
+        it('should de-duplicate document ids before querying', async () => {
+            let queryArgs;
+            const mockDB = {
+                query: async (args) => {
+                    queryArgs = args;
+                    return aggregationResponse([]);
+                }
+            };
+
+            const dal = createDocumentDAL({
+                caseReferenceNumber: '12-745678',
+                createDBQuery: () => mockDB,
+                logger: mockLogger
+            });
+
+            await dal.getDocumentsContainingHandwriting(['doc-a', 'doc-a', 'doc-b']);
+
+            assert.deepStrictEqual(queryArgs.body.query.bool.must[0], {
+                terms: { source_doc_id: ['doc-a', 'doc-b'] }
+            });
+        });
+
+        it('should query the chunks index with a terms filter and a source_doc_id aggregation', async () => {
+            let queryArgs;
+            const mockDB = {
+                query: async (args) => {
+                    queryArgs = args;
+                    return aggregationResponse([]);
+                }
+            };
+
+            const dal = createDocumentDAL({
+                caseReferenceNumber: '12-745678',
+                createDBQuery: () => mockDB,
+                logger: mockLogger
+            });
+
+            await dal.getDocumentsContainingHandwriting(['doc-a', 'doc-b']);
+
+            assert.strictEqual(queryArgs.index, process.env.OPENSEARCH_INDEX_CHUNKS_NAME);
+            assert.strictEqual(queryArgs.body.size, 0);
+            assert.deepStrictEqual(queryArgs.body.query.bool.must, [
+                { terms: { source_doc_id: ['doc-a', 'doc-b'] } },
+                { term: { page_contains_handwriting: true } }
+            ]);
+            assert.deepStrictEqual(queryArgs.body.aggs.documents_with_handwriting.terms, {
+                field: 'source_doc_id',
+                size: 2
+            });
+        });
+
+        it('should handle a missing aggregations block gracefully', async () => {
+            const mockDB = {
+                query: async () => ({ body: {} })
+            };
+
+            const dal = createDocumentDAL({
+                caseReferenceNumber: '12-745678',
+                createDBQuery: () => mockDB,
+                logger: mockLogger
+            });
+
+            const result = await dal.getDocumentsContainingHandwriting(['doc-a']);
+
+            assert.deepStrictEqual(result, []);
+        });
+
+        it('should throw VError when query fails', async () => {
+            const mockDB = {
+                query: async () => {
+                    throw new Error('Database connection failed');
+                }
+            };
+
+            const dal = createDocumentDAL({
+                caseReferenceNumber: '12-745678',
+                createDBQuery: () => mockDB,
+                logger: mockLogger
+            });
+
+            await assert.rejects(
+                () => dal.getDocumentsContainingHandwriting(['doc-a']),
+                (err) => err instanceof VError && /Failed to check handwriting/.test(err.message)
+            );
+        });
+    });
+
     describe('getPageChunksByDocumentIdAndPageNumber', () => {
         it('should return page chunks with bounding boxes', async () => {
             const mockDB = {
