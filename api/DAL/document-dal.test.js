@@ -485,9 +485,9 @@ describe('document-dal', () => {
             }
         });
 
-        it('should return the subset of documents that contain handwriting', async () => {
+        it('should return the distinct documents in the case that contain handwriting', async () => {
             const mockDB = {
-                query: async () => aggregationResponse(['doc-b'])
+                query: async () => aggregationResponse(['doc-a', 'doc-b'])
             };
 
             const dal = createDocumentDAL({
@@ -496,9 +496,9 @@ describe('document-dal', () => {
                 logger: mockLogger
             });
 
-            const result = await dal.getDocumentsContainingHandwriting(['doc-a', 'doc-b']);
+            const result = await dal.getDocumentsContainingHandwriting();
 
-            assert.deepStrictEqual(result, ['doc-b']);
+            assert.deepStrictEqual(result, ['doc-a', 'doc-b']);
         });
 
         it('should return an empty array when no documents contain handwriting', async () => {
@@ -512,33 +512,12 @@ describe('document-dal', () => {
                 logger: mockLogger
             });
 
-            const result = await dal.getDocumentsContainingHandwriting(['doc-a', 'doc-b']);
+            const result = await dal.getDocumentsContainingHandwriting();
 
             assert.deepStrictEqual(result, []);
         });
 
-        it('should short-circuit without querying when no document ids are provided', async () => {
-            let queryCalled = false;
-            const mockDB = {
-                query: async () => {
-                    queryCalled = true;
-                    return aggregationResponse([]);
-                }
-            };
-
-            const dal = createDocumentDAL({
-                caseReferenceNumber: '12-745678',
-                createDBQuery: () => mockDB,
-                logger: mockLogger
-            });
-
-            const result = await dal.getDocumentsContainingHandwriting([]);
-
-            assert.deepStrictEqual(result, []);
-            assert.strictEqual(queryCalled, false);
-        });
-
-        it('should de-duplicate document ids before querying', async () => {
+        it('should query the page_metadata index scoped by case_ref with a source_doc_id aggregation', async () => {
             let queryArgs;
             const mockDB = {
                 query: async (args) => {
@@ -553,39 +532,17 @@ describe('document-dal', () => {
                 logger: mockLogger
             });
 
-            await dal.getDocumentsContainingHandwriting(['doc-a', 'doc-a', 'doc-b']);
+            await dal.getDocumentsContainingHandwriting();
 
-            assert.deepStrictEqual(queryArgs.body.query.bool.must[0], {
-                terms: { source_doc_id: ['doc-a', 'doc-b'] }
-            });
-        });
-
-        it('should query the chunks index with a terms filter and a source_doc_id aggregation', async () => {
-            let queryArgs;
-            const mockDB = {
-                query: async (args) => {
-                    queryArgs = args;
-                    return aggregationResponse([]);
-                }
-            };
-
-            const dal = createDocumentDAL({
-                caseReferenceNumber: '12-745678',
-                createDBQuery: () => mockDB,
-                logger: mockLogger
-            });
-
-            await dal.getDocumentsContainingHandwriting(['doc-a', 'doc-b']);
-
-            assert.strictEqual(queryArgs.index, process.env.OPENSEARCH_INDEX_CHUNKS_NAME);
+            assert.strictEqual(queryArgs.index, 'page_metadata');
             assert.strictEqual(queryArgs.body.size, 0);
             assert.deepStrictEqual(queryArgs.body.query.bool.must, [
-                { terms: { source_doc_id: ['doc-a', 'doc-b'] } },
+                { term: { case_ref: '12-745678' } },
                 { term: { page_contains_handwriting: true } }
             ]);
             assert.deepStrictEqual(queryArgs.body.aggs.documents_with_handwriting.terms, {
                 field: 'source_doc_id',
-                size: 2
+                size: 100
             });
         });
 
@@ -600,7 +557,7 @@ describe('document-dal', () => {
                 logger: mockLogger
             });
 
-            const result = await dal.getDocumentsContainingHandwriting(['doc-a']);
+            const result = await dal.getDocumentsContainingHandwriting();
 
             assert.deepStrictEqual(result, []);
         });
@@ -619,7 +576,7 @@ describe('document-dal', () => {
             });
 
             await assert.rejects(
-                () => dal.getDocumentsContainingHandwriting(['doc-a']),
+                () => dal.getDocumentsContainingHandwriting(),
                 (err) => err instanceof VError && /Failed to check handwriting/.test(err.message)
             );
         });
