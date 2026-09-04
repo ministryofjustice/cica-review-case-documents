@@ -10,50 +10,31 @@ import buildViewModel from '../templateEngine/buildViewModel.js';
 import buildSearchSessionPreference from '../utils/buildSearchSessionPreference/index.js';
 
 /**
- * Resolves whether any document represented in the search results contains handwriting.
+ * Resolves whether a document belonging to the selected case contains handwriting.
  *
- * The handwriting flag is scoped to the stable document ID (`source_doc_id`), not the
- * case reference number, so it stays document-specific. Results are cached in the session
- * keyed by document ID; only documents not already cached are looked up, and they are
- * resolved together in a single batched OpenSearch query (rather than one query each).
- *
- * The banner is shown when at least one document in the current results contains
- * handwriting anywhere in that document.
+ * Handwriting is a per-document property; the case (CRN) is the scope we resolve it for.
+ * The result is resolved once per case and cached on the session as a boolean, so repeated
+ * searches within the same case do not re-query OpenSearch. Because resolution is scoped to
+ * the case rather than the current search hits, the banner is independent of the search
+ * term: it reflects the document's handwriting status even when the query returns no hits,
+ * and (for future multi-document cases) even when a handwritten document does not match the
+ * query.
  *
  * @async
  * @param {Object} options - Resolution options.
  * @param {Object} options.session - Express session object.
- * @param {string[]} options.documentIds - Document IDs represented in the search results.
- * @param {string} options.crn - Case reference number (used to scope the DAL).
+ * @param {string} options.crn - Case reference number to scope resolution.
  * @param {Object} [options.logger] - Optional logger instance.
  * @param {Function} options.createDocumentDAL - Factory to create the document DAL.
- * @returns {Promise<boolean>} Whether any document in the results contains handwriting.
+ * @returns {Promise<boolean>} Whether a document in the case contains handwriting.
  */
-async function resolveHasHandwriting({ session, documentIds, crn, logger, createDocumentDAL }) {
-    const uniqueDocumentIds = [...new Set((documentIds || []).filter(Boolean))];
-
-    if (uniqueDocumentIds.length === 0) {
+async function resolveHasHandwriting({ session, crn, logger, createDocumentDAL }) {
+    if (!crn) {
         return false;
     }
 
-    const cache = session?.hasHandwriting ?? {};
-
-    // Serve cached documents without hitting OpenSearch, and collect the rest.
-    let hasHandwriting = false;
-    const uncachedDocumentIds = [];
-
-    for (const documentId of uniqueDocumentIds) {
-        const cached = cache[documentId];
-
-        if (cached === undefined) {
-            uncachedDocumentIds.push(documentId);
-        } else if (cached === true) {
-            hasHandwriting = true;
-        }
-    }
-
-    if (uncachedDocumentIds.length === 0) {
-        return hasHandwriting;
+    if (session?.hasHandwriting !== undefined) {
+        return session.hasHandwriting;
     }
 
     try {
@@ -62,33 +43,18 @@ async function resolveHasHandwriting({ session, documentIds, crn, logger, create
             logger
         });
 
-        // Single batched query for all uncached documents rather than one per document.
-        const matchingDocumentIds =
-            await dal.getDocumentsContainingHandwriting(uncachedDocumentIds);
-        const matching = new Set(matchingDocumentIds);
-
-        // Populate the session cache for every queried document: true for matches,
-        // false for the rest, so subsequent searches short-circuit without querying.
-        const updatedCache = { ...session?.hasHandwriting };
-        for (const documentId of uncachedDocumentIds) {
-            const documentHasHandwriting = matching.has(documentId);
-            updatedCache[documentId] = documentHasHandwriting;
-            if (documentHasHandwriting) {
-                hasHandwriting = true;
-            }
-        }
+        const documentIds = await dal.getDocumentsContainingHandwriting();
+        const hasHandwriting = documentIds.length > 0;
 
         if (session) {
-            session.hasHandwriting = updatedCache;
+            session.hasHandwriting = hasHandwriting;
         }
-    } catch (error) {
-        logger?.warn?.(
-            { err: error, documentIds: uncachedDocumentIds },
-            'Failed to check handwriting status for documents'
-        );
-    }
 
-    return hasHandwriting;
+        return hasHandwriting;
+    } catch (error) {
+        logger?.warn?.({ err: error, crn }, 'Failed to check handwriting status for case');
+        return false;
+    }
 }
 
 /**
@@ -287,11 +253,11 @@ function createSearchRouter({
             templateParams.searchResults = searchResultsWithDocUuid;
             templateParams.searchTerm = query;
 
-            // Show the handwriting banner when any document represented in the results
-            // contains handwriting. Scoped to the stable document ID, cached in session.
+            // Show the handwriting banner when a document in the selected case contains
+            // handwriting. Resolved by CRN (independent of the search hits) and cached in
+            // the session for the duration of the case.
             templateParams.hasHandwriting = await resolveHasHandwriting({
                 session: req.session,
-                documentIds: searchResultsWithDocUuid.map((result) => result.docUuid),
                 crn: req.session?.caseReferenceNumber,
                 logger: req.log,
                 createDocumentDAL
