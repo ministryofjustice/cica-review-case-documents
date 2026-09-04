@@ -178,6 +178,45 @@ describe('getCaseReferenceNumberFromQueryString', () => {
         assert.equal(req.session.caseReferenceNumber, undefined);
     });
 
+    it('Should clear cached hasHandwriting when a different CRN is selected', () => {
+        const req = {
+            query: { crn: VALID_CRN },
+            session: {
+                caseReferenceNumber: '11-700000',
+                hasHandwriting: true
+            }
+        };
+        getCaseReferenceNumberFromQueryString(req, {}, () => {});
+        assert.equal(req.session.caseReferenceNumber, VALID_CRN);
+        assert.equal(req.session.hasHandwriting, undefined);
+    });
+
+    it('Should preserve cached hasHandwriting when the same CRN is re-selected', () => {
+        const req = {
+            query: { crn: VALID_CRN },
+            session: {
+                caseReferenceNumber: VALID_CRN,
+                hasHandwriting: true
+            }
+        };
+        getCaseReferenceNumberFromQueryString(req, {}, () => {});
+        assert.equal(req.session.caseReferenceNumber, VALID_CRN);
+        assert.equal(req.session.hasHandwriting, true);
+    });
+
+    it('Should not touch cached hasHandwriting when no valid CRN is provided', () => {
+        const req = {
+            query: { crn: INVALID_CRN },
+            session: {
+                caseReferenceNumber: VALID_CRN,
+                hasHandwriting: true
+            }
+        };
+        getCaseReferenceNumberFromQueryString(req, {}, () => {});
+        assert.equal(req.session.caseReferenceNumber, VALID_CRN);
+        assert.equal(req.session.hasHandwriting, true);
+    });
+
     it('Should call next() every time the middleware runs', () => {
         let nextCallCount = 0;
         const nextMock = () => {

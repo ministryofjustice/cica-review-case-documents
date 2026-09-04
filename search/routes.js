@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import express from 'express';
+import createDocumentDALDefault from '../api/DAL/document-dal.js';
 import buildQueryJson from '../api/DAL/utils/buildQueryJson/index.js';
 import { resolveSearchType } from '../api/search/constants/searchTypes.js';
 import { finalizeDebugInfo, hasDebugContext, ifDebugContext } from '../middleware/debug/index.js';
@@ -9,17 +10,70 @@ import buildViewModel from '../templateEngine/buildViewModel.js';
 import buildSearchSessionPreference from '../utils/buildSearchSessionPreference/index.js';
 
 /**
+ * Resolves whether a document belonging to the selected case contains handwriting.
+ *
+ * Handwriting is a per-document property; the case (CRN) is the scope we resolve it for.
+ * The result is resolved once per case and cached on the session as a boolean, so repeated
+ * searches within the same case do not re-query OpenSearch. Because resolution is scoped to
+ * the case rather than the current search hits, the banner is independent of the search
+ * term: it reflects the document's handwriting status even when the query returns no hits,
+ * and (for future multi-document cases) even when a handwritten document does not match the
+ * query.
+ *
+ * @async
+ * @param {Object} options - Resolution options.
+ * @param {Object} options.session - Express session object.
+ * @param {string} options.crn - Case reference number to scope resolution.
+ * @param {Object} [options.logger] - Optional logger instance.
+ * @param {Function} options.createDocumentDAL - Factory to create the document DAL.
+ * @returns {Promise<boolean>} Whether a document in the case contains handwriting.
+ */
+async function resolveHasHandwriting({ session, crn, logger, createDocumentDAL }) {
+    if (!crn) {
+        return false;
+    }
+
+    if (session?.hasHandwriting !== undefined) {
+        return session.hasHandwriting;
+    }
+
+    try {
+        const dal = createDocumentDAL({
+            caseReferenceNumber: crn,
+            logger
+        });
+
+        const documentIds = await dal.getDocumentsContainingHandwriting();
+        const hasHandwriting = documentIds.length > 0;
+
+        if (session) {
+            session.hasHandwriting = hasHandwriting;
+        }
+
+        return hasHandwriting;
+    } catch (error) {
+        logger?.warn?.({ err: error, crn }, 'Failed to check handwriting status for case');
+        return false;
+    }
+}
+
+/**
  * Creates an Express router for handling search functionality.
  *
  * @param {Object} services - The services required to create the router.
  * @param {Function} services.createTemplateEngineService - Factory function to create the template engine service.
  * @param {Function} services.createSearchService - Factory function to create the search service.
+ * @param {Function} [services.createDocumentDAL] - Factory function to create the document DAL.
  * @returns {express.Router} The configured Express router for search routes.
  *
  * @route POST /search
  * @route GET /search
  */
-function createSearchRouter({ createTemplateEngineService, createSearchService }) {
+function createSearchRouter({
+    createTemplateEngineService,
+    createSearchService,
+    createDocumentDAL = createDocumentDALDefault
+}) {
     const router = express.Router();
 
     /**
@@ -198,6 +252,16 @@ function createSearchRouter({ createTemplateEngineService, createSearchService }
 
             templateParams.searchResults = searchResultsWithDocUuid;
             templateParams.searchTerm = query;
+
+            // Show the handwriting banner when a document in the selected case contains
+            // handwriting. Resolved by CRN (independent of the search hits) and cached in
+            // the session for the duration of the case.
+            templateParams.hasHandwriting = await resolveHasHandwriting({
+                session: req.session,
+                crn: req.session?.caseReferenceNumber,
+                logger: req.log,
+                createDocumentDAL
+            });
 
             // TODO: move this logic into the view.
             templateParams.showPaginationItems = totalItemCount > itemsPerPage;

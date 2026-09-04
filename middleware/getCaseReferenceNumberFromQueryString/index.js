@@ -4,6 +4,7 @@ const CRN_REGEX = /^\d{2}-[78]\d{5}$/;
  * Middleware to extract and validate a case reference number from the query string.
  * Accepts either `crn` or `caseReferenceNumber` query parameters in the format YY-7NNNNN or YY-8NNNNN (e.g. 26-711111, 36-873423), where YY = year, 7 = Personal Injury, 8 = Bereavement, and NNNNN = 5-digit case ID.
  * If a valid case reference number is found, it sets `caseSelected` and `caseReferenceNumber` in the session.
+ * When the case changes, case-scoped cached data (e.g. `hasHandwriting`) is cleared so it is re-resolved for the new case.
  * @param {import('express').Request} req - Express request object.
  * @param {import('express').Response} res - Express response object.
  * @param {Function} next - Express next middleware function.
@@ -20,6 +21,11 @@ const getCaseReferenceNumberFromQueryString = (req, res, next) => {
 
     if (validCrn) {
         if (req.session) {
+            if (req.session.caseReferenceNumber !== validCrn) {
+                // New case selected — drop case-scoped cached data so it is
+                // re-resolved for the new case.
+                req.session.hasHandwriting = undefined;
+            }
             req.session.caseSelected = true;
             req.session.caseReferenceNumber = validCrn;
         }

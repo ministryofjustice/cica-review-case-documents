@@ -53,6 +53,7 @@ import buildQueryJson from './utils/buildQueryJson/index.js';
  *   getDocument: (documentId: string) => Promise<object>,
  *   getDocumentsChunksByKeyword: (keyword: string, pageNumber: number, itemsPerPage: number) => Promise<object[]>,
  *   getPageMetadataByDocumentIdAndPageNumber: (documentId: string, pageNumber: number|string) => Promise<object|null>,
+ *   getDocumentsContainingHandwriting: () => Promise<string[]>,
  *   getPageChunksByDocumentIdAndPageNumber: (documentId: string, pageNumber: number|string, keyword?: string, searchType?: string) => Promise<object[]>
  * }}
  *   A frozen object exposing document and chunk retrieval methods.
@@ -226,6 +227,75 @@ function createDocumentDAL({
     }
 
     /**
+     * Determines which document(s) belonging to the current case contain handwriting on
+     * any page, using a single query against the `page_metadata` index.
+     *
+     * Handwriting is a per-document property. The case (`case_ref`) is only the scope that
+     * bounds which documents we resolve that property for. The query filters
+     * `page_metadata` entries to the current `caseReferenceNumber` with
+     * `page_contains_handwriting: true` and uses a `terms` aggregation to return the
+     * distinct matching `source_doc_id`s. `size: 0` keeps the response lightweight
+     * (aggregation buckets only, no hit documents), avoiding an N+1 query pattern.
+     *
+     * `page_metadata` is used rather than the chunks index because it stores one entry per
+     * page (vs many chunks per page) and is where the rest of the handwriting feature reads
+     * the flag from. `case_ref`, `source_doc_id`, and `page_contains_handwriting` are all
+     * mapped as indexed fields on that index.
+     *
+     * @async
+     * @returns {Promise<string[]>} The distinct `source_doc_id`s in the case that contain
+     *   handwriting. Empty when none do.
+     * @throws {VError} If the database query fails.
+     */
+    async function getDocumentsContainingHandwriting() {
+        try {
+            logger?.info?.(
+                { caseReferenceNumber },
+                'Checking case documents for handwriting content'
+            );
+
+            const response = await db.query({
+                index: 'page_metadata',
+                body: {
+                    query: {
+                        bool: {
+                            must: [
+                                { term: { case_ref: caseReferenceNumber } },
+                                { term: { page_contains_handwriting: true } }
+                            ]
+                        }
+                    },
+                    size: 0,
+                    aggs: {
+                        documents_with_handwriting: {
+                            terms: {
+                                field: 'source_doc_id',
+                                size: 100
+                            }
+                        }
+                    }
+                }
+            });
+
+            const buckets = response?.body?.aggregations?.documents_with_handwriting?.buckets ?? [];
+            const matchingDocumentIds = buckets.map((bucket) => bucket.key);
+
+            logger?.info?.(
+                {
+                    caseReferenceNumber,
+                    handwritingDocumentCount: matchingDocumentIds.length
+                },
+                'Case documents handwriting check complete'
+            );
+
+            return matchingDocumentIds;
+        } catch (err) {
+            logger?.error?.({ err }, 'Failed to check documents handwriting');
+            throw new VError(err, 'Failed to check handwriting for documents');
+        }
+    }
+
+    /**
      * Retrieves all chunks for a specific document page, filtered by document ID, page number and search term.
      * Returns only the bounding box and chunk text data for each chunk to support overlay rendering.
      *
@@ -308,6 +378,7 @@ function createDocumentDAL({
         getDocument,
         getDocumentsChunksByKeyword,
         getPageMetadataByDocumentIdAndPageNumber,
+        getDocumentsContainingHandwriting,
         getPageChunksByDocumentIdAndPageNumber
     });
 }
