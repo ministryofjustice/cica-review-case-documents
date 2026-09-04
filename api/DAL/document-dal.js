@@ -53,7 +53,7 @@ import buildQueryJson from './utils/buildQueryJson/index.js';
  *   getDocument: (documentId: string) => Promise<object>,
  *   getDocumentsChunksByKeyword: (keyword: string, pageNumber: number, itemsPerPage: number) => Promise<object[]>,
  *   getPageMetadataByDocumentIdAndPageNumber: (documentId: string, pageNumber: number|string) => Promise<object|null>,
- *   getDocumentsContainingHandwriting: (documentIds: string[]) => Promise<string[]>,
+ *   getDocumentsContainingHandwriting: () => Promise<string[]>,
  *   getPageChunksByDocumentIdAndPageNumber: (documentId: string, pageNumber: number|string, keyword?: string, searchType?: string) => Promise<object[]>
  * }}
  *   A frozen object exposing document and chunk retrieval methods.
@@ -227,41 +227,40 @@ function createDocumentDAL({
     }
 
     /**
-     * Determines, for a set of documents, which ones contain handwriting on any page,
-     * using a single query against the chunks index.
+     * Determines which document(s) belonging to the current case contain handwriting on
+     * any page, using a single query against the `page_metadata` index.
      *
-     * Scoped to the stable document ID (`source_doc_id`) rather than the whole case.
-     * The `page_contains_handwriting` flag is denormalised onto every chunk, so a single
-     * query can resolve the whole set: it filters chunks to the given `source_doc_id` set
-     * with `page_contains_handwriting: true` and uses a terms aggregation to return the
-     * distinct document IDs that match. `size: 0` keeps the response lightweight
+     * Handwriting is a per-document property. The case (`case_ref`) is only the scope that
+     * bounds which documents we resolve that property for. The query filters
+     * `page_metadata` entries to the current `caseReferenceNumber` with
+     * `page_contains_handwriting: true` and uses a `terms` aggregation to return the
+     * distinct matching `source_doc_id`s. `size: 0` keeps the response lightweight
      * (aggregation buckets only, no hit documents), avoiding an N+1 query pattern.
      *
+     * `page_metadata` is used rather than the chunks index because it stores one entry per
+     * page (vs many chunks per page) and is where the rest of the handwriting feature reads
+     * the flag from. `case_ref`, `source_doc_id`, and `page_contains_handwriting` are all
+     * mapped as indexed fields on that index.
+     *
      * @async
-     * @param {string[]} documentIds - Document IDs (source_doc_id) to check.
-     * @returns {Promise<string[]>} The subset of the input document IDs that contain handwriting.
+     * @returns {Promise<string[]>} The distinct `source_doc_id`s in the case that contain
+     *   handwriting. Empty when none do.
      * @throws {VError} If the database query fails.
      */
-    async function getDocumentsContainingHandwriting(documentIds) {
-        const uniqueDocumentIds = [...new Set((documentIds || []).filter(Boolean))];
-
-        if (uniqueDocumentIds.length === 0) {
-            return [];
-        }
-
+    async function getDocumentsContainingHandwriting() {
         try {
             logger?.info?.(
-                { documentCount: uniqueDocumentIds.length },
-                'Checking documents for handwriting content'
+                { caseReferenceNumber },
+                'Checking case documents for handwriting content'
             );
 
             const response = await db.query({
-                index: process.env.OPENSEARCH_INDEX_CHUNKS_NAME,
+                index: 'page_metadata',
                 body: {
                     query: {
                         bool: {
                             must: [
-                                { terms: { source_doc_id: uniqueDocumentIds } },
+                                { term: { case_ref: caseReferenceNumber } },
                                 { term: { page_contains_handwriting: true } }
                             ]
                         }
@@ -271,7 +270,7 @@ function createDocumentDAL({
                         documents_with_handwriting: {
                             terms: {
                                 field: 'source_doc_id',
-                                size: uniqueDocumentIds.length
+                                size: 100
                             }
                         }
                     }
@@ -283,10 +282,10 @@ function createDocumentDAL({
 
             logger?.info?.(
                 {
-                    documentCount: uniqueDocumentIds.length,
+                    caseReferenceNumber,
                     handwritingDocumentCount: matchingDocumentIds.length
                 },
-                'Documents handwriting check complete'
+                'Case documents handwriting check complete'
             );
 
             return matchingDocumentIds;

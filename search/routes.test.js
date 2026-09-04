@@ -671,16 +671,15 @@ describe('Search Routes', () => {
             entraUser: { oid: 'entra-oid-123' }
         });
 
-        it('sets hasHandwriting true when a result document contains handwriting', async () => {
-            let queriedDocumentIds;
-            let queryCallCount = 0;
+        it('sets hasHandwriting true when the case has a handwriting document, regardless of the search term', async () => {
+            let dalCaseReferenceNumber;
             const router = createSearchRouter({
                 createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: buildSearchServiceWithDocIds(['doc-a', 'doc-b']),
-                createDocumentDAL: () => ({
-                    getDocumentsContainingHandwriting: async (documentIds) => {
-                        queryCallCount += 1;
-                        queriedDocumentIds = documentIds;
+                // Hits are irrelevant to the banner now; the DAL is scoped by CRN.
+                createSearchService: buildSearchServiceWithDocIds(['unrelated-hit']),
+                createDocumentDAL: ({ caseReferenceNumber }) => ({
+                    getDocumentsContainingHandwriting: async () => {
+                        dalCaseReferenceNumber = caseReferenceNumber;
                         return ['doc-b'];
                     }
                 })
@@ -692,12 +691,27 @@ describe('Search Routes', () => {
 
             assert.strictEqual(res.statusCode, 200);
             assert.strictEqual(lastRenderParams.hasHandwriting, true);
-            // A single batched query covers all uncached documents.
-            assert.strictEqual(queryCallCount, 1);
-            assert.deepStrictEqual(queriedDocumentIds, ['doc-a', 'doc-b']);
+            assert.strictEqual(dalCaseReferenceNumber, '12345');
         });
 
-        it('sets hasHandwriting false when no result document contains handwriting', async () => {
+        it('sets hasHandwriting true even when the search returns zero hits (zero-hit gap)', async () => {
+            const router = createSearchRouter({
+                createTemplateEngineService: mockCreateTemplateEngineService,
+                createSearchService: buildSearchServiceWithDocIds([]),
+                createDocumentDAL: () => ({
+                    getDocumentsContainingHandwriting: async () => ['doc-b']
+                })
+            });
+
+            const res = await request(buildAppWithSession(router, baseSession())).get(
+                `/search?query=nomatch&type=${DEFAULT_SEARCH_TYPE}`
+            );
+
+            assert.strictEqual(res.statusCode, 200);
+            assert.strictEqual(lastRenderParams.hasHandwriting, true);
+        });
+
+        it('sets hasHandwriting false when the case has no handwriting document', async () => {
             const router = createSearchRouter({
                 createTemplateEngineService: mockCreateTemplateEngineService,
                 createSearchService: buildSearchServiceWithDocIds(['doc-a', 'doc-b']),
@@ -714,11 +728,11 @@ describe('Search Routes', () => {
             assert.strictEqual(lastRenderParams.hasHandwriting, false);
         });
 
-        it('caches handwriting results in the session keyed by document id (true and false)', async () => {
+        it('caches the resolved boolean on the session', async () => {
             let queryCount = 0;
             const router = createSearchRouter({
                 createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: buildSearchServiceWithDocIds(['doc-a', 'doc-b']),
+                createSearchService: buildSearchServiceWithDocIds(['doc-a']),
                 createDocumentDAL: () => ({
                     getDocumentsContainingHandwriting: async () => {
                         queryCount += 1;
@@ -736,9 +750,7 @@ describe('Search Routes', () => {
             assert.strictEqual(res.statusCode, 200);
             assert.strictEqual(lastRenderParams.hasHandwriting, true);
             assert.strictEqual(queryCount, 1);
-            // Matching documents cache true; queried non-matching documents cache false.
-            assert.strictEqual(session.hasHandwriting['doc-b'], true);
-            assert.strictEqual(session.hasHandwriting['doc-a'], false);
+            assert.strictEqual(session.hasHandwriting, true);
         });
 
         it('uses the cached session value instead of querying the DAL again', async () => {
@@ -754,7 +766,7 @@ describe('Search Routes', () => {
                 })
             });
 
-            const session = { ...baseSession(), hasHandwriting: { 'doc-a': true } };
+            const session = { ...baseSession(), hasHandwriting: true };
 
             const res = await request(buildAppWithSession(router, session)).get(
                 `/search?query=test&type=${DEFAULT_SEARCH_TYPE}`
@@ -765,28 +777,28 @@ describe('Search Routes', () => {
             assert.strictEqual(queryCount, 0);
         });
 
-        it('only queries the DAL for documents not already cached', async () => {
-            let queriedDocumentIds;
+        it('serves a cached false without querying the DAL', async () => {
+            let queryCount = 0;
             const router = createSearchRouter({
                 createTemplateEngineService: mockCreateTemplateEngineService,
-                createSearchService: buildSearchServiceWithDocIds(['doc-a', 'doc-b']),
+                createSearchService: buildSearchServiceWithDocIds(['doc-a']),
                 createDocumentDAL: () => ({
-                    getDocumentsContainingHandwriting: async (documentIds) => {
-                        queriedDocumentIds = documentIds;
-                        return [];
+                    getDocumentsContainingHandwriting: async () => {
+                        queryCount += 1;
+                        return ['doc-a'];
                     }
                 })
             });
 
-            // doc-a is already cached (false); only doc-b should be queried.
-            const session = { ...baseSession(), hasHandwriting: { 'doc-a': false } };
+            const session = { ...baseSession(), hasHandwriting: false };
 
             const res = await request(buildAppWithSession(router, session)).get(
                 `/search?query=test&type=${DEFAULT_SEARCH_TYPE}`
             );
 
             assert.strictEqual(res.statusCode, 200);
-            assert.deepStrictEqual(queriedDocumentIds, ['doc-b']);
+            assert.strictEqual(lastRenderParams.hasHandwriting, false);
+            assert.strictEqual(queryCount, 0);
         });
 
         it('sets hasHandwriting false and still renders when the handwriting check fails', async () => {
