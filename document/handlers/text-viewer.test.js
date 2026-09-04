@@ -434,6 +434,85 @@ describe('Text Viewer Handler', () => {
         assert.equal(getPageChunksCalls, 0);
     });
 
+    it('passes pageContainsHandwriting as true when metadata indicates handwriting', async () => {
+        let renderParams;
+
+        const handler = createTextViewerHandler(
+            () => ({
+                getPageMetadata: async () =>
+                    buildPageMetadataFixture({
+                        overrides: {
+                            page_contains_handwriting: true
+                        }
+                    })
+            }),
+            createPageChunksServiceWithoutHighlights,
+            () => ({
+                render: (_view, params) => {
+                    renderParams = params;
+                    return 'render-output-handwriting-true';
+                }
+            })
+        );
+
+        const req = {
+            validatedParams: {
+                documentId: '123e4567-e89b-12d3-a456-426614174000',
+                pageNumber: 1,
+                crn: '26-745678'
+            },
+            query: {},
+            session: { caseSelected: true, entraUser: { oid: 'entra-oid-123' } },
+            log: { error: () => {} }
+        };
+
+        const res = {
+            locals: { csrfToken: 'csrf-token', cspNonce: 'nonce' },
+            send: () => {}
+        };
+
+        await handler(req, res, () => {});
+
+        assert.equal(renderParams.pageContainsHandwriting, true);
+    });
+
+    it('passes pageContainsHandwriting as false when metadata does not include the field', async () => {
+        let renderParams;
+
+        const handler = createTextViewerHandler(
+            () => ({
+                getPageMetadata: async () => buildPageMetadataFixture()
+            }),
+            createPageChunksServiceWithoutHighlights,
+            () => ({
+                render: (_view, params) => {
+                    renderParams = params;
+                    return 'render-output-handwriting-false';
+                }
+            })
+        );
+
+        const req = {
+            validatedParams: {
+                documentId: '123e4567-e89b-12d3-a456-426614174000',
+                pageNumber: 1,
+                crn: '26-745678'
+            },
+            query: {},
+            session: { caseSelected: true, entraUser: { oid: 'entra-oid-123' } },
+            log: { error: () => {} }
+        };
+
+        const res = {
+            locals: { csrfToken: 'csrf-token', cspNonce: 'nonce' },
+            send: () => {}
+        };
+
+        await handler(req, res, () => {});
+
+        assert.equal(renderParams.pageContainsHandwriting, false);
+    });
+
     it('calls next with outer catch error when validated params are missing', async () => {
         let metadataFactoryCalled = false;
         const handler = createTextViewerHandler(

@@ -202,7 +202,8 @@ function createDocumentDAL({
                         'page_count',
                         'page_num',
                         's3_page_image_s3_uri',
-                        'text'
+                        'text',
+                        'page_contains_handwriting'
                     ]
                 }
             });

@@ -1,0 +1,7 @@
+@use "node_modules/govuk-frontend/dist/govuk/helpers/colour" as govuk;
+
+.govuk-inset-text--moj,
+.guidance-panel {
+    border-left-color: govuk.govuk-colour('blue');
+    background-color: #eaf4f9;
+}

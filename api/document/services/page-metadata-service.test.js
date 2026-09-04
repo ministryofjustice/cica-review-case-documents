@@ -64,8 +64,31 @@ describe('page-metadata-service', () => {
             page_count: 10,
             page_num: 2,
             imageUrl: 's3://bucket/doc-123/2.png',
-            text: 'Sample text'
+            text: 'Sample text',
+            page_contains_handwriting: false
         });
+    });
+
+    it('should return page_contains_handwriting as true when DAL returns true', async () => {
+        mockGetPageMetadata = async () => ({
+            correspondence_type: 'TC19',
+            page_contains_handwriting: true
+        });
+
+        createDocumentDAL = () => ({
+            getPageMetadataByDocumentIdAndPageNumber: mockGetPageMetadata
+        });
+
+        const service = createPageMetadataService({
+            createPageContentHelper,
+            createDocumentDAL
+        });
+
+        const result = await service.getCombinedMetadata(documentId, pageNumber, crn, {
+            logger: mockLogger
+        });
+
+        assert.strictEqual(result.page_contains_handwriting, true);
     });
 
     it('should use pageMetadata.page_num in response payload', async () => {

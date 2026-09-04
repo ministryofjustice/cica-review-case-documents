@@ -127,7 +127,6 @@ export function createPageViewerHandler(
                     }
                 };
             });
-
             const html = render(
                 'document/page/imageview.njk',
                 buildViewModel(req, res, {
@@ -139,7 +138,8 @@ export function createPageViewerHandler(
                     pageTitle,
                     pageChunks: alignedPageHighlights,
                     showPagination: paginationData?.results?.count > 1,
-                    paginationData
+                    paginationData,
+                    pageContainsHandwriting: pageMetadata.page_contains_handwriting === true
                 })
             );
 
