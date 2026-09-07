@@ -42,28 +42,43 @@ ignore:
     - "*":
         reason: "Host confusion in fast-uri; ajv@8.20.0 pins fast-uri ^3 so patched 4.x cannot be installed; tracking for remediation via upstream update"
         expires: "2026-10-29"
-  # FIXABLE - temporary deploy unblock only. Fix by running `npm update undici`
-  # on Node >=24 (bumps undici within ^8.10.0 under @apidevtools/json-schema-ref-parser),
-  # then re-scan and remove these entries. Short expiry is deliberate.
+  # undici (transitive via @apidevtools/json-schema-ref-parser@16.0.1, range ^8.10.0).
+  # NOT currently fixable: a Sept 2026 advisory wave affects all published 8.10.x
+  # releases and undici `latest` is 8.10.2 - there is NO patched version to upgrade
+  # or override to yet. `npm update undici` does not help. Re-scan and remove these
+  # once undici ships a fixed release and json-schema-ref-parser allows it.
+  # Short expiry (2026-09-21) is deliberate so this is revisited weekly, not left to rot.
+  SNYK-JS-UNDICI-19635206:
+    - "*":
+        reason: "undici 8.10.x unpatched upstream (Sept 2026 advisory wave); no fixed version published; temporary deploy unblock, revisit weekly"
+        expires: "2026-09-21"
+  SNYK-JS-UNDICI-19635208:
+    - "*":
+        reason: "undici 8.10.x unpatched upstream (Sept 2026 advisory wave); no fixed version published; temporary deploy unblock, revisit weekly"
+        expires: "2026-09-21"
   SNYK-JS-UNDICI-19635210:
     - "*":
-        reason: "FIXABLE. Temporary deploy unblock; fix via undici lockfile bump within ^8.10.0 on Node 24, then remove"
-        expires: "2026-09-14"
+        reason: "undici 8.10.x unpatched upstream (Sept 2026 advisory wave); no fixed version published; temporary deploy unblock, revisit weekly"
+        expires: "2026-09-21"
+  SNYK-JS-UNDICI-19635216:
+    - "*":
+        reason: "undici 8.10.x unpatched upstream (Sept 2026 advisory wave); no fixed version published; temporary deploy unblock, revisit weekly"
+        expires: "2026-09-21"
   SNYK-JS-UNDICI-19635218:
     - "*":
-        reason: "FIXABLE. Temporary deploy unblock; fix via undici lockfile bump within ^8.10.0 on Node 24, then remove"
-        expires: "2026-09-14"
+        reason: "undici 8.10.x unpatched upstream (Sept 2026 advisory wave); no fixed version published; temporary deploy unblock, revisit weekly"
+        expires: "2026-09-21"
   SNYK-JS-UNDICI-19635222:
     - "*":
-        reason: "FIXABLE. Temporary deploy unblock; fix via undici lockfile bump within ^8.10.0 on Node 24, then remove"
-        expires: "2026-09-14"
+        reason: "undici 8.10.x unpatched upstream (Sept 2026 advisory wave); no fixed version published; temporary deploy unblock, revisit weekly"
+        expires: "2026-09-21"
   SNYK-JS-UNDICI-19635224:
     - "*":
-        reason: "FIXABLE. Temporary deploy unblock; fix via undici lockfile bump within ^8.10.0 on Node 24, then remove"
-        expires: "2026-09-14"
+        reason: "undici 8.10.x unpatched upstream (Sept 2026 advisory wave); no fixed version published; temporary deploy unblock, revisit weekly"
+        expires: "2026-09-21"
   SNYK-JS-UNDICI-19635226:
     - "*":
-        reason: "FIXABLE. Temporary deploy unblock; fix via undici lockfile bump within ^8.10.0 on Node 24, then remove"
-        expires: "2026-09-14"
+        reason: "undici 8.10.x unpatched upstream (Sept 2026 advisory wave); no fixed version published; temporary deploy unblock, revisit weekly"
+        expires: "2026-09-21"
 
 
