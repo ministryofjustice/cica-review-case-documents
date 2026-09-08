@@ -1,45 +1,20 @@
 import assert from 'node:assert';
-import { afterEach, beforeEach, test } from 'node:test';
+import { test } from 'node:test';
 import express from 'express';
 import { ipKeyGenerator } from 'express-rate-limit';
 import session from 'express-session';
 import request from 'supertest';
-import generalRateLimiter, { generateRateLimitKey } from './index.js';
+import createGeneralRateLimiter, { generateRateLimitKey } from './index.js';
 
-let originalAuthLimit;
-let originalUnauthLimit;
-let originalWindowMs;
-
-beforeEach(() => {
-    originalAuthLimit = process.env.APP_RATE_LIMIT_MAX_AUTH;
-    originalUnauthLimit = process.env.APP_RATE_LIMIT_MAX_UNAUTH;
-    originalWindowMs = process.env.APP_RATE_LIMIT_WINDOW_MS;
-});
-
-afterEach(() => {
-    if (originalAuthLimit === undefined) {
-        delete process.env.APP_RATE_LIMIT_MAX_AUTH;
-    } else {
-        process.env.APP_RATE_LIMIT_MAX_AUTH = originalAuthLimit;
-    }
-    if (originalUnauthLimit === undefined) {
-        delete process.env.APP_RATE_LIMIT_MAX_UNAUTH;
-    } else {
-        process.env.APP_RATE_LIMIT_MAX_UNAUTH = originalUnauthLimit;
-    }
-    if (originalWindowMs === undefined) {
-        delete process.env.APP_RATE_LIMIT_WINDOW_MS;
-    } else {
-        process.env.APP_RATE_LIMIT_WINDOW_MS = originalWindowMs;
-    }
-});
+// Config is injected into the factory, so these tests do not read or mutate
+// process.env and are safe to run without process isolation.
 
 /**
  * Creates an Express app configured with session support and the provided rate limiter.
- * @param {import('express').RequestHandler} [limiter=generalRateLimiter] - Rate limiter middleware to apply.
+ * @param {import('express').RequestHandler} limiter - Rate limiter middleware to apply.
  * @returns {import('express').Express} Configured Express application instance.
  */
-function createTestApp(limiter = generalRateLimiter) {
+function createTestApp(limiter) {
     const app = express();
     app.set('trust proxy', 1);
 
@@ -101,10 +76,7 @@ test('generateRateLimitKey falls back to IP when authenticated user has no oid',
 });
 
 test('blocks requests over the authenticated rate limit', async () => {
-    process.env.APP_RATE_LIMIT_MAX_AUTH = '2';
-    process.env.APP_RATE_LIMIT_MAX_UNAUTH = '100';
-
-    const app = createTestApp();
+    const app = createTestApp(createGeneralRateLimiter({ authLimit: 2, unauthLimit: 100 }));
 
     const res1 = await request(app).get('/test').set('x-test-oid', 'auth-limit-user');
     const res2 = await request(app).get('/test').set('x-test-oid', 'auth-limit-user');
@@ -117,10 +89,7 @@ test('blocks requests over the authenticated rate limit', async () => {
 });
 
 test('blocks requests over the unauthenticated rate limit by IP', async () => {
-    process.env.APP_RATE_LIMIT_MAX_AUTH = '100';
-    process.env.APP_RATE_LIMIT_MAX_UNAUTH = '1';
-
-    const app = createTestApp();
+    const app = createTestApp(createGeneralRateLimiter({ authLimit: 100, unauthLimit: 1 }));
 
     const res1 = await request(app).get('/test').set('x-forwarded-for', '203.0.113.10');
     const blocked = await request(app).get('/test').set('x-forwarded-for', '203.0.113.10');
@@ -131,10 +100,7 @@ test('blocks requests over the unauthenticated rate limit by IP', async () => {
 });
 
 test('applies independent limits to different authenticated users', async () => {
-    process.env.APP_RATE_LIMIT_MAX_AUTH = '1';
-    process.env.APP_RATE_LIMIT_MAX_UNAUTH = '100';
-
-    const app = createTestApp();
+    const app = createTestApp(createGeneralRateLimiter({ authLimit: 1, unauthLimit: 100 }));
 
     const user1First = await request(app).get('/test').set('x-test-oid', 'independent-user-1');
     const user1Blocked = await request(app).get('/test').set('x-test-oid', 'independent-user-1');
@@ -145,11 +111,9 @@ test('applies independent limits to different authenticated users', async () => 
     assert.strictEqual(user2First.status, 200);
 });
 
-test('uses default limits when env vars are not set', async () => {
-    delete process.env.APP_RATE_LIMIT_MAX_AUTH;
-    delete process.env.APP_RATE_LIMIT_MAX_UNAUTH;
-
-    const app = createTestApp();
+test('uses default limits when config is not provided', async () => {
+    // No config passed: the factory falls back to env / documented defaults.
+    const app = createTestApp(createGeneralRateLimiter());
 
     const unauthRes = await request(app).get('/test').set('x-forwarded-for', '198.51.100.20');
     const authRes = await request(app).get('/test').set('x-test-oid', 'default-auth-user');
@@ -160,14 +124,10 @@ test('uses default limits when env vars are not set', async () => {
     assert.strictEqual(authRes.headers['x-ratelimit-limit'], '1000');
 });
 
-test('uses configured windowMs when APP_RATE_LIMIT_WINDOW_MS is set', async () => {
-    process.env.APP_RATE_LIMIT_WINDOW_MS = '100';
-    process.env.APP_RATE_LIMIT_MAX_AUTH = '100';
-    process.env.APP_RATE_LIMIT_MAX_UNAUTH = '1';
-
-    // Re-import module with a unique specifier so windowMs is re-evaluated from env.
-    const module = await import(`./index.js?window-ms-${Date.now()}`);
-    const app = createTestApp(module.default);
+test('uses configured windowMs so the limit resets after the window elapses', async () => {
+    const app = createTestApp(
+        createGeneralRateLimiter({ windowMs: 100, authLimit: 100, unauthLimit: 1 })
+    );
 
     const first = await request(app).get('/test').set('x-forwarded-for', '203.0.113.30');
     const blocked = await request(app).get('/test').set('x-forwarded-for', '203.0.113.30');
@@ -182,14 +142,9 @@ test('uses configured windowMs when APP_RATE_LIMIT_WINDOW_MS is set', async () =
     assert.strictEqual(afterReset.status, 200);
 });
 
-test('uses default windowMs when APP_RATE_LIMIT_WINDOW_MS is not set', async () => {
-    delete process.env.APP_RATE_LIMIT_WINDOW_MS;
-    process.env.APP_RATE_LIMIT_MAX_AUTH = '100';
-    process.env.APP_RATE_LIMIT_MAX_UNAUTH = '1';
-
-    // Re-import module with a unique specifier so windowMs is re-evaluated from env.
-    const module = await import(`./index.js?default-window-${Date.now()}`);
-    const app = createTestApp(module.default);
+test('uses a long default window so the limit does not reset quickly', async () => {
+    // Default window (15 minutes) means a blocked client stays blocked shortly after.
+    const app = createTestApp(createGeneralRateLimiter({ authLimit: 100, unauthLimit: 1 }));
 
     const first = await request(app).get('/test').set('x-forwarded-for', '203.0.113.40');
     const blocked = await request(app).get('/test').set('x-forwarded-for', '203.0.113.40');
@@ -200,7 +155,6 @@ test('uses default windowMs when APP_RATE_LIMIT_WINDOW_MS is not set', async () 
         setTimeout(resolve, 150);
     });
 
-    // With default window (15 minutes), client should still be blocked shortly after.
     const stillBlocked = await request(app).get('/test').set('x-forwarded-for', '203.0.113.40');
     assert.strictEqual(stillBlocked.status, 429);
 });
