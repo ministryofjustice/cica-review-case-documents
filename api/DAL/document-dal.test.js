@@ -6,7 +6,7 @@ import createDocumentDAL from './document-dal.js';
 // Snapshot the pristine environment so it can be restored at the end of the
 // file. This file replaces process.env wholesale in beforeEach; without this
 // restore the mutation would leak into other files under --test-isolation=none.
-const PRISTINE_ENV = { ...process.env };
+const pristineEnv = { ...process.env };
 
 const mockLogger = {
     info: () => {},
@@ -51,7 +51,7 @@ describe('document-dal', () => {
     });
 
     after(() => {
-        process.env = { ...PRISTINE_ENV };
+        process.env = { ...pristineEnv };
     });
 
     describe('getDocuments', () => {

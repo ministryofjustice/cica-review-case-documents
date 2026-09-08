@@ -9,7 +9,7 @@ import createDocumentMetadataService from './document-metadata-service.js';
 // Snapshot APP_API_URL so the beforeEach override (and the in-test delete) is
 // restored at the end of the file and does not leak into other files under
 // --test-isolation=none.
-const ORIGINAL_APP_API_URL = process.env.APP_API_URL;
+const originalApiUrl = process.env.APP_API_URL;
 
 describe('document-metadata-service', () => {
     let mockGet;
@@ -34,10 +34,10 @@ describe('document-metadata-service', () => {
     });
 
     after(() => {
-        if (ORIGINAL_APP_API_URL === undefined) {
+        if (originalApiUrl === undefined) {
             delete process.env.APP_API_URL;
         } else {
-            process.env.APP_API_URL = ORIGINAL_APP_API_URL;
+            process.env.APP_API_URL = originalApiUrl;
         }
     });
 

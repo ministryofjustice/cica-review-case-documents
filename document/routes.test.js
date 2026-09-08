@@ -10,7 +10,7 @@ import createDocumentRouter from './routes.js';
 // Snapshot the environment so beforeEach mutations (APP_API_URL, NODE_ENV) are
 // restored at the end of the file and do not leak into other files under
 // --test-isolation=none.
-const PRISTINE_ENV = { ...process.env };
+const pristineEnv = { ...process.env };
 
 /**
  * Helper function to set up a test express app with required middleware
@@ -92,7 +92,7 @@ describe('Document Routes', () => {
     });
 
     after(() => {
-        process.env = { ...PRISTINE_ENV };
+        process.env = { ...pristineEnv };
     });
 
     describe('Input Validation', () => {

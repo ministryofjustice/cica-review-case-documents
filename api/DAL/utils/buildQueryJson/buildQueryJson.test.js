@@ -11,14 +11,14 @@ import {
 // Snapshot APP_LOG_PRETTY_JSON so that even if an assertion throws before the
 // in-test restore, the value is reset at the end of the file and does not leak
 // into other files under --test-isolation=none.
-const ORIGINAL_APP_LOG_PRETTY_JSON = process.env.APP_LOG_PRETTY_JSON;
+const originalPrettyJsonFlag = process.env.APP_LOG_PRETTY_JSON;
 
 describe('buildQueryJson', () => {
     after(() => {
-        if (ORIGINAL_APP_LOG_PRETTY_JSON === undefined) {
+        if (originalPrettyJsonFlag === undefined) {
             delete process.env.APP_LOG_PRETTY_JSON;
         } else {
-            process.env.APP_LOG_PRETTY_JSON = ORIGINAL_APP_LOG_PRETTY_JSON;
+            process.env.APP_LOG_PRETTY_JSON = originalPrettyJsonFlag;
         }
     });
 
