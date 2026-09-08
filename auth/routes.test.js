@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { generateKeyPairSync } from 'node:crypto';
-import { afterEach, beforeEach, test } from 'node:test';
+import { afterEach, before, beforeEach, test } from 'node:test';
 import got from 'got';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
@@ -27,7 +27,9 @@ afterEach(() => {
     process.env = { ...originalEnv };
 });
 
-beforeEach(async () => {
+before(async () => {
+    // Build the app once for the whole file. createApp produces an immutable
+    // Express instance, so rebuilding it per test only adds setup cost.
     app = await createApp({
         createLogger: () => (req, res, next) => {
             req.log = {
@@ -40,6 +42,10 @@ beforeEach(async () => {
             next();
         }
     });
+});
+
+beforeEach(() => {
+    // Fresh agent per test so session cookies do not leak between tests.
     agent = request.agent(app);
 });
 
