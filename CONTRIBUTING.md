@@ -333,11 +333,13 @@ describe('my feature', () => {
 
 ### Test performance and process isolation
 
-By default the Node.js test runner executes each test file in its own child
-process. This isolation is intentional: several tests mutate `process.env`, and
-separate processes stop those mutations from leaking across files.
+The test suite runs with `--test-isolation=none`, so every test file shares a
+single Node.js process. This is significantly faster than the default
+(one process per file) because runtime startup and module loading happen once.
+Running in a shared process only works because tests avoid leaking shared global
+state (chiefly `process.env`) across files.
 
-Two guidelines keep tests fast and isolation-independent:
+Two guidelines keep tests fast and safe to run without process isolation:
 
 1. **Build immutable app instances once per file.** When a suite builds an
    Express app (or router) that it does not change between tests, create it in a
@@ -353,11 +355,15 @@ Two guidelines keep tests fast and isolation-independent:
    `api/middleware/jwt-authentication/index.js` (`createAuthenticateJWTToken`)
    and `service/request/create-api-jwt-token.js`.
 
-Some existing tests still rely on mutating `process.env` combined with
-re-importing a module (using a unique query specifier) to pick up module-level
-config. Because that pattern mutates shared global state, the suite is not yet
-safe to run with `--test-isolation=none`. Do not enable that flag globally until
-those remaining tests are converted to configuration injection.
+Because the suite runs in a shared process, **do not introduce module-level
+reads of `process.env`** (for example `const isProd = process.env.NODE_ENV ===
+'production'` at the top of a module). Such a value is fixed at import time and
+cannot be varied per test without the fragile "mutate `process.env` then
+re-import the module" pattern, which is unsafe when files share a process.
+Resolve configuration inside a factory or function instead, and inject it in
+tests. If you add a test that must mutate `process.env`, ensure it fully
+restores the value (via `after`/`afterEach`) and does not rely on another
+file's hook to repair global state.
 
 ## Building Assets
 
