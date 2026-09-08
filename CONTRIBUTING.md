@@ -94,13 +94,14 @@ npm run lint:fix:unsafe
 
 `npm run prepush` runs in this order:
 
-1. `npm run quality:verify` (lint check + repository gitleaks scan)
-2. `npm run jsdoc:check`
-3. `npm run audit:ci` (`npm audit --audit-level=high --omit=dev`)
+1. `npm run sass` (compiles SCSS; fails fast on invalid styles)
+2. `npm test` (full unit test suite)
+3. `npm run quality:verify` (lint check + repository gitleaks scan)
+4. `npm run jsdoc:check`
 
-Audit runs last because audit failures are typically independent of the code being pushed. Running it as the final gate means you establish whether the branch passes quality and documentation checks before spending time on dependency issues.
+The full test suite runs at pre-push (not pre-commit) so commits stay fast while broken code is still blocked before it leaves your machine. Sass runs first as a quick compile-check; its output (`public/stylesheets/all.css`) is a git-ignored build artifact and is not committed.
 
-Pre-push does not run formatting fixes, Sass compilation, tests, or OpenAPI builds. Tests run during pre-commit for earlier feedback.
+Dependency auditing (`npm audit --audit-level=high --omit=dev`) is intentionally NOT run at pre-push. It is enforced in CI (`.github/workflows/sca.yml`), which runs it on every pull request with retry handling for registry flakiness. Keeping it out of pre-push avoids network issues blocking a push. The `audit:ci` npm script remains available for manual runs.
 
 ## Staged Helper Safety Rules
 
@@ -138,8 +139,8 @@ The project uses Husky for Git hooks:
 
 | Hook Name  | Action       | Description                          |
 | ---------- | ------------ | ------------------------------------ |
-| pre-commit | npm run precommit | Runs staged gitleaks, Biome checks/fixes, conditional sass build, and unit tests |
-| pre-push   | npm run prepush | Runs non-mutating quality checks (`quality:verify`), JSDoc linting, and npm audit before push |
+| pre-commit | npm run precommit | Runs staged gitleaks and Biome checks/fixes on staged files (fast, staged-scoped) |
+| pre-push   | npm run prepush | Compiles Sass, runs the full test suite, non-mutating quality checks (`quality:verify`), and JSDoc linting before push |
 
 Notes for pre-commit:
 - The staged helper aborts when a staged file also has unstaged edits (partial staging).
