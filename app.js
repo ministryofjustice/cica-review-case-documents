@@ -28,7 +28,7 @@ import featureFlags from './middleware/featureFlags/index.js';
 import getCaseReferenceNumberFromQueryString from './middleware/getCaseReferenceNumberFromQueryString/index.js';
 import isAuthenticated from './middleware/isAuthenticated/index.js';
 import defaultCreateLogger from './middleware/logger/index.js';
-import generalRateLimiter from './middleware/rateLimiter/index.js';
+import createGeneralRateLimiter from './middleware/rateLimiter/index.js';
 import searchRouter from './search/routes.js';
 import createSearchService from './search/search-service.js';
 import createTemplateEngineService from './templateEngine/index.js';
@@ -176,7 +176,8 @@ async function createApp({ createLogger = defaultCreateLogger } = {}) {
 
     // Apply General Rate Limiter to web app routes.
     // API routes are mounted before this and use their own API-specific limiter.
-    app.use(generalRateLimiter);
+    // Config is resolved once here rather than per request.
+    app.use(createGeneralRateLimiter());
 
     // Apply feature flags middleware globally so all routes and templates have access
     app.use(featureFlags);

@@ -96,7 +96,8 @@ For a complete list of available npm scripts, see the `scripts` section in [`pac
 | - | - |
 | `npm start` | Start the app in production mode |
 | `npm run start:dev` | Build assets, start dev server with Sass watcher and debugger on port 9229 |
-| `npm test` | Run all tests |
+| `npm test` | Run all tests with coverage (c8) |
+| `npm run test:fast` | Run all tests without coverage (faster local feedback) |
 | `npm run lint` | Check code with Biome linter |
 | `npm run format` | Format code with Biome |
 | `npm run sass` | Compile Sass to CSS (one-shot) |
@@ -109,12 +110,19 @@ For a complete list of available npm scripts, see the `scripts` section in [`pac
 ## Testing
 
 ```bash
-# Run all tests
+# Run all tests with coverage (c8)
 npm test
+
+# Run all tests without coverage for faster local feedback
+npm run test:fast
 
 # Run specific test file
 node --env-file=.env.test --test search/routes.test.js
 ```
+
+`npm run test:fast` skips c8 coverage instrumentation, which is useful during
+local development. `npm test` (with coverage) remains the gate enforced on
+pre-push and in CI.
 
 For detailed testing guidelines, see [CONTRIBUTING.md](./CONTRIBUTING.md#testing).
 

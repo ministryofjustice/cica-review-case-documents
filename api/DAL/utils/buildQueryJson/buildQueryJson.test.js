@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { describe, it } from 'node:test';
+import { after, describe, it } from 'node:test';
 import SEARCH_TYPES from '../../../search/constants/searchTypes.js';
 import buildQueryJson from './index.js';
 import {
@@ -8,7 +8,20 @@ import {
     createQueryTypeBuilders
 } from './queryTypeBuilders.js';
 
+// Snapshot APP_LOG_PRETTY_JSON so that even if an assertion throws before the
+// in-test restore, the value is reset at the end of the file and does not leak
+// into other files under --test-isolation=none.
+const originalPrettyJsonFlag = process.env.APP_LOG_PRETTY_JSON;
+
 describe('buildQueryJson', () => {
+    after(() => {
+        if (originalPrettyJsonFlag === undefined) {
+            delete process.env.APP_LOG_PRETTY_JSON;
+        } else {
+            process.env.APP_LOG_PRETTY_JSON = originalPrettyJsonFlag;
+        }
+    });
+
     it('Should build query with match_phrase for a single valid numeric date', () => {
         const params = {
             keyword: 'Meeting on 12/05/2024 at office',

@@ -1,8 +1,6 @@
 import pino from 'pino';
 import pinoHttp from 'pino-http';
 
-const isProd = process.env.NODE_ENV === 'production';
-
 /**
  * Builds pino-http redaction configuration from environment variables.
  *
@@ -53,6 +51,10 @@ export function buildRedactConfig() {
  */
 function createLogger(options = {}) {
     const { stream, ...pinoOptions } = options;
+    // Read NODE_ENV when the logger is created rather than caching it at module
+    // load, so behaviour reflects the current environment and does not depend on
+    // module import timing.
+    const isProd = process.env.NODE_ENV === 'production';
     const useTransport = !isProd && !stream;
     const prettyJsonEnabled = process.env.APP_LOG_PRETTY_JSON === 'true';
     const logger = pinoHttp({

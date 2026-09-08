@@ -4,118 +4,50 @@ import express from 'express';
 import { ipKeyGenerator } from 'express-rate-limit';
 import session from 'express-session';
 import request from 'supertest';
-import { generateEntraRateLimitKey } from './entraRateLimiter.js';
+import {
+    createEntraCallbackRateLimiter,
+    createEntraLoginRateLimiter,
+    generateEntraRateLimitKey
+} from './entraRateLimiter.js';
 
-test('Entra rate limiter applies outside production', async () => {
-    const originalEnv = process.env.NODE_ENV;
-    const originalWindow = process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS;
-    const originalLoginMax = process.env.APP_ENTRA_RATE_LIMIT_MAX_LOGIN;
+// Config is injected into the factories, so these tests do not read or mutate
+// process.env and are safe to run without process isolation.
 
-    process.env.NODE_ENV = 'development';
-    process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS = '60000';
-    process.env.APP_ENTRA_RATE_LIMIT_MAX_LOGIN = '1';
+/**
+ * Builds a minimal Express app that applies the given limiter to a route.
+ * @param {string} path - Route path to guard.
+ * @param {import('express').RequestHandler} limiter - Rate limiter middleware.
+ * @returns {import('express').Express} Configured app.
+ */
+function createLimiterApp(path, limiter) {
+    const app = express();
+    app.set('trust proxy', 1);
+    app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
+    app.get(path, limiter, (req, res) => res.status(200).send('ok'));
+    return app;
+}
 
-    try {
-        const { entraLoginRateLimiter } = await import(`./entraRateLimiter.js?t=${Date.now()}`);
-        const app = express();
-        app.set('trust proxy', 1);
-        app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
-        app.use(entraLoginRateLimiter);
-        app.get('/auth/login', (req, res) => res.status(200).send('ok'));
+test('Entra login limiter returns 429 when exceeded', async () => {
+    const limiter = createEntraLoginRateLimiter({ windowMs: 60000, loginLimit: 1 });
+    const app = createLimiterApp('/auth/login', limiter);
 
-        const first = await request(app).get('/auth/login').set('X-Forwarded-For', '10.9.9.9');
-        const second = await request(app).get('/auth/login').set('X-Forwarded-For', '10.9.9.9');
+    const first = await request(app).get('/auth/login').set('X-Forwarded-For', '10.1.1.1');
+    const second = await request(app).get('/auth/login').set('X-Forwarded-For', '10.1.1.1');
 
-        assert.equal(first.status, 200);
-        assert.equal(second.status, 429);
-    } finally {
-        process.env.NODE_ENV = originalEnv;
-        if (originalWindow === undefined) {
-            delete process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS;
-        } else {
-            process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS = originalWindow;
-        }
-        if (originalLoginMax === undefined) {
-            delete process.env.APP_ENTRA_RATE_LIMIT_MAX_LOGIN;
-        } else {
-            process.env.APP_ENTRA_RATE_LIMIT_MAX_LOGIN = originalLoginMax;
-        }
-    }
-});
-
-test('Entra login limiter applies in production and returns 429 when exceeded', async () => {
-    const originalEnv = process.env.NODE_ENV;
-    const originalWindow = process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS;
-    const originalLoginMax = process.env.APP_ENTRA_RATE_LIMIT_MAX_LOGIN;
-
-    process.env.NODE_ENV = 'production';
-    process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS = '60000';
-    process.env.APP_ENTRA_RATE_LIMIT_MAX_LOGIN = '1';
-
-    try {
-        const { entraLoginRateLimiter } = await import(`./entraRateLimiter.js?t=${Date.now()}`);
-        const app = express();
-        app.set('trust proxy', 1);
-        app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
-        app.use(entraLoginRateLimiter);
-        app.get('/auth/login', (req, res) => res.status(200).send('ok'));
-
-        const first = await request(app).get('/auth/login').set('X-Forwarded-For', '10.1.1.1');
-        const second = await request(app).get('/auth/login').set('X-Forwarded-For', '10.1.1.1');
-
-        assert.equal(first.status, 200);
-        assert.equal(second.status, 429);
-        assert.equal(second.body.error, 'Too many authentication requests, please try again later');
-    } finally {
-        process.env.NODE_ENV = originalEnv;
-        if (originalWindow === undefined) {
-            delete process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS;
-        } else {
-            process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS = originalWindow;
-        }
-        if (originalLoginMax === undefined) {
-            delete process.env.APP_ENTRA_RATE_LIMIT_MAX_LOGIN;
-        } else {
-            process.env.APP_ENTRA_RATE_LIMIT_MAX_LOGIN = originalLoginMax;
-        }
-    }
+    assert.equal(first.status, 200);
+    assert.equal(second.status, 429);
+    assert.equal(second.body.error, 'Too many authentication requests, please try again later');
 });
 
 test('Entra callback limiter uses independent callback threshold', async () => {
-    const originalEnv = process.env.NODE_ENV;
-    const originalWindow = process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS;
-    const originalCallbackMax = process.env.APP_ENTRA_RATE_LIMIT_MAX_CALLBACK;
+    const limiter = createEntraCallbackRateLimiter({ windowMs: 60000, callbackLimit: 1 });
+    const app = createLimiterApp('/auth/callback', limiter);
 
-    process.env.NODE_ENV = 'production';
-    process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS = '60000';
-    process.env.APP_ENTRA_RATE_LIMIT_MAX_CALLBACK = '1';
+    const first = await request(app).get('/auth/callback').set('X-Forwarded-For', '10.2.2.2');
+    const second = await request(app).get('/auth/callback').set('X-Forwarded-For', '10.2.2.2');
 
-    try {
-        const { entraCallbackRateLimiter } = await import(`./entraRateLimiter.js?t=${Date.now()}`);
-        const app = express();
-        app.set('trust proxy', 1);
-        app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
-        app.use(entraCallbackRateLimiter);
-        app.get('/auth/callback', (req, res) => res.status(200).send('ok'));
-
-        const first = await request(app).get('/auth/callback').set('X-Forwarded-For', '10.2.2.2');
-        const second = await request(app).get('/auth/callback').set('X-Forwarded-For', '10.2.2.2');
-
-        assert.equal(first.status, 200);
-        assert.equal(second.status, 429);
-    } finally {
-        process.env.NODE_ENV = originalEnv;
-        if (originalWindow === undefined) {
-            delete process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS;
-        } else {
-            process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS = originalWindow;
-        }
-        if (originalCallbackMax === undefined) {
-            delete process.env.APP_ENTRA_RATE_LIMIT_MAX_CALLBACK;
-        } else {
-            process.env.APP_ENTRA_RATE_LIMIT_MAX_CALLBACK = originalCallbackMax;
-        }
-    }
+    assert.equal(first.status, 200);
+    assert.equal(second.status, 429);
 });
 
 test('generateEntraRateLimitKey uses express-rate-limit ipKeyGenerator with req.ip string', () => {
@@ -132,60 +64,49 @@ test('generateEntraRateLimitKey uses express-rate-limit ipKeyGenerator with req.
     assert.equal(actual, expected);
 });
 
-test('Entra rate limiter falls back to default config when env vars are unset', async () => {
-    const originalWindow = process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS;
-    const originalLoginMax = process.env.APP_ENTRA_RATE_LIMIT_MAX_LOGIN;
-    const originalCallbackMax = process.env.APP_ENTRA_RATE_LIMIT_MAX_CALLBACK;
+test('Entra rate limiter falls back to default config when config is not provided', async () => {
+    // No config passed: the factories fall back to env / documented defaults (20/40).
+    const app = express();
+    app.set('trust proxy', 1);
+    app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
+    app.get('/auth/login', createEntraLoginRateLimiter(), (req, res) => res.status(200).send('ok'));
+    app.get('/auth/callback', createEntraCallbackRateLimiter(), (req, res) =>
+        res.status(200).send('ok')
+    );
 
-    delete process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS;
-    delete process.env.APP_ENTRA_RATE_LIMIT_MAX_LOGIN;
-    delete process.env.APP_ENTRA_RATE_LIMIT_MAX_CALLBACK;
+    const loginFirst = await request(app).get('/auth/login').set('X-Forwarded-For', '10.4.4.4');
+    const loginSecond = await request(app).get('/auth/login').set('X-Forwarded-For', '10.4.4.4');
 
-    try {
-        const { entraLoginRateLimiter, entraCallbackRateLimiter } = await import(
-            `./entraRateLimiter.js?t=${Date.now()}`
-        );
-        const app = express();
-        app.set('trust proxy', 1);
-        app.use(session({ secret: 'test', resave: false, saveUninitialized: true }));
+    const callbackFirst = await request(app)
+        .get('/auth/callback')
+        .set('X-Forwarded-For', '10.5.5.5');
+    const callbackSecond = await request(app)
+        .get('/auth/callback')
+        .set('X-Forwarded-For', '10.5.5.5');
 
-        app.get('/auth/login', entraLoginRateLimiter, (req, res) => res.status(200).send('ok'));
-        app.get('/auth/callback', entraCallbackRateLimiter, (req, res) =>
-            res.status(200).send('ok')
-        );
+    // Default limits (20/40) should allow initial repeated requests.
+    assert.equal(loginFirst.status, 200);
+    assert.equal(loginSecond.status, 200);
+    assert.equal(callbackFirst.status, 200);
+    assert.equal(callbackSecond.status, 200);
+});
 
-        const loginFirst = await request(app).get('/auth/login').set('X-Forwarded-For', '10.4.4.4');
-        const loginSecond = await request(app)
-            .get('/auth/login')
-            .set('X-Forwarded-For', '10.4.4.4');
+test('Entra login limiter accepts a partial config and fills the rest from defaults', async () => {
+    // Only loginLimit is provided; windowMs must fall back to the default (15 min)
+    // rather than being forwarded as undefined to express-rate-limit.
+    const limiter = createEntraLoginRateLimiter({ loginLimit: 1 });
+    const app = createLimiterApp('/auth/login', limiter);
 
-        const callbackFirst = await request(app)
-            .get('/auth/callback')
-            .set('X-Forwarded-For', '10.5.5.5');
-        const callbackSecond = await request(app)
-            .get('/auth/callback')
-            .set('X-Forwarded-For', '10.5.5.5');
+    const first = await request(app).get('/auth/login').set('X-Forwarded-For', '10.6.6.6');
+    const second = await request(app).get('/auth/login').set('X-Forwarded-For', '10.6.6.6');
 
-        // Default limits (20/40) should allow initial repeated requests.
-        assert.equal(loginFirst.status, 200);
-        assert.equal(loginSecond.status, 200);
-        assert.equal(callbackFirst.status, 200);
-        assert.equal(callbackSecond.status, 200);
-    } finally {
-        if (originalWindow === undefined) {
-            delete process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS;
-        } else {
-            process.env.APP_ENTRA_RATE_LIMIT_WINDOW_MS = originalWindow;
-        }
-        if (originalLoginMax === undefined) {
-            delete process.env.APP_ENTRA_RATE_LIMIT_MAX_LOGIN;
-        } else {
-            process.env.APP_ENTRA_RATE_LIMIT_MAX_LOGIN = originalLoginMax;
-        }
-        if (originalCallbackMax === undefined) {
-            delete process.env.APP_ENTRA_RATE_LIMIT_MAX_CALLBACK;
-        } else {
-            process.env.APP_ENTRA_RATE_LIMIT_MAX_CALLBACK = originalCallbackMax;
-        }
-    }
+    assert.equal(first.status, 200);
+    assert.equal(second.status, 429);
+
+    // With the default (long) window, a short wait does not reset the limit.
+    await new Promise((resolve) => {
+        setTimeout(resolve, 150);
+    });
+    const third = await request(app).get('/auth/login').set('X-Forwarded-For', '10.6.6.6');
+    assert.equal(third.status, 429);
 });

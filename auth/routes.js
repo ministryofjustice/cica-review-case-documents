@@ -4,13 +4,14 @@ import { createCallbackHandler } from './handlers/callback-handler.js';
 import { createLoginHandler } from './handlers/login-handler.js';
 import { signOutUser } from './handlers/sign-out-handler.js';
 import {
-    entraCallbackRateLimiter,
-    entraLoginRateLimiter
+    createEntraCallbackRateLimiter,
+    createEntraLoginRateLimiter
 } from './rateLimiters/entraRateLimiter.js';
 
 const router = express.Router();
-router.get('/login', entraLoginRateLimiter, createLoginHandler());
-router.get('/callback', entraCallbackRateLimiter, createCallbackHandler());
+// Config is resolved once here rather than at module load.
+router.get('/login', createEntraLoginRateLimiter(), createLoginHandler());
+router.get('/callback', createEntraCallbackRateLimiter(), createCallbackHandler());
 
 router.get('/sign-out', (req, res, next) => {
     try {

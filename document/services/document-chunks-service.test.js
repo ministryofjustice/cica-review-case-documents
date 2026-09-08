@@ -1,6 +1,10 @@
 import assert from 'node:assert';
-import { beforeEach, describe, it } from 'node:test';
+import { after, beforeEach, describe, it } from 'node:test';
 import createPageChunksService from './document-chunks-service.js';
+
+// Snapshot APP_API_URL so the beforeEach override is restored at the end of the
+// file and does not leak into other files under --test-isolation=none.
+const originalApiUrl = process.env.APP_API_URL;
 
 describe('createPageChunksService', () => {
     let mockGet;
@@ -47,6 +51,14 @@ describe('createPageChunksService', () => {
             error: () => {}
         };
         process.env.APP_API_URL = 'http://localhost:3000/api';
+    });
+
+    after(() => {
+        if (originalApiUrl === undefined) {
+            delete process.env.APP_API_URL;
+        } else {
+            process.env.APP_API_URL = originalApiUrl;
+        }
     });
 
     describe('getPageChunks', () => {

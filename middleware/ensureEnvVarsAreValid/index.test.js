@@ -10,7 +10,7 @@
  * @module ensureEnvVarsAreValid/index.test
  */
 import assert from 'node:assert/strict';
-import { beforeEach, describe, it } from 'node:test';
+import { after, beforeEach, describe, it } from 'node:test';
 
 import ensureEnvVarsAreValid, { getMandatoryEnvVars, getOptionalEnvVars } from './index.js';
 
@@ -45,6 +45,13 @@ describe('ensureEnvVarsAreValid', () => {
         resetEnv();
         setRequiredEntraEnv();
     });
+
+    // Restore the pristine environment at the end of the file so mutations do
+    // not leak into other files under --test-isolation=none.
+    after(() => {
+        resetEnv();
+    });
+
     it('Should calls next() if everything is valid', async () => {
         let nextCalled = false;
         const req = { log: fakeLogger };

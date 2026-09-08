@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { afterEach, beforeEach, describe, test } from 'node:test';
+import { after, before, beforeEach, describe, test } from 'node:test';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import isAuthenticated from '../middleware/isAuthenticated/index.js';
@@ -91,24 +91,50 @@ describe('API Application', () => {
     let app;
     let envSnapshot;
 
-    beforeEach(async () => {
-        envSnapshot = {};
-        for (const envVar of API_ENV_VARS) {
-            envSnapshot[envVar] = process.env[envVar];
-        }
-
-        // Set up environment for tests
+    /**
+     * Applies the default test environment used by the shared `app` instance and
+     * by tests that do not override specific env vars.
+     * @returns {void}
+     */
+    function applyDefaultTestEnv() {
         process.env.APP_LOG_LEVEL = 'silent';
         process.env.DEPLOY_ENV = 'test';
         process.env.npm_package_version = '1.0.0-test';
         process.env.APP_JWT_SECRET = 'test-secret-for-api';
         process.env.APP_API_JWT_ISSUER = 'test-ui';
         process.env.APP_API_JWT_AUDIENCE = 'test-api';
+    }
 
+    before(async () => {
+        // Snapshot managed env vars once so the suite can restore them at the end.
+        envSnapshot = {};
+        for (const envVar of API_ENV_VARS) {
+            envSnapshot[envVar] = process.env[envVar];
+        }
+
+        // Build the shared app once under the default test environment. createApi
+        // returns an immutable Express instance, so per-test rebuilds only add cost.
+        // Tests that need a different environment build their own app via createTestApi().
+        applyDefaultTestEnv();
         app = await createTestApi();
     });
 
-    afterEach(() => {
+    beforeEach(() => {
+        // Reset every managed env var to its original value, then re-apply the test
+        // defaults. This keeps each test isolated from env mutations made by others
+        // (e.g. DEPLOY_ENV=production or API_RATE_LIMIT_MAX_AUTH overrides) without
+        // rebuilding the shared app.
+        for (const envVar of API_ENV_VARS) {
+            if (envSnapshot[envVar] === undefined) {
+                delete process.env[envVar];
+            } else {
+                process.env[envVar] = envSnapshot[envVar];
+            }
+        }
+        applyDefaultTestEnv();
+    });
+
+    after(() => {
         for (const envVar of API_ENV_VARS) {
             if (envSnapshot[envVar] === undefined) {
                 delete process.env[envVar];
