@@ -99,6 +99,8 @@ if (scssFiles.length > 0) {
     run('npm', ['run', 'sass']);
 }
 
-// --- Unit tests ---
-
-run('npm', ['test']);
+// NOTE: The full test suite is intentionally NOT run here.
+// pre-commit is kept fast and staged-scoped so commits stay cheap; the full
+// suite runs once at pre-push (see the `prepush` npm script). This avoids the
+// ~30s-per-commit cost that pushes developers toward `--no-verify`, while still
+// blocking broken code before it leaves the machine.
