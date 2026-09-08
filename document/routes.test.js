@@ -1,11 +1,16 @@
 import assert from 'node:assert/strict';
-import { beforeEach, describe, it, mock } from 'node:test';
+import { after, beforeEach, describe, it, mock } from 'node:test';
 import express from 'express';
 import session from 'express-session';
 import request from 'supertest';
 import createTemplateEngineService from '../templateEngine/index.js';
 import { buildPageMetadataFixture } from '../test/fixtures/page-metadata.js';
 import createDocumentRouter from './routes.js';
+
+// Snapshot the environment so beforeEach mutations (APP_API_URL, NODE_ENV) are
+// restored at the end of the file and do not leak into other files under
+// --test-isolation=none.
+const PRISTINE_ENV = { ...process.env };
 
 /**
  * Helper function to set up a test express app with required middleware
@@ -84,6 +89,10 @@ describe('Document Routes', () => {
         }));
 
         app = createTestApp(mockCreateDocumentMetadataService);
+    });
+
+    after(() => {
+        process.env = { ...PRISTINE_ENV };
     });
 
     describe('Input Validation', () => {

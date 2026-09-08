@@ -1,10 +1,15 @@
 import assert from 'node:assert';
-import { beforeEach, describe, it, mock } from 'node:test';
+import { after, beforeEach, describe, it, mock } from 'node:test';
 import {
     buildPageMetadataApiBody,
     buildPageMetadataFixture
 } from '../../test/fixtures/page-metadata.js';
 import createDocumentMetadataService from './document-metadata-service.js';
+
+// Snapshot APP_API_URL so the beforeEach override (and the in-test delete) is
+// restored at the end of the file and does not leak into other files under
+// --test-isolation=none.
+const ORIGINAL_APP_API_URL = process.env.APP_API_URL;
 
 describe('document-metadata-service', () => {
     let mockGet;
@@ -26,6 +31,14 @@ describe('document-metadata-service', () => {
                 post: mock.fn()
             };
         });
+    });
+
+    after(() => {
+        if (ORIGINAL_APP_API_URL === undefined) {
+            delete process.env.APP_API_URL;
+        } else {
+            process.env.APP_API_URL = ORIGINAL_APP_API_URL;
+        }
     });
 
     it('Should call get with correct URL and headers', async () => {

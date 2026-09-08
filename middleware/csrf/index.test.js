@@ -1,8 +1,20 @@
 import assert from 'node:assert/strict';
-import { describe, it, mock } from 'node:test';
+import { after, describe, it, mock } from 'node:test';
 import createCsrf from './index.js';
 
+// Snapshot NODE_ENV so the per-test overrides below are restored at the end of
+// the file and do not leak into other files under --test-isolation=none.
+const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
+
 describe('csrf module', () => {
+    after(() => {
+        if (ORIGINAL_NODE_ENV === undefined) {
+            delete process.env.NODE_ENV;
+        } else {
+            process.env.NODE_ENV = ORIGINAL_NODE_ENV;
+        }
+    });
+
     it('calls doubleCsrf with correct config in development', () => {
         process.env.NODE_ENV = 'development';
         const doubleCsrfSpy = mock.fn(() => {

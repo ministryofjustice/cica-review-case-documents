@@ -1,7 +1,12 @@
 import assert from 'node:assert';
-import { beforeEach, describe, it } from 'node:test';
+import { after, beforeEach, describe, it } from 'node:test';
 import VError from 'verror';
 import createDocumentDAL from './document-dal.js';
+
+// Snapshot the pristine environment so it can be restored at the end of the
+// file. This file replaces process.env wholesale in beforeEach; without this
+// restore the mutation would leak into other files under --test-isolation=none.
+const PRISTINE_ENV = { ...process.env };
 
 const mockLogger = {
     info: () => {},
@@ -43,6 +48,10 @@ describe('document-dal', () => {
     };
     beforeEach(() => {
         process.env = { ...ENV_ORIGINAL };
+    });
+
+    after(() => {
+        process.env = { ...PRISTINE_ENV };
     });
 
     describe('getDocuments', () => {
