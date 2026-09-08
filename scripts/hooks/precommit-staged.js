@@ -94,8 +94,9 @@ if (stagedFiles.length > 0) {
 // NOTE: Sass is intentionally NOT compiled here.
 // The compiled output (public/stylesheets/all.css) is a git-ignored build
 // artifact, so rebuilding it at commit time produces nothing that can be
-// committed. CSS compilation belongs to the build (`npm run build`) and CI,
-// and broken SCSS is caught by the `sass` step in the `prepush` npm script.
+// committed. CSS compilation is handled by `npm run sass` (run directly, and
+// as the first step of the `prepush` npm script and in CI), which is also
+// where broken SCSS is caught.
 
 // NOTE: The full test suite is intentionally NOT run here.
 // pre-commit is kept fast and staged-scoped so commits stay cheap; the full

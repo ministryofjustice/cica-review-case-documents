@@ -77,8 +77,8 @@ Husky will now use the scripts defined in the `/.husky` folder:
    - Guards against partial staging (files with both staged and unstaged changes).
    - Runs Biome checks/fixes on staged `.js`/`.json` files.
    - Re-stages any files modified by Biome.
-   - Validates SCSS compilation (`npm run sass`) if any `.scss` files are staged. The compiled CSS is gitignored and not committed — this step exists solely to catch syntax errors at commit time rather than at deployment.
-   - Runs the unit test suite (`npm test`).
+
+Pre-commit is intentionally kept fast and staged-scoped: it does not compile Sass or run the test suite. SCSS compilation and the full test suite run at pre-push instead (see the Pre-push section below), so commits stay quick while broken code is still blocked before it leaves your machine.
 
 Each step fails fast — a failure at any point blocks the commit immediately.
 
