@@ -281,8 +281,11 @@ This application uses the [Node.js Test Runner](https://nodejs.org/api/test.html
 ### Running Tests
 
 ```bash
-# Run all tests
+# Run all tests with coverage (c8) — the gate used on pre-push and in CI
 npm test
+
+# Run all tests without coverage for faster local feedback
+npm run test:fast
 
 # Run tests in a specific file
 node --env-file=.env.test --test search/routes.test.js
@@ -327,6 +330,34 @@ describe('my feature', () => {
 - Mock external dependencies (database, API calls)
 - Test both success and error cases
 - Maintain high test coverage for critical paths
+
+### Test performance and process isolation
+
+By default the Node.js test runner executes each test file in its own child
+process. This isolation is intentional: several tests mutate `process.env`, and
+separate processes stop those mutations from leaking across files.
+
+Two guidelines keep tests fast and isolation-independent:
+
+1. **Build immutable app instances once per file.** When a suite builds an
+   Express app (or router) that it does not change between tests, create it in a
+   `before` hook rather than `beforeEach`. Create only genuinely per-test state
+   (for example a fresh `supertest` agent, so session cookies do not leak) in
+   `beforeEach`. See `auth/routes.test.js` and `api/app.test.js`.
+
+2. **Prefer injecting configuration over reading `process.env` at call time.**
+   Middleware and services should accept their config (secrets, issuer,
+   audience, limits) as parameters resolved once where the app is composed,
+   rather than reading global state on every invocation. Tests then pass config
+   explicitly and never touch `process.env`. See
+   `api/middleware/jwt-authentication/index.js` (`createAuthenticateJWTToken`)
+   and `service/request/create-api-jwt-token.js`.
+
+Some existing tests still rely on mutating `process.env` combined with
+re-importing a module (using a unique query specifier) to pick up module-level
+config. Because that pattern mutates shared global state, the suite is not yet
+safe to run with `--test-isolation=none`. Do not enable that flag globally until
+those remaining tests are converted to configuration injection.
 
 ## Building Assets
 
