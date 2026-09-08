@@ -53,8 +53,10 @@ function createEntraRateLimiter({ windowMs, limit }) {
  * @param {number} [config.loginLimit] - Max login requests per window.
  * @returns {import('express').RequestHandler} Login rate limiter middleware.
  */
-export function createEntraLoginRateLimiter(config) {
-    const { windowMs, loginLimit } = config ?? resolveConfigFromEnv();
+export function createEntraLoginRateLimiter(config = {}) {
+    const defaults = resolveConfigFromEnv();
+    const windowMs = config.windowMs ?? defaults.windowMs;
+    const loginLimit = config.loginLimit ?? defaults.loginLimit;
     return createEntraRateLimiter({ windowMs, limit: loginLimit });
 }
 
@@ -67,7 +69,9 @@ export function createEntraLoginRateLimiter(config) {
  * @param {number} [config.callbackLimit] - Max callback requests per window.
  * @returns {import('express').RequestHandler} Callback rate limiter middleware.
  */
-export function createEntraCallbackRateLimiter(config) {
-    const { windowMs, callbackLimit } = config ?? resolveConfigFromEnv();
+export function createEntraCallbackRateLimiter(config = {}) {
+    const defaults = resolveConfigFromEnv();
+    const windowMs = config.windowMs ?? defaults.windowMs;
+    const callbackLimit = config.callbackLimit ?? defaults.callbackLimit;
     return createEntraRateLimiter({ windowMs, limit: callbackLimit });
 }

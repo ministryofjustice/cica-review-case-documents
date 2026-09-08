@@ -47,8 +47,11 @@ function resolveConfigFromEnv() {
  * @param {number} [config.unauthLimit] - Max requests for unauthenticated users.
  * @returns {import('express').RequestHandler} The configured rate limiter middleware.
  */
-export function createGeneralRateLimiter(config) {
-    const { windowMs, authLimit, unauthLimit } = config ?? resolveConfigFromEnv();
+export function createGeneralRateLimiter(config = {}) {
+    const defaults = resolveConfigFromEnv();
+    const windowMs = config.windowMs ?? defaults.windowMs;
+    const authLimit = config.authLimit ?? defaults.authLimit;
+    const unauthLimit = config.unauthLimit ?? defaults.unauthLimit;
 
     return rateLimit({
         windowMs,

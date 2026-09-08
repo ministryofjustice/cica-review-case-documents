@@ -90,3 +90,23 @@ test('Entra rate limiter falls back to default config when config is not provide
     assert.equal(callbackFirst.status, 200);
     assert.equal(callbackSecond.status, 200);
 });
+
+test('Entra login limiter accepts a partial config and fills the rest from defaults', async () => {
+    // Only loginLimit is provided; windowMs must fall back to the default (15 min)
+    // rather than being forwarded as undefined to express-rate-limit.
+    const limiter = createEntraLoginRateLimiter({ loginLimit: 1 });
+    const app = createLimiterApp('/auth/login', limiter);
+
+    const first = await request(app).get('/auth/login').set('X-Forwarded-For', '10.6.6.6');
+    const second = await request(app).get('/auth/login').set('X-Forwarded-For', '10.6.6.6');
+
+    assert.equal(first.status, 200);
+    assert.equal(second.status, 429);
+
+    // With the default (long) window, a short wait does not reset the limit.
+    await new Promise((resolve) => {
+        setTimeout(resolve, 150);
+    });
+    const third = await request(app).get('/auth/login').set('X-Forwarded-For', '10.6.6.6');
+    assert.equal(third.status, 429);
+});

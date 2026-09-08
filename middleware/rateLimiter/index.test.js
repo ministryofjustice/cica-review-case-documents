@@ -158,3 +158,22 @@ test('uses a long default window so the limit does not reset quickly', async () 
     const stillBlocked = await request(app).get('/test').set('x-forwarded-for', '203.0.113.40');
     assert.strictEqual(stillBlocked.status, 429);
 });
+
+test('accepts a partial config and fills the rest from defaults', async () => {
+    // Only unauthLimit is provided; windowMs must fall back to the default rather
+    // than being forwarded as undefined to express-rate-limit.
+    const app = createTestApp(createGeneralRateLimiter({ unauthLimit: 1 }));
+
+    const first = await request(app).get('/test').set('x-forwarded-for', '198.51.100.99');
+    const blocked = await request(app).get('/test').set('x-forwarded-for', '198.51.100.99');
+
+    assert.strictEqual(first.status, 200);
+    assert.strictEqual(blocked.status, 429);
+
+    // With the default (long) window, a short wait does not reset the limit.
+    await new Promise((resolve) => {
+        setTimeout(resolve, 150);
+    });
+    const stillBlocked = await request(app).get('/test').set('x-forwarded-for', '198.51.100.99');
+    assert.strictEqual(stillBlocked.status, 429);
+});
