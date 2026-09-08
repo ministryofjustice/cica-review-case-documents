@@ -91,13 +91,11 @@ if (stagedFiles.length > 0) {
     run('git', ['add', '--', ...stagedFiles]);
 }
 
-// --- Sass build (only if .scss files are staged) ---
-
-const scssFiles = stagedFiles.filter((file) => /\.scss$/.test(file));
-
-if (scssFiles.length > 0) {
-    run('npm', ['run', 'sass']);
-}
+// NOTE: Sass is intentionally NOT compiled here.
+// The compiled output (public/stylesheets/all.css) is a git-ignored build
+// artifact, so rebuilding it at commit time produces nothing that can be
+// committed. CSS compilation belongs to the build (`npm run build`) and CI,
+// and broken SCSS is caught by the `sass` step in the `prepush` npm script.
 
 // NOTE: The full test suite is intentionally NOT run here.
 // pre-commit is kept fast and staged-scoped so commits stay cheap; the full
