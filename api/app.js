@@ -8,7 +8,7 @@ import pinoHttp from 'pino-http';
 import createDocsRouter from './docs/createDocsRouter.js';
 import createApiRouter from './document/routes.js';
 import errorHandler from './middleware/errorHandler/index.js';
-import authenticateJWTToken from './middleware/jwt-authentication/index.js';
+import createAuthenticateJWTToken from './middleware/jwt-authentication/index.js';
 import createDynamicRateLimiter from './middleware/rateLimiter/index.js';
 import createOpenApiValidatorMiddleware from './middleware/validator/index.js';
 import createSearchService from './search/search-service.js';
@@ -89,6 +89,8 @@ export default async function createApi(options = {}) {
 
     const openApiValidator = await createOpenApiValidatorMiddleware({ ajv, logger });
     const apiRateLimiter = createDynamicRateLimiter();
+    // Resolve JWT auth config once at app-build time rather than per request.
+    const authenticateJWTToken = createAuthenticateJWTToken();
     app.use(
         '/',
         authenticateJWTToken,

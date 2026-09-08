@@ -1,16 +1,20 @@
 import assert from 'node:assert/strict';
-import { beforeEach, test } from 'node:test';
+import { test } from 'node:test';
 import jwt from 'jsonwebtoken';
-import authenticateToken from './index.js';
+import createAuthenticateJWTToken from './index.js';
 
 const SECRET = 'test-secret';
+const ISSUER = 'test-ui';
+const AUDIENCE = 'test-api';
 
 const TEST_GUID = '123e4567-e89b-12d3-a456-426614174000'; // Example GUID for testing
 
-beforeEach(() => {
-    process.env.APP_JWT_SECRET = SECRET;
-    process.env.APP_API_JWT_ISSUER = 'test-ui';
-    process.env.APP_API_JWT_AUDIENCE = 'test-api';
+// Config is injected directly into the middleware factory, so these tests do
+// not read or mutate process.env and are safe to run without process isolation.
+const authenticateToken = createAuthenticateJWTToken({
+    secret: SECRET,
+    issuer: ISSUER,
+    audience: AUDIENCE
 });
 
 /**
@@ -70,8 +74,8 @@ function createMockRes() {
 test('authenticateToken succeeds and attaches payload parameters for valid token in header', async () => {
     const payload = { id: TEST_GUID, name: 'Test' };
     const token = jwt.sign(payload, SECRET, {
-        issuer: process.env.APP_API_JWT_ISSUER,
-        audience: process.env.APP_API_JWT_AUDIENCE,
+        issuer: ISSUER,
+        audience: AUDIENCE,
         algorithm: 'HS256'
     });
     const req = createMockReq({ token });
@@ -91,8 +95,8 @@ test('authenticateToken succeeds when token has whitespace suffix', async () => 
     const id_with_whitespace = `${TEST_GUID} `;
     const payload = { id: id_with_whitespace };
     const token = jwt.sign(payload, SECRET, {
-        issuer: process.env.APP_API_JWT_ISSUER,
-        audience: process.env.APP_API_JWT_AUDIENCE,
+        issuer: ISSUER,
+        audience: AUDIENCE,
         algorithm: 'HS256'
     });
     const req = createMockReq({ token });
@@ -132,7 +136,7 @@ test('authenticateToken returns 403 if token is invalid', async () => {
 test('authenticateToken returns 403 if token issuer is invalid', async () => {
     const token = jwt.sign({ id: TEST_GUID }, SECRET, {
         issuer: 'wrong-issuer',
-        audience: process.env.APP_API_JWT_AUDIENCE,
+        audience: AUDIENCE,
         algorithm: 'HS256'
     });
     const req = createMockReq({ token });
@@ -147,7 +151,7 @@ test('authenticateToken returns 403 if token issuer is invalid', async () => {
 
 test('authenticateToken returns 403 if token audience is invalid', async () => {
     const token = jwt.sign({ id: TEST_GUID }, SECRET, {
-        issuer: process.env.APP_API_JWT_ISSUER,
+        issuer: ISSUER,
         audience: 'wrong-audience',
         algorithm: 'HS256'
     });
@@ -162,18 +166,25 @@ test('authenticateToken returns 403 if token audience is invalid', async () => {
 });
 
 test('authenticateToken returns 500 when auth configuration is invalid', async () => {
-    const token = jwt.sign({ id: TEST_GUID }, SECRET, {
-        issuer: process.env.APP_API_JWT_ISSUER,
-        audience: process.env.APP_API_JWT_AUDIENCE,
-        algorithm: 'HS256'
+    // Build a middleware instance with incomplete config (missing issuer). The
+    // configuration error is captured at creation time and surfaced as a 500 on
+    // each request, without reading global state.
+    const misconfiguredAuth = createAuthenticateJWTToken({
+        secret: SECRET,
+        issuer: undefined,
+        audience: AUDIENCE
     });
 
-    delete process.env.APP_API_JWT_ISSUER;
+    const token = jwt.sign({ id: TEST_GUID }, SECRET, {
+        issuer: ISSUER,
+        audience: AUDIENCE,
+        algorithm: 'HS256'
+    });
 
     const req = createMockReq({ token });
     const res = createMockRes();
 
-    await authenticateToken(req, res, () => {});
+    await misconfiguredAuth(req, res, () => {});
 
     assert.equal(res.statusCode, 500);
     assert.ok(res.jsonBody);
@@ -185,8 +196,8 @@ test('authenticateToken returns 500 when auth configuration is invalid', async (
 
 test('authenticateToken returns 403 when token has no usable identity claims', async () => {
     const token = jwt.sign({ email: 'test@example.com' }, SECRET, {
-        issuer: process.env.APP_API_JWT_ISSUER,
-        audience: process.env.APP_API_JWT_AUDIENCE,
+        issuer: ISSUER,
+        audience: AUDIENCE,
         algorithm: 'HS256'
     });
     const req = createMockReq({ token });
@@ -208,8 +219,8 @@ test('authenticateToken returns 403 when token has no usable identity claims', a
 
 test('authenticateToken returns 403 when token has whitespace only identity claims', async () => {
     const token = jwt.sign({ id: '   ' }, SECRET, {
-        issuer: process.env.APP_API_JWT_ISSUER,
-        audience: process.env.APP_API_JWT_AUDIENCE,
+        issuer: ISSUER,
+        audience: AUDIENCE,
         algorithm: 'HS256'
     });
     const req = createMockReq({ token });
@@ -232,8 +243,8 @@ test('authenticateToken returns 403 when token has whitespace only identity clai
 test('authenticateToken uses fast-path when apiJwtVerified flag and decodedToken already set', async () => {
     const payload = { id: TEST_GUID, name: 'Test' };
     const token = jwt.sign(payload, SECRET, {
-        issuer: process.env.APP_API_JWT_ISSUER,
-        audience: process.env.APP_API_JWT_AUDIENCE,
+        issuer: ISSUER,
+        audience: AUDIENCE,
         algorithm: 'HS256'
     });
 
@@ -257,8 +268,8 @@ test('authenticateToken uses fast-path when apiJwtVerified flag and decodedToken
 test('authenticateToken sets apiJwtVerified flag after successful verification', async () => {
     const payload = { id: TEST_GUID, name: 'Test' };
     const token = jwt.sign(payload, SECRET, {
-        issuer: process.env.APP_API_JWT_ISSUER,
-        audience: process.env.APP_API_JWT_AUDIENCE,
+        issuer: ISSUER,
+        audience: AUDIENCE,
         algorithm: 'HS256'
     });
     const req = createMockReq({ token });

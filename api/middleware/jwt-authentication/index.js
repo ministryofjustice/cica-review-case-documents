@@ -2,6 +2,21 @@ import jwt from 'jsonwebtoken';
 import { getApiJwtAudience, getApiJwtIssuer } from '../../auth/apiJwtClaims/index.js';
 
 /**
+ * Resolves the JWT authentication configuration from the environment.
+ * Called once when the middleware is created so that request handling does
+ * not read mutable global state (process.env) on every invocation.
+ *
+ * @returns {{ secret: string|undefined, issuer: string, audience: string }} Resolved config.
+ */
+function resolveJwtConfigFromEnv() {
+    return {
+        secret: process.env.APP_JWT_SECRET,
+        issuer: getApiJwtIssuer(),
+        audience: getApiJwtAudience()
+    };
+}
+
+/**
  * Extracts a bearer token from the Authorization header.
  */
 function getTokenFromRequest(req) {
@@ -20,97 +35,132 @@ function getTokenFromRequest(req) {
 }
 
 /**
- * Middleware to authenticate JWT tokens from Authorization headers.
- * If a valid token is found, attaches the decoded token object to `req.decodedToken`.
- * Responds with 401 if no token is provided, or 403 if the token is invalid.
+ * Creates JWT authentication middleware with its configuration resolved once,
+ * up front, rather than read from process.env on every request.
  *
- * @param {import('express').Request} req - Express request object.
- * @param {import('express').Response} res - Express response object.
- * @param {Function} next - Express next middleware function.
+ * Configuration can be injected directly (preferred, and used by tests), or
+ * resolved from the environment when omitted (the default used by app wiring).
+ * If required configuration is missing, the resulting middleware responds with
+ * 500 for every request, preserving the previous "misconfigured service"
+ * behaviour without reading global state per request.
+ *
+ * @param {Object} [config] - Optional explicit JWT config. When omitted, config
+ *   is resolved from the environment at creation time.
+ * @param {string} [config.secret] - HMAC secret used to verify tokens.
+ * @param {string} [config.issuer] - Expected token issuer.
+ * @param {string} [config.audience] - Expected token audience.
+ * @returns {import('express').RequestHandler} The configured middleware.
  */
-function authenticateJWTToken(req, res, next) {
-    if (req.apiJwtVerified === true && req.decodedToken) {
-        return next();
-    }
+export function createAuthenticateJWTToken(config) {
+    let resolved;
+    let configError;
 
-    const token = getTokenFromRequest(req);
-
-    if (!token) {
-        req.log?.warn({ url: req.originalUrl }, 'Missing authentication token');
-        return res.status(401).json({
-            errors: [
-                {
-                    status: '401',
-                    title: 'Unauthorized',
-                    detail: 'Missing authentication token'
-                }
-            ]
-        });
-    }
-
-    let jwtVerificationOptions;
     try {
-        if (!process.env.APP_JWT_SECRET) {
+        resolved = config ?? resolveJwtConfigFromEnv();
+        if (!resolved.secret) {
             throw new Error('APP_JWT_SECRET environment variable is not set');
         }
-
-        jwtVerificationOptions = {
-            algorithms: ['HS256'],
-            issuer: getApiJwtIssuer(),
-            audience: getApiJwtAudience()
-        };
+        if (!resolved.issuer) {
+            throw new Error('APP_API_JWT_ISSUER environment variable is not set');
+        }
+        if (!resolved.audience) {
+            throw new Error('APP_API_JWT_AUDIENCE environment variable is not set');
+        }
     } catch (err) {
-        req.log?.error(
-            { url: req.originalUrl, error: err.message },
-            'JWT authentication configuration error'
-        );
-        return res.status(500).json({
-            errors: [
-                {
-                    status: '500',
-                    title: 'Internal Server Error',
-                    detail: 'Authentication service is not configured correctly'
-                }
-            ]
-        });
+        configError = err;
     }
 
-    try {
-        // Verify the token and attach the decoded payload to the request object for downstream middleware and route handlers.
-        req.decodedToken = jwt.verify(token, process.env.APP_JWT_SECRET, jwtVerificationOptions);
-        const rawIdentity = req.decodedToken?.id;
-        const identity = typeof rawIdentity === 'string' ? rawIdentity.trim() : rawIdentity;
+    /**
+     * Middleware to authenticate JWT tokens from Authorization headers.
+     * If a valid token is found, attaches the decoded token object to `req.decodedToken`.
+     * Responds with 401 if no token is provided, or 403 if the token is invalid.
+     *
+     * @param {import('express').Request} req - Express request object.
+     * @param {import('express').Response} res - Express response object.
+     * @param {Function} next - Express next middleware function.
+     */
+    return function authenticateJWTToken(req, res, next) {
+        if (req.apiJwtVerified === true && req.decodedToken) {
+            return next();
+        }
 
-        if (identity == null || identity === '') {
+        const token = getTokenFromRequest(req);
+
+        if (!token) {
+            req.log?.warn({ url: req.originalUrl }, 'Missing authentication token');
+            return res.status(401).json({
+                errors: [
+                    {
+                        status: '401',
+                        title: 'Unauthorized',
+                        detail: 'Missing authentication token'
+                    }
+                ]
+            });
+        }
+
+        if (configError) {
+            req.log?.error(
+                { url: req.originalUrl, error: configError.message },
+                'JWT authentication configuration error'
+            );
+            return res.status(500).json({
+                errors: [
+                    {
+                        status: '500',
+                        title: 'Internal Server Error',
+                        detail: 'Authentication service is not configured correctly'
+                    }
+                ]
+            });
+        }
+
+        const jwtVerificationOptions = {
+            algorithms: ['HS256'],
+            issuer: resolved.issuer,
+            audience: resolved.audience
+        };
+
+        try {
+            // Verify the token and attach the decoded payload to the request object for downstream middleware and route handlers.
+            req.decodedToken = jwt.verify(token, resolved.secret, jwtVerificationOptions);
+            const rawIdentity = req.decodedToken?.id;
+            const identity = typeof rawIdentity === 'string' ? rawIdentity.trim() : rawIdentity;
+
+            if (identity == null || identity === '') {
+                req.log?.warn(
+                    { url: req.originalUrl },
+                    'Authentication token is missing a usable identity claim'
+                );
+                return res.status(403).json({
+                    errors: [
+                        {
+                            status: '403',
+                            title: 'Forbidden',
+                            detail: 'Authentication token is missing required identity claims'
+                        }
+                    ]
+                });
+            }
+            req.decodedToken.id = identity;
+            req.apiJwtVerified = true;
+            next();
+        } catch (err) {
             req.log?.warn(
-                { url: req.originalUrl },
-                'Authentication token is missing a usable identity claim'
+                { url: req.originalUrl, error: err.message },
+                'Invalid authentication token'
             );
             return res.status(403).json({
                 errors: [
                     {
                         status: '403',
                         title: 'Forbidden',
-                        detail: 'Authentication token is missing required identity claims'
+                        detail: 'Invalid authentication token'
                     }
                 ]
             });
         }
-        req.decodedToken.id = identity;
-        req.apiJwtVerified = true;
-        next();
-    } catch (err) {
-        req.log?.warn({ url: req.originalUrl, error: err.message }, 'Invalid authentication token');
-        return res.status(403).json({
-            errors: [
-                {
-                    status: '403',
-                    title: 'Forbidden',
-                    detail: 'Invalid authentication token'
-                }
-            ]
-        });
-    }
+    };
 }
 
-export default authenticateJWTToken;
+export default createAuthenticateJWTToken;
