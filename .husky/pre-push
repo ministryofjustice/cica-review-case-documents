@@ -1,1 +1,6 @@
+#!/usr/bin/env sh
+
+# Fail fast so a prepush check failure blocks the push.
+set -e
+
 npm run prepush
