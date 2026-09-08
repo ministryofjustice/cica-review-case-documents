@@ -22,12 +22,19 @@ function resolveConfigFromEnv() {
  * resolved from the environment when omitted (the default used by request
  * handlers).
  *
+ * The `config` object as a whole is optional: omit it to resolve everything
+ * from the environment. When `config` IS provided it is treated as the complete
+ * configuration and is NOT merged with the environment; `secret`, `issuer` and
+ * `audience` are all required together (a missing one throws), rather than being
+ * silently sourced from `process.env`. `expiresIn` is the only field with a
+ * built-in default ('300s') when a config is supplied.
+ *
  * @param {string} id - Stable user ID (Entra oid) for rate limiting.
- * @param {Object} [config] - Optional signing config. Resolved from env when omitted.
- * @param {string} [config.secret] - HMAC secret used to sign the token.
- * @param {string} [config.issuer] - Token issuer claim.
- * @param {string} [config.audience] - Token audience claim.
- * @param {string} [config.expiresIn] - Token lifetime (e.g. '300s').
+ * @param {Object} [config] - Complete signing config, or omit to resolve from env.
+ * @param {string} config.secret - HMAC secret used to sign the token (required when `config` is given).
+ * @param {string} config.issuer - Token issuer claim (required when `config` is given).
+ * @param {string} config.audience - Token audience claim (required when `config` is given).
+ * @param {string} [config.expiresIn] - Token lifetime (e.g. '300s'). Defaults to '300s'.
  * @returns {string} A signed JWT token.
  */
 export default function createApiJwtToken(id, config) {

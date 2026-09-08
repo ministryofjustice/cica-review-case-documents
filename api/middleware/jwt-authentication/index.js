@@ -44,11 +44,18 @@ function getTokenFromRequest(req) {
  * 500 for every request, preserving the previous "misconfigured service"
  * behaviour without reading global state per request.
  *
- * @param {Object} [config] - Optional explicit JWT config. When omitted, config
- *   is resolved from the environment at creation time.
- * @param {string} [config.secret] - HMAC secret used to verify tokens.
- * @param {string} [config.issuer] - Expected token issuer.
- * @param {string} [config.audience] - Expected token audience.
+ * The `config` object as a whole is optional: omit it to resolve everything
+ * from the environment. When `config` IS provided it is treated as the complete
+ * configuration and is NOT merged with the environment; `secret`, `issuer` and
+ * `audience` are all required together. A partial config (a missing field)
+ * yields a middleware that responds with 500, rather than silently sourcing the
+ * missing field from `process.env` — mixing injected and environment values at
+ * an auth boundary is intentionally disallowed.
+ *
+ * @param {Object} [config] - Complete JWT config, or omit to resolve from env.
+ * @param {string} config.secret - HMAC secret used to verify tokens (required when `config` is given).
+ * @param {string} config.issuer - Expected token issuer (required when `config` is given).
+ * @param {string} config.audience - Expected token audience (required when `config` is given).
  * @returns {import('express').RequestHandler} The configured middleware.
  */
 export function createAuthenticateJWTToken(config) {
