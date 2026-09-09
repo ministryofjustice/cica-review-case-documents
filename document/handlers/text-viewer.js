@@ -149,7 +149,8 @@ export function createTextViewerHandler(
                     pageText,
                     pageTextSegments,
                     showPagination: paginationData?.results?.count > 1,
-                    paginationData
+                    paginationData,
+                    pageContainsHandwriting: pageMetadata.page_contains_handwriting === true
                 })
             );
 

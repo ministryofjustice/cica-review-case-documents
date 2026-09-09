@@ -2,6 +2,7 @@
 {% from "govuk/components/back-link/macro.njk" import govukBackLink %}
 {%- from "moj/components/sub-navigation/macro.njk" import mojSubNavigation -%}
 {% from "moj/components/pagination/macro.njk" import mojPagination %}
+{% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
 
 {% block title %}Document - Page {{ pageNumber }} - CICA FIND - GOV.UK{% endblock %}
 
@@ -15,8 +16,14 @@
   href: "#"
 }) }}
 
-  <h1 class="govuk-heading-l">{{ pageTitle }}</h1>
+<h1 class="govuk-heading-l">{{ pageTitle }}</h1>
 
+{% if pageContainsHandwriting %}
+{{ govukInsetText({
+    text: "This page includes handwriting - check carefully",
+    classes: "govuk-inset-text--moj"
+}) }}
+{% endif %}
 
 {{ mojSubNavigation({
   label: "Document navigation",
