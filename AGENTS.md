@@ -10,12 +10,32 @@ Keep this file limited to stable repo rules. Use [README.md](./README.md), [ARCH
 - Use kebab-case for UI component folder names under `components/cica/`.
 - Use `.js` files by default; do not introduce `.mjs` files.
 - Use Nunjucks only for templates.
+- Use British English explicitly and exclusively in prose, including documentation, comments, UI copy, error messages, and commit messages.
+- Do not rename or respell language-, platform-, API-, or framework-defined identifiers where the required spelling is outside the project's control.
+- Do not alter quoted third-party text, licence headers, or upstream documentation to satisfy the British English rule.
 
 ## Core Rules
 
 - Use the Node test runner only. Test files live beside the code they cover and end in `*.test.js`.
 - Keep middleware and utility folders in camelCase.
 - Keep private helpers inside the owning module folder.
+
+## Commit Messages
+
+- Use Conventional Commits for every commit message.
+- Required header format: `<type>(<scope>): <subject>`.
+- Use lower-case `type` and `scope`, and write `subject` in imperative mood.
+- Keep the header concise (ideally 72 characters or fewer).
+- Use `!` before the colon for breaking changes, for example `<type>(<scope>)!: <subject>`.
+- Common `type` values: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, `revert`.
+- Use a repository namespace as `scope`, for example: `api`, `app`, `auth`, `document`, `search`, `middleware`, `components`, `deps`.
+- If a commit includes multiple changes that benefit from extra context, include a commit body.
+- Start the body with one concise descriptive sentence.
+- Leave exactly one empty line after that sentence.
+- Put additional details in an unordered list using `-`.
+- Keep each bullet short and focused on one change.
+- Follow the commit-message requirements here; see `CONTRIBUTING.md` for terminal command examples and workflow mechanics.
+- Do not use `\n` escape sequences in commit command strings to simulate line breaks.
 
 ## Routing And Middleware
 
@@ -68,16 +88,43 @@ components/
 - Browser requests go browser → main app → API for metadata, and browser → main app → S3 for images.
 - Browser code should never call API or S3 endpoints directly.
 
-## Common Commands
+## Agent Behaviour
 
-- `npm install`
-- `npm test`
-- `npm run format`
-- `npm run lint`
-- `npm run sass`
-- `npm run openapi:build`
-- `npm run dev:server`
+- Agents may suggest or draft changes and run linters locally, but must not auto-commit, push, or open PRs without explicit human authorisation.
+- All agent-generated outputs must be reviewed before merge. Engineers remain accountable for code quality, security, and correctness.
+- Never include PII or secret values in suggestions, commits, or PR descriptions.
+
+## Change Scope
+
+- Prefer the smallest change that satisfies the requirement.
+- Do not perform unrelated refactoring.
+- Do not rename files, folders, functions, or variables unless required.
+- Preserve existing patterns unless there is a clear project rule requiring a change.
+
+## Rule Priority
+
+When instructions conflict, follow this order:
+
+1. Direct human instructions.
+2. This AGENTS.md file.
+3. CONTRIBUTING.md.
+4. README.md and other repository documentation.
+5. Tool defaults and agent assumptions.
+
+## Testing Expectations
+
+- Add or update tests for behaviour changes.
+- Do not remove tests unless the behaviour they cover has also been removed.
+- Run the smallest relevant validation commands for the change being made.
 
 ## Validation
 
 - Use `npm test`, `npm run lint`, `npm run format`, `npm run sass`, and `npm run openapi:build` as the main checks for changes here.
+
+## Documentation
+
+- Update relevant documentation when behaviour, configuration, routes, or environment variables change.
+- Keep documentation consistent with implementation.
+
+## Contributing
+Refer to CONTRIBUTING.md for the authoritative developer workflow and command reference.
