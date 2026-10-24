@@ -164,6 +164,36 @@ function respondInvalidAuthTransaction(req, res, { state, hasNonce, isStaleAuthT
 }
 
 /**
+ * Extracts structured Entra token endpoint error details from a got error.
+ *
+ * @param {any} err - Error thrown by the token exchange request.
+ * @returns {{ entraTokenError?: string, entraTokenErrorCode?: string, entraTokenErrorDescription?: string, entraTokenErrorUri?: string }}
+ */
+function getEntraTokenErrorDetails(err) {
+    const responseBody = err?.response?.body;
+
+    if (!responseBody || typeof responseBody !== 'object' || Array.isArray(responseBody)) {
+        return {};
+    }
+
+    const entraTokenError = typeof responseBody.error === 'string' ? responseBody.error : undefined;
+    const entraTokenErrorDescription =
+        typeof responseBody.error_description === 'string'
+            ? responseBody.error_description
+            : undefined;
+    const entraTokenErrorUri =
+        typeof responseBody.error_uri === 'string' ? responseBody.error_uri : undefined;
+    const entraTokenErrorCode = getEntraErrorCode(entraTokenErrorDescription);
+
+    return {
+        entraTokenError,
+        entraTokenErrorCode,
+        entraTokenErrorDescription,
+        entraTokenErrorUri
+    };
+}
+
+/**
  * Regenerates session and stores authenticated user details.
  *
  * @param {import('express').Request} req - Express request object.
@@ -236,8 +266,15 @@ export const createCallbackHandler = () => async (req, res, next) => {
             tokenResponse = await exchangeEntraAuthorizationCode(req, String(code));
             claims = await decodeAndValidateEntraIdToken(tokenResponse.id_token, pendingAuth.nonce);
         } catch (err) {
-            const wrappedError = new Error('Token exchange failed', { cause: err });
-            req.log?.error(safeErrorForLog(wrappedError), 'Entra token exchange failed');
+            // Sanitize error details to remove sensitive HTTP request/response data
+            // while preserving error type, message, code, and Entra-specific error codes
+            req.log?.error(
+                {
+                    ...safeErrorForLog(err),
+                    ...getEntraTokenErrorDetails(err)
+                },
+                'Entra token exchange failed'
+            );
             clearPendingEntraAuth(req);
             res.status(401).send('Authentication failed');
             return;

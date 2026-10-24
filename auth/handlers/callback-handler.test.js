@@ -485,3 +485,75 @@ test('createCallbackHandler defaults redirect to root when returnTo is missing',
         got.post = originalPost;
     }
 });
+
+test('createCallbackHandler logs Entra token endpoint error details on token exchange failure', async () => {
+    const handler = createCallbackHandler();
+    const originalPost = got.post;
+
+    try {
+        const tokenExchangeError = new Error(
+            'Request failed with status code 401 (Unauthorized): POST https://login.microsoftonline.com/test-entra-tenant-id/oauth2/v2.0/token'
+        );
+        tokenExchangeError.name = 'HTTPError';
+        tokenExchangeError.code = 'ERR_NON_2XX_3XX_RESPONSE';
+        tokenExchangeError.response = {
+            statusCode: 401,
+            body: {
+                error: 'invalid_client',
+                error_description:
+                    'AADSTS7000215: Invalid client secret provided. Ensure the secret being sent in the request is the client secret value, not the client secret ID.',
+                error_uri: 'https://login.microsoftonline.com/error?code=7000215'
+            }
+        };
+
+        got.post = () => ({
+            json: async () => {
+                throw tokenExchangeError;
+            }
+        });
+
+        let loggedError;
+        let loggedMessage;
+        const req = {
+            query: {
+                code: 'auth-code',
+                state: 'state-token-failure-1'
+            },
+            protocol: 'https',
+            get: () => 'example.test',
+            session: {
+                entraAuth: {
+                    state: 'state-token-failure-1',
+                    nonce: 'nonce-token-failure-1',
+                    createdAt: Date.now()
+                }
+            },
+            log: {
+                warn: () => {},
+                info: () => {},
+                error: (payload, message) => {
+                    loggedError = payload;
+                    loggedMessage = message;
+                }
+            }
+        };
+        const { responsePayload, res } = createResponseRecorder();
+
+        await handler(req, res, () => {});
+
+        assert.strictEqual(responsePayload.statusCode, 401);
+        assert.strictEqual(responsePayload.body, 'Authentication failed');
+        assert.strictEqual(loggedMessage, 'Entra token exchange failed');
+        assert.strictEqual(loggedError.code, 'ERR_NON_2XX_3XX_RESPONSE');
+        assert.strictEqual(loggedError.statusCode, 401);
+        assert.strictEqual(loggedError.entraTokenError, 'invalid_client');
+        assert.strictEqual(loggedError.entraTokenErrorCode, 'AADSTS7000215');
+        assert.match(loggedError.entraTokenErrorDescription, /AADSTS7000215/);
+        assert.strictEqual(
+            loggedError.entraTokenErrorUri,
+            'https://login.microsoftonline.com/error?code=7000215'
+        );
+    } finally {
+        got.post = originalPost;
+    }
+});
