@@ -3,7 +3,7 @@
 # see deployment/local/README.md for instructions
 
 # --- Stage 1: builder ---
-FROM node:24-trixie-slim@sha256:50c3b2f6988dfc307b86e5301d69611af31f4789bdf232863b07d3b02fe55ae0 AS builder
+FROM node:24-trixie-slim@sha256:54f84b4cf8432b21aaffd5d3ce8d41e12cea0d10d33c09d2f3c9879d49d6b446 AS builder
 
 WORKDIR /usr/src/app
 
@@ -15,7 +15,7 @@ RUN npm run sass && npm run build
 RUN npm prune --omit=dev
 
 # --- Stage 2: runtime ---
-FROM node:24-trixie-slim@sha256:50c3b2f6988dfc307b86e5301d69611af31f4789bdf232863b07d3b02fe55ae0
+FROM node:24-trixie-slim@sha256:54f84b4cf8432b21aaffd5d3ce8d41e12cea0d10d33c09d2f3c9879d49d6b446
 
 WORKDIR /usr/src/app
 
