@@ -50,7 +50,7 @@ jobs:
                   ref: ${{ inputs.ref || github.sha }}
 
             - name: Set up Node.js
-              uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 #v7.0.0
+              uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 #v7.1.0
               with:
                   node-version: "24.15.0"
 
@@ -64,7 +64,7 @@ jobs:
                   echo "Skip security scan: ${{ inputs.skip_security_scan || 'false' }}"
 
             - name: Configure AWS credentials
-              uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
+              uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
               with:
                   role-to-assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}
                   aws-region: ${{ vars.ECR_REGION }}
@@ -481,7 +481,7 @@ jobs:
                   ref: ${{ inputs.ref || github.sha }}
 
             - name: Configure AWS credentials
-              uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
+              uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
               with:
                   role-to-assume: ${{ secrets.ECR_ROLE_TO_ASSUME }}
                   aws-region: ${{ vars.ECR_REGION }}
